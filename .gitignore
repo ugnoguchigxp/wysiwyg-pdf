@@ -26,6 +26,9 @@ coverage/
 # npm cache (workaround for ~/.npm permissions)
 .npm-cache/
 
+# npm auth (never commit)
+.npmrc
+
 # example app artifacts
 example/node_modules/
 example/dist/

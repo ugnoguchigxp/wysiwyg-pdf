@@ -2,6 +2,8 @@
 
 `wysiwyg-pdf` is a **React + Konva** WYSIWYG editor toolkit for building **print-ready (A4 portrait/landscape) templates** in the browser.
 
+npm: https://www.npmjs.com/package/wysiwyg-pdf
+
 It is designed as a set of **composable editor building blocks**:
 
 - **Canvas editor** (`ReportKonvaEditor`) for selection, transform, drag/drop, inline text editing, copy/paste
