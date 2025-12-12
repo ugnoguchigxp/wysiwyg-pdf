@@ -23,6 +23,9 @@ coverage/
 # lock/temp
 *.tsbuildinfo
 
+# npm cache (workaround for ~/.npm permissions)
+.npm-cache/
+
 # example app artifacts
 example/node_modules/
 example/dist/

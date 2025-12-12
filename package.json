@@ -45,7 +45,7 @@
     "test": "pnpm exec vitest run",
     "test:watch": "pnpm exec vitest",
     "coverage": "pnpm exec vitest run --coverage",
-    "pack:dry": "npm pack --dry-run",
+    "pack:dry": "npm pack --dry-run --cache .npm-cache",
     "verify": "pnpm run build && pnpm run test && pnpm run coverage && pnpm run pack:dry",
     "prepublishOnly": "pnpm run verify",
     "prepare": "pnpm run build",
