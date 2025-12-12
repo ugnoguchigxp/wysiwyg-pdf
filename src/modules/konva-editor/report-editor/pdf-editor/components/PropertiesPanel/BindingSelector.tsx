@@ -1,0 +1,79 @@
+import { Database } from 'lucide-react'
+import type React from 'react'
+import { useTranslation } from 'react-i18next'
+import { Button } from '../../../../../../components/ui/Button'
+import type { IBinding } from '../../../../../../types/canvas'
+
+interface BindingSelectorProps {
+  binding?: IBinding
+  onUpdate: (binding: IBinding | undefined) => void
+  label?: string
+  onOpenModal?: () => void
+}
+
+export const BindingSelector: React.FC<BindingSelectorProps> = ({
+  binding,
+  onUpdate,
+  label = 'Data Binding',
+  onOpenModal,
+}) => {
+  const { t } = useTranslation()
+  const displayLabel = label === 'Data Binding' ? t('data_binding') : label
+
+  if (!binding) {
+    return (
+      <div className="mb-4">
+        <Button
+          variant="outline"
+          size="sm"
+          className="font-normal"
+          onClick={onOpenModal}
+          type="button"
+        >
+          <span>{displayLabel}</span>
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mb-4 p-2.5 bg-blue-50/50 border border-blue-100 rounded">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <Database size={14} className="text-blue-600" />
+          <span className="text-[11px] font-semibold text-blue-900">{displayLabel}</span>
+        </div>
+      </div>
+
+      <div className="bg-white border border-blue-100 rounded px-2 py-1.5 mb-2">
+        <div className="text-sm font-medium text-gray-900 break-all leading-tight">
+          {binding.fieldId || binding.path}
+        </div>
+        {binding.sourceId && (
+          <div className="text-[10px] text-gray-500 mt-0.5">
+            {t('data_binding_source')}: {binding.sourceId}
+          </div>
+        )}
+      </div>
+
+      <div className="flex justify-end gap-2">
+        <button
+          className="px-2 py-1 h-6 text-[10px] text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+          onClick={() => onUpdate(undefined)}
+          type="button"
+        >
+          {t('data_binding_remove')}
+        </button>
+        {onOpenModal && (
+          <button
+            className="px-2 py-1 h-6 text-[10px] bg-white border border-blue-200 text-blue-700 hover:bg-blue-50 rounded transition-colors shadow-sm"
+            onClick={onOpenModal}
+            type="button"
+          >
+            {t('data_binding_change')}
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}

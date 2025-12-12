@@ -1,0 +1,102 @@
+import type React from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { Layer, Stage } from 'react-konva'
+import { PaperBackground } from '../../konva-editor/bedLayout/components/PaperBackground'
+import type { BedLayoutDocument } from '../../konva-editor/types'
+import type { BedStatusData } from '../types'
+import { getLayoutBoundingBox } from '../utils/layoutUtils'
+import { ElementRenderer } from './ElementRenderer'
+
+interface KonvaViewerProps {
+  document: BedLayoutDocument
+  width: number // Container width for responsive scaling
+  readOnly?: boolean
+  onBedClick?: (bedId: string, currentStatus?: BedStatusData) => void
+  bedStatusMap?: Record<string, BedStatusData>
+}
+
+const PADDING = 20
+
+export const KonvaViewer: React.FC<KonvaViewerProps> = ({
+  document,
+  width,
+  readOnly = false,
+  onBedClick,
+  bedStatusMap = {},
+}) => {
+  const [localDocument, setLocalDocument] = useState<BedLayoutDocument>(document)
+
+  // Update local document when the prop changes
+  useEffect(() => {
+    setLocalDocument(document)
+  }, [document])
+
+  // Calculate view parameters based on bounding box
+  const viewParams = useMemo(() => {
+    if (!localDocument || width <= 0) return null
+
+    const bbox = getLayoutBoundingBox(localDocument)
+
+    // Fallback to full layout if no content or error
+    if (!bbox) {
+      if (!localDocument.layout) return null
+      const layoutW = localDocument.layout.width
+      const layoutH = localDocument.layout.height
+      const scale = width / layoutW
+      return {
+        scale,
+        stageHeight: layoutH * scale,
+        offsetX: 0,
+        offsetY: 0,
+      }
+    }
+
+    // Calculate scale to fit width
+    const contentWidth = bbox.width + PADDING * 2
+    const contentHeight = bbox.height + PADDING * 2
+    const scale = width / contentWidth
+
+    return {
+      scale,
+      stageHeight: contentHeight * scale,
+      offsetX: bbox.x - PADDING,
+      offsetY: bbox.y - PADDING,
+    }
+  }, [localDocument, width])
+
+  if (!localDocument.layout || !viewParams) {
+    return <div>Invalid Layout Data</div>
+  }
+
+  return (
+    <Stage
+      width={width}
+      height={viewParams.stageHeight}
+      scaleX={viewParams.scale}
+      scaleY={viewParams.scale}
+      offsetX={viewParams.offsetX}
+      offsetY={viewParams.offsetY}
+      style={{ touchAction: 'none' }} // Prevent scrolling on touch devices if needed
+    >
+      <Layer>
+        <PaperBackground document={localDocument} />
+        {(localDocument.elementOrder || []).map((id) => {
+          const element = localDocument.elementsById?.[id]
+          if (!element) return null
+          return (
+            <ElementRenderer
+              key={id}
+              element={element}
+              isSelected={false}
+              onSelect={() => {}} // No-op
+              onChange={() => {}} // No-op
+              readOnly={readOnly}
+              onBedClick={onBedClick}
+              bedStatus={bedStatusMap[id]}
+            />
+          )
+        })}
+      </Layer>
+    </Stage>
+  )
+}

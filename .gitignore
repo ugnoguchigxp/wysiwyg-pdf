@@ -1,0 +1,28 @@
+node_modules/
+dist/
+
+# logs
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# test/coverage
+coverage/
+.nyc_output/
+
+# env
+.env
+.env.*
+
+# lock/temp
+*.tsbuildinfo
+
+# example app artifacts
+example/node_modules/
+example/dist/

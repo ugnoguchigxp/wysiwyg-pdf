@@ -1,0 +1,44 @@
+@media print {
+  /* @page is handled dynamically by react-to-print pageStyle */
+
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: "Meiryo", "Hiragino Kaku Gothic ProN", "MS PGothic", sans-serif;
+    background-color: white;
+  }
+
+  /* Show only the print container */
+  /* We assume the PrintLayout is rendered into a portal or directly in body with a specific class/id wrapper if possible, 
+     but react-to-print usually handles this by cloning the node. 
+     If using react-to-print, it creates an iframe or a new window, so we just need to ensure the content is styled correctly.
+     Actually, react-to-print copies styles. So we need to ensure these styles are available to the printed content.
+  */
+
+  .print-container {
+    display: block;
+    width: 210mm;
+    background-color: white;
+  }
+
+  .print-page {
+    position: relative;
+    width: 210mm;
+    height: 296mm;
+    /* Slightly less than 297mm to prevent accidental overflow */
+    page-break-after: always;
+    overflow: hidden;
+    background-color: white;
+  }
+
+  .print-page:last-child {
+    page-break-after: auto;
+  }
+}
+
+/* Screen styles for debugging or if rendered on screen (hidden by default) */
+@media screen {
+  .print-container {
+    display: none;
+  }
+}

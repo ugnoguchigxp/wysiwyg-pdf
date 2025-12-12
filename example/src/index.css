@@ -1,0 +1,139 @@
+@import "tailwindcss";
+
+@config "../tailwind.config.js";
+@source "../../src/**/*.{js,ts,jsx,tsx}";
+
+/* Tailwind v4: Register custom colors with @theme directive */
+/* Tailwind v4 Configuration via tailwind.config.js */
+
+/* Global variables (moved out of @layer base for compatibility) */
+
+/* デフォルトテーマ（light） */
+:root {
+  --app-font-size: 16px;
+  --theme-bg-primary: hsl(0 0% 100%);
+  --theme-bg-secondary: hsl(0 0% 96%);
+  --theme-bg-tertiary: hsl(0 0% 90%);
+  --theme-text-primary: hsl(210 20% 10%);
+  --theme-text-secondary: hsl(210 15% 30%);
+  --theme-text-tertiary: hsl(210 10% 45%);
+  --theme-object-primary: hsl(220 90% 45%);
+  --theme-object-secondary: hsl(220 85% 40%);
+  --theme-object-tertiary: hsl(220 85% 20%);
+  --theme-border: hsl(210 16% 82%);
+  --theme-accent: hsl(210 100% 26%);
+  --theme-success: hsl(140 65% 62%);
+  --theme-warning: hsl(45 90% 69%);
+  --theme-danger: hsl(0 75% 65%);
+  --theme-chart-1: hsl(210 85% 78%);
+  --theme-chart-2: hsl(140 65% 73%);
+  --theme-chart-3: hsl(45 90% 78%);
+  --theme-chart-4: hsl(285 70% 75%);
+  --theme-text-on-color: hsl(0 0% 100%);
+  --theme-border-contrast: hsl(210 20% 10%);
+  --theme-shadow-contrast: hsl(210 20% 10%);
+  --theme-hover-brightness: 0.75;
+  --theme-hover: var(--theme-bg-secondary);
+
+  /* Shadcn vars needed for toolbar too */
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 222.2 84% 4.9%;
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --primary: 222.2 47.4% 11.2%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --radius: 0.5rem;
+}
+
+/* Darkテーマ */
+[data-theme="dark"],
+.dark {
+  --theme-bg-primary: hsl(210 20% 10%);
+  --theme-bg-secondary: hsl(210 20% 16%);
+  --theme-bg-tertiary: hsl(210 20% 22%);
+  --theme-text-primary: hsl(210 30% 96%);
+  --theme-text-secondary: hsl(210 20% 78%);
+  --theme-text-tertiary: hsl(210 15% 60%);
+  --theme-object-primary: hsl(200 95% 42%);
+  --theme-object-secondary: hsl(200 95% 75%);
+  --theme-object-tertiary: hsl(200 95% 92%);
+  --theme-border: hsl(210 20% 30%);
+  --theme-accent: hsl(210 85% 42%);
+  --theme-success: hsl(135 65% 35%);
+  --theme-warning: hsl(45 90% 42%);
+  --theme-danger: hsl(0 75% 38%);
+  --theme-chart-1: hsl(210 85% 33%);
+  --theme-chart-2: hsl(135 65% 28%);
+  --theme-chart-3: hsl(45 90% 33%);
+  --theme-chart-4: hsl(285 70% 30%);
+  --theme-text-on-color: hsl(210 20% 10%);
+  --theme-border-contrast: hsl(210 30% 96%);
+  --theme-shadow-contrast: hsl(210 30% 96%);
+  --theme-hover-brightness: 1.25;
+  --theme-hover: var(--theme-bg-tertiary);
+
+  /* Shadcn Dark vars */
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 210 40% 98%;
+  --primary-foreground: 222.2 47.4% 11.2%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 212.7 26.8% 83.9%;
+}
+
+/* 基本スタイル */
+@layer base {
+  html {
+    background-color: var(--theme-bg-primary);
+    color: var(--theme-text-primary);
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    border-color: var(--theme-border);
+  }
+
+  body {
+    margin: 0;
+    font-family: "メイリオ", Helvetica, sans-serif;
+    font-size: var(--app-font-size, 16px);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: var(--theme-bg-primary);
+    color: var(--theme-text-primary);
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease;
+  }
+}
