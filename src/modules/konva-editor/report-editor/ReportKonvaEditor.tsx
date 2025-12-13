@@ -329,18 +329,8 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
         const stage = e.target.getStage()
         const point = stage?.getPointerPosition()
         if (point) {
-          // Correct for stage transform
-          // But actually we are drawing ON TOP of everything?
-          // Or in the world coordinates?
-          // We need world coordinates.
-          // stage.getPointerPosition() is screen px.
-          // We need to divide by scale. (We don't use scroll in this simple editor yet, or do we? 
-          // The container has overflow-auto, but stage is fixed size with scale inside.
-          // Wait, container scrolls. Stage is typically full size?
-          // No, file says: <div overflow-auto> <Stage .../> </div>
-          // So Stage is big. pointerPosition is relative to Stage top-left?
-          // Yes, Konva getPointerPosition is relative to page usually, but react-konva uses relative to container?
-          // Standard Konva: getRelativePointerPosition updates for scale.
+
+
           const transform = stage?.getAbsoluteTransform().copy()
           transform?.invert()
           const pos = transform?.point(point)
@@ -362,6 +352,8 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
         const stage = e.target.getStage()
         const point = stage?.getPointerPosition()
         if (point) {
+
+
           const transform = stage?.getAbsoluteTransform().copy()
           transform?.invert()
           const pos = transform?.point(point)

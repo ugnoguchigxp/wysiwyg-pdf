@@ -55,11 +55,11 @@ export interface WysiwygPropertiesPanelProps {
   i18nOverrides?: Record<string, string>
   activeTool?: string
   onToolSelect?: (tool: string) => void
-  drawingSettings?: { stroke: string; strokeWidth: number }
-  onDrawingSettingsChange?: (settings: { stroke: string; strokeWidth: number }) => void
+  drawingSettings?: { stroke: string; strokeWidth: number; useOffset?: boolean }
+  onDrawingSettingsChange?: (settings: { stroke: string; strokeWidth: number; useOffset?: boolean }) => void
 }
 
-// --- Local UI Components matching Root Design System (Dense Variant) ---
+// ... (Local UI Components match Root Design System)
 
 const PropertiesLabel: React.FC<React.LabelHTMLAttributes<HTMLLabelElement>> = ({
   className,
@@ -67,7 +67,7 @@ const PropertiesLabel: React.FC<React.LabelHTMLAttributes<HTMLLabelElement>> = (
 }) => (
   <label
     className={cn(
-      'block text-sm font-medium text-theme-text-primary mb-1.5', // text-sm (14px) matches Root Label
+      'block text-sm font-medium text-theme-text-primary mb-1.5',
       className
     )}
     {...props}
@@ -90,6 +90,10 @@ const PropertiesInput = React.forwardRef<
   />
 ))
 PropertiesInput.displayName = 'PropertiesInput'
+
+// ...
+
+
 
 const PropertiesSectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <h4 className="text-sm font-semibold text-theme-text-primary mb-3 border-b border-theme-border pb-2">
@@ -247,6 +251,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
       )}
     </div>
   )
+
 
   const [activeBindingMode, setActiveBindingMode] = React.useState<'field' | 'repeater' | null>(
     null

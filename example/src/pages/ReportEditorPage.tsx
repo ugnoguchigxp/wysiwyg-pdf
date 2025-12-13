@@ -74,7 +74,7 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
     } | null>(null)
     const [showShortcuts, setShowShortcuts] = useState(false)
     const [activeTool, setActiveTool] = useState<string>('select')
-    const [drawingSettings, setDrawingSettings] = useState({ stroke: '#000000', strokeWidth: 2 })
+    const [drawingSettings, setDrawingSettings] = useState<{ stroke: string; strokeWidth: number }>({ stroke: '#000000', strokeWidth: 2 })
 
     // History Management
     const { document: doc, setDocument, undo, redo, canUndo, canRedo } = useReportHistory(INITIAL_DOC)
