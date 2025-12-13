@@ -11,6 +11,7 @@ import { TableContextMenu } from './pdf-editor/components/ContextMenu/TableConte
 import { findImageWithExtension } from './pdf-editor/components/WysiwygCanvas/canvasImageUtils'
 import type { Element, IBox, ISignatureElement, ITableElement, ITemplateDoc } from './pdf-editor/types/wysiwyg'
 import { A4_HEIGHT_PT, A4_WIDTH_PT } from './pdf-editor/utils/coordinates'
+import { simplifyPoints } from '../../../utils/geometry'
 
 const log = createContextLogger('ReportKonvaEditor')
 type TableCell = ITableElement['cells'][number]
@@ -263,16 +264,33 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
     const commitSignature = useCallback(() => {
       if (currentStrokes.length === 0) return
 
+      // Simplification Step
+      const simplifiedStrokes = currentStrokes.map(stroke => {
+        const simplified = simplifyPoints(stroke, 2.5) // Tolerance 2.5
+        // Single point check: Konva Line needs at least 2 points to render a dot/line
+        if (simplified.length === 2) {
+          return [...simplified, ...simplified]
+        }
+        return simplified
+      })
+
       const pageId = currentPageId || templateDoc.pages[0]?.id
       const id = `sig-${crypto.randomUUID()}`
-      const box = getStrokesBox(currentStrokes)
+      const box = getStrokesBox(simplifiedStrokes)
 
-      // Normalize points relative to box (0,0)
-      const normalizedStrokes = currentStrokes.map(stroke => {
+      // Normalize points relative to box (0,0) and Round to 3 decimals
+      const normalizedStrokes = simplifiedStrokes.map(stroke => {
         const newStroke: number[] = []
         for (let i = 0; i < stroke.length; i += 2) {
-          newStroke.push(stroke[i] - box.x)
-          newStroke.push(stroke[i + 1] - box.y)
+          // Normalize
+          let x = stroke[i] - box.x
+          let y = stroke[i + 1] - box.y
+
+          // Round to 3 decimals
+          x = Math.round(x * 1000) / 1000
+          y = Math.round(y * 1000) / 1000
+
+          newStroke.push(x, y)
         }
         return newStroke
       })
@@ -771,7 +789,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
                     // Then absolute points will render correctly in the group at 0,0.
                     // My previous implementation of `commitSignature` normalized them.
                     // So here, render ABSOLUTE points with box at 0,0.
-                    strokes: [...currentStrokes, ...(currentPoints.length > 0 ? [currentPoints] : [])],
+                    strokes: [...currentStrokes, ...(currentPoints.length > 0 ? [currentPoints] : [])].map(s => s.length === 2 ? [...s, ...s] : s),
                     stroke: drawingSettings.stroke,
                     strokeWidth: drawingSettings.strokeWidth,
                   } as unknown as ISignatureElement}
