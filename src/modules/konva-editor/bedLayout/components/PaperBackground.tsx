@@ -20,8 +20,6 @@ export const PaperBackground: React.FC<PaperBackgroundProps> = ({ document }) =>
 
   return (
     <Group>
-      {/* Shadow */}
-      <Rect x={5} y={5} width={width} height={height} fill="rgba(0,0,0,0.2)" shadowBlur={10} />
       {/* Paper */}
       <Rect
         name="paper-background"
@@ -30,8 +28,6 @@ export const PaperBackground: React.FC<PaperBackgroundProps> = ({ document }) =>
         width={width}
         height={height}
         fill="white"
-        stroke="#9ca3af"
-        strokeWidth={1}
       />
     </Group>
   )

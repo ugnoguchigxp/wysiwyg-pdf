@@ -229,6 +229,67 @@ From `src/index.ts`, typical consumers use:
 
 This package also exports bed-layout related components (e.g., `BedLayoutEditor`, `BedPrintLayout`).
 
+## Component Customization
+
+You can customize the editor components to fit your application's needs or build your own variants.
+
+### Header Customization (`EditorHeader`)
+
+The `EditorHeader` component supports customization via props:
+
+- **orientationOptions**: Define your own set of orientation choices (e.g., 'Square').
+- **children**: Render custom buttons or actions (e.g., Theme Toggle, Save status).
+
+```tsx
+<EditorHeader
+  // ... other props
+  orientationOptions={[
+    { label: 'Portrait', value: 'portrait' },
+    { label: 'Landscape', value: 'landscape' },
+    { label: 'Square', value: 'square' },
+  ]}
+>
+  <button onClick={myCustomAction}>My Action</button>
+</EditorHeader>
+```
+
+You can also wrap it in your own component (like `BedLayoutHeader` does) to preset these options.
+
+### Toolbar Customization
+
+The toolbar (`WysiwygEditorToolbar` or `BedToolbar`) is simply a consumer of the editor state. If you need a fully custom toolbar:
+1.  Create your own component.
+2.  Use the state handlers provided by `useReportHistory` or `useBedEditorHistory` (e.g., `setDocument`, `undo`, `redo`).
+3.  Manage tool state (e.g., `activeTool`) in your parent page and pass it to your toolbar.
+
+### Property Panel Customization
+
+The property panel (`WysiwygPropertiesPanel`) updates the selected element's attributes. To customize it:
+- You can create a copy of the panel and add/remove fields.
+- Or, if you just need to support new element types, extend the rendering logic for those types.
+- The panel receives `selectedElement` and `onChange`. You can wrap it or conditional render different panels based on `selectedElement.type`.
+
+### I18n Overrides
+
+If your application uses different translation keys or if you want to override specific labels without setting up a full i18next resource bundle, you can use the `i18nOverrides` prop.
+
+This prop is supported by `EditorHeader`, `WysiwygEditorToolbar`, and `BedToolbar`.
+
+```tsx
+<EditorHeader
+  // ...
+  i18nOverrides={{
+    'editor_orientation': 'Page Orientation', // Override specific key
+    'orientations_portrait': 'Vertical',
+    'save': 'Save Changes',
+  }}
+/>
+```
+
+Common keys you might want to override:
+- **Header**: `editor_orientation`, `save`, `back`, `toolbar_undo`, `toolbar_redo`
+- **Toolbar**: `toolbar_text`, `toolbar_image`, `toolbar_shape`, `toolbar_line`
+
 ## Development (in this repository)
 
 An interactive reference app is available under `wysiwyg-pdf/example`.

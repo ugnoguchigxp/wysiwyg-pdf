@@ -1,4 +1,4 @@
-import type {} from './global'
+import type { } from './global'
 // Components
 
 // Bed Layout Components
@@ -10,6 +10,7 @@ export {
   Toolbar as BedToolbar,
   type ToolType,
 } from './modules/konva-editor/bedLayout/components/Toolbar'
+export { BedLayoutHeader } from './modules/konva-editor/bedLayout/components/BedLayoutHeader'
 // Hooks
 export * from './modules/konva-editor/hooks/useEditorHistory'
 export * from './modules/konva-editor/hooks/useEditorState'

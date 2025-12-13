@@ -76,6 +76,7 @@ interface IWysiwygEditorToolbarProps {
   onTemplateChange: (doc: ITemplateDoc) => void
   onSelectElement: (elementId: string) => void
   currentPageId?: string
+  i18nOverrides?: Record<string, string>
 }
 
 export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
@@ -85,8 +86,15 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
   onTemplateChange,
   onSelectElement,
   currentPageId,
+  i18nOverrides,
 }) => {
   const { t } = useTranslation()
+
+  // Helper to resolve translation: Override -> i18next -> Default
+  const resolveText = (key: string, defaultValue?: string) => {
+    if (i18nOverrides && i18nOverrides[key]) return i18nOverrides[key]
+    return t(key, defaultValue ?? key)
+  }
 
   const handleZoomIn = () => {
     onZoomChange(Math.min(200, zoom + 25))
@@ -126,7 +134,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
   const addText = () => {
     const pageId = getTargetPageId()
     const id = `text-${crypto.randomUUID()}`
-    const textContent = t('toolbar_default_text') ?? 'Text'
+    const textContent = resolveText('toolbar_default_text', 'Text')
     const font = {
       family: 'Meiryo',
       size: 12,
@@ -369,7 +377,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
     { type: 'Triangle', icon: <Triangle size={20} /> },
     {
       type: 'Trapezoid',
-      icon: <TrapezoidIcon size={20} title={t('shape_trapezoid', 'Trapezoid')} />,
+      icon: <TrapezoidIcon size={20} title={resolveText('shape_trapezoid', 'Trapezoid')} />,
     },
     { type: 'Diamond', icon: <Diamond size={20} /> },
     { type: 'Cylinder', icon: <Database size={20} /> },
@@ -395,12 +403,12 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
               type="button"
               onClick={addText}
               className={TOOLBAR_BUTTON_CLASS}
-              aria-label={t('toolbar_add_text')}
+              aria-label={resolveText('toolbar_add_text', 'Add Text')}
             >
               <Type size={20} />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="right">{t('toolbar_add_text')}</TooltipContent>
+          <TooltipContent side="right">{resolveText('toolbar_add_text', 'Add Text')}</TooltipContent>
         </Tooltip>
 
         {/* Add Image Button */}
@@ -410,12 +418,12 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
               type="button"
               onClick={addImage}
               className={TOOLBAR_BUTTON_CLASS}
-              aria-label={t('toolbar_add_image')}
+              aria-label={resolveText('toolbar_add_image', 'Add Image')}
             >
               <ImageIcon size={20} />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="right">{t('toolbar_add_image')}</TooltipContent>
+          <TooltipContent side="right">{resolveText('toolbar_add_image', 'Add Image')}</TooltipContent>
         </Tooltip>
 
         {/* Add Line Button */}
@@ -425,12 +433,12 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
               type="button"
               onClick={addLine}
               className={TOOLBAR_BUTTON_CLASS}
-              aria-label={t('toolbar_line', 'Line')}
+              aria-label={resolveText('toolbar_line', 'Line')}
             >
               <Minus size={20} />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="right">{t('toolbar_line', 'Line')}</TooltipContent>
+          <TooltipContent side="right">{resolveText('toolbar_line', 'Line')}</TooltipContent>
         </Tooltip>
 
         {/* Add Table Button */}
@@ -440,12 +448,12 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
               type="button"
               onClick={addTable}
               className={TOOLBAR_BUTTON_CLASS}
-              aria-label={t('toolbar_add_table', 'Table')}
+              aria-label={resolveText('toolbar_add_table', 'Table')}
             >
               <Table size={20} />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="right">{t('toolbar_add_table', 'Table')}</TooltipContent>
+          <TooltipContent side="right">{resolveText('toolbar_add_table', 'Table')}</TooltipContent>
         </Tooltip>
 
         {/* Shapes Menu */}
@@ -456,13 +464,13 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
                 <button
                   type="button"
                   className={TOOLBAR_BUTTON_CLASS}
-                  aria-label={t('toolbar_shape')}
+                  aria-label={resolveText('toolbar_shape', 'Shape')}
                 >
                   <Shapes size={20} />
                 </button>
               </DropdownMenuTrigger>
             </TooltipTrigger>
-            <TooltipContent side="right">{t('toolbar_shape')}</TooltipContent>
+            <TooltipContent side="right">{resolveText('toolbar_shape', 'Shape')}</TooltipContent>
           </Tooltip>
 
           <DropdownMenuContent align="start" className="w-56 grid grid-cols-4 gap-1 p-2">

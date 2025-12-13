@@ -10,11 +10,12 @@ import {
   CircleHelp,
 } from 'lucide-react'
 
-interface EditorHeaderProps {
+export interface EditorHeaderProps {
   templateName: string
   onTemplateNameChange: (name: string) => void
-  orientation: 'portrait' | 'landscape'
-  onOrientationChange: (orientation: 'portrait' | 'landscape') => void
+  orientation: string
+  onOrientationChange: (orientation: any) => void
+  orientationOptions?: { label: string; value: string }[]
   canUndo: boolean
   canRedo: boolean
   onUndo: () => void
@@ -25,6 +26,7 @@ interface EditorHeaderProps {
   onBack?: () => void
   onShowShortcuts?: () => void
   children?: React.ReactNode
+  i18nOverrides?: Record<string, string>
 }
 
 export const EditorHeader: React.FC<EditorHeaderProps> = ({
@@ -32,6 +34,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   onTemplateNameChange,
   orientation,
   onOrientationChange,
+  orientationOptions,
   canUndo,
   canRedo,
   onUndo,
@@ -42,8 +45,22 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   onBack,
   onShowShortcuts,
   children,
+  i18nOverrides,
 }) => {
   const { t } = useTranslation()
+
+  // Helper to resolve translation: Override -> i18next -> Default
+  const resolveText = (key: string, defaultValue?: string) => {
+    if (i18nOverrides && i18nOverrides[key]) return i18nOverrides[key]
+    return t(key, defaultValue ?? key)
+  }
+
+  const defaultOptions = [
+    { label: resolveText('orientations_portrait', 'Portrait'), value: 'portrait' },
+    { label: resolveText('orientations_landscape', 'Landscape'), value: 'landscape' },
+  ]
+
+  const currentOptions = orientationOptions || defaultOptions
 
   return (
     <div className="px-5 py-3 bg-theme-bg-secondary border-b border-theme-border flex items-center justify-between shrink-0 h-16 transition-colors shadow-sm">
@@ -53,7 +70,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
           className="flex items-center text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary transition-colors"
         >
           <ChevronLeft className="w-4 h-4 mr-1" />
-          Back
+          {resolveText('back', 'Back')}
         </button>
 
         <div className="h-6 w-px bg-theme-border" />
@@ -70,15 +87,18 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
         {/* Orientation Select */}
         <div className="flex items-center gap-2 border border-theme-border rounded-md px-2 py-1 bg-theme-bg-primary">
           <span className="text-xs font-medium text-theme-text-secondary">
-            {t('editor_orientation')}:
+            {resolveText('editor_orientation', 'Orientation')}:
           </span>
           <select
             value={orientation}
-            onChange={(e) => onOrientationChange(e.target.value as 'portrait' | 'landscape')}
+            onChange={(e) => onOrientationChange(e.target.value)}
             className="text-xs bg-transparent border-none focus:ring-0 text-theme-text-primary cursor-pointer outline-none"
           >
-            <option value="portrait">{t('orientations_portrait')}</option>
-            <option value="landscape">{t('orientations_landscape')}</option>
+            {currentOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -89,7 +109,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
           onClick={onUndo}
           disabled={!canUndo}
           className="p-2 rounded-md hover:bg-theme-bg-tertiary text-theme-text-secondary disabled:opacity-30 transition-colors"
-          title={t('toolbar_undo')}
+          title={resolveText('toolbar_undo', 'Undo')}
         >
           <Undo className="w-4 h-4" />
         </button>
@@ -97,7 +117,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
           onClick={onRedo}
           disabled={!canRedo}
           className="p-2 rounded-md hover:bg-theme-bg-tertiary text-theme-text-secondary disabled:opacity-30 transition-colors"
-          title={t('toolbar_redo')}
+          title={resolveText('toolbar_redo', 'Redo')}
         >
           <Redo className="w-4 h-4" />
         </button>
@@ -107,7 +127,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
         <button
           onClick={onShowShortcuts}
           className="p-2 rounded-md hover:bg-theme-bg-tertiary text-theme-text-secondary transition-colors"
-          title={t('toolbar_shortcuts')}
+          title={resolveText('toolbar_shortcuts', 'Shortcuts')}
         >
           <CircleHelp className="w-4 h-4" />
         </button>
@@ -136,7 +156,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
           className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-theme-object-primary hover:bg-theme-object-primary/90 rounded-md shadow-sm transition-colors"
         >
           <Save className="w-4 h-4" />
-          {t('save')}
+          {resolveText('save', 'Save')}
         </button>
 
         {/* Custom Actions (e.g. Theme Toggle) */}

@@ -2,9 +2,7 @@ import type Konva from 'konva'
 import type React from 'react'
 import {
   forwardRef,
-  useEffect,
   useImperativeHandle,
-  useLayoutEffect,
   useRef,
   useState,
 } from 'react'
@@ -68,51 +66,15 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
   ) => {
     const containerRef = useRef<HTMLDivElement>(null)
     const stageRef = useRef<Konva.Stage>(null)
-    const [dimensions, setDimensions] = useState({ width: 800, height: 600 })
     const [editingElementId, setEditingElementId] = useState<string | null>(null)
-    const [stagePos, setStagePos] = useState({ x: 0, y: 20 })
 
     useImperativeHandle(ref, () => ({
       getStage: () => stageRef.current,
     }))
 
-    useLayoutEffect(() => {
-      if (containerRef.current) {
-        setDimensions({
-          width: containerRef.current.offsetWidth,
-          height: containerRef.current.offsetHeight,
-        })
-      }
-    }, [])
-
-    // Calculate required size for the stage to fit the zoomed paper
-    const padding = 20
-    const requiredWidth = paperWidth * zoom + padding * 2
-    const requiredHeight = paperHeight * zoom + padding * 2
-
-    // Stage size should be at least the container size, or larger if content overflows
-    const stageWidth = Math.max(dimensions.width, requiredWidth)
-    const stageHeight = Math.max(dimensions.height, requiredHeight)
-
-    // Calculate stage position to center content or align with padding
-    useEffect(() => {
-      let x = 0
-      let y = 0
-
-      if (requiredWidth < dimensions.width) {
-        x = (dimensions.width - paperWidth * zoom) / 2
-      } else {
-        x = padding
-      }
-
-      if (requiredHeight < dimensions.height) {
-        y = (dimensions.height - paperHeight * zoom) / 2
-      } else {
-        y = padding
-      }
-
-      setStagePos({ x, y })
-    }, [zoom, dimensions, paperWidth, paperHeight, requiredWidth, requiredHeight])
+    // Calculate stage size based on zoomed paper
+    const stageWidth = paperWidth * zoom
+    const stageHeight = paperHeight * zoom
 
     const handleSelect = (
       id: string | null,
@@ -200,57 +162,51 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
     return (
       <div
         ref={containerRef}
-        className="scrollbar-thin"
-        style={{
-          backgroundColor: '#f0f0f0',
-          width: '100%',
-          height: '100%',
-          overflow: 'auto',
-        }}
+        className="w-full h-full bg-gray-100 dark:bg-gray-900 overflow-auto scrollbar-thin flex justify-start items-start p-2"
       >
-        <Stage
-          width={stageWidth}
-          height={stageHeight}
-          scaleX={zoom}
-          scaleY={zoom}
-          x={stagePos.x}
-          y={stagePos.y}
-          ref={stageRef}
-          onMouseDown={(e) => {
-            // Clicked on stage or paper background
-            if (e.target === e.target.getStage() || e.target.name() === 'paper-background') {
-              handleSelect(null, e)
-              setEditingElementId(null)
-            }
-          }}
-        >
-          <Layer>
-            {background}
-            {elements
-              .sort((a, b) => a.z - b.z)
-              .map((element) => (
-                <CanvasElementRenderer
-                  key={element.id}
-                  element={element}
-                  isSelected={selectedIds.includes(element.id)}
-                  onSelect={(e) => handleSelect(element.id, e)}
-                  onChange={(newAttrs) => onChange(element.id, newAttrs)}
-                  onDblClick={() => handleElementDblClick(element)}
-                  isEditing={element.id === editingElementId}
-                  renderCustom={renderCustom}
-                />
-              ))}
-          </Layer>
-        </Stage>
-        {editingElement && (
-          <TextEditOverlay
-            element={editingElement}
-            scale={zoom}
-            stageNode={stageRef.current}
-            onUpdate={handleTextUpdate}
-            onFinish={handleTextEditFinish}
-          />
-        )}
+        <div className="relative shadow-lg border-2 border-gray-500 bg-white dark:bg-gray-800 w-fit h-fit">
+          <Stage
+            width={stageWidth}
+            height={stageHeight}
+            scaleX={zoom}
+            scaleY={zoom}
+            ref={stageRef}
+            onMouseDown={(e) => {
+              // Clicked on stage or paper background
+              if (e.target === e.target.getStage() || e.target.name() === 'paper-background') {
+                handleSelect(null, e)
+                setEditingElementId(null)
+              }
+            }}
+          >
+            <Layer>
+              {background}
+              {elements
+                .sort((a, b) => a.z - b.z)
+                .map((element) => (
+                  <CanvasElementRenderer
+                    key={element.id}
+                    element={element}
+                    isSelected={selectedIds.includes(element.id)}
+                    onSelect={(e) => handleSelect(element.id, e)}
+                    onChange={(newAttrs) => onChange(element.id, newAttrs)}
+                    onDblClick={() => handleElementDblClick(element)}
+                    isEditing={element.id === editingElementId}
+                    renderCustom={renderCustom}
+                  />
+                ))}
+            </Layer>
+          </Stage>
+          {editingElement && (
+            <TextEditOverlay
+              element={editingElement}
+              scale={zoom}
+              stageNode={stageRef.current}
+              onUpdate={handleTextUpdate}
+              onFinish={handleTextEditFinish}
+            />
+          )}
+        </div>
       </div>
     )
   }
