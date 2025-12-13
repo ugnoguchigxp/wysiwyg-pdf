@@ -182,6 +182,7 @@ export type ShapeType =
   | 'rect' | 'circle' | 'triangle' | 'diamond'
   | 'star' | 'pentagon' | 'hexagon'
   | 'arrow-u' | 'arrow-d' | 'arrow-l' | 'arrow-r'
+  | 'trapezoid' | 'cylinder' | 'heart' | 'tree' | 'house'
 
 export type ArrowType = 'none' | 'arrow' | 'circle' | 'diamond'
 

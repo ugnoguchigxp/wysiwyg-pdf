@@ -27,7 +27,9 @@ vi.mock('../../../../../src/modules/konva-editor/report-editor/ReportKonvaEditor
   return {
     ReportKonvaEditor: React.forwardRef((props: any, ref: any) => {
       React.useImperativeHandle(ref, () => ({ downloadImage: vi.fn() }))
-      konvaMockState.selectedId = props.selectedElementId ?? 'none'
+      React.useEffect(() => {
+        konvaMockState.selectedId = props.selectedElementId ?? 'none'
+      })
       return (
         <div>
           <div data-testid="konva-selected">{props.selectedElementId ?? 'none'}</div>

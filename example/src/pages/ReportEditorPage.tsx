@@ -79,7 +79,7 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
     } | null>(null)
     const [showShortcuts, setShowShortcuts] = useState(false)
     const [activeTool, setActiveTool] = useState<string>('select')
-    const [drawingSettings, setDrawingSettings] = useState<{ stroke: string; strokeWidth: number }>({ stroke: '#000000', strokeWidth: 2 })
+    const [drawingSettings, setDrawingSettings] = useState<{ stroke: string; strokeWidth: number; tolerance?: number }>({ stroke: '#000000', strokeWidth: 2, tolerance: 2.0 })
 
     // History Management
     const { document: doc, setDocument, undo, redo, canUndo, canRedo } = useReportHistory(INITIAL_DOC)
@@ -112,8 +112,26 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
     }
 
     const handleSave = () => {
-        console.log('Save document:', JSON.stringify(doc, null, 2))
-        alert(t('editor_save_success') || 'Saved! (Check Console)')
+        try {
+            // Attempt to flush any active signature drawing
+            let updatedDoc = null
+            if (editorRef.current) {
+                updatedDoc = editorRef.current.flushSignature()
+            } else {
+                console.error('[ReportEditorPage] editorRef is null!')
+            }
+
+            // Use updated doc if available, otherwise current state doc
+            const docToSave = updatedDoc || doc
+
+            // Log Object directly as requested
+            console.log(docToSave)
+
+            alert(t('editor_save_success') || 'Saved! (Check Console)')
+        } catch (error) {
+            console.error('[ReportEditorPage] Error during save:', error)
+            alert('Error during save. See console.')
+        }
     }
 
     return (

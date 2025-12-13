@@ -126,23 +126,25 @@ export const BedElement: React.FC<BedElementProps> = ({
         {(() => {
           const fontSize = 16
           const lineHeight = 1.2
-
-
-
-          // In Editor mode, bedStatus is usually undefined or mock.
-          // Real dashboard functionality passes bedStatus.
-          // User request: Hide the lower 2 fields (Patient Name, BP) in Editor.
-          // We can assume if bedStatus is not provided, we are in Editor mode or "Offline".
-          // Or strictly check if we are just displaying layout vs monitoring.
           const isEditorMode = !bedStatus
 
-          const renderLines = isEditorMode
-            ? [element.name ?? 'Bed'] // Only show Bed Name in Editor
-            : [
-              label, // Bed Label
+          // Expanded width to allow overflow
+          const expandedWidth = Math.max(width, 2000)
+          const expandedX = (width - expandedWidth) / 2
+
+          let renderLines: string[] = []
+
+          if (isEditorMode) {
+            renderLines = [element.name ?? 'Bed']
+          } else {
+            // Dashboard Mode: Always show 3 lines (Bed Name, Patient Name, BP)
+            // Even if data is missing, keep the slot to maintain position/layout standard
+            renderLines = [
+              label || '',
               patientName !== '-' ? patientName : '',
               bloodPressure !== '-' ? bloodPressure : ''
-            ].filter(Boolean)
+            ]
+          }
 
           const totalHeight = renderLines.length * fontSize * lineHeight
           const startY = (height - totalHeight) / 2
@@ -150,9 +152,9 @@ export const BedElement: React.FC<BedElementProps> = ({
           return renderLines.map((text, index) => (
             <OutlinedText
               key={index}
-              x={0}
+              x={expandedX}
               y={startY + index * fontSize * lineHeight}
-              width={width}
+              width={expandedWidth}
               text={text}
               fontSize={fontSize}
               fontFamily="Meiryo"
@@ -161,6 +163,7 @@ export const BedElement: React.FC<BedElementProps> = ({
               fill="#000000"
               wrap="none"
               lineHeight={lineHeight}
+              listening={false} // Click-through to bed
             />
           ))
         })()}

@@ -54,8 +54,8 @@ export interface WysiwygPropertiesPanelProps {
   i18nOverrides?: Record<string, string>
   activeTool?: string
   onToolSelect?: (tool: string) => void
-  drawingSettings?: { stroke: string; strokeWidth: number; useOffset?: boolean }
-  onDrawingSettingsChange?: (settings: { stroke: string; strokeWidth: number; useOffset?: boolean }) => void
+  drawingSettings?: { stroke: string; strokeWidth: number; useOffset?: boolean; tolerance?: number }
+  onDrawingSettingsChange?: (settings: { stroke: string; strokeWidth: number; useOffset?: boolean; tolerance?: number }) => void
 }
 
 const PropertiesLabel: React.FC<React.LabelHTMLAttributes<HTMLLabelElement>> = ({
@@ -230,22 +230,43 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
       </div>
 
       {showFinishButton && (
-        <div className="mt-4 pt-4 border-t border-theme-border">
-          <p className="text-xs text-theme-text-secondary mb-3">
-            {resolveText('signature_instruction', 'Drag on canvas to draw.')}
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              console.log('Signature JSON:', JSON.stringify(templateDoc.nodes.find(n => n.t === 'signature'), null, 2))
-              console.log('Full Document JSON:', JSON.stringify(templateDoc, null, 2))
-              onToolSelect?.('select')
-            }}
-            className="w-full flex items-center justify-center py-2 px-4 rounded bg-theme-object-primary text-white hover:bg-theme-object-primary/90 transition-colors"
-          >
-            {resolveText('properties_finish_drawing', 'Finish Drawing')}
-          </button>
-        </div>
+        <>
+          <div>
+            <PropertiesLabel>
+              {resolveText('properties_signature_optimization', 'Vertex Count (Data Reduction Degree)')}: {drawingSettings?.tolerance ?? 2.0}
+            </PropertiesLabel>
+            <input
+              type="range"
+              min="1.0"
+              max="3.0"
+              step="0.1"
+              value={drawingSettings?.tolerance ?? 2.5}
+              onChange={(e) => {
+                if (onDrawingSettingsChange && drawingSettings) {
+                  onDrawingSettingsChange({ ...drawingSettings, tolerance: parseFloat(e.target.value) })
+                }
+              }}
+              className="w-full accent-theme-object-primary"
+            />
+          </div>
+
+          <div className="mt-4 pt-4 border-t border-theme-border">
+            <p className="text-xs text-theme-text-secondary mb-3">
+              {resolveText('signature_instruction', 'Drag on canvas to draw.')}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                console.log('Signature JSON:', JSON.stringify(templateDoc.nodes.find(n => n.t === 'signature'), null, 2))
+                console.log('Full Document JSON:', JSON.stringify(templateDoc, null, 2))
+                onToolSelect?.('select')
+              }}
+              className="w-full flex items-center justify-center py-2 px-4 rounded bg-theme-object-primary text-white hover:bg-theme-object-primary/90 transition-colors"
+            >
+              {resolveText('properties_finish_drawing', 'Finish Drawing')}
+            </button>
+          </div>
+        </>
       )}
     </div>
   )
@@ -312,29 +333,9 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
     onTemplateChange(nextDoc)
   }
 
-  // --- Render Signature Panel (When Pen Tool is Active) ---
-  if (activeTool === 'signature' && !selectedElement) {
-    return (
-      <div className="w-72 bg-theme-bg-secondary border-l border-theme-border p-5 overflow-y-auto text-theme-text-primary">
-        <div className={sectionCardClass}>
-          {renderSignaturePanelContent(
-            drawingSettings || { stroke: '#000000', strokeWidth: 2 },
-            (updates) => {
-              if (onDrawingSettingsChange && drawingSettings) {
-                const newSettings = { ...drawingSettings }
-                if (updates.stroke !== undefined) newSettings.stroke = updates.stroke
-                if (updates.strokeW !== undefined) newSettings.strokeWidth = updates.strokeW
-                onDrawingSettingsChange(newSettings)
-              }
-            },
-            true
-          )}
-        </div>
-      </div>
-    )
-  }
+  const isDrawing = activeTool === 'signature'
 
-  if (!selectedElement) {
+  const renderPageBackground = () => {
     // Page Background
     const bg = currentSurface.bg || '#ffffff'
     const isColor = bg.startsWith('#') || bg.startsWith('rgb')
@@ -371,12 +372,55 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
     )
   }
 
+  // Unified Signature Panel Logic
+  const renderSignaturePanel = () => {
+    // Case 1: Active Tool (Priority)
+    if (isDrawing) {
+      return (
+        <div className={sectionCardClass}>
+          {renderSignaturePanelContent(
+            drawingSettings || { stroke: '#000000', strokeWidth: 2 },
+            (updates) => {
+              if (onDrawingSettingsChange && drawingSettings) {
+                const newSettings = { ...drawingSettings }
+                if (updates.stroke !== undefined) newSettings.stroke = updates.stroke
+                if (updates.strokeW !== undefined) newSettings.strokeWidth = updates.strokeW
+                onDrawingSettingsChange(newSettings)
+              }
+            },
+            true // showFinishButton
+          )}
+        </div>
+      )
+    }
+
+    // Case 2: Selected Element
+    if (selectedElement?.t === 'signature') {
+      const sig = selectedElement as SignatureNode
+      return (
+        <div className={sectionCardClass}>
+          {renderSignaturePanelContent(
+            { stroke: sig.stroke, strokeWidth: sig.strokeW },
+            (updates) => updateElement(updates),
+            false // showFinishButton (implied: no tolerance slider)
+          )}
+        </div>
+      )
+    }
+
+    return null
+  }
+
+  if (!selectedElement && !isDrawing) {
+    return renderPageBackground()
+  }
+
   const renderBindingProps = () => {
     // Only show for Text, Table(repeater)
     const validTypes = ['text', 'table']
     // For table, if cell selected, it might be separate.
     // Assuming table repeater binding on the table element itself.
-    if (!validTypes.includes(selectedElement.t)) return null
+    if (!selectedElement || !validTypes.includes(selectedElement.t)) return null
 
     // Check if table is global (repeater) or cell binding? 
     // Usually table data vs cell data.
@@ -399,7 +443,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
   }
 
   const renderTextProps = () => {
-    if (selectedElement.t !== 'text') return null
+    if (selectedElement?.t !== 'text') return null
     const textEl = selectedElement as TextNode
 
     const fontSizes = [
@@ -552,7 +596,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
   }
 
   const renderShapeProps = () => {
-    if (selectedElement.t !== 'shape') return null
+    if (selectedElement?.t !== 'shape') return null
     const shape = selectedElement as ShapeNode
 
     return (
@@ -597,7 +641,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
   }
 
   const renderImageProps = () => {
-    if (selectedElement.t !== 'image') return null
+    if (selectedElement?.t !== 'image') return null
     const img = selectedElement as ImageNode
 
     return (
@@ -611,12 +655,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
   }
 
   const renderTableProps = () => {
-    if (selectedElement.t !== 'table') return null;
-    // We need to pass selectedCell and edit capability to TableProperties
-    // But TableProperties needs compatible props.
-    // Assuming TableProperties exports a component that takes { element, onChange, selectedCell, ... }
-    // This requires verify TableProperties interface.
-    // Based on usual patterns:
+    if (selectedElement?.t !== 'table') return null;
     return (
       <TableProperties
         element={selectedElement as TableNode}
@@ -627,48 +666,52 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
     )
   }
 
-  const renderCommonProps = () => (
-    <div className={sectionCardClass}>
-      <PropertiesSectionTitle>{resolveText('properties_layout', 'Layout')}</PropertiesSectionTitle>
-      <div className="grid grid-cols-2 gap-3 mb-3">
-        <div>
-          <PropertiesLabel>X</PropertiesLabel>
-          <PropertiesInput
-            type="number"
-            value={Math.round(selectedElement.x || 0)}
-            onChange={(e) => updateElement({ x: Number(e.target.value) })}
-          />
-        </div>
-        <div>
-          <PropertiesLabel>Y</PropertiesLabel>
-          <PropertiesInput
-            type="number"
-            value={Math.round(selectedElement.y || 0)}
-            onChange={(e) => updateElement({ y: Number(e.target.value) })}
-          />
-        </div>
-        <div>
-          <PropertiesLabel>W</PropertiesLabel>
-          <PropertiesInput
-            type="number"
-            value={Math.round(selectedElement.w || 0)}
-            onChange={(e) => updateElement({ w: Number(e.target.value) })}
-          />
-        </div>
-        <div>
-          <PropertiesLabel>H</PropertiesLabel>
-          <PropertiesInput
-            type="number"
-            value={Math.round(selectedElement.h || 0)}
-            onChange={(e) => updateElement({ h: Number(e.target.value) })}
-          />
+  const renderCommonProps = () => {
+    if (isDrawing || !selectedElement) return null;
+    return (
+      <div className={sectionCardClass}>
+        <PropertiesSectionTitle>{resolveText('properties_layout', 'Layout')}</PropertiesSectionTitle>
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div>
+            <PropertiesLabel>X</PropertiesLabel>
+            <PropertiesInput
+              type="number"
+              value={Math.round(selectedElement.x || 0)}
+              onChange={(e) => updateElement({ x: Number(e.target.value) })}
+            />
+          </div>
+          <div>
+            <PropertiesLabel>Y</PropertiesLabel>
+            <PropertiesInput
+              type="number"
+              value={Math.round(selectedElement.y || 0)}
+              onChange={(e) => updateElement({ y: Number(e.target.value) })}
+            />
+          </div>
+          <div>
+            <PropertiesLabel>W</PropertiesLabel>
+            <PropertiesInput
+              type="number"
+              value={Math.round(selectedElement.w || 0)}
+              onChange={(e) => updateElement({ w: Number(e.target.value) })}
+            />
+          </div>
+          <div>
+            <PropertiesLabel>H</PropertiesLabel>
+            <PropertiesInput
+              type="number"
+              value={Math.round(selectedElement.h || 0)}
+              onChange={(e) => updateElement({ h: Number(e.target.value) })}
+            />
+          </div>
         </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   return (
     <div className="w-full h-full bg-theme-bg-secondary p-4 overflow-y-auto">
+      {renderSignaturePanel()}
       {renderCommonProps()}
       {renderTextProps()}
       {renderShapeProps()}

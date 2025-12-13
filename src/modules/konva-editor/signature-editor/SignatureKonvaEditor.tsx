@@ -2,6 +2,7 @@ import { PEN_CURSOR_URL } from '../cursors';
 import React, { useState, useRef } from 'react';
 import { Stage, Layer, Line } from 'react-konva';
 import Konva from 'konva';
+import { simplifyPoints } from '../../../utils/geometry';
 
 interface SignatureKonvaEditorProps {
     width?: number;
@@ -62,6 +63,24 @@ export const SignatureKonvaEditor: React.FC<SignatureKonvaEditorProps> = ({
         if (stageRef.current) {
             // We might want to trim or handle background, but for now simple export
             const dataURL = stageRef.current.toDataURL();
+
+            // Apply optimization logic (DRY principle with ReportKonvaEditor)
+            const optimizedLines = lines.map(line => {
+                // 1. Simplify points with tolerance 2.0
+                const simplified = simplifyPoints(line.points, 2.0);
+
+                // 2. Round to 3 decimal places
+                const rounded = simplified.map(val => Math.round(val * 1000) / 1000);
+
+                return {
+                    ...line,
+                    points: rounded
+                };
+            });
+
+            // Log Object for debugging as requested by user
+            console.log('Signature Lines Object (Optimized):', optimizedLines);
+
             onSave?.(dataURL);
         }
     };

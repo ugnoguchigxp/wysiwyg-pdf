@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import type { Doc, UnifiedNode, TextNode, LineNode, WidgetNode } from '../../../src/types/canvas'
+import type { Doc, TextNode, LineNode, WidgetNode } from '../../../src/types/canvas'
 
 describe('Unified JSON Schema v2', () => {
 
@@ -45,7 +45,7 @@ describe('Unified JSON Schema v2', () => {
 
         expect(textNode.t).toBe('text')
         // Check that legacy keys are undefined
-        expect((textNode as any).type).toBeUndefined()
+        expect((textNode as unknown as Record<string, unknown>).type).toBeUndefined()
     })
 
     it('should validate a WidgetNode (Bed) matches the schema', () => {
@@ -68,7 +68,7 @@ describe('Unified JSON Schema v2', () => {
 
         expect(bedNode.t).toBe('widget')
         expect(bedNode.widget).toBe('bed')
-        expect((bedNode as any).box).toBeUndefined()
+        expect((bedNode as unknown as Record<string, unknown>).box).toBeUndefined()
     })
 
     it('should validate a LineNode with flattened points', () => {
@@ -84,7 +84,7 @@ describe('Unified JSON Schema v2', () => {
 
         expect(lineNode.t).toBe('line')
         expect(lineNode.pts).toHaveLength(4)
-        expect((lineNode as any).startPoint).toBeUndefined()
+        expect((lineNode as unknown as Record<string, unknown>).startPoint).toBeUndefined()
     })
 
     it('should accept Valid JSON structure', () => {

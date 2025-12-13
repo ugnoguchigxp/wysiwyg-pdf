@@ -189,7 +189,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
     const shape: ShapeNode = {
       id,
       t: 'shape',
-      shape: shapeType.toLowerCase() as any, // Cast to any or ShapeType if locally imported
+      shape: shapeType.toLowerCase() as ShapeNode['shape'],
       s,
       locked: false,
       r: 0,

@@ -16,18 +16,19 @@ import {
   findImageWithExtension,
   preloadBackgroundImage,
 } from '../../../../../../../../src/modules/konva-editor/report-editor/pdf-editor/components/WysiwygCanvas/canvasImageUtils'
+import type { ImageNode, TableNode } from '../../../../../../../../src/types/canvas'
 
 function createCtx() {
-  const base: any = { canvas: { width: 100, height: 100 } }
+  const base: Record<string, any> = { canvas: { width: 100, height: 100 } }
   return new Proxy(base, {
     get(target, prop) {
-      if (prop in target) return target[prop as any]
+      if (prop in target) return target[prop as keyof typeof base]
       const fn = vi.fn()
-      target[prop as any] = fn
+      target[prop as keyof typeof base] = fn
       return fn
     },
     set(target, prop, value) {
-      target[prop as any] = value
+      target[prop as keyof typeof base] = value
       return true
     },
   }) as unknown as CanvasRenderingContext2D
@@ -69,13 +70,13 @@ describe('canvasImageUtils', () => {
     }
     // @ts-expect-error test override
     globalThis.Image = MockImage
-    ;(globalThis as any).__WYSIWYG_PDF__ = { assetBaseUrl: 'https://example.com//' }
+      ; (globalThis as unknown as Record<string, unknown>).__WYSIWYG_PDF__ = { assetBaseUrl: 'https://example.com//' }
 
     const res = await findImageWithExtension('asset1')
     expect(res?.url).toContain('/assets/images/asset1.png')
 
     globalThis.Image = OriginalImage
-    delete (globalThis as any).__WYSIWYG_PDF__
+    delete (globalThis as unknown as Record<string, any>).__WYSIWYG_PDF__
   })
 
   it('drawImageElement draws placeholders and cached images', () => {
@@ -85,22 +86,22 @@ describe('canvasImageUtils', () => {
 
     drawImageElement(
       ctx,
-      { id: 'i', t: 'image', s: 's', x: 0, y: 0, w: 10, h: 10, src: '' } as any,
-      cache as any,
-      setImageCache as any,
+      { id: 'i', t: 'image', s: 's', x: 0, y: 0, w: 10, h: 10, src: '' } as ImageNode,
+      cache,
+      setImageCache,
       { loading: 'Loading...', placeholder: 'Image' }
     )
-    expect((ctx as any).fillText).toHaveBeenCalled()
+    expect(ctx.fillText).toHaveBeenCalled()
 
     cache.set('http://x', { complete: true })
     drawImageElement(
       ctx,
-      { id: 'i', t: 'image', s: 's', x: 0, y: 0, w: 10, h: 10, src: 'http://x' } as any,
-      cache as any,
-      setImageCache as any,
+      { id: 'i', t: 'image', s: 's', x: 0, y: 0, w: 10, h: 10, src: 'http://x' } as ImageNode,
+      cache,
+      setImageCache,
       { loading: 'Loading...', placeholder: 'Image' }
     )
-    expect((ctx as any).drawImage).toHaveBeenCalled()
+    expect(ctx.drawImage).toHaveBeenCalled()
   })
 
   it('drawTableElement renders cells and text alignment', () => {
@@ -122,25 +123,25 @@ describe('canvasImageUtils', () => {
           { r: 0, c: 0, v: 'R', border: '1', align: 'r' },
         ],
       },
-    } as any)
+    } as TableNode)
 
-    expect((ctx as any).fillText).toHaveBeenCalled()
-    expect((ctx as any).strokeRect).toHaveBeenCalled()
+    expect(ctx.fillText).toHaveBeenCalled()
+    expect(ctx.strokeRect).toHaveBeenCalled()
   })
 
   it('drawBackgroundImage handles data/url and id based paths', () => {
     const ctx = createCtx()
     const cache = new Map<string, any>()
 
-    drawBackgroundImage(ctx, 'data:bg', 100, 100, cache as any, { loading: 'L', imageLoading: (n) => n })
-    expect((ctx as any).fillText).toHaveBeenCalled()
+    drawBackgroundImage(ctx, 'data:bg', 100, 100, cache, { loading: 'L', imageLoading: (n) => n })
+    expect(ctx.fillText).toHaveBeenCalled()
 
     cache.set('data:bg', { complete: true })
-    drawBackgroundImage(ctx, 'data:bg', 100, 100, cache as any)
-    expect((ctx as any).drawImage).toHaveBeenCalled()
+    drawBackgroundImage(ctx, 'data:bg', 100, 100, cache)
+    expect(ctx.drawImage).toHaveBeenCalled()
 
-    drawBackgroundImage(ctx, 'id1', 100, 100, cache as any, { loading: 'L', imageLoading: (n) => `loading:${n}` })
-    expect((ctx as any).fillText).toHaveBeenCalledWith('loading:id1', 50, 50)
+    drawBackgroundImage(ctx, 'id1', 100, 100, cache, { loading: 'L', imageLoading: (n) => `loading:${n}` })
+    expect(ctx.fillText).toHaveBeenCalledWith('loading:id1', 50, 50)
   })
 
   it('preloadBackgroundImage populates cache and ignores duplicates', async () => {
@@ -155,7 +156,7 @@ describe('canvasImageUtils', () => {
     // @ts-expect-error test override
     globalThis.Image = MockImage
 
-    const cache = new Map<string, any>()
+    const cache = new Map<string, HTMLImageElement>()
     const setCache = vi.fn((updater: any) => {
       // emulate react setState
       cache.clear()
@@ -163,13 +164,13 @@ describe('canvasImageUtils', () => {
       for (const [k, v] of next.entries()) cache.set(k, v)
     })
 
-    preloadBackgroundImage('asset1', cache as any, setCache as any)
+    preloadBackgroundImage('asset1', cache, setCache)
     await new Promise((r) => setTimeout(r, 0))
     expect(setCache).toHaveBeenCalled()
 
     // duplicate should no-op
     setCache.mockClear()
-    preloadBackgroundImage('asset1', cache as any, setCache as any)
+    preloadBackgroundImage('asset1', cache, setCache)
     expect(setCache).not.toHaveBeenCalled()
 
     globalThis.Image = OriginalImage

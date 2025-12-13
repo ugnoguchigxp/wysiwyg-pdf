@@ -417,7 +417,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
       )
     }
     case 'image':
-      return <CanvasImage element={element as ImageNode} commonProps={commonProps} ref={shapeRef as any} />
+      return <CanvasImage element={element as ImageNode} commonProps={commonProps} ref={shapeRef as React.RefObject<Konva.Image>} />
 
     case 'table': {
       const tbl = element as TableNode

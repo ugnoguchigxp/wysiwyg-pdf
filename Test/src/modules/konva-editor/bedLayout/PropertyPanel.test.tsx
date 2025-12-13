@@ -58,8 +58,8 @@ describe('bedLayout PropertyPanel', () => {
     render(
       <PropertyPanel
         selectedElement={null}
-        onChange={() => {}}
-        onDelete={() => {}}
+        onChange={() => { }}
+        onDelete={() => { }}
         document={doc}
         onDocumentChange={onDocumentChange}
       />
@@ -91,7 +91,7 @@ describe('bedLayout PropertyPanel', () => {
     } as any
 
     const { container } = render(
-      <PropertyPanel selectedElement={selected} onChange={onChange} onDelete={() => {}} />
+      <PropertyPanel selectedElement={selected} onChange={onChange} onDelete={() => { }} />
     )
 
     const boldButton = container.querySelector('svg.lucide-bold')?.closest('button')
@@ -105,7 +105,7 @@ describe('bedLayout PropertyPanel', () => {
 
   it('renders image preview via asset resolver', async () => {
     const selected = { id: 'img1', t: 'image', x: 0, y: 0, w: 10, h: 10, src: 'asset-id' } as any
-    render(<PropertyPanel selectedElement={selected} onChange={() => {}} onDelete={() => {}} />)
+    render(<PropertyPanel selectedElement={selected} onChange={() => { }} onDelete={() => { }} />)
     expect(await screen.findByAltText('Preview')).toBeInTheDocument()
     expect(screen.getByAltText('Preview')).toHaveAttribute('src', 'resolved:asset-id')
   })
@@ -117,7 +117,7 @@ describe('bedLayout PropertyPanel', () => {
       <PropertyPanel
         selectedElement={{ id: 'l1', t: 'line', stroke: '#000000', strokeW: 2, dash: [] } as any}
         onChange={onChange}
-        onDelete={() => {}}
+        onDelete={() => { }}
       />
     )
     fireEvent.click(screen.getByText('ShapeSelector'))
@@ -127,7 +127,7 @@ describe('bedLayout PropertyPanel', () => {
       <PropertyPanel
         selectedElement={{ id: 's1', t: 'shape', fill: '#ffffff', stroke: '#000000', strokeW: 1 } as any}
         onChange={onChange}
-        onDelete={() => {}}
+        onDelete={() => { }}
       />
     )
     fireEvent.change(screen.getAllByLabelText('Fill Color')[0], { target: { value: '#ff0000' } })
@@ -135,12 +135,12 @@ describe('bedLayout PropertyPanel', () => {
 
     render(
       <PropertyPanel
-        selectedElement={{ id: 'bed1', t: 'widget', widget: 'bed', data: { label: 'A', orientation: 'horizontal' } } as any}
+        selectedElement={{ id: 'bed1', t: 'widget', widget: 'bed', name: 'A', data: { orientation: 'horizontal' } } as any}
         onChange={onChange}
-        onDelete={() => {}}
+        onDelete={() => { }}
       />
     )
     fireEvent.change(screen.getByDisplayValue('A'), { target: { value: 'B' } })
-    expect(onChange).toHaveBeenCalledWith('bed1', expect.objectContaining({ data: expect.objectContaining({ label: 'B' }) }))
+    expect(onChange).toHaveBeenCalledWith('bed1', expect.objectContaining({ name: 'B' }))
   })
 })

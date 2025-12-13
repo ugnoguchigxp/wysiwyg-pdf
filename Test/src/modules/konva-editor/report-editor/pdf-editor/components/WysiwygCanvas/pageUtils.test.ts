@@ -4,6 +4,7 @@ import {
   getPageDimensions,
   getPresentationPageDimensions,
 } from '../../../../../../../../src/modules/konva-editor/report-editor/pdf-editor/components/WysiwygCanvas/pageUtils'
+import type { Unit } from '../../../../../../../../src/types/canvas'
 
 describe('pageUtils', () => {
   it('getPageDimensions supports presets and custom objects', () => {
@@ -13,17 +14,19 @@ describe('pageUtils', () => {
     expect(getPageDimensions('Letter').width).toBeGreaterThan(0)
 
     // default branch
-    expect(getPageDimensions('Unknown' as any).width).toBeGreaterThan(0)
+    expect(getPageDimensions('Unknown' as unknown as 'A4').width).toBeGreaterThan(0)
 
     // custom object (swap when width > height)
-    expect(getPageDimensions({ width: 300, height: 200, unit: 'pt' } as any)).toEqual({
+    expect(getPageDimensions({ width: 300, height: 200, unit: 'pt' as Unit }).height).toBeGreaterThan(0)
+    // Actually the original code expected value. Let's match original content but change cast.
+    expect(getPageDimensions({ width: 300, height: 200, unit: 'pt' as Unit })).toEqual({
       width: 200,
       height: 300,
     })
   })
 
   it('getPresentationPageDimensions scales presets and custom objects', () => {
-    const custom = getPresentationPageDimensions({ width: 100, height: 200, unit: 'pt' } as any)
+    const custom = getPresentationPageDimensions({ width: 100, height: 200, unit: 'pt' as Unit })
     expect(custom).toEqual({ width: 70, height: 140 })
 
     expect(getPresentationPageDimensions('A4').width).toBeGreaterThan(0)
@@ -32,7 +35,7 @@ describe('pageUtils', () => {
     expect(getPresentationPageDimensions('Letter').width).toBeGreaterThan(0)
 
     // default branch
-    expect(getPresentationPageDimensions('Unknown' as any).width).toBeGreaterThan(0)
+    expect(getPresentationPageDimensions('Unknown' as unknown as 'A4').width).toBeGreaterThan(0)
   })
 })
 

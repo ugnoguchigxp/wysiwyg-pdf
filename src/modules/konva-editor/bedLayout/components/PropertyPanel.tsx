@@ -511,8 +511,8 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
           <label className={labelClass}>{resolveText('label', 'Label')}</label>
           <input
             type="text"
-            value={(bed.data?.label as string) || ''}
-            onChange={e => updateElement({ data: { ...bed.data, label: e.target.value } } as Partial<WidgetNode>)}
+            value={bed.name || ''}
+            onChange={e => updateElement({ name: e.target.value })}
             className={inputClass}
           />
         </div>

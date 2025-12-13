@@ -98,6 +98,8 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                 return el?.t === 'widget' && (el as any).widget === 'bed'
             })
 
+            const patientNames = ['T. Yamada', 'H. Suzuki', 'K. Sato', 'M. Tanaka', 'Y. Kobayashi', 'J. Doe', 'A. Smith']
+
             bedIds.forEach((id, index) => {
                 // Random status
                 const rand = Math.random()
@@ -115,10 +117,10 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                 }
 
                 data[id] = {
-                    bedId: id,
+                    bedId: `b${index + 1}`,
                     status,
                     alerts,
-                    patientName: status !== 'free' ? `Patient ${String.fromCharCode(65 + index)}` : undefined,
+                    patientName: status !== 'free' ? patientNames[index % patientNames.length] : undefined,
                     vitals: status !== 'free' ? {
                         bp: {
                             systolic: 120 + Math.floor(Math.random() * 40),
@@ -198,7 +200,7 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                 w: 50,
                 h: 100,
                 r: 0,
-                name: 'Bed 1',
+                name: 'Bed',
                 data: { bedType: 'standard' },
                 opacity: 1,
             }
@@ -243,7 +245,7 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
     }
 
     const handleSave = () => {
-        console.log('Save bed document:', bedDoc)
+        console.log(bedDoc)
         alert(t('editor_save_success') || 'Saved! (Check Console)')
     }
 
@@ -273,10 +275,10 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                 onBack={onBack}
                 i18nOverrides={{
                     // Header
-                    editor_orientation: '用紙方向',
-                    orientations_portrait: '縦',
-                    orientations_landscape: '横',
-                    orientations_square: '正方形',
+                    editor_orientation: '部屋形状',
+                    orientations_portrait: '縦長方形',
+                    orientations_landscape: '横長方形',
+                    orientations_square: '正四角形',
                     save: '保存',
                     back: '戻る',
                     header_image: '画像保存',

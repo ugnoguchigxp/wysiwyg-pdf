@@ -1,8 +1,5 @@
-以下は、これまでの話（帳票／図面／mindmap／アニメ背景をモード分離しつつ、保存JSONは統一・Undoは編集時だけ）を前提にした **統一JSONの構造サンプル**と、**AIが「このJSONを書けばこういう図が描ける」と理解するための説明文（仕様テキスト）**です。
 
----
-
-## 統一JSON 構造サンプル
+# JSON 構造サンプル
 
 ```json
 {
@@ -187,7 +184,7 @@
 ```
 
 * **保存（配布）**するのは基本 `document / nodes / links / constraints / dataBinding / animation`
-* **編集中だけ** `editorState.history` を持ち、保存時には `editorState` を落とす（またはhistoryだけ落とす）想定です。
+* **編集中だけ** `editorState.history` を持ち、保存時には `editorState` を落とす。
 
 ---
 

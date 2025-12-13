@@ -14,6 +14,7 @@ const log = createContextLogger('ReportKonvaEditor')
 
 export interface ReportKonvaEditorHandle {
   downloadImage: () => void
+  flushSignature: () => Doc | null
 }
 
 interface ReportKonvaEditorProps {
@@ -28,7 +29,7 @@ interface ReportKonvaEditorProps {
   orientation?: 'portrait' | 'landscape'
   onSelectedCellChange?: (cell: { elementId: string; row: number; col: number } | null) => void
   activeTool?: string
-  drawingSettings?: { stroke: string; strokeWidth: number }
+  drawingSettings?: { stroke: string; strokeWidth: number; tolerance?: number }
 }
 
 const PageBackground = ({
@@ -104,23 +105,10 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       // orientation = 'portrait', // unused
       // onSelectedCellChange, // Unused
       activeTool,
-      drawingSettings = { stroke: '#000000', strokeWidth: 2 },
+      drawingSettings = { stroke: '#000000', strokeWidth: 2, tolerance: 2.0 },
     },
     ref
   ) => {
-    useImperativeHandle(ref, () => ({
-      downloadImage: () => {
-        if (!stageRef.current) return
-        const dataURL = stageRef.current.toDataURL({ pixelRatio: 2 })
-        const link = document.createElement('a')
-        link.download = `report-${Date.now()}.png`
-        link.href = dataURL
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-      }
-    }))
-
     const stageRef = useRef<Konva.Stage>(null)
     const containerRef = useRef<HTMLDivElement>(null)
     const [editingElementId, setEditingElementId] = useState<string | null>(null)
@@ -194,11 +182,11 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       return { x: minX, y: minY, w: maxX - minX, h: maxY - minY }
     }, [])
 
-    const commitSignature = useCallback(() => {
-      if (currentStrokes.length === 0) return
+    const commitSignature = useCallback((): Doc | null => {
+      if (currentStrokes.length === 0) return null
 
       const simplifiedStrokes = currentStrokes.map(stroke => {
-        const simplified = simplifyPoints(stroke, 2.5)
+        const simplified = simplifyPoints(stroke, drawingSettings.tolerance ?? 2.5)
         if (simplified.length === 2) return [...simplified, ...simplified]
         return simplified
       })
@@ -244,7 +232,9 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       setCurrentPoints([])
       setIsDrawing(false)
       onElementSelect(element)
-    }, [currentStrokes, currentSurface.id, templateDoc, getStrokesBox, onTemplateChange, onElementSelect, drawingSettings.stroke, drawingSettings.strokeWidth])
+
+      return nextDoc
+    }, [currentStrokes, currentSurface.id, templateDoc, getStrokesBox, onTemplateChange, onElementSelect, drawingSettings.stroke, drawingSettings.strokeWidth, drawingSettings.tolerance])
 
     useEffect(() => {
       if (activeTool !== 'signature' && currentStrokes.length > 0) {
@@ -332,6 +322,23 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       onMoveLeft: (step) => handleMove(-step, 0),
       onMoveRight: (step) => handleMove(step, 0),
     })
+
+    useImperativeHandle(ref, () => ({
+      downloadImage: () => {
+        if (!stageRef.current) return
+        const dataURL = stageRef.current.toDataURL({ pixelRatio: 2 })
+        const link = document.createElement('a')
+        link.download = `report-${Date.now()}.png`
+        link.href = dataURL
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      },
+      flushSignature: () => {
+        const result = commitSignature()
+        return result
+      }
+    }))
 
     const handleDrop = (e: React.DragEvent) => {
       e.preventDefault()
