@@ -4,10 +4,10 @@ import {
     WysiwygEditorToolbar,
     WysiwygPropertiesPanel,
     PrintLayout,
-    type ITemplateDoc,
     type IDataSchema,
     useReportHistory,
     type ReportKonvaEditorHandle,
+    type Doc,
     EditorHeader,
     ShortcutHelpModal,
 } from 'wysiwyg-pdf'
@@ -43,17 +43,22 @@ const MOCK_SCHEMA: IDataSchema = {
     ],
 }
 
-const INITIAL_DOC: ITemplateDoc = {
-    meta: { id: 'doc-1', name: 'New Template', version: 1 },
-    pages: [
+const INITIAL_DOC: Doc = {
+    v: 1,
+    id: 'doc-1',
+    title: 'New Template',
+    unit: 'pt',
+    surfaces: [
         {
             id: 'page-1',
-            size: 'A4',
-            margin: { top: 0, right: 0, bottom: 0, left: 0, unit: 'pt' },
-            background: { color: '#ffffff' },
+            type: 'page',
+            w: 595.28,
+            h: 841.89, // A4 at 72dpi? or PT. A4 is 595x842 pt
+            bg: '#ffffff',
+            margin: { t: 0, r: 0, b: 0, l: 0 },
         },
     ],
-    elements: [],
+    nodes: [],
 }
 
 interface ReportEditorPageProps {
@@ -230,7 +235,7 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
                         templateDoc={doc}
                         onTemplateChange={setDocument}
                         onSelectElement={(id) => setSelectedElementId(id)}
-                        currentPageId={doc.pages[0]?.id}
+                        currentPageId={doc.surfaces[0]?.id}
                         activeTool={activeTool}
                         onToolSelect={setActiveTool}
                         i18nOverrides={{
@@ -253,7 +258,7 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
                             }
                         }}
                         onTemplateChange={setDocument}
-                        currentPageId={doc.pages[0]?.id}
+                        currentPageId={doc.surfaces[0]?.id}
                         onSelectedCellChange={setSelectedCell}
                         onUndo={canUndo ? undo : undefined}
                         onRedo={canRedo ? redo : undefined}
@@ -269,7 +274,7 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
                         templateDoc={doc}
                         selectedElementId={selectedElementId}
                         onTemplateChange={setDocument}
-                        currentPageId={doc.pages[0]?.id}
+                        currentPageId={doc.surfaces[0]?.id}
                         selectedCell={selectedCell}
                         schema={MOCK_SCHEMA}
                         activeTool={activeTool}

@@ -93,28 +93,40 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
     useEffect(() => {
         if (isDashboardMode) {
             const data: Record<string, BedStatusData> = {}
-            const bedIds = bedDoc.elementOrder.filter(id => bedDoc.elementsById[id]?.type === 'Bed')
+            const bedIds = bedDoc.elementOrder.filter(id => {
+                const el = bedDoc.elementsById[id]
+                return el?.t === 'widget' && (el as any).widget === 'bed'
+            })
 
             bedIds.forEach((id, index) => {
                 // Random status
                 const rand = Math.random()
-                let status: BedStatusData['status'] = 'idle'
-                if (rand > 0.8) status = 'alarm'
-                else if (rand > 0.6) status = 'warning'
-                else if (rand > 0.3) status = 'active'
+                let status: BedStatusData['status'] = 'free'
+                const alerts: string[] = []
+
+                if (rand > 0.8) {
+                    status = 'occupied'
+                    alerts.push('High BP', 'Tachycardia')
+                } else if (rand > 0.6) {
+                    status = 'occupied'
+                    alerts.push('Check IV')
+                } else if (rand > 0.3) {
+                    status = 'occupied'
+                }
 
                 data[id] = {
+                    bedId: id,
                     status,
-                    patientName: status !== 'idle' ? `Patient ${String.fromCharCode(65 + index)}` : undefined,
-                    vitals: status !== 'idle' ? {
+                    alerts,
+                    patientName: status !== 'free' ? `Patient ${String.fromCharCode(65 + index)}` : undefined,
+                    vitals: status !== 'free' ? {
                         bp: {
                             systolic: 120 + Math.floor(Math.random() * 40),
                             diastolic: 80 + Math.floor(Math.random() * 20),
                         },
                         hr: 60 + Math.floor(Math.random() * 40),
-                        temp: 36.5 + Math.random(),
                     } : undefined,
-                    isOccupied: status !== 'idle',
+                    isOccupied: status !== 'free',
                 }
             })
             setDashboardData(data)
@@ -147,71 +159,73 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
         if (tool === 'text') {
             newElement = {
                 id: newId,
-                type: 'Text',
-                rotation: 0,
+                t: 'text',
+                s: 'layout',
+                r: 0,
                 text: 'Text',
-                font: { family: 'Meiryo', size: 12, weight: 400, italic: false, underline: false, strikethrough: false },
-                color: '#000000',
-                align: 'left',
-                box: { x: center.x, y: center.y, width: 100, height: 20 },
+                font: 'Meiryo',
+                fontSize: 12,
+                fontWeight: 400,
+                fill: '#000000',
+                align: 'l',
+                x: center.x,
+                y: center.y,
+                w: 100,
+                h: 20
             }
         } else if (tool === 'image') {
             newElement = {
                 id: newId,
-                type: 'Image',
-                rotation: 0,
+                t: 'image',
+                s: 'layout',
+                r: 0,
                 name: 'Image',
-                box: {
-                    x: center.x,
-                    y: center.y,
-                    width: 120,
-                    height: 80,
-                },
-                assetId: '',
+                x: center.x,
+                y: center.y,
+                w: 120,
+                h: 80,
+                src: '', // ImageNode requires src
                 opacity: 1,
             }
         } else if (tool === 'bed') {
             newElement = {
                 id: newId,
-                type: 'Bed',
-                box: {
-                    x: center.x,
-                    y: center.y,
-                    width: 50,
-                    height: 100,
-                },
-                rotation: 0,
+                t: 'widget',
+                widget: 'bed',
+                s: 'layout',
+                x: center.x,
+                y: center.y,
+                w: 50,
+                h: 100,
+                r: 0,
                 name: 'Bed 1',
-                bedType: 'standard', // or whatever required
+                data: { bedType: 'standard' },
                 opacity: 1,
             }
         } else if (tool === 'shape' && subType) {
             newElement = {
                 id: newId,
-                type: subType, // e.g. Rect, Circle
-                box: {
-                    x: center.x,
-                    y: center.y,
-                    width: 100,
-                    height: 100,
-                },
-                rotation: 0,
-                fill: { color: '#cccccc' },
-                stroke: { color: '#000000', width: 1 },
+                t: 'shape',
+                s: 'layout',
+                shape: subType.toLowerCase() as any, // Rect -> rect
+                x: center.x,
+                y: center.y,
+                w: 100,
+                h: 100,
+                r: 0,
+                fill: '#cccccc',
+                stroke: '#000000',
+                strokeW: 1
             }
         } else if (tool === 'line') {
             newElement = {
                 id: newId,
-                type: 'Line',
-                rotation: 0,
-                startPoint: { x: 60, y: 340 },
-                endPoint: { x: 220, y: 340 },
-                stroke: {
-                    color: '#000000',
-                    width: 1,
-                },
-                startArrow: 'none',
-                endArrow: 'none',
+                t: 'line',
+                s: 'layout',
+                pts: [60, 340, 220, 340],
+                stroke: '#000000',
+                strokeW: 1,
+                arrows: ['none', 'none']
             }
         }
 

@@ -3,10 +3,10 @@ import type React from 'react'
 import { Group, Rect, Text } from 'react-konva'
 import type { CanvasElementCommonProps } from '../../../../components/canvas/CanvasElementRenderer'
 import type { BedStatusData } from '../../../bedlayout-dashboard/types'
-import type { IBedElement } from '../../types'
+import type { WidgetNode } from '../../../../types/canvas'
 
 type BedElementProps = Omit<CanvasElementCommonProps, 'ref'> & {
-  element: IBedElement
+  element: WidgetNode
   isSelected: boolean
   shapeRef?: React.Ref<Konva.Rect>
   onClick?: (e: Konva.KonvaEventObject<MouseEvent>) => void
@@ -47,37 +47,56 @@ export const BedElement: React.FC<BedElementProps> = ({
   bedStatus,
   ...otherProps
 }) => {
-  // Determine status and data from prop OR internal element state (fallback)
+  // Data extraction from WidgetNode data
+  const data = element.data || {}
+  const localStatus = (data.status as string) || 'idle'
+  const localLabel = (data.label as string) || 'Bed'
+  const localPatientName = (data.patientName as string) || '-'
+  const localBP = (data.bloodPressure as string) || '-'
+
   // Prop (bedStatus) takes precedence for dashboard mode
-  const status = bedStatus?.status || element.status || 'idle'
-  const label = element.label || 'Bed'
-  const patientName = bedStatus?.patientName || element.patientName || '-'
+  const rawStatus = bedStatus?.status || localStatus
+  const label = bedStatus ? bedStatus.bedId : localLabel // Preferred label source? Or stick to local text. Keep localLabel for now if name is separate.
+  // Actually bedId is ID, label might be name.
+  // Let's keep label as localLabel.
+
+  const patientName = bedStatus?.patientName || localPatientName
   const bloodPressure = bedStatus?.vitals?.bp
     ? `${bedStatus.vitals.bp.systolic}/${bedStatus.vitals.bp.diastolic}`
-    : element.bloodPressure || '-'
+    : localBP
   const alertCount = bedStatus?.alerts?.length || 0
 
   // Status colors
-  let strokeColor = '#3b82f6' // Default Blue (Idle)
+  let strokeColor = '#3b82f6' // Default Blue (Free)
   let strokeWidth = 2
   let bgColor = '#ffffff'
 
-  if (status === 'active') {
-    strokeColor = '#22c55e' // Green (Active)
-    strokeWidth = 3
-  } else if (status === 'warning') {
-    strokeColor = '#eab308' // Yellow (Warning)
-    strokeWidth = 4
-    bgColor = '#fefce8' // Light yellow background
-  } else if (status === 'alarm' || alertCount > 0) {
-    strokeColor = '#ef4444' // Red (Alarm)
-    strokeWidth = 4
-    bgColor = '#fef2f2' // Light red background
+  // Map new statuses to visual styles
+  if (rawStatus === 'occupied') {
+    if (alertCount > 0) {
+      // Assume alarm if alerts exist
+      strokeColor = '#ef4444' // Red (Alarm)
+      strokeWidth = 4
+      bgColor = '#fef2f2'
+    } else {
+      strokeColor = '#22c55e' // Green (Active/Occupied)
+      strokeWidth = 3
+    }
+  } else if (rawStatus === 'cleaning') {
+    strokeColor = '#06b6d4' // Cyan
+    bgColor = '#ecfeff'
+  } else if (rawStatus === 'maintenance') {
+    strokeColor = '#64748b' // Slate
+    bgColor = '#f1f5f9'
   } else {
-    // Idle or undefined
+    // free / idle
     strokeColor = '#3b82f6'
     strokeWidth = 2
   }
+
+  // Access w/h directly from UnifiedNode
+  const width = element.w || 100
+  const height = element.h || 60
 
   return (
     <Group
@@ -91,8 +110,8 @@ export const BedElement: React.FC<BedElementProps> = ({
     >
       {/* Bed Frame */}
       <Rect
-        width={element.box.width}
-        height={element.box.height}
+        width={width}
+        height={height}
         fill={bgColor}
         stroke={strokeColor}
         strokeWidth={strokeWidth}
@@ -108,30 +127,32 @@ export const BedElement: React.FC<BedElementProps> = ({
           const fontSize = 16
           const lineHeight = 1.2
 
-          // If occupied (active/warning/alarm) show details
-          // If idle, show just Label
-          const isOccupied = status !== 'idle' && bedStatus?.isOccupied !== false // Check explicitly if false
 
-          const alertMessage = bedStatus?.customData?.statusMessage || ''
 
-          const renderLines = isOccupied
-            ? [label, patientName, bloodPressure, alertMessage].filter(
-              (l): l is string => typeof l === 'string' && l !== ''
-            )
-            : [label]
+          // In Editor mode, bedStatus is usually undefined or mock.
+          // Real dashboard functionality passes bedStatus.
+          // User request: Hide the lower 2 fields (Patient Name, BP) in Editor.
+          // We can assume if bedStatus is not provided, we are in Editor mode or "Offline".
+          // Or strictly check if we are just displaying layout vs monitoring.
+          const isEditorMode = !bedStatus
 
-          // Debug rendering
-          // console.log(`[BedElement] ID=${element.id} Status=${status} Occupied=${isOccupied} Name=${patientName} BP=${bloodPressure} Lines=${renderLines.length}`);
+          const renderLines = isEditorMode
+            ? [element.name ?? 'Bed'] // Only show Bed Name in Editor
+            : [
+              label, // Bed Label
+              patientName !== '-' ? patientName : '',
+              bloodPressure !== '-' ? bloodPressure : ''
+            ].filter(Boolean)
 
           const totalHeight = renderLines.length * fontSize * lineHeight
-          const startY = (element.box.height - totalHeight) / 2
+          const startY = (height - totalHeight) / 2
 
           return renderLines.map((text, index) => (
             <OutlinedText
               key={index}
               x={0}
               y={startY + index * fontSize * lineHeight}
-              width={element.box.width}
+              width={width}
               text={text}
               fontSize={fontSize}
               fontFamily="Meiryo"

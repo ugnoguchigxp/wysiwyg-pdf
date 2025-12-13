@@ -1,5 +1,5 @@
 import type React from 'react'
-import { Circle, Line, Rect, RegularPolygon } from 'react-konva'
+import { Circle, Line, RegularPolygon } from 'react-konva'
 import type { ArrowType } from '../../types/canvas'
 
 interface LineMarkerProps {
@@ -34,56 +34,20 @@ export const LineMarker: React.FC<LineMarkerProps> = ({
   }
 
   switch (type) {
-    case 'standard': // V shape
+    case 'arrow': // Standard V or Triangle
       return (
         <Line
           {...commonProps}
           points={[-size, -size / 2, 0, 0, -size, size / 2]}
           closed={false}
           fillEnabled={false}
-        />
-      )
-    case 'filled': // Triangle filled
-      return (
-        <Line
-          {...commonProps}
-          points={[0, 0, -size, -size / 2, -size * 0.7, 0, -size, size / 2]}
-          closed={true}
-        />
-      )
-    case 'triangle': // Triangle filled (simple)
-      return (
-        <RegularPolygon
-          {...commonProps}
-          sides={3}
-          radius={size / 1.5}
-          rotation={commonProps.rotation + 90} // Adjust rotation for polygon
-          offsetY={-size / 3} // Center adjustment
-        />
-      )
-    case 'open': // Concave arrow
-      return (
-        <Line
-          {...commonProps}
-          points={[0, 0, -size, -size / 2, -size * 0.5, 0, -size, size / 2]}
-          closed={true}
-          fillEnabled={false}
+          strokeWidth={2}
         />
       )
     case 'circle':
-      return <Circle {...commonProps} radius={size / 3} offsetX={size / 2} />
+      return <Circle {...commonProps} radius={size / 3} offsetX={size / 3} />
     case 'diamond':
       return <RegularPolygon {...commonProps} sides={4} radius={size / 2} offsetX={size / 2} />
-    case 'square':
-      return (
-        <Rect
-          {...commonProps}
-          width={size}
-          height={size * 0.7}
-          offsetX={size}
-          offsetY={(size * 0.7) / 2}
-        />
-      )
     default:
       return null
   }

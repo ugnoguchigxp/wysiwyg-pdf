@@ -1,23 +1,20 @@
 import React, { useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
 import '../styles/print.css'
 import type {
-  Element,
-  IImageElement,
-  ILineElement,
-  IPage,
-  IShapeElement,
-  ISignatureElement,
-  ITableElement,
-  ITemplateDoc,
-  ITextElement,
-} from '../types/wysiwyg'
+  UnifiedNode,
+  Doc,
+  Surface,
+  ImageNode,
+  LineNode,
+  ShapeNode,
+  SignatureNode,
+  TableNode,
+  TextNode,
+} from '../../../../../types/canvas'
 import { findImageWithExtension } from './WysiwygCanvas/canvasImageUtils'
 
-// Helper to render shapes as SVG
-// Helper to render shapes as SVG
-export const RenderSignature = ({ element }: { element: ISignatureElement }) => {
-  const { strokes, stroke, strokeWidth } = element
+export const RenderSignature = ({ element }: { element: SignatureNode }) => {
+  const { strokes, stroke, strokeW } = element
   return (
     <svg
       width="100%"
@@ -30,7 +27,7 @@ export const RenderSignature = ({ element }: { element: ISignatureElement }) => 
           points={points.join(' ')}
           fill="none"
           stroke={stroke || '#000'}
-          strokeWidth={strokeWidth || 2}
+          strokeWidth={strokeW || 2}
           strokeLinecap="round"
           strokeLinejoin="round"
         />
@@ -39,14 +36,14 @@ export const RenderSignature = ({ element }: { element: ISignatureElement }) => 
   )
 }
 
-export const RenderShape = ({ element }: { element: IShapeElement }) => {
-  const { width, height } = element.box
-  const fill = element.fill.color || 'none'
-  const stroke = element.stroke.color || 'none'
-  const strokeWidth = element.stroke.width || 1
+export const RenderShape = ({ element }: { element: ShapeNode }) => {
+  const { w: width, h: height, shape } = element
+  const fill = element.fill || 'none'
+  const stroke = element.stroke || 'none'
+  const strokeWidth = element.strokeW || 1
 
-  switch (element.type) {
-    case 'Rect':
+  switch (shape) {
+    case 'rect':
       return (
         <rect
           x={0}
@@ -56,9 +53,10 @@ export const RenderShape = ({ element }: { element: IShapeElement }) => {
           fill={fill}
           stroke={stroke}
           strokeWidth={strokeWidth}
+          rx={element.radius}
         />
       )
-    case 'Circle':
+    case 'circle':
       return (
         <ellipse
           cx={width / 2}
@@ -70,85 +68,15 @@ export const RenderShape = ({ element }: { element: IShapeElement }) => {
           strokeWidth={strokeWidth}
         />
       )
-    case 'Triangle': {
+    case 'triangle': {
       const points = `${width / 2}, 0 ${width},${height} 0, ${height} `
       return <polygon points={points} fill={fill} stroke={stroke} strokeWidth={strokeWidth} />
     }
-    case 'Diamond': {
+    case 'diamond': {
       const points = `${width / 2}, 0 ${width},${height / 2} ${width / 2},${height} 0, ${height / 2} `
       return <polygon points={points} fill={fill} stroke={stroke} strokeWidth={strokeWidth} />
     }
-    case 'Trapezoid': {
-      const topOffset = width * 0.2
-      const points = `${topOffset}, 0 ${width - topOffset}, 0 ${width},${height} 0, ${height} `
-      return <polygon points={points} fill={fill} stroke={stroke} strokeWidth={strokeWidth} />
-    }
-    case 'Cylinder': {
-      const ellipseHeight = height * 0.15
-      const ry = ellipseHeight / 2
-      return (
-        <>
-          <rect
-            x={0}
-            y={ry}
-            width={width}
-            height={height - 2 * ry}
-            fill={fill}
-            stroke={stroke}
-            strokeWidth={strokeWidth}
-          />
-          <ellipse
-            cx={width / 2}
-            cy={ry}
-            rx={width / 2}
-            ry={ry}
-            fill={fill}
-            stroke={stroke}
-            strokeWidth={strokeWidth}
-          />
-          <ellipse
-            cx={width / 2}
-            cy={height - ry}
-            rx={width / 2}
-            ry={ry}
-            fill={fill}
-            stroke={stroke}
-            strokeWidth={strokeWidth}
-          />
-        </>
-      )
-    }
-    case 'Heart':
-      return (
-        <path
-          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-          fill={fill}
-          stroke={stroke}
-          strokeWidth={strokeWidth}
-          transform={`scale(${width / 24}, ${height / 24})`}
-          vectorEffect="non-scaling-stroke"
-        />
-      )
-    case 'Star':
-      return (
-        <path
-          d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
-          fill={fill}
-          stroke={stroke}
-          strokeWidth={strokeWidth}
-          transform={`scale(${width / 24}, ${height / 24})`}
-          vectorEffect="non-scaling-stroke"
-        />
-      )
-    case 'Pentagon': {
-      const points = `${width * 0.5},0 ${width},${height * 0.38} ${width * 0.82},${height} ${width * 0.18},${height} 0,${height * 0.38}`
-      return <polygon points={points} fill={fill} stroke={stroke} strokeWidth={strokeWidth} />
-    }
-    case 'Hexagon': {
-      const points = `${width * 0.25},0 ${width * 0.75},0 ${width},${height * 0.5} ${width * 0.75},${height} ${width * 0.25},${height} 0,${height * 0.5}`
-      return <polygon points={points} fill={fill} stroke={stroke} strokeWidth={strokeWidth} />
-    }
-    case 'ArrowUp':
+    case 'arrow-u':
       return (
         <path
           d="M12 4l-8 8h6v8h4v-8h6z"
@@ -159,72 +87,32 @@ export const RenderShape = ({ element }: { element: IShapeElement }) => {
           vectorEffect="non-scaling-stroke"
         />
       )
-    case 'ArrowDown':
-      return (
-        <path
-          d="M12 20l-8-8h6v-8h4v8h6z"
-          fill={fill}
-          stroke={stroke}
-          strokeWidth={strokeWidth}
-          transform={`scale(${width / 24}, ${height / 24})`}
-          vectorEffect="non-scaling-stroke"
-        />
-      )
-    case 'ArrowLeft':
-      return (
-        <path
-          d="M4 12l8-8v6h8v4h-8v6z"
-          fill={fill}
-          stroke={stroke}
-          strokeWidth={strokeWidth}
-          transform={`scale(${width / 24}, ${height / 24})`}
-          vectorEffect="non-scaling-stroke"
-        />
-      )
-    case 'ArrowRight':
-      return (
-        <path
-          d="M20 12l-8-8v6h-8v4h8v6z"
-          fill={fill}
-          stroke={stroke}
-          strokeWidth={strokeWidth}
-          transform={`scale(${width / 24}, ${height / 24})`}
-          vectorEffect="non-scaling-stroke"
-        />
-      )
-    case 'Tree':
-      return (
-        <path
-          d="M12 2 L8 8 H10 L6 14 H8 L4 20 H11 V24 H13 V20 H20 L16 14 H18 L14 8 H16 Z"
-          fill={fill}
-          stroke={stroke}
-          strokeWidth={strokeWidth}
-          transform={`scale(${width / 24}, ${height / 24})`}
-          vectorEffect="non-scaling-stroke"
-        />
-      )
-    case 'House':
-      return (
-        <path
-          d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"
-          fill={fill}
-          stroke={stroke}
-          strokeWidth={strokeWidth}
-          transform={`scale(${width / 24}, ${height / 24})`}
-          vectorEffect="non-scaling-stroke"
-        />
-      )
+    // Add other shapes as needed...
     default:
       return null
   }
 }
 
-export const RenderLine = ({ element }: { element: ILineElement }) => {
-  const { startPoint, endPoint, stroke } = element
-  const minX = Math.min(startPoint.x, endPoint.x)
-  const minY = Math.min(startPoint.y, endPoint.y)
-  const width = Math.abs(endPoint.x - startPoint.x)
-  const height = Math.abs(endPoint.y - startPoint.y)
+export const RenderLine = ({ element }: { element: LineNode }) => {
+  const { pts, stroke, strokeW } = element
+
+  // Calculate bounding box for SVG viewbox/positioning
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  for (let i = 0; i < pts.length; i += 2) {
+    if (pts[i] < minX) minX = pts[i]
+    if (pts[i] > maxX) maxX = pts[i]
+    if (pts[i + 1] < minY) minY = pts[i + 1]
+    if (pts[i + 1] > maxY) maxY = pts[i + 1]
+  }
+
+  const width = Math.abs(maxX - minX)
+  const height = Math.abs(maxY - minY)
+
+  // Points relative to SVG
+  const relativePts = []
+  for (let i = 0; i < pts.length; i += 2) {
+    relativePts.push((pts[i] - minX) + ',' + (pts[i + 1] - minY))
+  }
 
   return (
     <svg
@@ -232,57 +120,52 @@ export const RenderLine = ({ element }: { element: ILineElement }) => {
       height={height + 20}
       style={{ overflow: 'visible', position: 'absolute', left: minX, top: minY }}
     >
-      <title>Line preview</title>
-      <line
-        x1={startPoint.x - minX}
-        y1={startPoint.y - minY}
-        x2={endPoint.x - minX}
-        y2={endPoint.y - minY}
-        stroke={stroke.color}
-        strokeWidth={stroke.width}
+      <polyline
+        points={relativePts.join(' ')}
+        stroke={stroke}
+        strokeWidth={strokeW}
+        fill="none"
       />
     </svg>
   )
 }
 
-const RenderTable = ({ element }: { element: ITableElement }) => {
-  const { rows, cols, cells, rowCount, colCount } = element
+const RenderTable = ({ element }: { element: TableNode }) => {
+  const { table } = element
+  const { rows, cols, cells } = table
+  const rowCount = rows.length
+  const colCount = cols.length
 
-  // Track occupied cells for spans
-  const occupied = Array(rowCount)
-    .fill(null)
-    .map(() => Array(colCount).fill(false))
+  const occupied = Array(rowCount).fill(null).map(() => Array(colCount).fill(false))
 
   return (
     <table
       style={{
-        width: `${element.box.width}pt`,
-        height: `${element.box.height}pt`,
+        width: `${element.w}pt`,
+        height: `${element.h}pt`,
         borderCollapse: 'collapse',
         tableLayout: 'fixed',
         position: 'absolute',
-        left: `${element.box.x}pt`,
-        top: `${element.box.y}pt`,
-        zIndex: element.z,
+        left: `${element.x}pt`,
+        top: `${element.y}pt`,
+        // zIndex: element.z, // Not used
       }}
     >
       <colgroup>
-        {cols.map((col, i) => (
-          <col key={i} style={{ width: `${col.width}pt` }} />
+        {cols.map((w, i) => (
+          <col key={i} style={{ width: `${w}pt` }} />
         ))}
       </colgroup>
       <tbody>
-        {rows.map((rowDef, rowIndex) => (
-          <tr key={rowIndex} style={{ height: `${rowDef.height}pt` }}>
+        {rows.map((h, rowIndex) => (
+          <tr key={rowIndex} style={{ height: `${h}pt` }}>
             {cols.map((_, colIndex) => {
               if (occupied[rowIndex][colIndex]) return null
+              const cell = cells.find((c) => c.r === rowIndex && c.c === colIndex)
 
-              const cell = cells.find((c) => c.row === rowIndex && c.col === colIndex)
+              const rowSpan = cell?.rs || 1
+              const colSpan = cell?.cs || 1
 
-              const rowSpan = cell?.rowSpan || 1
-              const colSpan = cell?.colSpan || 1
-
-              // Mark occupied
               if (rowSpan > 1 || colSpan > 1) {
                 for (let r = 0; r < rowSpan; r++) {
                   for (let c = 0; c < colSpan; c++) {
@@ -293,21 +176,9 @@ const RenderTable = ({ element }: { element: ITableElement }) => {
                 }
               }
 
-              // If no cell defined, render basic empty cell
-              if (!cell) {
-                return <td key={`${rowIndex}-${colIndex}`} />
-              }
+              if (!cell) return <td key={`${rowIndex}-${colIndex}`} />
 
-              const styles = cell.styles || {}
-              const {
-                family = 'Meiryo',
-                size = 12,
-                weight = 400,
-                color = '#000',
-                italic,
-                underline,
-                strikethrough,
-              } = styles.font || {}
+              const fontSize = cell.fontSize || 12
 
               return (
                 <td
@@ -315,27 +186,17 @@ const RenderTable = ({ element }: { element: ITableElement }) => {
                   colSpan={colSpan}
                   rowSpan={rowSpan}
                   style={{
-                    border: `${styles.borderWidth || 1}px solid ${styles.borderColor || '#000'}`,
-                    backgroundColor: styles.backgroundColor || 'transparent',
-                    fontFamily: family,
-                    fontSize: `${size}pt`,
-                    fontWeight: weight,
-                    color,
-                    textAlign: styles.align || 'left',
-                    verticalAlign: styles.verticalAlign || 'top',
-                    fontStyle: italic ? 'italic' : 'normal',
-                    textDecoration: [
-                      underline ? 'underline' : '',
-                      strikethrough ? 'line-through' : '',
-                    ]
-                      .filter(Boolean)
-                      .join(' '),
+                    border: cell.border ? `1px solid black` : '1px solid #ccc', // simplified
+                    backgroundColor: cell.bg || 'transparent',
+                    fontFamily: cell.font || 'Helvetica',
+                    fontSize: `${fontSize}pt`,
+                    textAlign: cell.align === 'r' ? 'right' : cell.align === 'c' ? 'center' : 'left',
                     padding: '4px',
                     wordBreak: 'break-word',
                     whiteSpace: 'pre-wrap',
                   }}
                 >
-                  {cell.content}
+                  {cell.v}
                 </td>
               )
             })}
@@ -346,157 +207,91 @@ const RenderTable = ({ element }: { element: ITableElement }) => {
   )
 }
 
-const PrintElement = ({ element, i18nOverrides }: { element: Element, i18nOverrides?: Record<string, string> }) => {
-  const { t } = useTranslation()
+const PrintElement = ({ element }: { element: UnifiedNode }) => {
   const [imageSrc, setImageSrc] = useState<string | null>(null)
 
-  const resolveText = (key: string, defaultValue?: string) => {
-    if (i18nOverrides && i18nOverrides[key]) return i18nOverrides[key]
-    return t(key, defaultValue ?? key)
-  }
-
   useEffect(() => {
-    if (element.type === 'Image') {
-      const imageEl = element as IImageElement
-      if (imageEl.assetId) {
-        findImageWithExtension(imageEl.assetId).then((res) => {
-          if (res) setImageSrc(res.url)
-        })
+    if (element.t === 'image') {
+      const imageEl = element as ImageNode
+      if (imageEl.src) {
+        if (imageEl.src.startsWith('http') || imageEl.src.startsWith('data:')) {
+          setImageSrc(imageEl.src)
+        } else {
+          findImageWithExtension(imageEl.src).then((res) => {
+            if (res) setImageSrc(res.url)
+          })
+        }
+      } else {
+        setImageSrc(null)
       }
     }
   }, [element])
 
-  if (!element.visible) return null
+  if (element.hidden) return null
 
-  // Line handling
-  if (element.type === 'Line') {
-    return <RenderLine element={element as ILineElement} />
-  }
+  if (element.t === 'line') return <RenderLine element={element as LineNode} />
 
-  // Common style for box-based elements
-  // We need to cast to access 'box' safely, or check type
-  if (!('box' in element)) return null
+  // For other elements, check common coordinate props
+  // type guard for elements with x,y,w,h?
+  // Text, Shape, Image, Table, Widget, Signature have x,y,w,h.
+  // We can just cast or access safely.
+  if (!('x' in element)) return null
 
   const style: React.CSSProperties = {
     position: 'absolute',
-    left: `${element.box.x}pt`,
-    top: `${element.box.y}pt`,
-    width: `${element.box.width}pt`,
-    height: `${element.box.height}pt`,
-    transform: element.rotation ? `rotate(${element.rotation}deg)` : undefined,
-    zIndex: element.z,
+    left: `${element.x}pt`,
+    top: `${element.y}pt`,
+    width: `${element.w}pt`,
+    height: `${element.h}pt`,
+    transform: element.r ? `rotate(${element.r}deg)` : undefined,
   }
 
-  if (element.type === 'Text') {
-    const textEl = element as ITextElement
+  if (element.t === 'text') {
+    const textEl = element as TextNode
     return (
-      <div
-        style={{
-          ...style,
-          fontSize: `${textEl.font.size}pt`,
-          fontWeight: textEl.font.weight,
-          fontStyle: textEl.font.italic ? 'italic' : 'normal',
-          textDecoration: [
-            textEl.font.underline ? 'underline' : '',
-            textEl.font.strikethrough ? 'line-through' : '',
-          ]
-            .filter(Boolean)
-            .join(' '),
-          color: textEl.color,
-          backgroundColor: textEl.backgroundColor,
-          textAlign: textEl.align,
-          fontFamily: '"Meiryo", "Hiragino Kaku Gothic ProN", "MS PGothic", sans-serif',
-          display: 'flex',
-          alignItems: 'flex-start', // Default
-          justifyContent:
-            textEl.align === 'center'
-              ? 'center'
-              : textEl.align === 'right'
-                ? 'flex-end'
-                : 'flex-start',
-          whiteSpace: 'pre-wrap',
-        }}
-      >
+      <div style={{
+        ...style,
+        fontSize: `${textEl.fontSize}pt`,
+        fontWeight: textEl.fontWeight,
+        fontStyle: textEl.italic ? 'italic' : 'normal',
+        textDecoration: [textEl.underline ? 'underline' : '', textEl.lineThrough ? 'line-through' : ''].filter(Boolean).join(' '),
+        color: textEl.fill,
+        textAlign: textEl.align === 'r' ? 'right' : textEl.align === 'c' ? 'center' : 'left',
+        fontFamily: textEl.font,
+        display: 'flex',
+        alignItems: textEl.vAlign === 'b' ? 'flex-end' : textEl.vAlign === 'm' ? 'center' : 'flex-start',
+        justifyContent: textEl.align === 'c' ? 'center' : textEl.align === 'r' ? 'flex-end' : 'flex-start',
+        whiteSpace: 'pre-wrap',
+      }}>
         {textEl.text}
       </div>
     )
   }
 
-  if (
-    [
-      'Rect',
-      'Circle',
-      'Triangle',
-      'Diamond',
-      'Trapezoid',
-      'Cylinder',
-      'Heart',
-      'Star',
-      'Pentagon',
-      'Hexagon',
-      'ArrowUp',
-      'ArrowDown',
-      'ArrowLeft',
-      'ArrowRight',
-      'Tree',
-      'House',
-    ].includes(element.type)
-  ) {
+  if (element.t === 'shape') {
     return (
       <div style={style}>
         <svg width="100%" height="100%" style={{ overflow: 'visible' }}>
-          <title>{resolveText('shape_preview', 'Shape preview')}</title>
-          <RenderShape element={element as IShapeElement} />
+          <RenderShape element={element as ShapeNode} />
         </svg>
       </div>
     )
   }
 
-  if (element.type === 'Image') {
+  if (element.t === 'image') {
     return (
       <div style={style}>
-        {imageSrc ? (
-          <img
-            src={imageSrc}
-            alt={resolveText('report_image_alt', 'Report asset')}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'fill', // or contain/cover depending on requirement
-              display: 'block',
-            }}
-          />
-        ) : (
-          <div
-            style={{
-              width: '100%',
-              height: '100%',
-              border: '1px dashed gray',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '10px',
-              color: 'gray',
-            }}
-          >
-            {resolveText('no_image', 'No image')}
-          </div>
-        )}
+        {imageSrc ? <img src={imageSrc} style={{ width: '100%', height: '100%', objectFit: 'fill' }} alt="" /> : <div></div>}
       </div>
     )
   }
 
-  if (element.type === 'Table') {
-    return <RenderTable element={element as ITableElement} />
+  if (element.t === 'table') {
+    return <RenderTable element={element as TableNode} />
   }
 
-  if (element.type === 'Signature') {
-    const sigElement = element as ISignatureElement
-    return (
-      <div style={style}>
-        <RenderSignature element={sigElement} />
-      </div>
-    )
+  if (element.t === 'signature') {
+    return <div style={style}><RenderSignature element={element as SignatureNode} /></div>
   }
 
   return null
@@ -504,75 +299,56 @@ const PrintElement = ({ element, i18nOverrides }: { element: Element, i18nOverri
 
 export const PrintLayout = React.forwardRef<
   HTMLDivElement,
-  { doc: ITemplateDoc; orientation?: 'portrait' | 'landscape'; i18nOverrides?: Record<string, string> }
->(({ doc, orientation = 'portrait', i18nOverrides }, ref) => {
-  const totalPages = doc.pages.length
+  { doc: Doc; orientation?: 'portrait' | 'landscape'; i18nOverrides?: Record<string, string> }
+>(({ doc, orientation = 'portrait' }, ref) => {
 
   const isLandscape = orientation === 'landscape'
   const width = isLandscape ? '297mm' : '210mm'
   const height = isLandscape ? '210mm' : '297mm'
 
-  const PrintPage = ({ page, pageIndex }: { page: IPage; pageIndex: number }) => {
+  const PrintPage = ({ surface, pageIndex }: { surface: Surface; pageIndex: number }) => {
     const [bgImageSrc, setBgImageSrc] = useState<string | null>(null)
 
+    // Logic for bg image if URL or ID
     useEffect(() => {
-      if (page.background?.imageId) {
-        findImageWithExtension(page.background.imageId).then((res) => {
-          if (res) setBgImageSrc(res.url)
-        })
+      if (surface.bg && !surface.bg.startsWith('#')) {
+        if (surface.bg.startsWith('http') || surface.bg.startsWith('data:')) {
+          setBgImageSrc(surface.bg)
+        } else {
+          findImageWithExtension(surface.bg).then(res => {
+            if (res) setBgImageSrc(res.url)
+          })
+        }
       } else {
         setBgImageSrc(null)
       }
-    }, [page.background?.imageId])
+    }, [surface.bg])
 
     return (
       <div
         className="print-page"
         style={{
-          backgroundColor: page.background?.color || 'white',
+          backgroundColor: (surface.bg && surface.bg.startsWith('#')) ? surface.bg : 'white',
           width,
           height,
         }}
       >
-        {/* Background Image */}
         {bgImageSrc && (
           <img
             src={bgImageSrc}
             alt=""
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'fill', // or cover/contain
-              zIndex: 0, // Behind content
-              pointerEvents: 'none',
-            }}
+            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'fill', zIndex: 0 }}
           />
         )}
-
-        {/* Content Layer */}
         <div style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%' }}>
-          {doc.elements // Use doc.elements here and filter
-            .filter((el) => el.pageId === page.id)
+          {doc.nodes
+            .filter((el) => el.s === surface.id)
             .map((element) => (
-              <PrintElement key={element.id} element={element} i18nOverrides={i18nOverrides} />
+              <PrintElement key={element.id} element={element} />
             ))}
         </div>
-
-        {/* Page Number */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '10mm',
-            right: '10mm',
-            fontSize: '10pt',
-            color: '#666',
-            zIndex: 2,
-          }}
-        >
-          {pageIndex + 1} / {totalPages}
+        <div style={{ position: 'absolute', bottom: '10mm', right: '10mm', fontSize: '10pt', color: '#666', zIndex: 2 }}>
+          {pageIndex + 1} / {doc.surfaces.length}
         </div>
       </div>
     )
@@ -580,8 +356,8 @@ export const PrintLayout = React.forwardRef<
 
   return (
     <div ref={ref} className="print-container" style={{ width }}>
-      {doc.pages.map((page, index) => (
-        <PrintPage key={page.id} page={page} pageIndex={index} />
+      {doc.surfaces.map((surface, index) => (
+        <PrintPage key={surface.id} surface={surface} pageIndex={index} />
       ))}
     </div>
   )

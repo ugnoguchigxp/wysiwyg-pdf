@@ -2,13 +2,13 @@ import type Konva from 'konva'
 import type React from 'react'
 import { Image } from 'react-konva'
 import useImage from 'use-image'
-import type { IImageElement } from '../../types'
+import type { ImageNode } from '../../types'
 
 interface ImageElementProps {
-  element: IImageElement
+  element: ImageNode
   isSelected: boolean
   onSelect: (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void
-  onChange: (newAttrs: Partial<IImageElement>) => void
+  onChange: (newAttrs: Partial<ImageNode>) => void
   shapeRef?: React.Ref<Konva.Image>
 }
 
@@ -26,13 +26,13 @@ export const ImageElement: React.FC<ImageElementProps> = ({
       ref={shapeRef}
       id={element.id}
       image={image}
-      x={element.box.x}
-      y={element.box.y}
-      width={element.box.width}
-      height={element.box.height}
-      rotation={element.rotation}
+      x={element.x}
+      y={element.y}
+      width={element.w}
+      height={element.h}
+      rotation={element.r}
       opacity={element.opacity}
-      draggable
+      draggable={!element.locked}
       onMouseDown={onSelect}
       onTap={onSelect}
       onDragStart={(e) => {
@@ -40,11 +40,8 @@ export const ImageElement: React.FC<ImageElementProps> = ({
       }}
       onDragEnd={(e) => {
         onChange({
-          box: {
-            ...element.box,
-            x: e.target.x(),
-            y: e.target.y(),
-          },
+          x: e.target.x(),
+          y: e.target.y(),
         })
       }}
       stroke={isSelected ? '#3b82f6' : undefined}

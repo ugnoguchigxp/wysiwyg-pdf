@@ -1,17 +1,24 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
-  CanvasElement,
-  IImageElement,
-  ILineElement,
-  IShapeElement,
-  ITextElement,
+  UnifiedNode,
+  LineNode,
+  ShapeNode,
+  ImageNode,
+  TextNode,
+  WidgetNode
 } from '../../../types/canvas'
 import { RenderLine, RenderShape } from '../report-editor/pdf-editor/components/PrintLayout'
-import type { BedLayoutDocument, IBedElement } from '../types'
+import type { BedLayoutDocument } from '../types'
+import { findImageWithExtension } from '../report-editor/pdf-editor/components/WysiwygCanvas/canvasImageUtils'
 
-const RenderBed = ({ element }: { element: IBedElement }) => {
-  const { status, patientName, bloodPressure, orientation, label } = element
+const RenderBed = ({ element }: { element: WidgetNode }) => {
+  const data = element.data || {}
+  const status = (data.status as string) || 'idle'
+  const patientName = (data.patientName as string) || ''
+  const bloodPressure = (data.bloodPressure as string) || ''
+  const orientation = (data.orientation as string) || 'horizontal'
+  const label = (data.label as string) || 'Bed'
 
   // Status colors (Matching BedElement.tsx)
   let strokeColor = '#3b82f6' // Default Blue (Idle)
@@ -48,7 +55,6 @@ const RenderBed = ({ element }: { element: IBedElement }) => {
       height: '80%',
     }
 
-  // Text Halo effect (simulated with text-shadow)
   const textHalo =
     '2px 0 0 white, -2px 0 0 white, 0 2px 0 white, 0 -2px 0 white, 1px 1px 0 white, -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white'
 
@@ -66,7 +72,6 @@ const RenderBed = ({ element }: { element: IBedElement }) => {
         fontFamily: '"Meiryo", sans-serif',
       }}
     >
-      {/* Pillow */}
       <div
         style={{
           position: 'absolute',
@@ -76,8 +81,6 @@ const RenderBed = ({ element }: { element: IBedElement }) => {
           ...pillowStyle,
         }}
       />
-
-      {/* Content Container - Centered */}
       <div
         style={{
           position: 'absolute',
@@ -89,10 +92,9 @@ const RenderBed = ({ element }: { element: IBedElement }) => {
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          pointerEvents: 'none', // Let clicks pass through if needed (though this is print)
+          pointerEvents: 'none',
         }}
       >
-        {/* Bed Label */}
         <div
           style={{
             fontSize: '18px',
@@ -101,13 +103,11 @@ const RenderBed = ({ element }: { element: IBedElement }) => {
             textShadow: textHalo,
             lineHeight: 1,
             textAlign: 'center',
-            marginBottom: patientName ? '0' : '0', // Adjust spacing if needed
+            marginBottom: patientName ? '0' : '0',
           }}
         >
           {label || 'Bed'}
         </div>
-
-        {/* Patient Name */}
         {patientName && (
           <div
             style={{
@@ -123,8 +123,6 @@ const RenderBed = ({ element }: { element: IBedElement }) => {
             {patientName}
           </div>
         )}
-
-        {/* Blood Pressure */}
         {bloodPressure && (
           <div
             style={{
@@ -133,7 +131,7 @@ const RenderBed = ({ element }: { element: IBedElement }) => {
               textShadow: textHalo,
               lineHeight: 1,
               textAlign: 'center',
-              marginTop: patientName ? '18px' : '18px',
+              marginTop: '18px',
             }}
           >
             {bloodPressure}
@@ -144,7 +142,7 @@ const RenderBed = ({ element }: { element: IBedElement }) => {
   )
 }
 
-const BedPrintElement: React.FC<{ element: CanvasElement, i18nOverrides?: Record<string, string> }> = ({ element, i18nOverrides }) => {
+const BedPrintElement: React.FC<{ element: UnifiedNode, i18nOverrides?: Record<string, string> }> = ({ element, i18nOverrides }) => {
   const { t } = useTranslation()
 
   const resolveText = (key: string, defaultValue?: string) => {
@@ -152,59 +150,73 @@ const BedPrintElement: React.FC<{ element: CanvasElement, i18nOverrides?: Record
     return t(key, defaultValue ?? key)
   }
 
-  if (!element.visible) return null
+  const [imageSrc, setImageSrc] = useState<string | null>(null)
 
-  // Line handling
-  if (element.type === 'Line') {
-    return <RenderLine element={element as ILineElement} />
+  useEffect(() => {
+    if (element.t === 'image') {
+      const img = element as ImageNode
+      if (img.src) {
+        if (img.src.startsWith('http') || img.src.startsWith('data:')) {
+          setImageSrc(img.src)
+        } else {
+          findImageWithExtension(img.src).then((res) => {
+            if (res) setImageSrc(res.url)
+          })
+        }
+      }
+    }
+  }, [element])
+
+  if (element.hidden) return null
+
+  if (element.t === 'line') {
+    return <RenderLine element={element as LineNode} />
   }
 
-  // Common style for box-based elements
-  if (!('box' in element)) return null
+  if (!('x' in element)) return null
 
   const style: React.CSSProperties = {
     position: 'absolute',
-    left: `${element.box.x}px`,
-    top: `${element.box.y}px`,
-    width: `${element.box.width}px`,
-    height: `${element.box.height}px`,
-    transform: element.rotation ? `rotate(${element.rotation}deg)` : undefined,
-    zIndex: element.z,
+    left: `${element.x}px`,
+    top: `${element.y}px`,
+    width: `${element.w}px`,
+    height: `${element.h}px`,
+    transform: element.r ? `rotate(${element.r}deg)` : undefined,
+    // zIndex: element.z,
   }
 
-  if (element.type === 'Bed') {
+  if (element.t === 'widget' && element.widget === 'bed') {
     return (
       <div style={style}>
-        <RenderBed element={element as IBedElement} />
+        <RenderBed element={element as WidgetNode} />
       </div>
     )
   }
 
-  if (element.type === 'Text') {
-    const textEl = element as ITextElement
+  if (element.t === 'text') {
+    const textEl = element as TextNode
     return (
       <div
         style={{
           ...style,
-          fontSize: `${textEl.font.size}px`,
-          fontWeight: textEl.font.weight,
-          fontStyle: textEl.font.italic ? 'italic' : 'normal',
+          fontSize: `${textEl.fontSize}px`,
+          fontWeight: textEl.fontWeight,
+          fontStyle: textEl.italic ? 'italic' : 'normal',
           textDecoration: [
-            textEl.font.underline ? 'underline' : '',
-            textEl.font.strikethrough ? 'line-through' : '',
+            textEl.underline ? 'underline' : '',
+            textEl.lineThrough ? 'line-through' : '',
           ]
             .filter(Boolean)
             .join(' '),
-          color: textEl.color,
-          backgroundColor: textEl.backgroundColor,
-          textAlign: textEl.align,
+          color: textEl.fill,
+          textAlign: textEl.align === 'r' ? 'right' : textEl.align === 'c' ? 'center' : 'left',
           fontFamily: '"Meiryo", "Hiragino Kaku Gothic ProN", "MS PGothic", sans-serif',
           display: 'flex',
           alignItems: 'flex-start',
           justifyContent:
-            textEl.align === 'center'
+            textEl.align === 'c'
               ? 'center'
-              : textEl.align === 'right'
+              : textEl.align === 'r'
                 ? 'flex-end'
                 : 'flex-start',
           whiteSpace: 'pre-wrap',
@@ -215,50 +227,30 @@ const BedPrintElement: React.FC<{ element: CanvasElement, i18nOverrides?: Record
     )
   }
 
-  if (
-    [
-      'Rect',
-      'Circle',
-      'Triangle',
-      'Diamond',
-      'Trapezoid',
-      'Cylinder',
-      'Heart',
-      'Star',
-      'Pentagon',
-      'Hexagon',
-      'ArrowUp',
-      'ArrowDown',
-      'ArrowLeft',
-      'ArrowRight',
-      'Tree',
-      'House',
-    ].includes(element.type)
-  ) {
+  if (element.t === 'shape') {
     return (
       <div style={style}>
         <svg width="100%" height="100%" style={{ overflow: 'visible' }}>
           <title>{resolveText('bed_layout_shape_preview', 'Bed layout shape')}</title>
-          <RenderShape element={element as IShapeElement} />
+          <RenderShape element={element as ShapeNode} />
         </svg>
       </div>
     )
   }
 
-  if (element.type === 'Image') {
-    const imageEl = element as IImageElement
+  if (element.t === 'image') {
     return (
       <div style={style}>
-        {imageEl.src ? (
+        {imageSrc ? (
           <img
-            src={imageEl.src}
+            src={imageSrc}
             alt={resolveText('bed_layout_image_preview', 'Asset preview')}
             style={{
               width: '100%',
               height: '100%',
               objectFit: 'fill',
               display: 'block',
-              opacity: imageEl.opacity ?? 1,
+              opacity: element.opacity ?? 1,
             }}
           />
         ) : (
@@ -295,7 +287,7 @@ export const BedPrintLayout = React.forwardRef<HTMLDivElement, { document: BedLa
           style={{
             width: `${width}px`,
             height: `${height}px`,
-            backgroundColor: 'white', // Bed Layout usually has white background or transparent
+            backgroundColor: 'white',
             position: 'relative',
             overflow: 'hidden',
           }}

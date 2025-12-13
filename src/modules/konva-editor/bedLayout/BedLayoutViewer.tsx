@@ -1,6 +1,6 @@
 import React from 'react'
 import { KonvaViewer } from '../../../components/canvas/KonvaViewer'
-import type { IBedElement } from '../../../types/canvas'
+import type { WidgetNode } from '../../../types/canvas'
 import { BedElement } from './elements/BedElement'
 import { PaperBackground } from './components/PaperBackground'
 import type { BedLayoutDocument } from '../types'
@@ -20,7 +20,9 @@ export const BedLayoutViewer: React.FC<BedLayoutViewerProps> = ({ document, dash
     // Filter out undefined elements and ensure type safety
     const elements = document.elementOrder
         .map((id) => document.elementsById[id])
-        .filter((el): el is IBedElement => el !== undefined)
+        .filter((el): el is WidgetNode => el !== undefined) // Assuming we only have WidgetNodes or handle generics? 
+    // actually elements can be any UnifiedNode. KonvaViewer handles them.
+    // But `elements` passed to KonvaViewer should be UnifiedNode[].
 
     return (
         <KonvaViewer
@@ -30,13 +32,13 @@ export const BedLayoutViewer: React.FC<BedLayoutViewerProps> = ({ document, dash
             paperHeight={paperHeight}
             background={<PaperBackground document={document} />}
             renderCustom={(el, commonProps, handleShapeRef) => {
-                if (el.type === 'Bed') {
+                if (el.t === 'widget' && el.widget === 'bed') {
                     const { ref: _ignoredRef, ...propsWithoutRef } = commonProps
                     const bedStatus = dashboardData ? dashboardData[el.id] : undefined
                     return (
                         <BedElement
                             {...propsWithoutRef}
-                            element={el as IBedElement}
+                            element={el as WidgetNode}
                             isSelected={false}
                             shapeRef={handleShapeRef}
                             bedStatus={bedStatus}

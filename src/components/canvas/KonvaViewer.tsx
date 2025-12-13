@@ -2,7 +2,7 @@ import type Konva from 'konva'
 import type React from 'react'
 import { forwardRef, useImperativeHandle, useRef } from 'react'
 import { Layer, Stage } from 'react-konva'
-import type { CanvasElement } from '../../types/canvas'
+import type { UnifiedNode } from '../../types/canvas'
 import {
     type CanvasElementCommonProps,
     CanvasElementRenderer,
@@ -14,13 +14,13 @@ export interface KonvaViewerHandle {
 }
 
 interface KonvaViewerProps {
-    elements: CanvasElement[]
+    elements: UnifiedNode[]
     zoom: number
     paperWidth: number
     paperHeight: number
     background?: React.ReactNode
     renderCustom?: (
-        element: CanvasElement,
+        element: UnifiedNode,
         commonProps: CanvasElementCommonProps,
         shapeRef: CanvasShapeRefCallback
     ) => React.ReactNode
@@ -50,19 +50,17 @@ export const KonvaViewer = forwardRef<KonvaViewerHandle, KonvaViewerProps>(
                     >
                         <Layer>
                             {background}
-                            {window.location.protocol !== 'file:' && elements?.slice() // Avoid mutating original array
-                                .sort((a, b) => a.z - b.z)
-                                .map((element) => (
-                                    <CanvasElementRenderer
-                                        key={element.id}
-                                        element={element}
-                                        isSelected={false}
-                                        onSelect={() => { }}
-                                        onChange={() => { }}
-                                        readOnly={true}
-                                        renderCustom={renderCustom}
-                                    />
-                                ))}
+                            {elements?.map((element) => (
+                                <CanvasElementRenderer
+                                    key={element.id}
+                                    element={element}
+                                    isSelected={false}
+                                    onSelect={() => { }}
+                                    onChange={() => { }}
+                                    readOnly={true}
+                                    renderCustom={renderCustom}
+                                />
+                            ))}
                         </Layer>
                     </Stage>
                 </div>

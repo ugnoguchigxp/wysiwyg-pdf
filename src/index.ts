@@ -33,11 +33,10 @@ export * from './types/schema'
 export * from './modules/konva-editor/bedlayout-dashboard/types'
 // export * from './modules/konva-editor/report-editor/pdf-editor/types/wysiwyg';
 export type {
-  Element,
+  UnifiedNode,
   ICanvasEditorProps,
-  IPage,
-  ITemplateDoc,
-  ITemplateMeta,
+  Surface,
+  Doc,
   PageSize,
 } from './modules/konva-editor/report-editor/pdf-editor/types/wysiwyg'
 // Types

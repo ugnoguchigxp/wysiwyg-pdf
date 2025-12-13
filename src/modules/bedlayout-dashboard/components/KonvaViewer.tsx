@@ -35,20 +35,41 @@ export const KonvaViewer: React.FC<KonvaViewerProps> = ({
   const viewParams = useMemo(() => {
     if (!localDocument || width <= 0) return null
 
-    const bbox = getLayoutBoundingBox(localDocument)
+    // Adapt legacy document to Doc interface for getLayoutBoundingBox
+    const docCompat = {
+      nodes: localDocument.elementsById ? Object.values(localDocument.elementsById) : []
+    } as unknown as import('../../konva-editor/types').Doc
+    const bbox = getLayoutBoundingBox(docCompat)
 
     // Fallback to full layout if no content or error
     if (!bbox) {
-      if (!localDocument.layout) return null
-      const layoutW = localDocument.layout.width
-      const layoutH = localDocument.layout.height
-      const scale = width / layoutW
-      return {
-        scale,
-        stageHeight: layoutH * scale,
-        offsetX: 0,
-        offsetY: 0,
+      // Check for Unified Doc surface size (if converted)
+      // Check for Unified Doc surface size (if converted)
+      if ('surfaces' in localDocument && Array.isArray((localDocument as unknown as { surfaces: { w: number, h: number }[] }).surfaces) && (localDocument as unknown as { surfaces: unknown[] }).surfaces.length > 0) {
+        const surface = (localDocument as unknown as { surfaces: { w: number, h: number }[] }).surfaces[0]
+        const layoutW = surface.w
+        const layoutH = surface.h
+        const scale = width / layoutW
+        return {
+          scale,
+          stageHeight: layoutH * scale,
+          offsetX: 0,
+          offsetY: 0,
+        }
       }
+      // Legacy fallback
+      if (localDocument.layout) {
+        const layoutW = localDocument.layout.width
+        const layoutH = localDocument.layout.height
+        const scale = width / layoutW
+        return {
+          scale,
+          stageHeight: layoutH * scale,
+          offsetX: 0,
+          offsetY: 0,
+        }
+      }
+      return null
     }
 
     // Calculate scale to fit width
@@ -64,7 +85,7 @@ export const KonvaViewer: React.FC<KonvaViewerProps> = ({
     }
   }, [localDocument, width])
 
-  if (!localDocument.layout || !viewParams) {
+  if (!viewParams) {
     return <div>Invalid Layout Data</div>
   }
 
@@ -82,14 +103,14 @@ export const KonvaViewer: React.FC<KonvaViewerProps> = ({
         <PaperBackground document={localDocument} />
         {(localDocument.elementOrder || []).map((id) => {
           const element = localDocument.elementsById?.[id]
-          if (!element) return null
+          if (!element || element.hidden) return null
           return (
             <ElementRenderer
               key={id}
               element={element}
               isSelected={false}
-              onSelect={() => {}} // No-op
-              onChange={() => {}} // No-op
+              onSelect={() => { }} // No-op
+              onChange={() => { }} // No-op
               readOnly={readOnly}
               onBedClick={onBedClick}
               bedStatus={bedStatusMap[id]}

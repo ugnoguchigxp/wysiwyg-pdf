@@ -2,13 +2,6 @@ import {
   AlignCenter,
   AlignLeft,
   AlignRight,
-  AlignVerticalJustifyCenter,
-  AlignVerticalJustifyEnd,
-  AlignVerticalJustifyStart,
-  Bold,
-  Italic,
-  Strikethrough,
-  Underline,
 } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
@@ -19,46 +12,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '../../../../../../components/ui/Tooltip'
-import type { ITableElement } from '../../types/wysiwyg'
+import type { TableNode } from '../../types/wysiwyg'
 import { BindingSelector } from './BindingSelector'
 
-type TableCellStyles = ITableElement['cells'][number]['styles']
-
-const applyStyleUpdates = (
-  styles: TableCellStyles,
-  updates: Partial<TableCellStyles>
-): TableCellStyles => {
-  const nextStyles: TableCellStyles = { ...styles }
-
-  const setStyleProp = <K extends keyof TableCellStyles>(key: K, value: TableCellStyles[K]) => {
-    nextStyles[key] = value
-  }
-
-  if (updates.font) {
-    nextStyles.font = { ...(styles.font || {}), ...updates.font }
-  }
-
-  ; (Object.keys(updates) as Array<keyof TableCellStyles>).forEach((key) => {
-    if (key === 'font') return
-    const value = updates[key]
-    if (value !== undefined) {
-      setStyleProp(key, value)
-    }
-  })
-
-  return nextStyles
-}
+// Helper type for cell properties
+type CellProps = TableNode['table']['cells'][number]
 
 interface TablePropertiesProps {
-  element: ITableElement
-  onUpdate: (updates: Partial<ITableElement>) => void
-  // We need to know which cell is selected to insert properly
-  // Since we don't have separate selection state in the panel (yet),
-  // we might need to rely on the user selecting a cell via editing interaction
-  // OR add a "selectedCell" concept to the Properties Panel.
-  // For now, let's implement basic "Append" and "Remove Last" if no selection,
-  // or simple index inputs.
-  // Better: We receive the editingCell from parent if available.
+  element: TableNode
+  onUpdate: (updates: Partial<TableNode>) => void
   selectedCell?: { row: number; col: number } | null
   i18nOverrides?: Record<string, string>
 }
@@ -76,86 +38,50 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
     return t(key, defaultValue ?? key)
   }
 
-  const updateCurrentCell = (updates: Partial<TableCellStyles>) => {
-    if (!selectedCell) return
+  const updateCells = (updates: Partial<CellProps>) => {
+    const newCells = [...element.table.cells]
 
-    const cellIndex = element.cells.findIndex(
-      (c) => c.row === selectedCell.row && c.col === selectedCell.col
-    )
-
-    let newCells
-    if (cellIndex >= 0) {
-      newCells = [...element.cells]
-      const oldStyles = newCells[cellIndex].styles || ({} as TableCellStyles)
-      const newStyles = applyStyleUpdates(oldStyles, updates)
-
-      newCells[cellIndex] = {
-        ...newCells[cellIndex],
-        styles: newStyles,
+    if (selectedCell) {
+      // Update specific cell
+      const index = newCells.findIndex(c => c.r === selectedCell.row && c.c === selectedCell.col)
+      if (index >= 0) {
+        newCells[index] = { ...newCells[index], ...updates }
+      } else {
+        // Create if missing?
+        newCells.push({
+          r: selectedCell.row,
+          c: selectedCell.col,
+          v: '',
+          ...updates
+        })
       }
     } else {
-      newCells = [
-        ...element.cells,
-        {
-          row: selectedCell.row,
-          col: selectedCell.col,
-          content: '',
-          styles: { ...updates },
-        },
-      ]
+      // Update all cells (global style)
+      // For existing cells
+      for (let i = 0; i < newCells.length; i++) {
+        newCells[i] = { ...newCells[i], ...updates }
+      }
     }
-    onUpdate({ cells: newCells })
+
+    onUpdate({ table: { ...element.table, cells: newCells } })
   }
 
-  const updateAllCells = (updates: Partial<TableCellStyles>) => {
-    const newCells = element.cells.map((cell) => {
-      const oldStyles = cell.styles || {}
-      const newStyles = applyStyleUpdates(oldStyles, updates)
-      return { ...cell, styles: newStyles }
-    })
-    onUpdate({ cells: newCells })
-  }
-
-  const currentCellData = selectedCell
-    ? element.cells.find((c) => c.row === selectedCell.row && c.col === selectedCell.col) || {
-      row: selectedCell.row,
-      col: selectedCell.col,
-      content: '',
-      styles: {},
-    }
-    : null
-
-  // Use first cell as default for global controls or fallback
-  const firstCell = element.cells[0] || {}
-  const firstCellStyles = firstCell.styles || {}
-  // Ensure we have a valid font object with defaults if missing
-  const defaultFont = { family: 'Meiryo', size: 11, weight: 400, color: '#000000' }
-
+  // Get active cell data for UI state
   const isGlobal = !selectedCell
-  const activeData = isGlobal ? { styles: firstCellStyles } : currentCellData!
-  // Safe font access
-  const activeFont = (activeData.styles?.font || defaultFont) as typeof defaultFont & {
-    italic?: boolean
-    underline?: boolean
-    strikethrough?: boolean
-  }
+  const defaultCell: Partial<CellProps> = { fontSize: 12, font: 'Meiryo', bg: '#ffffff', align: 'l' }
 
-  const handleUpdate = (updates: Partial<TableCellStyles>) => {
-    if (isGlobal) {
-      updateAllCells(updates)
-    } else {
-      updateCurrentCell(updates)
-    }
-  }
-
-  const handleFontUpdate = (fontUpdates: Partial<TableCellStyles['font']>) => {
-    handleUpdate({ font: { ...activeFont, ...fontUpdates } })
+  let activeData: Partial<CellProps> = defaultCell
+  if (selectedCell) {
+    const found = element.table.cells.find(c => c.r === selectedCell.row && c.c === selectedCell.col)
+    if (found) activeData = found
+  } else {
+    // Use first cell or defaults
+    if (element.table.cells.length > 0) activeData = element.table.cells[0]
   }
 
   const labelClass = 'block text-[11px] text-theme-text-secondary mb-0.5'
   const headingClass = 'text-[11px] font-medium text-theme-text-secondary mb-1.5'
-  const inputClass =
-    'w-full px-1.5 py-1 border border-theme-border rounded text-[11px] bg-theme-bg-primary text-theme-text-primary focus:outline-none focus:ring-1 focus:ring-theme-accent'
+
 
   const fontSizes = [8, 9, 10, 10.5, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72]
 
@@ -171,8 +97,8 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
         {isGlobal && (
           <BindingSelector
             label="Repeater Source (Array)"
-            binding={element.binding}
-            onUpdate={(binding) => onUpdate({ binding })}
+            binding={element.bind ? { field: element.bind } : undefined}
+            onUpdate={(binding) => onUpdate({ bind: binding?.field })}
             i18nOverrides={i18nOverrides}
           />
         )}
@@ -191,97 +117,35 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
               <div>
                 <label className={labelClass}>{resolveText('properties_size', 'Size')}</label>
                 <EditableSelect
-                  value={activeFont.size}
-                  onChange={(val) => handleFontUpdate({ size: Number(val) })}
+                  value={activeData.fontSize || 12}
+                  onChange={(val) => updateCells({ fontSize: Number(val) })}
                   options={fontSizes}
                   className="w-full"
                 />
               </div>
-              <div>
-                <label className={labelClass}>{resolveText('color', 'Color')}</label>
-                <input
-                  type="color"
-                  className="w-full h-8 rounded border border-theme-border bg-theme-bg-primary"
-                  value={activeFont.color || '#000000'}
-                  onChange={(e) => handleFontUpdate({ color: e.target.value })}
-                />
-              </div>
+              {/* Note: Color property isn't explicitly in TableNode cell, maybe `fill`? unified node uses fill for text color usually. But for table cell text? `v` is value. 
+                  Schema says `v: string`. It doesn't strictly specify text color. 
+                  If we look at `TextNode`, it uses `fill`. 
+                  Let's assume we can add `fill` to cell or it's not supported in schema yet.
+                  Wait, `TableNode` schema in `canvas.ts` -> `cells` props.
+                  Actually `UnifiedNode` > `TableNode`. `TableData` > `CellData`.
+                  `CellData` has `fontSize?: number`, `font?: string`, `align?: 'l'|'c'|'r'`, `bg?: string`. 
+                  It DOES NOT have text color. 
+                  I might need to add it to schema or ignore it.
+                  I'll use `vColor` or just ignore for now if schema is strict.
+                  Checking `canvas.ts`... `CellData` is `any` in some places? No, defined.
+                  Let's assume we can extend it or use `fill` if `CellData` allows.
+                  For now I won't implement text color if it's not in schema to avoid type errors.
+               */}
             </div>
 
-            <div className="flex gap-1 mb-2">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleFontUpdate({ weight: activeFont.weight === 700 ? 400 : 700 })
-                      }
-                      className={`p-1 rounded border ${activeFont.weight === 700
-                        ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
-                        : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
-                        }`}
-                    >
-                      <Bold size={14} />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{resolveText('properties_font_style_bold', 'Bold')}</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      onClick={() => handleFontUpdate({ italic: !activeFont.italic })}
-                      className={`p-1 rounded border ${activeFont.italic
-                        ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
-                        : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
-                        }`}
-                    >
-                      <Italic size={14} />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{resolveText('properties_font_style_italic', 'Italic')}</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      onClick={() => handleFontUpdate({ underline: !activeFont.underline })}
-                      className={`p-1 rounded border ${activeFont.underline
-                        ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
-                        : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
-                        }`}
-                    >
-                      <Underline size={14} />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{resolveText('properties_font_style_underline', 'Underline')}</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      onClick={() => handleFontUpdate({ strikethrough: !activeFont.strikethrough })}
-                      className={`p-1 rounded border ${activeFont.strikethrough
-                        ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
-                        : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
-                        }`}
-                    >
-                      <Strikethrough size={14} />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{resolveText('properties_font_style_strikethrough', 'Strikethrough')}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
+            {/* Style Buttons (Bold/Italic etc - Not in schema for CellData explicitly? 
+                 Schema: `fontSize`, `font`, `align`, `bg`.
+                 If schema is strict, we can't do bold/italic in table cells yet.
+                 Refactoring plan said "minimal fields".
+                 I will skip bold/italic controls for table cells for now or use `font` string (e.g. "Bold 12px Arial").
+                 Ill keep alignment and bg.
+             */}
           </div>
 
           {/* Alignment */}
@@ -291,100 +155,44 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
             </label>
             <div className="flex bg-theme-bg-primary rounded border border-theme-border p-0.5 mb-2">
               <TooltipProvider>
+                {/* Left */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
                       type="button"
-                      onClick={() => handleUpdate({ align: 'left' })}
-                      className={`flex-1 flex items-center justify-center py-1 rounded ${activeData.styles?.align === 'left' ? 'bg-theme-bg-tertiary text-theme-accent' : 'text-theme-text-secondary hover:bg-theme-bg-secondary'}`}
+                      onClick={() => updateCells({ align: 'l' })}
+                      className={`flex-1 flex items-center justify-center py-1 rounded ${activeData.align === 'l' ? 'bg-theme-bg-tertiary text-theme-accent' : 'text-theme-text-secondary hover:bg-theme-bg-secondary'}`}
                     >
                       <AlignLeft size={14} />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{resolveText('side_left', 'Left')}</p>
-                  </TooltipContent>
+                  <TooltipContent><p>{resolveText('side_left', 'Left')}</p></TooltipContent>
                 </Tooltip>
+                {/* Center */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
                       type="button"
-                      onClick={() => handleUpdate({ align: 'center' })}
-                      className={`flex-1 flex items-center justify-center py-1 rounded ${activeData.styles?.align === 'center' ? 'bg-theme-bg-tertiary text-theme-accent' : 'text-theme-text-secondary hover:bg-theme-bg-secondary'}`}
+                      onClick={() => updateCells({ align: 'c' })}
+                      className={`flex-1 flex items-center justify-center py-1 rounded ${activeData.align === 'c' ? 'bg-theme-bg-tertiary text-theme-accent' : 'text-theme-text-secondary hover:bg-theme-bg-secondary'}`}
                     >
                       <AlignCenter size={14} />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{resolveText('center', 'Center')}</p>
-                  </TooltipContent>
+                  <TooltipContent><p>{resolveText('center', 'Center')}</p></TooltipContent>
                 </Tooltip>
+                {/* Right */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
                       type="button"
-                      onClick={() => handleUpdate({ align: 'right' })}
-                      className={`flex-1 flex items-center justify-center py-1 rounded ${activeData.styles?.align === 'right' ? 'bg-theme-bg-tertiary text-theme-accent' : 'text-theme-text-secondary hover:bg-theme-bg-secondary'}`}
+                      onClick={() => updateCells({ align: 'r' })}
+                      className={`flex-1 flex items-center justify-center py-1 rounded ${activeData.align === 'r' ? 'bg-theme-bg-tertiary text-theme-accent' : 'text-theme-text-secondary hover:bg-theme-bg-secondary'}`}
                     >
                       <AlignRight size={14} />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{resolveText('side_right', 'Right')}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-          </div>
-
-          {/* Vertical Align */}
-          <div>
-            <label className={`${labelClass} font-medium`}>
-              {resolveText('properties_vertical_align', 'Vertical Align')}
-            </label>
-            <div className="flex bg-theme-bg-primary rounded border border-theme-border p-0.5 mb-2">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      onClick={() => handleUpdate({ verticalAlign: 'top' })}
-                      className={`flex-1 flex items-center justify-center py-1 rounded ${activeData.styles?.verticalAlign === 'top' ? 'bg-theme-bg-tertiary text-theme-accent' : 'text-theme-text-secondary hover:bg-theme-bg-secondary'}`}
-                    >
-                      <AlignVerticalJustifyStart size={14} />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{resolveText('side_top', 'Top')}</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      onClick={() => handleUpdate({ verticalAlign: 'middle' })}
-                      className={`flex-1 flex items-center justify-center py-1 rounded ${activeData.styles?.verticalAlign === 'middle' ? 'bg-theme-bg-tertiary text-theme-accent' : 'text-theme-text-secondary hover:bg-theme-bg-secondary'}`}
-                    >
-                      <AlignVerticalJustifyCenter size={14} />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{resolveText('center', 'Center')}</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      onClick={() => handleUpdate({ verticalAlign: 'bottom' })}
-                      className={`flex-1 flex items-center justify-center py-1 rounded ${activeData.styles?.verticalAlign === 'bottom' ? 'bg-theme-bg-tertiary text-theme-accent' : 'text-theme-text-secondary hover:bg-theme-bg-secondary'}`}
-                    >
-                      <AlignVerticalJustifyEnd size={14} />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{resolveText('side_bottom', 'Bottom')}</p>
-                  </TooltipContent>
+                  <TooltipContent><p>{resolveText('side_right', 'Right')}</p></TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
@@ -399,36 +207,26 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
               <input
                 type="color"
                 className="w-full h-8 rounded border border-theme-border bg-theme-bg-primary"
-                value={activeData.styles?.backgroundColor || '#ffffff'}
-                onChange={(e) => handleUpdate({ backgroundColor: e.target.value })}
+                value={activeData.bg || '#ffffff'}
+                onChange={(e) => updateCells({ bg: e.target.value })}
               />
             </div>
           </div>
 
-          {/* Border Width */}
+          {/* Border (Boolean only in schema?) `border?: boolean`.
+              I'll add a checkbox or simple toggle.
+          */}
           <div>
-            <label className={labelClass}>{resolveText('properties_border_width', 'Border Width')}</label>
-            <input
-              type="number"
-              min={0}
-              className={inputClass}
-              value={activeData.styles?.borderWidth ?? 1}
-              onChange={(e) => handleUpdate({ borderWidth: Number(e.target.value) })}
-            />
-          </div>
-
-          {/* Border Color */}
-          <div>
-            <label className={labelClass}>{resolveText('properties_border_color', 'Border Color')}</label>
-            <div className="flex items-center gap-2">
+            <label className="flex items-center gap-2 text-xs">
               <input
-                type="color"
-                className="w-full h-8 rounded border border-theme-border bg-theme-bg-primary"
-                value={activeData.styles?.borderColor || '#000000'}
-                onChange={(e) => handleUpdate({ borderColor: e.target.value })}
+                type="checkbox"
+                checked={!!activeData.border}
+                onChange={e => updateCells({ border: e.target.checked ? '#000000' : undefined })}
               />
-            </div>
+              {resolveText('properties_border', 'Border')}
+            </label>
           </div>
+
         </div>
       </div>
     </div>

@@ -1,4 +1,6 @@
-import type { IBedElement } from '../konva-editor/types'
+// import type { IBedElement } from '../konva-editor/types'
+
+export type BedStatusValue = 'free' | 'occupied' | 'cleaning' | 'maintenance'
 
 export interface BedStatusData {
   bedId: string
@@ -6,7 +8,7 @@ export interface BedStatusData {
   patientId?: string
   sessionId?: string
   isOccupied: boolean
-  status: IBedElement['status']
+  status: BedStatusValue
   alerts: string[]
   vitals?: {
     bp?: {

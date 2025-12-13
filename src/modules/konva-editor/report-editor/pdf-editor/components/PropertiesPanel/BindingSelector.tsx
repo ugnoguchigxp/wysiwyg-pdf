@@ -2,11 +2,18 @@ import { Database } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../../../../../../components/ui/Button'
-import type { IBinding } from '../../../../../../types/canvas'
+
+export interface BindingInfo {
+  field?: string
+  // Legacy support or extended info
+  sourceId?: string
+  fieldId?: string
+  path?: string
+}
 
 interface BindingSelectorProps {
-  binding?: IBinding
-  onUpdate: (binding: IBinding | undefined) => void
+  binding?: BindingInfo
+  onUpdate: (binding: BindingInfo | undefined) => void
   label?: string
   onOpenModal?: () => void
   i18nOverrides?: Record<string, string>
@@ -44,6 +51,9 @@ export const BindingSelector: React.FC<BindingSelectorProps> = ({
     )
   }
 
+  // Display logic
+  const displayText = binding.field || binding.fieldId || binding.path || ''
+
   return (
     <div className="mb-4 p-2.5 bg-blue-50/50 border border-blue-100 rounded">
       <div className="flex items-center justify-between mb-2">
@@ -55,7 +65,7 @@ export const BindingSelector: React.FC<BindingSelectorProps> = ({
 
       <div className="bg-white border border-blue-100 rounded px-2 py-1.5 mb-2">
         <div className="text-sm font-medium text-gray-900 break-all leading-tight">
-          {binding.fieldId || binding.path}
+          {displayText}
         </div>
         {binding.sourceId && (
           <div className="text-[10px] text-gray-500 mt-0.5">

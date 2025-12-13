@@ -1,49 +1,14 @@
 /**
- * WYSIWYG Types (copied from /wysiwyg-pdf/types/wysiwyg.ts)
- * バックエンド型定義と統一
+ * WYSIWYG Types (Refactored for Unified JSON Schema v2)
  */
 
 import type {
-  ArrowType,
-  BindingType,
-  ConnectionPoint,
-  CanvasElement as Element,
-  ElementType,
-  IBinding,
-  IBox,
-  IConnection,
-  IElementBase,
-  IImageElement,
-  ILineElement,
-  IPosition,
-  IShapeElement,
-  ISize,
-  ITableElement,
-  ITextElement,
-  Unit,
-  ISignatureElement,
+  Doc,
+  UnifiedNode,
+  Unit
 } from '../../../../../types/canvas'
 
-export type {
-  Unit,
-  ElementType,
-  BindingType,
-  ArrowType,
-  ConnectionPoint,
-  IConnection,
-  IBinding,
-  IPosition,
-  ISize,
-  IBox,
-  IElementBase,
-  ITextElement,
-  IShapeElement,
-  ILineElement,
-  IImageElement,
-  ITableElement,
-  ISignatureElement,
-  Element,
-}
+export * from '../../../../../types/canvas'
 
 export type PageSize =
   | 'A4'
@@ -56,48 +21,15 @@ export type PageSize =
     unit: Unit
   }
 
-export interface ITemplateMeta {
-  id?: string
-  name: string
-  title?: string
-  version: number
-  description?: string
-  createdAt?: string
-  updatedAt?: string
-  ownerId?: string
-}
-
-export interface IPage {
-  id: string
-  size: PageSize
-  margin: {
-    top: number
-    right: number
-    bottom: number
-    left: number
-    unit: Unit
-  }
-  background?: {
-    color?: string
-    imageId?: string
-  }
-}
-
-export interface ITemplateDoc {
-  meta: ITemplateMeta
-  pages: IPage[]
-  elements: Element[]
-}
-
-// Component Props interfaces (必要になったものだけ後で個別に import して使用)
+// Component Props interfaces
 export interface ICanvasEditorProps {
-  templateDoc: ITemplateDoc
-  selectedElement?: Element
+  templateDoc: Doc
+  selectedElement?: UnifiedNode
   selectedElementId?: string
-  onElementSelect: (element: Element | null) => void
-  onElementUpdate: (element: Element) => void
-  onTemplateUpdate: (template: ITemplateDoc) => void
-  onTemplateChange: (template: ITemplateDoc) => void
+  onElementSelect: (element: UnifiedNode | null) => void
+  onElementUpdate: (element: UnifiedNode) => void
+  onTemplateUpdate: (template: Doc) => void
+  onTemplateChange: (template: Doc) => void
   zoom: number
 
   isPresentationMode?: boolean

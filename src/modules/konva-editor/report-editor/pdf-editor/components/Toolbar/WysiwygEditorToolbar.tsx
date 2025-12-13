@@ -11,7 +11,7 @@ import {
   Home,
   Image as ImageIcon,
   Minus,
-  PenTool, // Import PenTool
+  PenTool,
   Pentagon,
   Shapes,
   Square,
@@ -22,7 +22,7 @@ import {
   Type,
   ZoomIn,
   ZoomOut,
-  MousePointer2, // Import MousePointer2 for Select
+  MousePointer2,
 } from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
@@ -40,12 +40,13 @@ import {
 } from '../../../../../../components/ui/DropdownMenu'
 import { createContextLogger } from '../../../../../../utils/logger'
 import type {
-  IImageElement,
-  ILineElement,
-  IShapeElement,
-  ITableElement,
-  ITemplateDoc,
-  ITextElement,
+  Doc,
+  UnifiedNode,
+  TextNode,
+  ShapeNode,
+  LineNode,
+  ImageNode,
+  TableNode,
 } from '../../types/wysiwyg'
 import { measureText } from '../../utils/textUtils'
 
@@ -77,8 +78,8 @@ const TrapezoidIcon = ({ size = 20, className = '', title = 'Trapezoid' }) => (
 interface IWysiwygEditorToolbarProps {
   zoom: number
   onZoomChange: (value: number) => void
-  templateDoc: ITemplateDoc
-  onTemplateChange: (doc: ITemplateDoc) => void
+  templateDoc: Doc
+  onTemplateChange: (doc: Doc) => void
   onSelectElement: (elementId: string) => void
   currentPageId?: string
   i18nOverrides?: Record<string, string>
@@ -99,8 +100,6 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
 }) => {
   const { t } = useTranslation()
 
-
-  // Helper to resolve translation: Override -> i18next -> Default
   const resolveText = (key: string, defaultValue?: string) => {
     if (i18nOverrides && i18nOverrides[key]) return i18nOverrides[key]
     return t(key, defaultValue ?? key)
@@ -118,32 +117,24 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
     onZoomChange(100)
   }
 
-  const getTargetPageId = () => {
+  const getTargetSurfaceId = () => {
     if (currentPageId) return currentPageId
-    return templateDoc.pages[0]?.id ?? 'page-1'
+    return templateDoc.surfaces[0]?.id ?? 'page-1'
   }
 
-  const getNextZIndex = () => {
-    if (!templateDoc.elements.length) return 1
-    return Math.max(...templateDoc.elements.map((el) => el.z)) + 1
-  }
-
-  const withNewElement = (
-    element: ITextElement | IShapeElement | ILineElement | IImageElement | ITableElement
-  ) => {
-    const nextDoc: ITemplateDoc = {
+  const withNewElement = (element: UnifiedNode) => {
+    const nextDoc: Doc = {
       ...templateDoc,
-      elements: [...templateDoc.elements, element],
+      nodes: [...templateDoc.nodes, element],
     }
     onTemplateChange(nextDoc)
-    // Selection is handled by parent's pending logic via Effect
     onSelectElement(element.id)
-    onToolSelect?.('select') // Force select tool after adding
-    log.debug('Element added from toolbar', { id: element.id, type: element.type })
+    onToolSelect?.('select')
+    log.debug('Element added from toolbar', { id: element.id, type: element.t })
   }
 
   const addText = () => {
-    const pageId = getTargetPageId()
+    const s = getTargetSurfaceId()
     const id = `text-${crypto.randomUUID()}`
     const textContent = resolveText('toolbar_default_text', 'Text')
     const font = {
@@ -153,255 +144,164 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
     }
     const { width, height } = measureText(textContent, font)
 
-    const text: ITextElement = {
+    const text: TextNode = {
       id,
-      type: 'Text',
-      pageId,
-      z: getNextZIndex(),
-      visible: true,
+      t: 'text',
+      s,
       locked: false,
-      rotation: 0,
+      r: 0,
       name: 'Text',
       text: textContent,
-      font,
-      color: '#000000',
-      align: 'left',
-      box: {
-        x: 50,
-        y: 50,
-        width: width + 10,
-        height: height + 4,
-      },
-      listType: 'none',
+      font: font.family,
+      fontSize: font.size,
+      fontWeight: font.weight,
+      fill: '#000000',
+      align: 'l',
+      x: 50,
+      y: 50,
+      w: width + 10,
+      h: height + 4,
     }
     withNewElement(text)
   }
 
-  const addShape = (type: IShapeElement['type']) => {
-    const pageId = getTargetPageId()
-    const id = `${type.toLowerCase()}-${crypto.randomUUID()}`
+  const addShape = (shapeType: string) => {
+    const s = getTargetSurfaceId()
+    const id = `${shapeType.toLowerCase()}-${crypto.randomUUID()}`
 
     let width = 80
     let height = 80
 
-    if (type === 'Trapezoid') {
+    if (shapeType === 'trapezoid') {
       width = 100
       height = 60
-    } else if (type === 'Cylinder') {
+    } else if (shapeType === 'cylinder') {
       width = 60
       height = 100
-    } else if (['ArrowUp', 'ArrowDown'].includes(type)) {
+    } else if (['arrow-u', 'arrow-d'].includes(shapeType)) {
       width = 40
       height = 80
-    } else if (['ArrowLeft', 'ArrowRight'].includes(type)) {
+    } else if (['arrow-l', 'arrow-r'].includes(shapeType)) {
       width = 80
       height = 40
     }
 
-    const shape: IShapeElement = {
+    const shape: ShapeNode = {
       id,
-      type,
-      pageId,
-      z: getNextZIndex(),
-      visible: true,
+      t: 'shape',
+      shape: shapeType.toLowerCase() as any, // Cast to any or ShapeType if locally imported
+      s,
       locked: false,
-      rotation: 0,
-      name: type,
-      box: {
-        x: 100,
-        y: 100,
-        width,
-        height,
-      },
-      stroke: {
-        color: '#000000',
-        width: 1,
-      },
-      fill: {
-        color: '#ffffff',
-      },
+      r: 0,
+      name: shapeType,
+      x: 100,
+      y: 100,
+      w: width,
+      h: height,
+      stroke: '#000000',
+      strokeW: 1,
+      fill: '#ffffff',
     }
+    // Rename shapes that have specific handling or lowercase conventions
+    // Already lowercase from input
+
+
     withNewElement(shape)
   }
 
   const addLine = () => {
-    const pageId = getTargetPageId()
+    const s = getTargetSurfaceId()
     const id = `line-${crypto.randomUUID()}`
-    const line: ILineElement = {
+    const line: LineNode = {
       id,
-      type: 'Line',
-      pageId,
-      z: getNextZIndex(),
-      visible: true,
+      t: 'line',
+      s,
       locked: false,
-      rotation: 0,
       name: 'Line',
-      startPoint: { x: 60, y: 340 },
-      endPoint: { x: 220, y: 340 },
-      stroke: {
-        color: '#000000',
-        width: 1,
-      },
-      startArrow: 'none',
-      endArrow: 'none',
+      pts: [60, 340, 220, 340],
+      stroke: '#000000',
+      strokeW: 1,
     }
     withNewElement(line)
   }
 
   const addImage = () => {
-    const pageId = getTargetPageId()
+    const s = getTargetSurfaceId()
     const id = `image-${crypto.randomUUID()}`
-    const image: IImageElement = {
+    const image: ImageNode = {
       id,
-      type: 'Image',
-      pageId,
-      z: getNextZIndex(),
-      visible: true,
+      t: 'image',
+      s,
       locked: false,
-      rotation: 0,
+      r: 0,
       name: 'Image',
-      box: {
-        x: 150,
-        y: 420,
-        width: 120,
-        height: 80,
-      },
-      assetId: '',
+      x: 150,
+      y: 420,
+      w: 120,
+      h: 80,
+      src: '', // Empty
     }
     withNewElement(image)
   }
 
   const addTable = () => {
-    const pageId = getTargetPageId()
+    const s = getTargetSurfaceId()
     const id = `table-${crypto.randomUUID()}`
-    const table: ITableElement = {
+    const table: TableNode = {
       id,
-      type: 'Table',
-      pageId,
-      z: getNextZIndex(),
-      visible: true,
+      t: 'table',
+      s,
       locked: false,
-      rotation: 0,
+      r: 0,
       name: 'Table',
-      box: {
-        x: 50, // Default position
-        y: 50,
-        width: 300, // 3 cols * 100
-        height: 150, // 3 rows * 50
-      },
-      rowCount: 3,
-      colCount: 3,
-      rows: [
-        { id: 'r1', height: 50 },
-        { id: 'r2', height: 50 },
-        { id: 'r3', height: 50 },
-      ],
-      cols: [
-        { id: 'c1', width: 100 },
-        { id: 'c2', width: 100 },
-        { id: 'c3', width: 100 },
-      ],
-      cells: [
-        // Row 0
-        {
-          row: 0,
-          col: 0,
-          content: '',
-          styles: {
-            align: 'left',
-            verticalAlign: 'top',
-            backgroundColor: '#f0f0f0',
-            borderWidth: 1,
-            borderColor: '#000000',
-          },
-        },
-        {
-          row: 0,
-          col: 1,
-          content: '',
-          styles: {
-            align: 'left',
-            verticalAlign: 'top',
-            backgroundColor: '#f0f0f0',
-            borderWidth: 1,
-            borderColor: '#000000',
-          },
-        },
-        {
-          row: 0,
-          col: 2,
-          content: '',
-          styles: {
-            align: 'left',
-            verticalAlign: 'top',
-            backgroundColor: '#f0f0f0',
-            borderWidth: 1,
-            borderColor: '#000000',
-          },
-        },
-        // Row 1
-        {
-          row: 1,
-          col: 0,
-          content: '',
-          styles: { align: 'left', verticalAlign: 'top', borderWidth: 1, borderColor: '#000000' },
-        },
-        {
-          row: 1,
-          col: 1,
-          content: '',
-          styles: { align: 'left', verticalAlign: 'top', borderWidth: 1, borderColor: '#000000' },
-        },
-        {
-          row: 1,
-          col: 2,
-          content: '',
-          styles: { align: 'left', verticalAlign: 'top', borderWidth: 1, borderColor: '#000000' },
-        },
-        // Row 2
-        {
-          row: 2,
-          col: 0,
-          content: '',
-          styles: { align: 'left', verticalAlign: 'top', borderWidth: 1, borderColor: '#000000' },
-        },
-        {
-          row: 2,
-          col: 1,
-          content: '',
-          styles: { align: 'left', verticalAlign: 'top', borderWidth: 1, borderColor: '#000000' },
-        },
-        {
-          row: 2,
-          col: 2,
-          content: '',
-          styles: { align: 'left', verticalAlign: 'top', borderWidth: 1, borderColor: '#000000' },
-        },
-      ],
+      x: 50,
+      y: 50,
+      w: 300,
+      h: 150,
+      table: {
+        rows: [50, 50, 50],
+        cols: [100, 100, 100],
+        cells: [
+          // Minimal cells
+          { r: 0, c: 0, v: '' },
+          { r: 0, c: 1, v: '' },
+          { r: 0, c: 2, v: '' }
+          // ... populate lazily in renderer if needed or fill all here
+        ]
+      }
     }
+    // Fill all cells for completeness
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        if (!table.table.cells.find(cell => cell.r === r && cell.c === c)) {
+          table.table.cells.push({ r, c, v: '' })
+        }
+      }
+    }
+
     withNewElement(table)
   }
 
   const shapes = [
-    { type: 'Rect', icon: <Square size={20} /> },
-    { type: 'Circle', icon: <Circle size={20} /> },
-    { type: 'Triangle', icon: <Triangle size={20} /> },
+    { type: 'rect', icon: <Square size={20} /> },
+    { type: 'circle', icon: <Circle size={20} /> },
+    { type: 'triangle', icon: <Triangle size={20} /> },
     {
-      type: 'Trapezoid',
+      type: 'trapezoid',
       icon: <TrapezoidIcon size={20} title={resolveText('shape_trapezoid', 'Trapezoid')} />,
     },
-    { type: 'Diamond', icon: <Diamond size={20} /> },
-    { type: 'Cylinder', icon: <Database size={20} /> },
-    { type: 'Heart', icon: <Heart size={20} /> },
-    { type: 'Star', icon: <Star size={20} /> },
-    { type: 'Pentagon', icon: <Pentagon size={20} /> },
-    { type: 'Hexagon', icon: <Hexagon size={20} /> },
-    { type: 'ArrowUp', icon: <ArrowUp size={20} /> },
-    { type: 'ArrowDown', icon: <ArrowDown size={20} /> },
-    { type: 'ArrowLeft', icon: <ArrowLeft size={20} /> },
-    { type: 'ArrowRight', icon: <ArrowRight size={20} /> },
-    { type: 'Tree', icon: <Trees size={20} /> },
-    { type: 'House', icon: <Home size={20} /> },
+    { type: 'diamond', icon: <Diamond size={20} /> },
+    { type: 'cylinder', icon: <Database size={20} /> },
+    { type: 'heart', icon: <Heart size={20} /> },
+    { type: 'star', icon: <Star size={20} /> },
+    { type: 'pentagon', icon: <Pentagon size={20} /> },
+    { type: 'hexagon', icon: <Hexagon size={20} /> },
+    { type: 'arrow-u', icon: <ArrowUp size={20} /> },
+    { type: 'arrow-d', icon: <ArrowDown size={20} /> },
+    { type: 'arrow-l', icon: <ArrowLeft size={20} /> },
+    { type: 'arrow-r', icon: <ArrowRight size={20} /> },
+    { type: 'tree', icon: <Trees size={20} /> },
+    { type: 'house', icon: <Home size={20} /> },
   ] as const
 
   return (
@@ -413,11 +313,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
             <span>
               <button
                 type="button"
-                onClick={() => {
-                  log.debug('Select Tool Clicked')
-                  console.log('Calling onToolSelect', !!onToolSelect)
-                  onToolSelect?.('select')
-                }}
+                onClick={() => onToolSelect?.('select')}
                 className={activeTool === 'select' ? TOOLBAR_BUTTON_ACTIVE_CLASS : TOOLBAR_BUTTON_CLASS}
                 aria-label={resolveText('toolbar_select', 'Select')}
               >
@@ -434,11 +330,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
             <span>
               <button
                 type="button"
-                onClick={() => {
-                  log.debug('Signature Tool Clicked')
-                  console.log('Calling onToolSelect', !!onToolSelect)
-                  onToolSelect?.('signature')
-                }}
+                onClick={() => onToolSelect?.('signature')}
                 className={activeTool === 'signature' ? TOOLBAR_BUTTON_ACTIVE_CLASS : TOOLBAR_BUTTON_CLASS}
                 aria-label={resolveText('toolbar_signature', 'Signature')}
               >

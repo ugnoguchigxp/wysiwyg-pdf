@@ -1,13 +1,13 @@
 import type Konva from 'konva'
 import type React from 'react'
 import { Circle, Group, Line } from 'react-konva'
-import type { ILineElement } from '../../types'
+import type { LineNode } from '../../types'
 
 interface LineElementProps {
-  element: ILineElement
+  element: LineNode
   isSelected: boolean
   onSelect: (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void
-  onChange: (newAttrs: Partial<ILineElement>) => void
+  onChange: (newAttrs: Partial<LineNode>) => void
   shapeRef?: React.Ref<Konva.Group>
 }
 
@@ -23,15 +23,22 @@ export const LineElement: React.FC<LineElementProps> = ({
     if (!group) return
 
     // Get position relative to the group
-    const pos = group.getRelativePointerPosition()
+    // For LineElement, group is at (0,0) so relative is absolute if we assume that.
+    // Use stage pointer for accurate positioning?
+    // e.target.x()/y() are relative to parent (group).
 
-    if (!pos) return
-
-    let newPos = { x: pos.x, y: pos.y }
+    const newX = e.target.x()
+    const newY = e.target.y()
+    let newPos = { x: newX, y: newY }
 
     // Snap to 45 degrees if Shift is pressed
     if (e.evt.shiftKey) {
-      const otherPoint = point === 'start' ? element.endPoint : element.startPoint
+      const startX = element.pts[0]
+      const startY = element.pts[1]
+      const endX = element.pts[2]
+      const endY = element.pts[3]
+
+      const otherPoint = point === 'start' ? { x: endX, y: endY } : { x: startX, y: startY }
       const dx = newPos.x - otherPoint.x
       const dy = newPos.y - otherPoint.y
       const angle = Math.atan2(dy, dx)
@@ -49,15 +56,16 @@ export const LineElement: React.FC<LineElementProps> = ({
       e.target.position(newPos)
     }
 
+    const currentPts = [...element.pts]
     if (point === 'start') {
-      onChange({
-        startPoint: newPos,
-      })
+      currentPts[0] = newPos.x
+      currentPts[1] = newPos.y
     } else {
-      onChange({
-        endPoint: newPos,
-      })
+      currentPts[2] = newPos.x
+      currentPts[3] = newPos.y
     }
+
+    onChange({ pts: currentPts })
 
     // Prevent event bubbling to avoid dragging the group
     e.cancelBubble = true
@@ -67,39 +75,16 @@ export const LineElement: React.FC<LineElementProps> = ({
     <Group
       ref={shapeRef}
       id={element.id}
-      // LineElement in Report Template usually has x/y as 0 or position of group?
-      // Assuming ILineElement uses startPoint/endPoint relative to (0,0) or group position.
-      // But IElementBase has x/y (z, visible etc).
-      // Let's assume the Group is at (0,0) of the page for now, or we treat startPoint/endPoint as absolute coordinates on canvas if x/y are not used for position offset.
-      // However, typical Konva usage puts group at x/y.
-      // If we follow Report Template, let's check if it uses x/y for group position.
-      // IElementBase has x/y (implied by extending it? No, IElementBase in shared types has z, visible... wait.
-      // IElementBase in shared types does NOT have x/y directly. IBox has x/y.
-      // But ILineElement extends IElementBase. It does NOT have IBox.
-      // So LineElement relies on startPoint/endPoint.
-      // We should render the Group at (0,0) or handle it differently.
-      // For now, let's assume absolute coordinates for points and Group at (0,0).
       x={0}
       y={0}
-      draggable={false} // Lines might be draggable by points or whole body?
-      // If we want to drag the whole line, we need to update both points.
-      // Let's keep it simple: Group is static (0,0), we drag points.
-      // OR we can make Group draggable and update points on drag end?
-      // Report Template usually handles this by updating x/y of the group and keeping points relative?
-      // But ILineElement has startPoint/endPoint.
-      // Let's assume points are absolute for now as per previous WallElement logic (which used points array).
+      draggable={false}
       onMouseDown={onSelect}
       onTap={onSelect}
     >
       <Line
-        points={[
-          element.startPoint.x,
-          element.startPoint.y,
-          element.endPoint.x,
-          element.endPoint.y,
-        ]}
-        stroke={element.stroke.color || '#000'}
-        strokeWidth={element.stroke.width || 2}
+        points={element.pts}
+        stroke={element.stroke || '#000'}
+        strokeWidth={element.strokeW || 2}
         hitStrokeWidth={20} // Make it easier to select
         shadowColor={isSelected ? '#3b82f6' : undefined}
         shadowBlur={isSelected ? 10 : 0}
@@ -111,10 +96,13 @@ export const LineElement: React.FC<LineElementProps> = ({
           // Reset line position and update points
           e.target.x(0)
           e.target.y(0)
-          onChange({
-            startPoint: { x: element.startPoint.x + dx, y: element.startPoint.y + dy },
-            endPoint: { x: element.endPoint.x + dx, y: element.endPoint.y + dy },
-          })
+
+          const newPts = []
+          for (let i = 0; i < element.pts.length; i += 2) {
+            newPts.push(element.pts[i] + dx)
+            newPts.push(element.pts[i + 1] + dy)
+          }
+          onChange({ pts: newPts })
         }}
       />
 
@@ -122,8 +110,8 @@ export const LineElement: React.FC<LineElementProps> = ({
         <>
           {/* Start Point Handle */}
           <Circle
-            x={element.startPoint.x}
-            y={element.startPoint.y}
+            x={element.pts[0]}
+            y={element.pts[1]}
             radius={6}
             fill="#fff"
             stroke="#3b82f6"
@@ -134,8 +122,8 @@ export const LineElement: React.FC<LineElementProps> = ({
           />
           {/* End Point Handle */}
           <Circle
-            x={element.endPoint.x}
-            y={element.endPoint.y}
+            x={element.pts[2]}
+            y={element.pts[3]}
             radius={6}
             fill="#fff"
             stroke="#3b82f6"

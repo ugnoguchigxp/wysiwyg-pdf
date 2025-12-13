@@ -2,6 +2,7 @@ import {
   AlignCenter,
   AlignLeft,
   AlignRight,
+  AlignJustify,
   Bold,
   Italic,
   Strikethrough,
@@ -26,30 +27,28 @@ import type { IDataSchema } from '../../../../../../types/schema'
 import { cn } from '../../../../../../utils/utils'
 import { createContextLogger } from '../../../../../../utils/logger'
 import type {
-  Element,
-  IBinding,
-  IImageElement,
-  ILineElement,
-  IShapeElement,
-  ISignatureElement,
-  ITableElement,
-  ITemplateDoc,
-  ITextElement,
+  Doc,
+  UnifiedNode,
+  TextNode,
+  ShapeNode,
+
+  ImageNode,
+  SignatureNode,
+  TableNode,
 } from '../../types/wysiwyg'
 import { measureText } from '../../utils/textUtils'
 import { findImageWithExtension } from '../WysiwygCanvas/canvasImageUtils'
 import { BindingSelector } from './BindingSelector'
-import { DataBindingModal } from './DataBindingModal'
-import { type ShapeOption, ShapeSelector } from './ShapeSelector'
 import { TableProperties } from './TableProperties'
+import { DataBindingModal } from './DataBindingModal'
 
 const log = createContextLogger('WysiwygPropertiesPanel')
 
 export interface WysiwygPropertiesPanelProps {
-  templateDoc: ITemplateDoc
+  templateDoc: Doc
   selectedElementId: string | null
   selectedCell?: { elementId: string; row: number; col: number } | null
-  onTemplateChange: (newDoc: ITemplateDoc) => void
+  onTemplateChange: (newDoc: Doc) => void
   currentPageId: string
   schema?: IDataSchema
   i18nOverrides?: Record<string, string>
@@ -58,8 +57,6 @@ export interface WysiwygPropertiesPanelProps {
   drawingSettings?: { stroke: string; strokeWidth: number; useOffset?: boolean }
   onDrawingSettingsChange?: (settings: { stroke: string; strokeWidth: number; useOffset?: boolean }) => void
 }
-
-// ... (Local UI Components match Root Design System)
 
 const PropertiesLabel: React.FC<React.LabelHTMLAttributes<HTMLLabelElement>> = ({
   className,
@@ -91,10 +88,6 @@ const PropertiesInput = React.forwardRef<
 ))
 PropertiesInput.displayName = 'PropertiesInput'
 
-// ...
-
-
-
 const PropertiesSectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <h4 className="text-sm font-semibold text-theme-text-primary mb-3 border-b border-theme-border pb-2">
     {children}
@@ -110,34 +103,37 @@ const PropertiesSubsectionTitle: React.FC<{ children: React.ReactNode }> = ({ ch
 const sectionCardClass = 'mb-6'
 
 const ImagePreview: React.FC<{
-  assetId: string
+  src: string
   i18nOverrides?: Record<string, string>
-}> = ({ assetId, i18nOverrides }) => {
+}> = ({ src, i18nOverrides }) => {
   const { t } = useTranslation()
   const resolveText = (key: string, defaultValue?: string) => {
     if (i18nOverrides && i18nOverrides[key]) return i18nOverrides[key]
     return t(key, defaultValue ?? key)
   }
 
-  const [src, setSrc] = useState<string | null>(null)
+  const [imageSrc, setImageSrc] = useState<string | null>(null)
   const [status, setStatus] = useState<'loading' | 'loaded' | 'error'>('loading')
 
   useEffect(() => {
+    if (!src) {
+      setStatus('error')
+      return
+    }
     let active = true
     setStatus('loading')
 
-    // Check if it's a data URL
-    if (assetId.startsWith('data:')) {
-      setSrc(assetId)
+    if (src.startsWith('data:') || src.startsWith('http')) {
+      setImageSrc(src)
       setStatus('loaded')
       return
     }
 
-    findImageWithExtension(assetId)
+    findImageWithExtension(src)
       .then((res) => {
         if (active) {
           if (res) {
-            setSrc(res.url)
+            setImageSrc(res.url)
             setStatus('loaded')
           } else {
             setStatus('error')
@@ -151,7 +147,7 @@ const ImagePreview: React.FC<{
     return () => {
       active = false
     }
-  }, [assetId])
+  }, [src])
 
   if (status === 'loading') {
     return (
@@ -171,7 +167,7 @@ const ImagePreview: React.FC<{
 
   return (
     <img
-      src={src!}
+      src={imageSrc!}
       alt="Preview"
       className="max-w-full h-auto border border-theme-border rounded"
     />
@@ -200,13 +196,12 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
 
   const renderSignaturePanelContent = (
     data: { stroke: string; strokeWidth: number },
-    onUpdate: (updates: Partial<ISignatureElement>) => void,
+    onUpdate: (updates: Partial<SignatureNode>) => void,
     showFinishButton: boolean
   ) => (
     <div className="mb-4 space-y-3">
       <PropertiesSectionTitle>{resolveText('toolbar_signature', 'Signature')}</PropertiesSectionTitle>
 
-      {/* Stroke Color */}
       <div>
         <PropertiesLabel>
           {resolveText('properties_stroke_color', 'Stroke Color')}
@@ -219,7 +214,6 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
         />
       </div>
 
-      {/* Stroke Width */}
       <div>
         <PropertiesLabel>
           {resolveText('properties_stroke_width', 'Thickness')} (px)
@@ -230,7 +224,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
           value={data.strokeWidth}
           onChange={(e) => {
             const val = Number(e.target.value)
-            if (val > 0) onUpdate({ strokeWidth: val })
+            if (val > 0) onUpdate({ strokeW: val })
           }}
         />
       </div>
@@ -242,7 +236,11 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
           </p>
           <button
             type="button"
-            onClick={() => onToolSelect?.('select')}
+            onClick={() => {
+              console.log('Signature JSON:', JSON.stringify(templateDoc.nodes.find(n => n.t === 'signature'), null, 2))
+              console.log('Full Document JSON:', JSON.stringify(templateDoc, null, 2))
+              onToolSelect?.('select')
+            }}
             className="w-full flex items-center justify-center py-2 px-4 rounded bg-theme-object-primary text-white hover:bg-theme-object-primary/90 transition-colors"
           >
             {resolveText('properties_finish_drawing', 'Finish Drawing')}
@@ -257,103 +255,61 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
     null
   )
 
-  // Helper to open modal
   const openBindingModal = (mode: 'field' | 'repeater') => {
     setActiveBindingMode(mode)
   }
 
-  const handleBindingSelect = (newBinding: IBinding) => {
-    if (!selectedElement) return
-    updateElement({ binding: newBinding })
+  const handleBindingSelect = (binding: { field?: string }) => {
+    if (selectedElement) {
+      updateElement({ bind: binding.field })
+    }
     setActiveBindingMode(null)
   }
 
-  const selectedElement: Element | undefined = React.useMemo(() => {
-    return templateDoc.elements.find((el) => el.id === selectedElementId)
-  }, [templateDoc.elements, selectedElementId])
+  const selectedElement: UnifiedNode | undefined = React.useMemo(() => {
+    return templateDoc.nodes.find((el) => el.id === selectedElementId)
+  }, [templateDoc.nodes, selectedElementId])
 
-  const targetPageIndex = currentPageId
-    ? templateDoc.pages.findIndex((p) => p.id === currentPageId)
-    : 0
+  const currentSurface = templateDoc.surfaces.find(s => s.id === currentPageId) || templateDoc.surfaces[0]
 
-  const renderPageBackgroundSection = () => {
-    const page = templateDoc.pages[targetPageIndex] ?? templateDoc.pages[0]
-    if (!page) return null
-    const bg = page.background ?? {}
+  const updateElement = (updates: Partial<UnifiedNode>) => {
+    if (!selectedElement) return
+    log.debug('Updating element', { id: selectedElement.id, updates })
 
-    const updatePageBackground = (updates: Partial<NonNullable<typeof page.background>>) => {
-      const nextPages = templateDoc.pages.map((p, index) => {
-        if (index !== targetPageIndex) return p
-        return {
-          ...p,
-          background: {
-            ...(p.background ?? {}),
-            ...updates,
-          },
-        }
-      })
-
-      onTemplateChange({
-        ...templateDoc,
-        pages: nextPages,
-      })
+    let finalUpdates = updates
+    // Recalculate size if text content/font changes (simplified)
+    if (selectedElement.t === 'text' && ('fontSize' in updates || 'font' in updates || 'text' in updates)) {
+      const textEl = selectedElement as TextNode
+      const updatesText = updates as Partial<TextNode>
+      const newFont = {
+        family: updatesText.font ?? textEl.font ?? 'Helvetica',
+        size: updatesText.fontSize ?? textEl.fontSize ?? 12,
+        weight: updatesText.fontWeight ?? textEl.fontWeight ?? 400
+      }
+      const text = updatesText.text ?? textEl.text
+      const { width, height } = measureText(text, newFont)
+      finalUpdates = {
+        ...updates,
+        w: width + 10,
+        h: height + 4
+      }
     }
 
-    return (
-      <div className={sectionCardClass}>
-        <PropertiesSectionTitle>
-          {resolveText('properties_page_background', 'Page Background')}
-        </PropertiesSectionTitle>
-        <div className="mb-2">
-          <PropertiesLabel htmlFor="page-bg-color">
-            {resolveText('properties_background_color', 'Background Color')}
-          </PropertiesLabel>
-          <div className="flex items-center gap-2">
-            <PropertiesInput
-              id="page-bg-color"
-              type="color"
-              value={bg.color ?? '#ffffff'}
-              onChange={(e) => updatePageBackground({ color: e.target.value })}
-              className="h-9 w-full p-1 cursor-pointer"
-            />
-          </div>
-        </div>
-        <div>
-          <PropertiesLabel>
-            {resolveText('properties_background_image', 'Background Image')}
-          </PropertiesLabel>
-          <PropertiesInput
-            type="file"
-            accept="image/*"
-            onChange={(e) => {
-              const file = e.target.files?.[0]
-              if (!file) return
-              const reader = new FileReader()
-              reader.onload = (event) => {
-                const dataUrl = event.target?.result as string
-                if (dataUrl) {
-                  updatePageBackground({ imageId: dataUrl })
-                }
-              }
-              reader.readAsDataURL(file)
-            }}
-            className="text-theme-text-primary file:text-theme-object-primary file:bg-theme-object-primary/10 hover:file:bg-theme-object-primary/20"
-          />
-          {bg.imageId && (
-            <div className="mt-2">
-              <PropertiesLabel>{resolveText('properties_preview', 'Preview')}</PropertiesLabel>
-              <ImagePreview assetId={bg.imageId} i18nOverrides={i18nOverrides} />
-              <button
-                onClick={() => updatePageBackground({ imageId: undefined })}
-                className="mt-1 text-xs text-red-500 hover:underline"
-              >
-                {resolveText('delete', 'Delete')}
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    )
+    const nextDoc: Doc = {
+      ...templateDoc,
+      nodes: templateDoc.nodes.map((el) =>
+        el.id === selectedElement.id ? ({ ...el, ...finalUpdates } as UnifiedNode) : el
+      ),
+    }
+    onTemplateChange(nextDoc)
+  }
+
+  const updateSurface = (updates: Partial<typeof currentSurface>) => {
+    const nextDoc = {
+      ...templateDoc,
+      surfaces: templateDoc.surfaces.map(s => s.id === currentSurface.id ? { ...s, ...updates } : s)
+    }
+    onTemplateChange(nextDoc)
   }
 
   // --- Render Signature Panel (When Pen Tool is Active) ---
@@ -365,143 +321,87 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
             drawingSettings || { stroke: '#000000', strokeWidth: 2 },
             (updates) => {
               if (onDrawingSettingsChange && drawingSettings) {
-                // simplistic merge
                 const newSettings = { ...drawingSettings }
                 if (updates.stroke !== undefined) newSettings.stroke = updates.stroke
-                if (updates.strokeWidth !== undefined) newSettings.strokeWidth = updates.strokeWidth
+                if (updates.strokeW !== undefined) newSettings.strokeWidth = updates.strokeW
                 onDrawingSettingsChange(newSettings)
               }
             },
-            true // Show finish button
+            true
           )}
         </div>
       </div>
     )
   }
 
-  // 要素未選択時はページ背景プロパティのみ表示
   if (!selectedElement) {
+    // Page Background
+    const bg = currentSurface.bg || '#ffffff'
+    const isColor = bg.startsWith('#') || bg.startsWith('rgb')
+
     return (
       <div className="w-72 bg-theme-bg-secondary border-l border-theme-border p-5 overflow-y-auto text-theme-text-primary">
-        {renderPageBackgroundSection()}
+        <div className={sectionCardClass}>
+          <PropertiesSectionTitle>
+            {resolveText('properties_page_background', 'Page Background')}
+          </PropertiesSectionTitle>
+          <div className="mb-2">
+            <PropertiesLabel htmlFor="page-bg-color">
+              {resolveText('properties_background_color', 'Background Color')}
+            </PropertiesLabel>
+            <PropertiesInput
+              id="page-bg-color"
+              type="color"
+              value={isColor ? bg : '#ffffff'}
+              onChange={(e) => updateSurface({ bg: e.target.value })}
+              className="h-9 w-full p-1 cursor-pointer"
+            />
+          </div>
+          {/* Image upload logic simplified */}
+          <div>
+            <PropertiesLabel>Image URL (or ID)</PropertiesLabel>
+            <PropertiesInput
+              value={!isColor ? bg : ''}
+              onChange={(e) => updateSurface({ bg: e.target.value })}
+              placeholder="http://..."
+            />
+          </div>
+        </div>
       </div>
-    )
-  }
-
-  const updateElement = (updates: Partial<Element>) => {
-    if (!selectedElement) return
-    log.debug('Updating element', { id: selectedElement.id, updates })
-
-    let finalUpdates = updates
-    if (selectedElement.type === 'Text' && 'font' in updates) {
-      const textEl = selectedElement as ITextElement
-      const newFont = {
-        ...textEl.font,
-        ...(updates as Partial<ITextElement>).font,
-      }
-      const { width, height } = measureText(textEl.text, newFont)
-      finalUpdates = {
-        ...updates,
-        box: {
-          ...textEl.box,
-          width: width + 10,
-          height: height + 4,
-        },
-      }
-    }
-
-    const nextDoc: ITemplateDoc = {
-      ...templateDoc,
-      elements: templateDoc.elements.map((el) =>
-        el.id === selectedElement.id ? ({ ...el, ...finalUpdates } as Element) : el
-      ),
-    }
-    onTemplateChange(nextDoc)
-  }
-
-  const updateBox = (boxUpdates: Partial<ITextElement['box']>) => {
-    if (!('box' in selectedElement)) return
-    const current = (selectedElement as ITextElement | IShapeElement | IImageElement).box
-    updateElement({
-      box: {
-        ...current,
-        ...boxUpdates,
-      },
-    } as Partial<ITextElement>)
-  }
-
-  const buildId = (suffix: string) => `${selectedElement.id}-${suffix}`
-
-  const typeLabelMap: Record<Element['type'], string> = {
-    Group: resolveText('properties_element_group', 'Group'),
-    Text: resolveText('properties_element_text', 'Text'),
-    Rect: resolveText('properties_element_rect', 'Rectangle'),
-    Triangle: resolveText('properties_element_triangle', 'Triangle'),
-    Trapezoid: resolveText('properties_element_trapezoid', 'Trapezoid'),
-    Circle: resolveText('properties_element_circle', 'Circle'),
-    Diamond: resolveText('properties_element_diamond', 'Diamond'),
-    Cylinder: resolveText('properties_element_cylinder', 'Cylinder'),
-    Heart: resolveText('properties_element_heart', 'Heart'),
-    Star: resolveText('properties_element_star', 'Star'),
-    Pentagon: resolveText('properties_element_pentagon', 'Pentagon'),
-    Hexagon: resolveText('properties_element_hexagon', 'Hexagon'),
-    ArrowUp: resolveText('properties_element_arrow_up', 'Arrow Up'),
-    ArrowDown: resolveText('properties_element_arrow_down', 'Arrow Down'),
-    ArrowLeft: resolveText('properties_element_arrow_left', 'Arrow Left'),
-    ArrowRight: resolveText('properties_element_arrow_right', 'Arrow Right'),
-    Tree: resolveText('properties_element_tree', 'Tree'),
-    House: resolveText('properties_element_house', 'House'),
-    Line: resolveText('properties_element_line', 'Line'),
-    Image: resolveText('properties_element_image', 'Image'),
-    Table: resolveText('properties_element_table', 'Table'),
-    Bed: resolveText('toolbar_bed', 'Bed'),
-    Chart: 'Chart',
-    Signature: resolveText('toolbar_signature', 'Signature'),
-  }
-
-
-
-  const renderSignatureProps = () => {
-    if (selectedElement.type !== 'Signature') return null
-    const signature = selectedElement as ISignatureElement
-
-    return renderSignaturePanelContent(
-      {
-        stroke: signature.stroke ?? '#000000',
-        strokeWidth: signature.strokeWidth ?? 2,
-      },
-      (updates) => updateElement(updates),
-      false // No finish button when selecting existing
     )
   }
 
   const renderBindingProps = () => {
     // Only show for Text, Table(repeater)
-    const validTypes = ['Text']
-    const element = selectedElement
-    const isGlobalTable = element.type === 'Table' && !selectedCell
+    const validTypes = ['text', 'table']
+    // For table, if cell selected, it might be separate.
+    // Assuming table repeater binding on the table element itself.
+    if (!validTypes.includes(selectedElement.t)) return null
 
-    if (!validTypes.includes(element.type) && !isGlobalTable) return null
+    // Check if table is global (repeater) or cell binding? 
+    // Usually table data vs cell data.
 
     const label = resolveText('data_binding', 'Data Binding')
-    const mode = element.type === 'Table' ? 'repeater' : 'field'
+    const mode = selectedElement.t === 'table' ? 'repeater' : 'field'
 
     return (
-      <BindingSelector
-        label={label}
-        binding={element.binding}
-        onUpdate={(binding) => updateElement({ binding })}
-        onOpenModal={() => openBindingModal(mode)}
-        i18nOverrides={i18nOverrides}
-      />
+      <div className={sectionCardClass}>
+        <PropertiesSectionTitle>{label}</PropertiesSectionTitle>
+        <BindingSelector
+          label={label}
+          binding={selectedElement.bind ? { field: selectedElement.bind } : undefined} // Map string bind to object if needed by Selector
+          onUpdate={(binding) => updateElement({ bind: binding?.field })}
+          onOpenModal={() => openBindingModal(mode)}
+          i18nOverrides={i18nOverrides}
+        />
+      </div>
     )
   }
 
   const renderTextProps = () => {
-    if (selectedElement.type !== 'Text') return null
-    const textEl = selectedElement as ITextElement
+    if (selectedElement.t !== 'text') return null
+    const textEl = selectedElement as TextNode
 
-    // Standard font sizes like Word
     const fontSizes = [
       8, 9, 10, 10.5, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 32, 36, 40, 44, 48, 54, 60, 66, 72,
       80, 88, 96,
@@ -509,20 +409,16 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
 
     return (
       <div className="mb-6 space-y-5">
-        {/* Font & Color */}
-        {/* Font & Color */}
         <div>
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
-              <PropertiesLabel htmlFor={buildId('font-size')}>
+              <PropertiesLabel>
                 {resolveText('properties_size', 'Size')}
               </PropertiesLabel>
               <Select
-                value={String(textEl.font.size)}
+                value={String(textEl.fontSize ?? 12)}
                 onValueChange={(val) =>
-                  updateElement({
-                    font: { ...textEl.font, size: Number(val) },
-                  } as Partial<ITextElement>)
+                  updateElement({ fontSize: Number(val) })
                 }
               >
                 <SelectTrigger className="h-9 w-full rounded-md border border-theme-border bg-theme-bg-primary px-3 py-1 text-sm shadow-sm">
@@ -538,18 +434,13 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
               </Select>
             </div>
             <div>
-              <PropertiesLabel htmlFor={buildId('font-color')}>
+              <PropertiesLabel>
                 {resolveText('color', 'Color')}
               </PropertiesLabel>
               <PropertiesInput
-                id={buildId('font-color')}
                 type="color"
-                value={textEl.color}
-                onChange={(e) =>
-                  updateElement({
-                    color: e.target.value,
-                  } as Partial<ITextElement>)
-                }
+                value={textEl.fill}
+                onChange={(e) => updateElement({ fill: e.target.value })}
                 className="h-9 p-1 cursor-pointer"
               />
             </div>
@@ -559,92 +450,67 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
         {/* Font Styles */}
         <div className="flex gap-1 mb-2">
           <TooltipProvider>
+            {/* Bold */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   type="button"
                   onClick={() =>
-                    updateElement({
-                      font: { ...textEl.font, weight: textEl.font.weight === 700 ? 400 : 700 },
-                    } as Partial<ITextElement>)
+                    updateElement({ fontWeight: (textEl.fontWeight === 700) ? 400 : 700 })
                   }
-                  className={`p-1 rounded border ${textEl.font.weight === 700
+                  className={cn("p-1 rounded border", textEl.fontWeight === 700
                     ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
-                    : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
-                    }`}
+                    : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary')}
                 >
                   <Bold size={14} />
                 </button>
               </TooltipTrigger>
-              <TooltipContent>
-                <p>{resolveText('properties_font_style_bold', 'Bold')}</p>
-              </TooltipContent>
+              <TooltipContent><p>{resolveText('properties_font_style_bold', 'Bold')}</p></TooltipContent>
             </Tooltip>
-
+            {/* Italic */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  onClick={() =>
-                    updateElement({
-                      font: { ...textEl.font, italic: !textEl.font.italic },
-                    } as Partial<ITextElement>)
-                  }
-                  className={`p-1 rounded border ${textEl.font.italic
+                  onClick={() => updateElement({ italic: !textEl.italic })}
+                  className={cn("p-1 rounded border", textEl.italic
                     ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
-                    : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
-                    }`}
+                    : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary')}
                 >
                   <Italic size={14} />
                 </button>
               </TooltipTrigger>
-              <TooltipContent>
-                <p>{resolveText('properties_font_style_italic', 'Italic')}</p>
-              </TooltipContent>
+              <TooltipContent><p>{resolveText('properties_font_style_italic', 'Italic')}</p></TooltipContent>
             </Tooltip>
-
+            {/* Underline */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  onClick={() =>
-                    updateElement({
-                      font: { ...textEl.font, underline: !textEl.font.underline },
-                    } as Partial<ITextElement>)
-                  }
-                  className={`p-1 rounded border ${textEl.font.underline
+                  onClick={() => updateElement({ underline: !textEl.underline })}
+                  className={cn("p-1 rounded border", textEl.underline
                     ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
-                    : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
-                    }`}
+                    : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary')}
                 >
                   <Underline size={14} />
                 </button>
               </TooltipTrigger>
-              <TooltipContent>
-                <p>{resolveText('properties_font_style_underline', 'Underline')}</p>
-              </TooltipContent>
+              <TooltipContent><p>{resolveText('properties_font_style_underline', 'Underline')}</p></TooltipContent>
             </Tooltip>
-
+            {/* Strikethrough */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  onClick={() =>
-                    updateElement({
-                      font: { ...textEl.font, strikethrough: !textEl.font.strikethrough },
-                    } as Partial<ITextElement>)
-                  }
-                  className={`p-1 rounded border ${textEl.font.strikethrough
+                  onClick={() => updateElement({ lineThrough: !textEl.lineThrough })}
+                  className={cn("p-1 rounded border", textEl.lineThrough
                     ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
-                    : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
-                    }`}
+                    : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary')}
                 >
                   <Strikethrough size={14} />
                 </button>
               </TooltipTrigger>
-              <TooltipContent>
-                <p>{resolveText('properties_font_style_strikethrough', 'Strikethrough')}</p>
-              </TooltipContent>
+              <TooltipContent><p>{resolveText('properties_font_style_strikethrough', 'Strikethrough')}</p></TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
@@ -656,56 +522,27 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={() => updateElement({ align: 'left' } as Partial<ITextElement>)}
-                    className={`flex-1 flex items-center justify-center py-1 rounded ${textEl.align === 'left'
-                      ? 'bg-theme-bg-tertiary text-theme-accent'
-                      : 'text-theme-text-secondary hover:bg-theme-bg-secondary'
-                      }`}
-                  >
-                    <AlignLeft size={14} />
-                  </button>
+                  <button type="button" onClick={() => updateElement({ align: 'l' })} className={cn("flex-1 py-1 flex justify-center rounded", textEl.align === 'l' ? 'bg-theme-bg-tertiary text-theme-accent' : '')}><AlignLeft size={14} /></button>
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p>{resolveText('side_left', 'Left')}</p>
-                </TooltipContent>
+                <TooltipContent>Left</TooltipContent>
               </Tooltip>
-
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={() => updateElement({ align: 'center' } as Partial<ITextElement>)}
-                    className={`flex-1 flex items-center justify-center py-1 rounded ${textEl.align === 'center'
-                      ? 'bg-theme-bg-tertiary text-theme-accent'
-                      : 'text-theme-text-secondary hover:bg-theme-bg-secondary'
-                      }`}
-                  >
-                    <AlignCenter size={14} />
-                  </button>
+                  <button type="button" onClick={() => updateElement({ align: 'c' })} className={cn("flex-1 py-1 flex justify-center rounded", textEl.align === 'c' ? 'bg-theme-bg-tertiary text-theme-accent' : '')}><AlignCenter size={14} /></button>
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p>{resolveText('center', 'Center')}</p>
-                </TooltipContent>
+                <TooltipContent>Center</TooltipContent>
               </Tooltip>
-
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={() => updateElement({ align: 'right' } as Partial<ITextElement>)}
-                    className={`flex-1 flex items-center justify-center py-1 rounded ${textEl.align === 'right'
-                      ? 'bg-theme-bg-tertiary text-theme-accent'
-                      : 'text-theme-text-secondary hover:bg-theme-bg-secondary'
-                      }`}
-                  >
-                    <AlignRight size={14} />
-                  </button>
+                  <button type="button" onClick={() => updateElement({ align: 'r' })} className={cn("flex-1 py-1 flex justify-center rounded", textEl.align === 'r' ? 'bg-theme-bg-tertiary text-theme-accent' : '')}><AlignRight size={14} /></button>
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p>{resolveText('side_right', 'Right')}</p>
-                </TooltipContent>
+                <TooltipContent>Right</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" onClick={() => updateElement({ align: 'j' })} className={cn("flex-1 py-1 flex justify-center rounded", textEl.align === 'j' ? 'bg-theme-bg-tertiary text-theme-accent' : '')}><AlignJustify size={14} /></button>
+                </TooltipTrigger>
+                <TooltipContent>Justify</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
@@ -715,550 +552,139 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
   }
 
   const renderShapeProps = () => {
-    if (
-      ![
-        'Rect',
-        'Circle',
-        'Triangle',
-        'Trapezoid',
-        'Diamond',
-        'Cylinder',
-        'Heart',
-        'Star',
-        'Pentagon',
-        'Hexagon',
-        'ArrowUp',
-        'ArrowDown',
-        'ArrowLeft',
-        'ArrowRight',
-        'Tree',
-        'House',
-      ].includes(selectedElement.type)
-    )
-      return null
-    const shape = selectedElement as IShapeElement
+    if (selectedElement.t !== 'shape') return null
+    const shape = selectedElement as ShapeNode
 
     return (
       <div className="mb-6 space-y-4">
-        {/* Colors */}
         <div>
           <PropertiesSubsectionTitle>{resolveText('color', 'Color')}</PropertiesSubsectionTitle>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <PropertiesLabel htmlFor={buildId('fill-color')}>
+              <PropertiesLabel>
                 {resolveText('properties_fill_color', 'Fill Color')}
               </PropertiesLabel>
               <PropertiesInput
-                id={buildId('fill-color')}
                 type="color"
-                value={shape.fill?.color ?? '#ffffff'}
-                onChange={(e) =>
-                  updateElement({
-                    fill: { ...(shape.fill ?? { color: '#ffffff' }), color: e.target.value },
-                  } as Partial<IShapeElement>)
-                }
+                value={shape.fill ?? '#ffffff'}
+                onChange={(e) => updateElement({ fill: e.target.value })}
                 className="h-9 p-1 cursor-pointer"
               />
             </div>
             <div>
-              <PropertiesLabel htmlFor={buildId('stroke-color')}>
+              <PropertiesLabel>
                 {resolveText('properties_border', 'Border')}
               </PropertiesLabel>
               <PropertiesInput
-                id={buildId('stroke-color')}
                 type="color"
-                value={shape.stroke?.color ?? '#000000'}
-                onChange={(e) =>
-                  updateElement({
-                    stroke: {
-                      ...(shape.stroke ?? { color: '#000000', width: 1 }),
-                      color: e.target.value,
-                    },
-                  } as Partial<IShapeElement>)
-                }
+                value={shape.stroke ?? '#000000'}
+                onChange={(e) => updateElement({ stroke: e.target.value })}
                 className="h-9 p-1 cursor-pointer"
               />
             </div>
           </div>
         </div>
-
-        {/* Stroke width */}
         <div>
-          <PropertiesSubsectionTitle>{resolveText('properties_border', 'Border')}</PropertiesSubsectionTitle>
-          <PropertiesLabel htmlFor={buildId('stroke-width')}>
-            {resolveText('properties_line_width', 'Line Width')}
-          </PropertiesLabel>
+          <PropertiesLabel>{resolveText('properties_line_width', 'Line Width')}</PropertiesLabel>
           <PropertiesInput
-            id={buildId('stroke-width')}
             type="number"
-            value={shape.stroke?.width ?? 1}
-            onChange={(e) =>
-              updateElement({
-                stroke: {
-                  ...(shape.stroke ?? { color: '#000000', width: 1 }),
-                  width: Number(e.target.value),
-                },
-              } as Partial<IShapeElement>)
-            }
+            value={shape.strokeW ?? 1}
+            onChange={(e) => updateElement({ strokeW: Number(e.target.value) })}
           />
-        </div>
-      </div>
-    )
-  }
-
-  const renderLineProps = () => {
-    if (selectedElement.type !== 'Line') return null
-    const line = selectedElement as ILineElement
-
-    const arrowOptions: ShapeOption[] = [
-      {
-        value: 'none',
-        label: resolveText('properties_arrow_none', 'None'),
-        icon: <div className="w-4 h-0.5 bg-current" />,
-      },
-      {
-        value: 'standard',
-        label: resolveText('properties_arrow_standard', 'Standard'),
-        icon: (
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-          >
-            <title>{resolveText('properties_arrow_standard', 'Standard')}</title>
-            <path d="M12 8H2m0 0l4-4m-4 4l4 4" />
-          </svg>
-        ),
-      },
-      {
-        value: 'filled',
-        label: resolveText('properties_arrow_filled', 'Filled'),
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" stroke="none">
-            <title>{resolveText('properties_arrow_filled', 'Filled')}</title>
-            <path d="M2 8l6-4v8z" />
-            <path d="M8 8h6" stroke="currentColor" strokeWidth="1.5" />
-          </svg>
-        ),
-      },
-      {
-        value: 'triangle',
-        label: resolveText('properties_arrow_triangle', 'Triangle'),
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" stroke="none">
-            <title>{resolveText('properties_arrow_triangle', 'Triangle')}</title>
-            <path d="M2 8l6-4v8z" />
-            <path d="M8 8h6" stroke="currentColor" strokeWidth="1.5" />
-          </svg>
-        ),
-      },
-      {
-        value: 'open',
-        label: resolveText('properties_arrow_open', 'Open'),
-        icon: (
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-          >
-            <title>{resolveText('properties_arrow_open', 'Open')}</title>
-            <path d="M6 4l-4 4 4 4" />
-            <path d="M2 8h10" />
-          </svg>
-        ),
-      },
-      {
-        value: 'circle',
-        label: resolveText('properties_arrow_circle', 'Circle'),
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" stroke="none">
-            <title>{resolveText('properties_arrow_circle', 'Circle')}</title>
-            <circle cx="4" cy="8" r="3" />
-            <path d="M7 8h7" stroke="currentColor" strokeWidth="1.5" />
-          </svg>
-        ),
-      },
-      {
-        value: 'diamond',
-        label: resolveText('properties_arrow_diamond', 'Diamond'),
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" stroke="none">
-            <title>{resolveText('properties_arrow_diamond', 'Diamond')}</title>
-            <path d="M2 8l3-3 3 3-3 3z" />
-            <path d="M8 8h6" stroke="currentColor" strokeWidth="1.5" />
-          </svg>
-        ),
-      },
-      {
-        value: 'square',
-        label: resolveText('properties_arrow_square', 'Square'),
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" stroke="none">
-            <title>{resolveText('properties_arrow_square', 'Square')}</title>
-            <rect x="2" y="5" width="6" height="6" />
-            <path d="M8 8h6" stroke="currentColor" strokeWidth="1.5" />
-          </svg>
-        ),
-      },
-    ]
-
-    const lineStyleOptions: ShapeOption[] = [
-      {
-        value: 'solid',
-        label: resolveText('properties_line_style_solid', 'Solid'),
-        icon: (
-          <svg
-            width="24"
-            height="8"
-            viewBox="0 0 24 8"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <title>{resolveText('properties_line_style_solid', 'Solid')}</title>
-            <line x1="0" y1="4" x2="24" y2="4" />
-          </svg>
-        ),
-      },
-      {
-        value: 'dashed',
-        label: resolveText('properties_line_style_dashed', 'Dashed'),
-        icon: (
-          <svg
-            width="24"
-            height="8"
-            viewBox="0 0 24 8"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <title>{resolveText('properties_line_style_dashed', 'Dashed')}</title>
-            <line x1="0" y1="4" x2="24" y2="4" strokeDasharray="6 4" />
-          </svg>
-        ),
-      },
-      {
-        value: 'dotted',
-        label: resolveText('properties_line_style_dotted', 'Dotted'),
-        icon: (
-          <svg
-            width="24"
-            height="8"
-            viewBox="0 0 24 8"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <title>{resolveText('properties_line_style_dotted', 'Dotted')}</title>
-            <line x1="0" y1="4" x2="24" y2="4" strokeDasharray="2 4" />
-          </svg>
-        ),
-      },
-    ]
-
-    const getLineStyleValue = (dash?: number[]) => {
-      if (!dash || dash.length === 0) return 'solid'
-      if (dash[0] !== undefined && dash[0] < 1) return 'dotted' // Ratio < 1 means dot (usually 0 or 0.001)
-      return 'dashed'
-    }
-
-    const handleLineStyleChange = (val: string) => {
-      let dash: number[] | undefined
-      if (val === 'dashed')
-        dash = [3, 3] // Ratio: 3x width dash, 3x width gap
-      else if (val === 'dotted') dash = [0.001, 2] // Ratio: Dot, 2x width gap
-
-      updateElement({
-        stroke: { ...line.stroke, dash },
-      } as Partial<ILineElement>)
-    }
-
-    return (
-      <div className="mb-4 space-y-3">
-        {/* Line Color */}
-        <div>
-          <PropertiesLabel htmlFor={buildId('line-color')}>
-            {resolveText('properties_line_color', 'Line Color')}
-          </PropertiesLabel>
-          <PropertiesInput
-            id={buildId('line-color')}
-            type="color"
-            value={line.stroke.color}
-            onChange={(e) =>
-              updateElement({
-                stroke: { ...line.stroke, color: e.target.value },
-              } as Partial<ILineElement>)
-            }
-            className="h-9 p-1 cursor-pointer"
-          />
-        </div>
-
-        {/* Line Width */}
-        <div>
-          <PropertiesLabel htmlFor={buildId('line-width')}>
-            {resolveText('properties_line_width', 'Line Width')} (px)
-          </PropertiesLabel>
-          <PropertiesInput
-            id={buildId('line-width')}
-            type="number"
-            min="1"
-            value={line.stroke.width}
-            onChange={(e) => {
-              const val = Number(e.target.value)
-              if (val > 0) {
-                updateElement({
-                  stroke: { ...line.stroke, width: val },
-                } as Partial<ILineElement>)
-              }
-            }}
-          />
-        </div>
-
-        {/* Line Style */}
-        <div>
-          <PropertiesLabel>{resolveText('properties_line_style', 'Line Style')}</PropertiesLabel>
-          <ShapeSelector
-            value={getLineStyleValue(line.stroke.dash)}
-            onChange={handleLineStyleChange}
-            options={lineStyleOptions}
-          />
-        </div>
-
-        {/* Start Arrow */}
-        <div>
-          <PropertiesLabel htmlFor={buildId('start-arrow')}>
-            {resolveText('properties_arrow_start', 'Start Arrow')}
-          </PropertiesLabel>
-          <ShapeSelector
-            value={line.startArrow || 'none'}
-            onChange={(val) =>
-              updateElement({
-                startArrow: val,
-              } as Partial<ILineElement>)
-            }
-            options={arrowOptions}
-          />
-        </div>
-
-        {/* End Arrow */}
-        <div>
-          <PropertiesLabel htmlFor={buildId('end-arrow')}>
-            {resolveText('properties_arrow_end', 'End Arrow')}
-          </PropertiesLabel>
-          <ShapeSelector
-            value={line.endArrow || 'none'}
-            onChange={(val) =>
-              updateElement({
-                endArrow: val,
-              } as Partial<ILineElement>)
-            }
-            options={arrowOptions.map((opt) => ({
-              ...opt,
-              icon: <div className="transform rotate-180">{opt.icon}</div>,
-            }))}
-          />
-        </div>
-      </div>
-    )
-  }
-
-  const renderLayoutSection = () => {
-    if (!('box' in selectedElement)) return null
-    const box = (selectedElement as ITextElement | IShapeElement | IImageElement).box
-
-    return (
-      <div className={sectionCardClass}>
-        <PropertiesSectionTitle>{resolveText('properties_layout', 'Layout')}</PropertiesSectionTitle>
-
-        {/* Position */}
-        <div className="mb-4">
-          <PropertiesSubsectionTitle>{resolveText('position', 'Position')}</PropertiesSubsectionTitle>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <PropertiesLabel htmlFor={buildId('position-x')}>X</PropertiesLabel>
-              <PropertiesInput
-                id={buildId('position-x')}
-                type="number"
-                step="0.01"
-                value={box.x.toFixed(2)}
-                onChange={(e) => {
-                  const v = Number(e.target.value)
-                  if (Number.isNaN(v)) return
-                  updateBox({ x: Math.floor(v * 100) / 100 })
-                }}
-              />
-            </div>
-            <div>
-              <PropertiesLabel htmlFor={buildId('position-y')}>Y</PropertiesLabel>
-              <PropertiesInput
-                id={buildId('position-y')}
-                type="number"
-                step="0.01"
-                value={box.y.toFixed(2)}
-                onChange={(e) => {
-                  const v = Number(e.target.value)
-                  if (Number.isNaN(v)) return
-                  updateBox({ y: Math.floor(v * 100) / 100 })
-                }}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Size */}
-        <div>
-          <PropertiesSubsectionTitle>{resolveText('properties_size', 'Size')}</PropertiesSubsectionTitle>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <PropertiesLabel htmlFor={buildId('size-width')}>
-                {resolveText('properties_width', 'Width')}
-              </PropertiesLabel>
-              <PropertiesInput
-                id={buildId('size-width')}
-                type="number"
-                step="0.01"
-                value={box.width.toFixed(2)}
-                onChange={(e) => {
-                  const v = Number(e.target.value)
-                  if (Number.isNaN(v)) return
-                  updateBox({ width: Math.floor(v * 100) / 100 })
-                }}
-              />
-            </div>
-            <div>
-              <PropertiesLabel htmlFor={buildId('size-height')}>
-                {resolveText('properties_height', 'Height')}
-              </PropertiesLabel>
-              <PropertiesInput
-                id={buildId('size-height')}
-                type="number"
-                step="0.01"
-                value={box.height.toFixed(2)}
-                onChange={(e) => {
-                  const v = Number(e.target.value)
-                  if (Number.isNaN(v)) return
-                  updateBox({ height: Math.floor(v * 100) / 100 })
-                }}
-              />
-            </div>
-          </div>
         </div>
       </div>
     )
   }
 
   const renderImageProps = () => {
-    if (selectedElement.type !== 'Image') return null
-    const image = selectedElement as IImageElement
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0]
-      if (!file) return
-
-      log.info('File selected:', { name: file.name, size: file.size })
-
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        const dataUrl = event.target?.result as string
-        if (dataUrl) {
-          const img = new Image()
-          img.onload = () => {
-            log.info('Data URL generated', {
-              length: dataUrl.length,
-              width: img.naturalWidth,
-              height: img.naturalHeight,
-            })
-            updateElement({
-              assetId: dataUrl,
-              box: {
-                ...image.box,
-                width: img.naturalWidth,
-                height: img.naturalHeight,
-              },
-            } as Partial<IImageElement>)
-          }
-          img.src = dataUrl
-        } else {
-          log.error('Failed to generate Data URL')
-        }
-      }
-      reader.readAsDataURL(file)
-    }
+    if (selectedElement.t !== 'image') return null
+    const img = selectedElement as ImageNode
 
     return (
-      <div className="mb-6 space-y-4">
-        <div>
-          <PropertiesLabel>
-            {resolveText('properties_select_image', 'Select Image')}
-          </PropertiesLabel>
-          <PropertiesInput
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="text-theme-text-primary file:text-theme-object-primary file:bg-theme-object-primary/10 hover:file:bg-theme-object-primary/20"
-          />
+      <div className={sectionCardClass}>
+        <PropertiesSectionTitle>{resolveText('properties_element_image', 'Image')}</PropertiesSectionTitle>
+        <div className="mb-2">
+          <ImagePreview src={img.src} i18nOverrides={i18nOverrides} />
         </div>
-        {image.assetId && (
-          <div className="mt-2">
-            <PropertiesLabel>{resolveText('properties_preview', 'Preview')}</PropertiesLabel>
-            <ImagePreview assetId={image.assetId} i18nOverrides={i18nOverrides} />
-          </div>
-        )}
       </div>
     )
   }
 
   const renderTableProps = () => {
-    if (selectedElement.type !== 'Table') return null
+    if (selectedElement.t !== 'table') return null;
+    // We need to pass selectedCell and edit capability to TableProperties
+    // But TableProperties needs compatible props.
+    // Assuming TableProperties exports a component that takes { element, onChange, selectedCell, ... }
+    // This requires verify TableProperties interface.
+    // Based on usual patterns:
     return (
       <TableProperties
-        element={selectedElement as ITableElement}
-        onUpdate={updateElement as (updates: Partial<ITableElement>) => void}
-        selectedCell={
-          selectedCell && selectedCell.elementId === selectedElement.id ? selectedCell : null
-        }
+        element={selectedElement as TableNode}
+        onUpdate={(newAttrs) => onTemplateChange({ ...templateDoc, nodes: templateDoc.nodes.map(n => n.id === selectedElement.id ? { ...n, ...newAttrs } as UnifiedNode : n) })}
+        selectedCell={selectedCell}
         i18nOverrides={i18nOverrides}
       />
     )
   }
 
-  return (
-    <div className="relative w-72 h-full bg-theme-bg-secondary border-l border-theme-border p-5 overflow-y-auto overflow-x-hidden text-theme-text-primary">
-      {/* Type badge - floating top-right */}
-      <div className="absolute top-1.5 right-2">
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-theme-object-primary/20 text-theme-text-primary shadow-sm">
-          {typeLabelMap[selectedElement.type] ?? selectedElement.type}
-        </span>
+  const renderCommonProps = () => (
+    <div className={sectionCardClass}>
+      <PropertiesSectionTitle>{resolveText('properties_layout', 'Layout')}</PropertiesSectionTitle>
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div>
+          <PropertiesLabel>X</PropertiesLabel>
+          <PropertiesInput
+            type="number"
+            value={Math.round(selectedElement.x || 0)}
+            onChange={(e) => updateElement({ x: Number(e.target.value) })}
+          />
+        </div>
+        <div>
+          <PropertiesLabel>Y</PropertiesLabel>
+          <PropertiesInput
+            type="number"
+            value={Math.round(selectedElement.y || 0)}
+            onChange={(e) => updateElement({ y: Number(e.target.value) })}
+          />
+        </div>
+        <div>
+          <PropertiesLabel>W</PropertiesLabel>
+          <PropertiesInput
+            type="number"
+            value={Math.round(selectedElement.w || 0)}
+            onChange={(e) => updateElement({ w: Number(e.target.value) })}
+          />
+        </div>
+        <div>
+          <PropertiesLabel>H</PropertiesLabel>
+          <PropertiesInput
+            type="number"
+            value={Math.round(selectedElement.h || 0)}
+            onChange={(e) => updateElement({ h: Number(e.target.value) })}
+          />
+        </div>
       </div>
+    </div>
+  )
 
-      {renderBindingProps()}
+  return (
+    <div className="w-full h-full bg-theme-bg-secondary p-4 overflow-y-auto">
+      {renderCommonProps()}
       {renderTextProps()}
       {renderShapeProps()}
-      {renderLineProps()}
       {renderImageProps()}
       {renderTableProps()}
-      {renderSignatureProps()}
+      {renderBindingProps()}
 
-      {renderLayoutSection()}
-      {/* Modal */}
-      {schema && (
+      {activeBindingMode && schema && (
         <DataBindingModal
-          isOpen={!!activeBindingMode}
+          isOpen={true}
           onClose={() => setActiveBindingMode(null)}
-          schema={schema}
           onSelect={handleBindingSelect}
-          mode={activeBindingMode || 'field'}
+          mode={activeBindingMode}
+          schema={schema}
         />
       )}
     </div>
   )
 }
-
-
-

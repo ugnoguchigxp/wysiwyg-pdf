@@ -1,21 +1,21 @@
 import { useCallback, useState } from 'react'
-import type { ITemplateDoc } from '../pdf-editor/types/wysiwyg'
+import type { Doc } from '../pdf-editor/types/wysiwyg'
 
 interface UseHistoryReturn {
-  document: ITemplateDoc
-  setDocument: (doc: ITemplateDoc | ((prev: ITemplateDoc) => ITemplateDoc)) => void
+  document: Doc
+  setDocument: (doc: Doc | ((prev: Doc) => Doc)) => void
   canUndo: boolean
   canRedo: boolean
   undo: () => void
   redo: () => void
-  reset: (doc: ITemplateDoc) => void
+  reset: (doc: Doc) => void
 }
 
-export function useReportHistory(initialDocument: ITemplateDoc): UseHistoryReturn {
+export function useReportHistory(initialDocument: Doc): UseHistoryReturn {
   const [history, setHistory] = useState<{
-    past: ITemplateDoc[]
-    present: ITemplateDoc
-    future: ITemplateDoc[]
+    past: Doc[]
+    present: Doc
+    future: Doc[]
   }>({
     past: [],
     present: initialDocument,
@@ -23,7 +23,7 @@ export function useReportHistory(initialDocument: ITemplateDoc): UseHistoryRetur
   })
 
   const setDocument = useCallback(
-    (docOrUpdater: ITemplateDoc | ((prev: ITemplateDoc) => ITemplateDoc)) => {
+    (docOrUpdater: Doc | ((prev: Doc) => Doc)) => {
       setHistory((prev) => {
         const newPresent =
           typeof docOrUpdater === 'function' ? docOrUpdater(prev.present) : docOrUpdater
@@ -77,7 +77,7 @@ export function useReportHistory(initialDocument: ITemplateDoc): UseHistoryRetur
     })
   }, [])
 
-  const reset = useCallback((doc: ITemplateDoc) => {
+  const reset = useCallback((doc: Doc) => {
     setHistory({
       past: [],
       present: doc,

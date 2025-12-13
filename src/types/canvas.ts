@@ -1,294 +1,269 @@
 /**
- * Shared Canvas Types
- * Unified definitions for Report Template and Bed Layout
+ * Unified JSON Schema v2 (Optimized)
+ * Replaces the old CanvasElement/ITemplateDoc structure.
  */
 
-export type Unit = 'px' | 'mm' | 'pt'
+// ========================================
+// Primitive Types
+// ========================================
 
-export type ElementType =
-  | 'Text'
-  | 'Rect'
-  | 'Triangle'
-  | 'Trapezoid'
-  | 'Circle'
-  | 'Diamond'
-  | 'Cylinder'
-  | 'Heart'
-  | 'Star'
-  | 'Pentagon'
-  | 'Hexagon'
-  | 'ArrowUp'
-  | 'ArrowDown'
-  | 'ArrowLeft'
-  | 'ArrowRight'
-  | 'Tree'
-  | 'House'
-  | 'Line'
-  | 'Image'
-  | 'Table'
-  | 'Group'
-  | 'Guide'
-  | 'Bed'
-  | 'Chart'
-  | 'Signature'
+export type NodeId = string;   // nanoid (21 chars recommended)
+export type SurfaceId = string;
+export type LinkId = string;
+export type Color = string;    // Hex (#RRGGBB), rgba(), hsl() supported
+export type Unit = 'mm' | 'pt' | 'px' | 'in';
 
-export type BindingType = 'field' | 'expr' | 'repeater'
+// ========================================
+// Document Root
+// ========================================
 
-export type ArrowType =
-  | 'none'
-  | 'standard'
-  | 'open'
-  | 'filled'
-  | 'triangle'
-  | 'circle'
-  | 'diamond'
-  | 'square'
-
-export type ConnectionPoint =
-  | 'top-left'
-  | 'left'
-  | 'bottom-left'
-  | 'bottom'
-  | 'bottom-right'
-  | 'right'
-  | 'top-right'
-  | 'top'
-
-export interface IConnection {
-  elementId: string
-  connectionPoint: ConnectionPoint
-}
-
-export interface IBinding {
-  type: BindingType
-  sourceId: string
-  fieldId?: string // Added for strict schema binding
-  path?: string
-  expr?: string
-  format?: string
-  repeaterConfig?: {
-    maxRows?: number
-    overflow?: 'clip' | 'warn'
-  }
-}
-
-export interface IPosition {
-  x: number
-  y: number
-}
-
-export interface ISize {
-  width: number
-  height: number
-}
-
-export interface IBox {
-  x: number
-  y: number
-  width: number
-  height: number
-}
-
-// Element interfaces
-export interface IElementBase {
+export interface Doc {
+  v: 1                           // Schema version (number for compactness)
   id: string
-  type: ElementType
-  pageId?: string // Optional for Bed Layout
-  z: number
-  visible: boolean
-  locked: boolean
-  rotation: number
-  name: string
-  binding?: IBinding
+  title: string
+  unit: Unit
+
+  // Surfaces (where nodes live)
+  surfaces: Surface[]
+
+  // All drawable elements
+  // Order determines Z-index (First = Background, Last = Foreground)
+  nodes: UnifiedNode[]
+
+  // Connections between nodes (optional, for mindmap/flowchart)
+  links?: Link[]
+
+  // Optional features (omit if unused)
+  binding?: BindingConfig
+  animation?: AnimationConfig
+  snap?: SnapConfig
 }
 
-export interface ITextElement extends IElementBase {
-  type: 'Text'
+export interface Surface {
+  id: SurfaceId
+  type: 'page' | 'canvas'        // page=A4等, canvas=無限キャンバス
+  w: number
+  h: number
+
+  // Page specific details
+  margin?: Margin                // For 'page' type
+  bg?: string                    // Color hex or image URL (data:image/...)
+}
+
+export interface Margin {
+  t: number
+  r: number
+  b: number
+  l: number
+}
+
+// ========================================
+// Nodes (All Drawable Elements)
+// ========================================
+
+export type UnifiedNode =
+  | TextNode
+  | ShapeNode
+  | LineNode
+  | ImageNode
+  | GroupNode
+  | TableNode
+  | SignatureNode
+  | WidgetNode;
+
+// Common properties for all nodes
+export interface BaseNode {
+  id: NodeId
+  s: SurfaceId                   // Surface ID (short key name)
+
+  // Note: 'z' is REMOVED. Use array index.
+
+  // Geometry (Optional for LineNode)
+  x?: number
+  y?: number
+  w?: number
+  h?: number
+  r?: number                     // Rotation in degrees (default: 0)
+
+  // Common Style
+  opacity?: number               // 0-1
+  locked?: boolean
+  hidden?: boolean
+  tags?: string[]
+
+  // Binding (optional)
+  bind?: string                  // Simple path like "customer.name"
+
+  // Metadata
+  name?: string
+}
+
+export interface TextNode extends BaseNode {
+  t: 'text'
+  x: number; y: number; w: number; h: number // Required
   text: string
-  font: {
-    family: string
-    size: number
-    weight: number
-    italic?: boolean
-    strikethrough?: boolean
-    underline?: boolean
-  }
-  color: string
-  backgroundColor?: string
-  align: 'left' | 'center' | 'right'
-  verticalAlign?: 'top' | 'middle' | 'bottom' // Added for Bed Layout compatibility
-  box: IBox
-  listType?: 'none' | 'bullet' | 'numbered'
+
+  // Text Style
+  font?: string                  // Font family
+  fontSize?: number
+  fontWeight?: number            // 400, 700, etc.
+  italic?: boolean
+  underline?: boolean
+  lineThrough?: boolean
+  align?: 'l' | 'c' | 'r' | 'j'  // left/center/right/justify (short)
+  vAlign?: 't' | 'm' | 'b'       // top/middle/bottom (short)
+  fill?: Color                   // Text color
 }
 
-export interface IShapeElement extends IElementBase {
-  type:
-  | 'Rect'
-  | 'Triangle'
-  | 'Trapezoid'
-  | 'Circle'
-  | 'Diamond'
-  | 'Cylinder'
-  | 'Heart'
-  | 'Star'
-  | 'Pentagon'
-  | 'Hexagon'
-  | 'ArrowUp'
-  | 'ArrowDown'
-  | 'ArrowLeft'
-  | 'ArrowRight'
-  | 'Tree'
-  | 'House'
-  box: IBox
-  stroke: {
-    color: string
-    width: number
-    dash?: number[]
-  }
-  fill: {
-    color: string
-  }
-  label?: {
-    text: string
-    font: {
-      family: string
-      size: number
-      weight: number
-    }
-    color: string
-  }
+export interface ShapeNode extends BaseNode {
+  t: 'shape'
+  x: number; y: number; w: number; h: number // Required
+  shape: ShapeType
+  radius?: number                // Border radius for rect
+
+  // Shape Style
+  fill?: Color
+  stroke?: Color
+  strokeW?: number
+  dash?: number[]
 }
 
-export interface ILineElement extends IElementBase {
-  type: 'Line'
-  startPoint: IPosition
-  endPoint: IPosition
-  intermediatePoints?: IPosition[]
-  stroke: {
-    color: string
-    width: number
-    dash?: number[]
-  }
-  startArrow: ArrowType
-  endArrow: ArrowType
-  startConnection?: IConnection
-  endConnection?: IConnection
+export interface LineNode extends BaseNode {
+  t: 'line'
+  // x, y, w, h are IGNORED/UNDEFINED for lines.
+
+  pts: number[]                  // Flat array: [x1,y1,x2,y2,...] ABSOLUTE coordinates
+  arrows?: [ArrowType, ArrowType] // [start, end]
+
+  // Line Style
+  stroke: Color
+  strokeW: number
+  dash?: number[]
 }
 
-export interface IImageElement extends IElementBase {
-  type: 'Image'
-  box: IBox
-  assetId?: string // Optional for Bed Layout placeholder
-  src?: string // Added for Bed Layout direct URL support
-  opacity?: number // Added for Bed Layout
+export interface ImageNode extends BaseNode {
+  t: 'image'
+  x: number; y: number; w: number; h: number // Required
+  src: string                    // URL or base64
 }
 
-export interface ITableElement extends IElementBase {
-  type: 'Table'
-  box: IBox
-
-  // Structure
-  rowCount: number
-  colCount: number
-
-  rows: Array<{
-    id: string
-    height: number
-    // Potentially add specific row styles later (e.g. frozen)
-  }>
-
-  cols: Array<{
-    id: string
-    width: number
-  }>
-
-  cells: Array<{
-    row: number // 0-indexed
-    col: number // 0-indexed
-    rowSpan?: number
-    colSpan?: number
-    content: string
-    styles: {
-      backgroundColor?: string
-      borderColor?: string
-      borderWidth?: number
-      font?: {
-        family: string
-        size: number
-        weight: number
-        color: string
-        italic?: boolean
-        strikethrough?: boolean
-        underline?: boolean
-      }
-      align?: 'left' | 'center' | 'right'
-      verticalAlign?: 'top' | 'middle' | 'bottom'
-    }
-  }>
+export interface GroupNode extends BaseNode {
+  t: 'group'
+  x: number; y: number; w: number; h: number // Bounding box of group
+  children: NodeId[]
 }
 
-// Bed Element (Specific to Bed Layout)
-export interface IBedElement extends IElementBase {
-  type: 'Bed'
-  box: IBox
-  label?: string
-  patientName?: string
-  patientId?: string
-  bloodPressure?: string
-  orientation?: 'vertical' | 'horizontal'
-  status?: 'idle' | 'active' | 'warning' | 'alarm'
-  statusMessage?: string
+export interface TableNode extends BaseNode {
+  t: 'table'
+  x: number; y: number; w: number; h: number // Required
+  table: TableData
 }
 
-export interface IGroupElement extends IElementBase {
-  type: 'Group'
-  box: IBox
-  childIds: string[]
+export interface WidgetNode extends BaseNode {
+  t: 'widget'
+  x: number; y: number; w: number; h: number // Required
+  widget: string                 // 'chart' | 'bed' | 'mindNode' | ...
+  data?: Record<string, unknown> // Flexible data storage
 }
 
-export interface IChartElement extends IElementBase {
-  type: 'Chart'
-  box: IBox
-  config: {
-    title?: string
-    xAxis: {
-      type: 'time' | 'category'
-      domain: ['dataMin', 'dataMax'] | [string, string] // [start, end]
-      ticks?: string[] // '30m', '1h'
-    }
-    yAxes: Array<{
-      id: string // 'left', 'right'
-      position: 'left' | 'right'
-      label?: string
-      domain?: [number, number] // [min, max]
-    }>
-    series: Array<{
-      id: string
-      label: string
-      dataSourceId: string // 'bp_sys', 'pulse', 'medication_event'
-      yAxisId: string // 'left' or 'right'
-      type: 'line' | 'bar' | 'scatter' | 'event'
-      color?: string
-      markerShape?: 'circle' | 'triangle' | 'square' | 'cross'
-    }>
-  }
+export interface SignatureNode extends BaseNode {
+  t: 'signature'
+  x: number; y: number; w: number; h: number // Bounding box
+  strokes: number[][]            // Array of stroke paths: [[x1,y1,x2,y2,...], ...]
+  stroke: Color                  // Stroke color
+  strokeW: number                // Stroke width
 }
 
-export interface ISignatureElement extends IElementBase {
-  type: 'Signature'
-  box: IBox
-  strokes: number[][] // Each stroke is an array of [x, y, x, y, ...]
-  stroke: string // Color
-  strokeWidth: number
+// ========================================
+// Type Enums & Helpers
+// ========================================
+
+export type ShapeType =
+  | 'rect' | 'circle' | 'triangle' | 'diamond'
+  | 'star' | 'pentagon' | 'hexagon'
+  | 'arrow-u' | 'arrow-d' | 'arrow-l' | 'arrow-r'
+
+export type ArrowType = 'none' | 'arrow' | 'circle' | 'diamond'
+
+export interface TableData {
+  rows: number[]                 // Row heights in Doc.unit (all rows must be specified)
+  cols: number[]                 // Column widths in Doc.unit (all columns must be specified)
+  cells: Cell[]                  // Sparse array: only non-empty cells need to be defined
 }
 
-export type CanvasElement =
-  | ITextElement
-  | IShapeElement
-  | ILineElement
-  | IImageElement
-  | ITableElement
-  | IBedElement
-  | IGroupElement
-  | IChartElement
-  | ISignatureElement
+export interface Cell {
+  r: number                      // Row index
+  c: number                      // Column index
+  rs?: number                    // Row span
+  cs?: number                    // Col span
+  v: string                      // Value/content
+  // Cell-specific styles
+  bg?: string
+  border?: string
+  font?: string
+  fontSize?: number
+  align?: 'l' | 'c' | 'r'
+}
+
+// ========================================
+// Links (Smart Connectors)
+// ========================================
+
+export interface Link {
+  id: LinkId
+  s: SurfaceId                   // Surface where the link is rendered
+  from: NodeId                   // Both from/to nodes MUST be on the same Surface
+  to: NodeId                     // Cross-surface links are NOT supported
+  fromAnchor?: Anchor            // Default: 'auto'
+  toAnchor?: Anchor
+  routing?: 'straight' | 'orthogonal' | 'bezier'
+  stroke?: Color
+  strokeW?: number
+  arrows?: [ArrowType, ArrowType]
+}
+
+export type Anchor = 'auto' | 't' | 'b' | 'l' | 'r' | 'tl' | 'tr' | 'bl' | 'br'
+
+// ========================================
+// Optional Subsystems
+// ========================================
+
+export interface BindingConfig {
+  sampleData: Record<string, unknown>  // Renamed from 'data' for clarity
+  sources?: DataSource[]
+}
+
+export interface DataSource {
+  id: string
+  type: 'json' | 'api'
+  url?: string
+}
+
+export interface AnimationConfig {
+  timelines: Timeline[]
+}
+
+export interface Timeline {
+  id: string
+  surface: SurfaceId
+  duration: number               // Seconds
+  loop?: boolean
+  tracks: Track[]
+}
+
+export interface Track {
+  node: NodeId
+  prop: string                   // e.g., 'x', 'y', 'opacity'
+  keys: Keyframe[]
+}
+
+export interface Keyframe {
+  t: number                      // Time in seconds
+  v: number | string
+  ease?: 'linear' | 'ease' | 'ease-in' | 'ease-out'
+}
+
+export interface SnapConfig {
+  grid?: number                  // Grid size
+  guides?: boolean               // Show alignment guides
+}

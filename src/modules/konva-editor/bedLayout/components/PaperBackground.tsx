@@ -14,6 +14,7 @@ export const PaperBackground: React.FC<PaperBackgroundProps> = ({ document }) =>
     width = document.paper.width
     height = document.paper.height
   } else {
+    // BedLayoutDocument
     width = document.layout.width
     height = document.layout.height
   }

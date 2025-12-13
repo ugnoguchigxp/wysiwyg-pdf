@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 import { BedLayoutViewer, KonvaViewer } from 'wysiwyg-pdf'
-import type { ITemplateDoc } from 'wysiwyg-pdf'
+import type { Doc } from 'wysiwyg-pdf'
 import { dummyBedLayout, dummyDashboardData } from '../data/dummyBedLayout'
 import { INVOICE_TEMPLATE, SIGNATURE_TEMPLATE } from '../data/dummyReportTemplates'
-import { ArrowLeft, Moon, Sun, X, ZoomIn } from 'lucide-react'
+import { ArrowLeft, Moon, Sun, X } from 'lucide-react'
 
 
 interface ViewerPageProps {
@@ -35,30 +35,22 @@ const StatusLegend = () => (
     </div>
 )
 
-// Helper to adapt ITemplateDoc to KonvaViewer
+// Helper to adapt Doc to KonvaViewer
 import { Rect } from 'react-konva'
 
-const getPageDimensions = (size: any) => {
-    if (typeof size === 'string') {
-        if (size === 'A4') return { width: 595.28, height: 841.89 }
-        // Default to A4 for now for other strings
-        return { width: 595.28, height: 841.89 }
-    }
-    return size || { width: 595.28, height: 841.89 }
-}
-
-const TemplateViewer: React.FC<{ doc: ITemplateDoc; zoom: number }> = ({ doc, zoom }) => {
-    const page = doc.pages[0]
-    const dims = getPageDimensions(page?.size)
-    const bgColor = page?.background?.color || '#ffffff'
+const TemplateViewer: React.FC<{ doc: Doc; zoom: number }> = ({ doc, zoom }) => {
+    const page = doc.surfaces[0]
+    const dims = page ? { width: page.w, height: page.h } : { width: 595.28, height: 841.89 }
+    const bgColor = page?.bg || '#ffffff'
 
     // Cast elements to any to avoid strict type mismatch during rapid dev
-    const elements = (doc.elements || []) as any[]
+    const elements = (doc.nodes || []) as any[]
 
     return (
         <div className="shadow-lg bg-white">
             <KonvaViewer
                 elements={elements}
+                // ...
                 zoom={zoom}
                 paperWidth={dims.width}
                 paperHeight={dims.height}
@@ -102,7 +94,7 @@ export const ViewerPage: React.FC<ViewerPageProps> = ({ onBack }) => {
             )
         }
 
-        const template: ITemplateDoc = selectedDemo === 'invoice' ? INVOICE_TEMPLATE : SIGNATURE_TEMPLATE
+        const template: Doc = selectedDemo === 'invoice' ? INVOICE_TEMPLATE : SIGNATURE_TEMPLATE
         return (
             <div className="w-full h-full bg-gray-50 dark:bg-gray-900 flex justify-center overflow-auto p-4">
                 <TemplateViewer doc={template} zoom={zoom / 100} />

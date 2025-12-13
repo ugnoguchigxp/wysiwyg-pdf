@@ -7,7 +7,7 @@ import {
   useState,
 } from 'react'
 import { Layer, Stage } from 'react-konva'
-import type { CanvasElement, IBox, ITextElement } from '../../types/canvas'
+import type { UnifiedNode, TextNode } from '../../types/canvas'
 import {
   type CanvasElementCommonProps,
   CanvasElementRenderer,
@@ -21,16 +21,16 @@ export interface KonvaCanvasEditorHandle {
 }
 
 interface KonvaCanvasEditorProps {
-  elements: CanvasElement[]
+  elements: UnifiedNode[]
   selectedIds: string[]
   onSelect: (ids: string[]) => void
-  onChange: (id: string, newAttrs: Partial<CanvasElement>) => void
+  onChange: (id: string, newAttrs: Partial<UnifiedNode>) => void
   zoom: number
   paperWidth: number
   paperHeight: number
   background?: React.ReactNode
   renderCustom?: (
-    element: CanvasElement,
+    element: UnifiedNode,
     commonProps: CanvasElementCommonProps,
     shapeRef: CanvasShapeRefCallback
   ) => React.ReactNode
@@ -44,10 +44,6 @@ interface KonvaCanvasEditorProps {
   onStageMouseMove?: (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void
   onStageMouseUp?: (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void
 }
-
-type BoxElement = Extract<CanvasElement, { box: IBox }>
-
-const isBoxElement = (element: CanvasElement): element is BoxElement => 'box' in element
 
 export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvasEditorProps>(
   (
@@ -88,39 +84,34 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       e?: Konva.KonvaEventObject<MouseEvent | TouchEvent>
     ) => {
       if (readOnly) return
-
-      // If no ID (clicked on empty stage), clear selection
       if (!id) {
         onSelect([])
         return
       }
 
-      // Check for modifier keys (Shift or Ctrl/Meta)
       const isMultiSelect = e?.evt?.shiftKey || e?.evt?.ctrlKey || e?.evt?.metaKey
 
       if (isMultiSelect) {
-        // Toggle selection
         if (selectedIds.includes(id)) {
           onSelect(selectedIds.filter((s) => s !== id))
         } else {
           onSelect([...selectedIds, id])
         }
       } else {
-        // Single selection (replace)
         onSelect([id])
       }
     }
 
-    const handleElementDblClick = (element: CanvasElement) => {
+    const handleElementDblClick = (element: UnifiedNode) => {
       if (readOnly) return
-      if (element.type === 'Text') {
+      if (element.t === 'text') {
         setEditingElementId(element.id)
       }
     }
 
     const handleTextUpdate = (text: string) => {
       if (!editingElementId) return
-      onChange(editingElementId, { text })
+      onChange(editingElementId, { text } as Partial<UnifiedNode>)
     }
 
     const handleTextEditFinish = () => {
@@ -131,17 +122,14 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       if (readOnly) return
       selectedIds.forEach((id) => {
         const element = elements.find((el) => el.id === id)
-        if (element && isBoxElement(element)) {
-          onChange(id, {
-            box: {
-              ...element.box,
-              x: element.box.x + dx,
-              y: element.box.y + dy,
-            },
-          })
-        } else if (element && element.type === 'Line') {
-          // Handle line movement if needed (requires moving points)
-          // Simplified for now, assuming lines are not moved by arrow keys or handled differently
+        if (element && element.t !== 'line') {
+          // Assuming elements with x/y
+          if ('x' in element && 'y' in element) {
+            onChange(id, {
+              x: (element.x ?? 0) + dx,
+              y: (element.y ?? 0) + dy,
+            })
+          }
         }
       })
     }
@@ -163,7 +151,7 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
     })
 
     const editingElement = editingElementId
-      ? (elements.find((el) => el.id === editingElementId) as ITextElement)
+      ? (elements.find((el) => el.id === editingElementId) as TextNode)
       : undefined
 
     return (
@@ -179,35 +167,21 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
             scaleY={zoom}
             ref={stageRef}
             onMouseDown={(e) => {
-              // Priority to passed handler (e.g. for drawing)
               if (onStageMouseDown) {
                 onStageMouseDown(e)
-                // If drawing, we might want to stop propagation or prevent default selection logic
-                // For now, let's assume if onStageMouseDown is provided, it handles logic.
-                // But we also need selection clearing if NOT drawing.
-                // We can check e.cancelBubble or similar if the handler decides to consume it?
-                // Or simple check:
               }
-
-              // Clicked on stage or paper background -> Clear selection
-              // ONLY if NOT handled by element click (bubbling)
-              // But passed onStageMouseDown might be for drawing tools which capture everything.
               if (
-                !onStageMouseDown && // If external handler exists, assume it manages selection or decides to clear
+                !onStageMouseDown &&
                 (e.target === e.target.getStage() || e.target.name() === 'paper-background')
               ) {
                 handleSelect(null, e)
                 setEditingElementId(null)
               } else if (!onStageMouseDown && e.target === e.target.getStage()) {
-                handleSelect(null, e) // Fallback
+                handleSelect(null, e)
               }
             }}
-            onMouseMove={(e) => {
-              onStageMouseMove?.(e)
-            }}
-            onMouseUp={(e) => {
-              onStageMouseUp?.(e)
-            }}
+            onMouseMove={(e) => onStageMouseMove?.(e)}
+            onMouseUp={(e) => onStageMouseUp?.(e)}
             onTouchStart={(e) => {
               onStageMouseDown?.(e)
               if (
@@ -218,17 +192,12 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
                 setEditingElementId(null)
               }
             }}
-            onTouchMove={(e) => {
-              onStageMouseMove?.(e)
-            }}
-            onTouchEnd={(e) => {
-              onStageMouseUp?.(e)
-            }}
+            onTouchMove={(e) => onStageMouseMove?.(e)}
+            onTouchEnd={(e) => onStageMouseUp?.(e)}
           >
             <Layer>
               {background}
               {elements
-                .sort((a, b) => a.z - b.z)
                 .map((element) => (
                   <CanvasElementRenderer
                     key={element.id}

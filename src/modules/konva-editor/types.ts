@@ -1,39 +1,8 @@
 import type {
-  CanvasElement,
-  IBedElement,
-  IImageElement,
-  ILineElement,
-  IShapeElement,
-  ITextElement,
-  ITableElement,
-  IChartElement,
+  UnifiedNode,
 } from '../../types/canvas'
 
-export type {
-  CanvasElement,
-  IBedElement,
-  IImageElement,
-  ILineElement,
-  IShapeElement,
-  ITextElement,
-  ITableElement,
-  IChartElement,
-}
-
-// グループ要素 (共通) - Keep local for now if not in shared, or move to shared later
-import type { IGroupElement } from '../../types/canvas'
-// Group Element (Use shared definition if possible, but for now align it)
-export type GroupElement = IGroupElement
-
-export type BedLayoutElement =
-  | IBedElement
-  | ILineElement
-  | ITextElement
-  | IImageElement
-  | IShapeElement
-  | GroupElement
-  | ITableElement
-  | IChartElement
+export * from '../../types/canvas'
 
 // 帳票ドキュメント
 export interface FormDocument {
@@ -58,7 +27,7 @@ export interface FormDocument {
     fit: 'fill' | 'contain' | 'cover' | 'none'
   }
 
-  elementsById: Record<string, CanvasElement>
+  elementsById: Record<string, UnifiedNode>
   elementOrder: string[]
 }
 
@@ -72,30 +41,29 @@ export interface BedLayoutDocument {
   layout: {
     // 用紙サイズではなく、形状タイプを選択
     mode: 'portrait' | 'landscape' | 'square'
-    // 描画領域の論理サイズ (pt換算または任意の単位)
-    // squareなら 1000x1000, portraitなら 1000x1414 等の比率で定義
+    // 描画領域の論理サイズ
     width: number
     height: number
   }
 
-  elementsById: Record<string, BedLayoutElement>
+  elementsById: Record<string, UnifiedNode>
   elementOrder: string[]
 }
 
 // 操作ログ (Operation)
 export type Operation =
-  | { kind: 'create-element'; element: BedLayoutElement | CanvasElement }
+  | { kind: 'create-element'; element: UnifiedNode }
   | {
-      kind: 'update-element'
-      id: string
-      prev: Partial<BedLayoutElement | CanvasElement> // Simplified for now
-      next: Partial<BedLayoutElement | CanvasElement>
-    }
+    kind: 'update-element'
+    id: string
+    prev: Partial<UnifiedNode>
+    next: Partial<UnifiedNode>
+  }
   | {
-      kind: 'delete-element'
-      id: string
-      prevElement: BedLayoutElement | CanvasElement
-    }
+    kind: 'delete-element'
+    id: string
+    prevElement: UnifiedNode
+  }
   | { kind: 'reorder-elements'; prevOrder: string[]; nextOrder: string[] }
 
 // エディタ状態 (EditorState)

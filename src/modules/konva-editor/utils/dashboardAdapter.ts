@@ -1,10 +1,10 @@
 import type { BedDashboardRoom, BedStatus } from '../../bedlayout-dashboard/types'
 import type {
   BedLayoutDocument,
-  BedLayoutElement,
-  IBedElement,
-  ILineElement,
-  ITextElement,
+  UnifiedNode,
+  WidgetNode,
+  LineNode,
+  TextNode,
 } from '../types'
 
 export const convertDashboardRoomToDocument = (
@@ -18,7 +18,7 @@ export const convertDashboardRoomToDocument = (
     statusMap.set(status.bedId, status)
   })
 
-  const elementsById: Record<string, BedLayoutElement> = {}
+  const elementsById: Record<string, UnifiedNode> = {}
   const elementOrder: string[] = []
 
   // Convert Beds
@@ -26,31 +26,28 @@ export const convertDashboardRoomToDocument = (
     const status = statusMap.get(bed.id)
     const isVertical = bed.height > bed.width
 
-    const bedElement: IBedElement = {
+    const bedElement: WidgetNode = {
       id: bed.id,
-      type: 'Bed',
-      box: {
-        x: bed.x,
-        y: bed.y,
-        width: bed.width,
-        height: bed.height,
-      },
-      rotation: 0,
-      label: bed.label,
-      orientation: isVertical ? 'vertical' : 'horizontal',
-      status: status ? status.status : 'idle',
-      visible: true,
-      locked: false,
+      t: 'widget',
+      widget: 'bed',
+      s: '', // surface ID not set, might need context or assume 'page-1' if used in a Doc
+      x: bed.x,
+      y: bed.y,
+      w: bed.width,
+      h: bed.height,
+      r: 0,
       name: 'Bed',
-      z: 0,
-      // Extended properties for dashboard display
-      // Note: These need to be added to IBedElement type if not present
-      patientName: status?.patientName,
-      statusMessage: undefined,
-      bloodPressure: status?.vitals?.bp
-        ? `${status.vitals.bp.systolic}/${status.vitals.bp.diastolic}`
-        : undefined,
-    } as IBedElement // Cast to IBedElement to allow extra props if type definition is lagging
+      data: {
+        label: bed.label,
+        orientation: isVertical ? 'vertical' : 'horizontal',
+        status: status ? status.status : 'idle',
+        patientName: status?.patientName,
+        bloodPressure: status?.vitals?.bp
+          ? `${status.vitals.bp.systolic}/${status.vitals.bp.diastolic}`
+          : undefined,
+      },
+      locked: false,
+    }
 
     elementsById[bed.id] = bedElement
     elementOrder.push(bed.id)
@@ -59,22 +56,16 @@ export const convertDashboardRoomToDocument = (
   // Convert Walls (to Lines)
   if (room.walls) {
     room.walls.forEach((wall) => {
-      const wallElement: ILineElement = {
+      const wallElement: LineNode = {
         id: wall.id,
-        type: 'Line',
-        startPoint: { x: wall.start.x, y: wall.start.y },
-        endPoint: { x: wall.end.x, y: wall.end.y },
-        stroke: {
-          color: wall.stroke || '#000000',
-          width: wall.strokeWidth || 6,
-        },
-        rotation: 0,
-        visible: true,
+        t: 'line',
+        s: '',
+        pts: [wall.start.x, wall.start.y, wall.end.x, wall.end.y],
+        stroke: wall.stroke || '#000000',
+        strokeW: wall.strokeWidth || 6,
+        r: 0,
         locked: false,
         name: 'Wall',
-        z: 0,
-        startArrow: 'none',
-        endArrow: 'none',
       }
       elementsById[wall.id] = wallElement
       elementOrder.push(wall.id)
@@ -84,34 +75,29 @@ export const convertDashboardRoomToDocument = (
   // Convert Texts
   if (room.texts) {
     room.texts.forEach((text) => {
-      const textElement: ITextElement = {
+      const textElement: TextNode = {
         id: text.id,
-        type: 'Text',
-        box: {
-          x: text.x,
-          y: text.y,
-          width: 200, // Default width
-          height: 30, // Default height
-        },
+        t: 'text',
+        s: '',
+        x: text.x,
+        y: text.y,
+        w: 200,
+        h: 30, // defaults
         text: text.text,
-        font: {
-          family: 'Meiryo',
-          size: text.fontSize || 16,
-          weight: 400,
-        },
-        color: text.color || '#000000',
+        font: 'Meiryo',
+        fontSize: text.fontSize || 16,
+        fontWeight: 400,
+        fill: text.color || '#000000',
         align: (() => {
           const textAlign = 'align' in text ? text.align : undefined
-          if (textAlign === 'middle') return 'center'
-          if (textAlign === 'end') return 'right'
-          return 'left'
+          if (textAlign === 'middle') return 'c'
+          if (textAlign === 'end') return 'r'
+          return 'l'
         })(),
-        verticalAlign: 'middle',
-        rotation: 0,
-        visible: true,
+        vAlign: 'm',
+        r: 0,
         locked: false,
         name: 'Text',
-        z: 0,
       }
       elementsById[text.id] = textElement
       elementOrder.push(text.id)

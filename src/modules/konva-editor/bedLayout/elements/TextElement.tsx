@@ -1,43 +1,44 @@
 import type Konva from 'konva'
 import type React from 'react'
 import { Text } from 'react-konva'
-import type { ITextElement } from '../../types'
+import type { TextNode } from '../../types'
 
 interface TextElementProps {
-  element: ITextElement
+  element: TextNode
   isSelected: boolean
   onSelect: (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void
-  onChange: (newAttrs: Partial<ITextElement>) => void
+  onChange: (newAttrs: Partial<TextNode>) => void
   shapeRef?: React.Ref<Konva.Text>
 }
 
 export const TextElement: React.FC<TextElementProps> = ({
   element,
-
   onSelect,
   onChange,
   shapeRef,
 }) => {
+  const alignMap = { l: 'left', c: 'center', r: 'right', j: 'justify' }
+
   return (
     <Text
       ref={shapeRef}
       id={element.id}
-      x={element.box.x}
-      y={element.box.y}
+      x={element.x}
+      y={element.y}
       text={element.text || 'Text'}
-      fontSize={element.font.size}
-      fontFamily={element.font.family}
-      fontStyle={`${element.font.weight || 'normal'} ${element.font.italic ? 'italic' : ''}`}
+      fontSize={element.fontSize}
+      fontFamily={element.font}
+      fontStyle={`${element.fontWeight || 'normal'} ${element.italic ? 'italic' : ''}`}
       textDecoration={
-        element.font.underline ? 'underline' : element.font.strikethrough ? 'line-through' : ''
+        element.underline ? 'underline' : element.lineThrough ? 'line-through' : ''
       }
-      fill={element.color}
-      align={element.align}
-      verticalAlign={element.verticalAlign || 'top'}
-      width={element.box.width}
-      height={element.box.height}
-      rotation={element.rotation}
-      draggable
+      fill={element.fill}
+      align={element.align ? alignMap[element.align] : 'left'}
+      verticalAlign={element.vAlign === 'm' ? 'middle' : element.vAlign === 'b' ? 'bottom' : 'top'}
+      width={element.w}
+      height={element.h}
+      rotation={element.r}
+      draggable={!element.locked}
       onMouseDown={onSelect}
       onTap={onSelect}
       onDragStart={(e) => {
@@ -45,11 +46,8 @@ export const TextElement: React.FC<TextElementProps> = ({
       }}
       onDragEnd={(e) => {
         onChange({
-          box: {
-            ...element.box,
-            x: e.target.x(),
-            y: e.target.y(),
-          },
+          x: e.target.x(),
+          y: e.target.y(),
         })
       }}
     />

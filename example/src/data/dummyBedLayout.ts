@@ -1,43 +1,47 @@
-import type { BedLayoutDocument } from 'wysiwyg-pdf'
-import type { BedStatusData } from 'wysiwyg-pdf/dist/modules/konva-editor/bedlayout-dashboard/types'
+import type { BedLayoutDocument, UnifiedNode, TextNode, LineNode, WidgetNode, BedStatusData } from 'wysiwyg-pdf'
 
 // Helper to create IDs
 const id = (prefix: string) => `${prefix}-${crypto.randomUUID().slice(0, 8)}`
 
-// Helper to create Bed Elements
-const createBed = (x: number, y: number, label: string, rotation = 0) => ({
+// Helper to create Bed Elements (Unified: WidgetNode)
+const createBed = (x: number, y: number, label: string, rotation = 0): WidgetNode => ({
     id: id('bed'),
-    type: 'Bed' as const,
-    box: { x, y, width: 60, height: 120 },
-    rotation,
-    label,
-    bedType: 'standard',
+    t: 'widget',
+    widget: 'bed',
+    s: 'layout', // Dummy surface ID
+    x, y, w: 60, h: 120,
+    r: rotation,
+    name: label,
     opacity: 1,
-    locked: true
+    locked: true,
+    data: { bedType: 'standard' }
 })
 
-// Helper to create Walls/Lines
-const createWall = (x1: number, y1: number, x2: number, y2: number) => ({
+// Helper to create Walls/Lines (Unified: LineNode)
+const createWall = (x1: number, y1: number, x2: number, y2: number): LineNode => ({
     id: id('wall'),
-    type: 'Line' as const,
-    startPoint: { x: x1, y: y1 },
-    endPoint: { x: x2, y: y2 },
-    stroke: { color: '#334155', width: 4 }, // Slate-700
-    startArrow: 'none',
-    endArrow: 'none',
+    t: 'line',
+    s: 'layout',
+    pts: [x1, y1, x2, y2],
+    stroke: '#334155', // Slate-700
+    strokeW: 4,
+    arrows: ['none', 'none'],
     locked: true
 })
 
-// Helper to create Text
-const createText = (x: number, y: number, text: string, fontSize = 14) => ({
+// Helper to create Text (Unified: TextNode)
+const createText = (x: number, y: number, text: string, fontSize = 14): TextNode => ({
     id: id('text'),
-    type: 'Text' as const,
+    t: 'text',
+    s: 'layout',
     text,
-    font: { family: 'Meiryo', size: fontSize, weight: 700 },
-    color: '#0f172a', // Slate-900
-    box: { x, y, width: 200, height: 30 },
-    align: 'center',
-    rotation: 0,
+    font: 'Meiryo',
+    fontSize: fontSize,
+    fontWeight: 700,
+    fill: '#0f172a', // Slate-900
+    x, y, w: 200, h: 30,
+    align: 'c',
+    r: 0,
     locked: true
 })
 
@@ -83,7 +87,7 @@ export const dummyBedLayout: BedLayoutDocument = {
 // Populate elements
 const allElements = [...walls, ...beds, ...labels]
 allElements.forEach(el => {
-    dummyBedLayout.elementsById[el.id] = el as any
+    dummyBedLayout.elementsById[el.id] = el as UnifiedNode
     dummyBedLayout.elementOrder.push(el.id)
 })
 
@@ -93,62 +97,68 @@ export const dummyDashboardData: Record<string, BedStatusData> = {}
 
 // Bed 1: Critical (Alarm)
 dummyDashboardData[beds[0].id] = {
-    status: 'alarm',
+    bedId: beds[0].id,
+    status: 'occupied',
+    alerts: ['High BP', 'Tachycardia'],
     patientName: 'Yamada Taro',
     vitals: {
         bp: { systolic: 180, diastolic: 110 },
-        hr: 120,
-        temp: 38.5
+        hr: 120
     },
-    alerts: ['High BP', 'Tachycardia'],
     isOccupied: true,
 }
 
 // Bed 2: Stable (Active)
 dummyDashboardData[beds[1].id] = {
-    status: 'active',
+    bedId: beds[1].id,
+    status: 'occupied',
+    alerts: [],
     patientName: 'Suzuki Hanako',
     vitals: {
         bp: { systolic: 118, diastolic: 76 },
-        hr: 72,
-        temp: 36.6
+        hr: 72
     },
     isOccupied: true,
 }
 
 // Bed 3: Empty (Idle)
 dummyDashboardData[beds[2].id] = {
-    status: 'idle',
+    bedId: beds[2].id,
+    status: 'free',
+    alerts: [],
     isOccupied: false,
 }
 
 // Bed 4: Warning
 dummyDashboardData[beds[3].id] = {
-    status: 'warning',
+    bedId: beds[3].id,
+    status: 'occupied',
+    alerts: ['Check IV'],
     patientName: 'Tanaka Ken',
     vitals: {
         bp: { systolic: 135, diastolic: 88 },
-        hr: 95,
-        temp: 37.2
+        hr: 95
     },
-    alerts: ['Check IV'],
     isOccupied: true,
 }
 
 // Bed 5: Stable
 dummyDashboardData[beds[4].id] = {
-    status: 'active',
+    bedId: beds[4].id,
+    status: 'occupied',
+    alerts: [],
     patientName: 'Sato Jiro',
     vitals: {
         bp: { systolic: 122, diastolic: 80 },
-        hr: 68,
-        temp: 36.4
+        hr: 68
     },
     isOccupied: true,
 }
 
 // Bed 6: Empty
 dummyDashboardData[beds[5].id] = {
-    status: 'idle',
+    bedId: beds[5].id,
+    status: 'free',
+    alerts: [],
     isOccupied: false,
 }

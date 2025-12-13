@@ -6,15 +6,15 @@ import { ImageElement } from '../../konva-editor/bedLayout/elements/ImageElement
 import { LineElement } from '../../konva-editor/bedLayout/elements/LineElement'
 import { ShapeElement } from '../../konva-editor/bedLayout/elements/ShapeElement'
 import { TextElement } from '../../konva-editor/bedLayout/elements/TextElement'
-import type { BedLayoutElement } from '../../konva-editor/types'
+import type { UnifiedNode, TextNode, ShapeNode, ImageNode, WidgetNode, LineNode } from '../../konva-editor/types'
 
 import type { BedStatusData } from '../types'
 
 interface ElementRendererProps {
-  element: BedLayoutElement
+  element: UnifiedNode
   isSelected: boolean
   onSelect: (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void
-  onChange: (newAttrs: Partial<BedLayoutElement>) => void
+  onChange: (newAttrs: Partial<UnifiedNode>) => void
   readOnly?: boolean
   onBedClick?: (bedId: string, currentStatus?: BedStatusData) => void
   bedStatus?: BedStatusData
@@ -39,111 +39,83 @@ const ElementRendererComponent: React.FC<ElementRendererProps> = ({
     }
   }, [isSelected])
 
-  const handleChange = (newAttrs: Partial<BedLayoutElement>) => {
+  const handleChange = (newAttrs: Partial<UnifiedNode>) => {
     if (readOnly) return
     onChange(newAttrs)
   }
 
   const commonProps = {
     isSelected,
-    onSelect: readOnly ? () => {} : onSelect,
+    onSelect: readOnly ? () => { } : onSelect,
     onChange: handleChange,
-    draggable: !readOnly && !('locked' in element && element.locked),
+    draggable: !readOnly && !element.locked,
   }
 
   let content = null
 
-  // Helper to extract positioning props
-  const getPositionProps = (el: BedLayoutElement) => {
-    if (el.type === 'Line') return {}
-    if ('box' in el && el.box) {
-      return {
-        x: el.box.x,
-        y: el.box.y,
-        rotation: el.rotation || 0,
-      }
-    }
-    // Fallback for flat structure if any
-    const record = el as unknown as Record<string, unknown>
-    return {
-      x: typeof record.x === 'number' ? record.x : 0,
-      y: typeof record.y === 'number' ? record.y : 0,
-      rotation: el.rotation || 0,
-    }
-  }
-
-  const positionProps = getPositionProps(element)
-
-  switch (element.type) {
-    case 'Text':
+  switch (element.t) {
+    case 'text':
       content = (
         <TextElement
           {...commonProps}
-          {...positionProps}
-          element={element}
+          element={element as TextNode}
           shapeRef={shapeRef as React.RefObject<Konva.Text>}
         />
       )
       break
-    case 'Rect':
-    case 'Circle':
-    case 'Triangle':
-    case 'Trapezoid':
-    case 'Diamond':
-    case 'Cylinder':
+    case 'shape':
       content = (
         <ShapeElement
           {...commonProps}
-          {...positionProps}
-          element={element}
+          element={element as ShapeNode}
           shapeRef={shapeRef as React.RefObject<Konva.Group>}
         />
       )
       break
-    case 'Image':
+    case 'image':
       content = (
         <ImageElement
           {...commonProps}
-          {...positionProps}
-          element={element}
+          element={element as ImageNode}
           shapeRef={shapeRef as React.RefObject<Konva.Image>}
         />
       )
       break
-    case 'Bed':
-      content = (
-        <BedElement
-          {...commonProps}
-          {...positionProps}
-          element={element}
-          shapeRef={shapeRef as React.RefObject<Konva.Rect>}
-          bedStatus={bedStatus}
-          onClick={readOnly && onBedClick ? () => onBedClick(element.id, bedStatus) : undefined}
-          onTap={readOnly && onBedClick ? () => onBedClick(element.id, bedStatus) : undefined}
-          onMouseEnter={
-            readOnly && onBedClick
-              ? (e: Konva.KonvaEventObject<MouseEvent>) => {
+    case 'widget':
+      if (element.widget === 'bed') {
+        content = (
+          <BedElement
+            {...commonProps}
+            element={element as WidgetNode}
+            shapeRef={shapeRef as React.RefObject<Konva.Rect>}
+            bedStatus={bedStatus}
+            onClick={readOnly && onBedClick ? () => onBedClick(element.id, bedStatus) : undefined}
+            onTap={readOnly && onBedClick ? () => onBedClick(element.id, bedStatus) : undefined}
+            onMouseEnter={
+              readOnly && onBedClick
+                ? (e: Konva.KonvaEventObject<MouseEvent>) => {
                   const container = e.target.getStage()?.container()
                   if (container) container.style.cursor = 'pointer'
                 }
-              : undefined
-          }
-          onMouseLeave={
-            readOnly && onBedClick
-              ? (e: Konva.KonvaEventObject<MouseEvent>) => {
+                : undefined
+            }
+            onMouseLeave={
+              readOnly && onBedClick
+                ? (e: Konva.KonvaEventObject<MouseEvent>) => {
                   const container = e.target.getStage()?.container()
                   if (container) container.style.cursor = 'default'
                 }
-              : undefined
-          }
-        />
-      )
+                : undefined
+            }
+          />
+        )
+      }
       break
-    case 'Line':
+    case 'line':
       content = (
         <LineElement
           {...commonProps}
-          element={element}
+          element={element as LineNode}
           shapeRef={shapeRef as React.RefObject<Konva.Group>}
         />
       )
@@ -155,7 +127,7 @@ const ElementRendererComponent: React.FC<ElementRendererProps> = ({
   return (
     <>
       {content}
-      {!readOnly && isSelected && element.type !== 'Line' && (
+      {!readOnly && isSelected && element.t !== 'line' && (
         <Transformer
           ref={trRef}
           boundBoxFunc={(oldBox, newBox) => {
@@ -165,7 +137,7 @@ const ElementRendererComponent: React.FC<ElementRendererProps> = ({
             }
             return newBox
           }}
-          rotateEnabled={element.type !== 'Bed'}
+          rotateEnabled={element.t !== 'widget'} // Assuming widgets/bed allow rotation? Old code disabled for Bed.
           onTransformEnd={() => {
             const node = shapeRef.current
             if (!node) return
@@ -179,42 +151,15 @@ const ElementRendererComponent: React.FC<ElementRendererProps> = ({
             const newWidth = Math.max(5, node.width() * scaleX)
             const newHeight = Math.max(5, node.height() * scaleY)
 
-            if (element.type === 'Bed') {
-              // BedElement logic might need adjustment if it adopts box structure or keeps flat x/y
-              // Assuming BedElement still uses flat x/y for now or we update it later.
-              // But wait, BedLayoutElement union uses IBedElement which has box.
-              // Let's assume BedElement component handles box update.
-              // But here we are updating the element state.
-
-              // If BedElement uses box:
-              onChange({
-                ...element,
-                box: {
-                  ...element.box,
-                  x: node.x(),
-                  y: node.y(),
-                  width: newWidth,
-                  height: newHeight,
-                },
-              })
-            } else if (
-              element.type === 'Text' ||
-              element.type === 'Image' ||
-              element.type === 'Rect' ||
-              element.type === 'Circle'
-            ) {
-              onChange({
-                ...element,
-                box: {
-                  ...element.box,
-                  x: node.x(),
-                  y: node.y(),
-                  width: newWidth,
-                  height: newHeight,
-                },
-                rotation: node.rotation(),
-              })
-            }
+            // Unified Node update
+            onChange({
+              ...element,
+              x: node.x(),
+              y: node.y(),
+              w: newWidth,
+              h: newHeight,
+              r: node.rotation()
+            } as UnifiedNode)
           }}
         />
       )}

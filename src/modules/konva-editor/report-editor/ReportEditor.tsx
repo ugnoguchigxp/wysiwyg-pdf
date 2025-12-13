@@ -2,12 +2,12 @@ import React, { useState, useRef, useCallback } from 'react'
 import { WysiwygEditorToolbar } from './pdf-editor/components/Toolbar/WysiwygEditorToolbar'
 import { ReportKonvaEditor } from './ReportKonvaEditor'
 import { WysiwygPropertiesPanel } from './pdf-editor/components/PropertiesPanel/WysiwygPropertiesPanel'
-import type { Element, ITemplateDoc } from './pdf-editor/types/wysiwyg'
+import type { UnifiedNode, Doc } from './pdf-editor/types/wysiwyg'
 import type { IDataSchema } from '../../../types/schema'
 
 export interface ReportEditorProps {
-  templateDoc: ITemplateDoc
-  onTemplateChange: (doc: ITemplateDoc) => void
+  templateDoc: Doc
+  onTemplateChange: (doc: Doc) => void
   schema?: IDataSchema
   initialZoom?: number
 }
@@ -32,12 +32,10 @@ export const ReportEditor: React.FC<ReportEditorProps> = ({
   // Tool state
   const [activeTool, setActiveTool] = useState<string>('select')
 
-  // Manage current page (for now, default to first page or 'page1')
-  // In a multi-page setup, we might need page navigation state.
-  // Assuming single page editor or prop control for now, but to be "drop-in" we should default.
-  const currentPageId = templateDoc.pages[0]?.id || ''
+  // Manage current page (for now, default to first content page)
+  const currentPageId = templateDoc.surfaces[0]?.id || ''
 
-  const handleElementSelect = (element: Element | null) => {
+  const handleElementSelect = (element: UnifiedNode | null) => {
     setSelectedElementId(element?.id ?? null)
     if (!element) {
       setSelectedCell(null)

@@ -13,8 +13,8 @@ import {
   DialogTitle,
 } from '../../../../../../components/ui/Dialog'
 import { SimpleSearchInput } from '../../../../../../components/ui/SimpleSearchInput'
-import type { IBinding } from '../../../../../../types/canvas'
 import type { IDataSchema, ISchemaField } from '../../../../../../types/schema'
+import type { BindingInfo } from './BindingSelector'
 
 type HierarchyItem = {
   id: string
@@ -32,7 +32,7 @@ interface DataBindingModalProps {
   isOpen: boolean
   onClose: () => void
   schema: IDataSchema
-  onSelect: (binding: IBinding) => void
+  onSelect: (binding: BindingInfo) => void
   mode: 'field' | 'repeater'
 }
 
@@ -122,7 +122,7 @@ export const DataBindingModal: React.FC<DataBindingModalProps> = ({
       // In repeater mode, we bind CATEGORIES
       if (item.type === 'category') {
         onSelect({
-          type: 'repeater',
+          field: item.id, // For repeater, often just category ID
           sourceId: item.id,
           fieldId: item.id,
           path: item.id,
@@ -132,8 +132,9 @@ export const DataBindingModal: React.FC<DataBindingModalProps> = ({
     } else {
       // In field mode, we bind FIELDS (children)
       if (item.type !== 'category' && item.categoryId) {
+        const dotPath = `${item.categoryId}.${item.id}`
         onSelect({
-          type: 'field',
+          field: dotPath,
           sourceId: item.categoryId,
           fieldId: item.id,
           path: item.id,

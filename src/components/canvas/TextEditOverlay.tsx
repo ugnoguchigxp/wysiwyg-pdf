@@ -1,10 +1,10 @@
 import type Konva from 'konva'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
-import type { ITextElement } from '../../modules/konva-editor/types'
+import type { TextNode } from '../../modules/konva-editor/types'
 
 interface TextEditOverlayProps {
-  element: ITextElement
+  element: TextNode
   scale: number
   stageNode: Konva.Stage | null
   onUpdate: (text: string) => void
@@ -39,20 +39,20 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
       position: 'absolute',
       top: `${areaPosition.y}px`,
       left: `${areaPosition.x}px`,
-      width: `${element.box.width * scale}px`,
-      height: `${element.box.height * scale}px`,
-      fontSize: `${element.font.size * scale}px`,
-      fontFamily: element.font.family,
-      fontWeight: element.font.weight,
-      fontStyle: element.font.italic ? 'italic' : 'normal',
+      width: `${element.w * scale}px`,
+      height: `${element.h * scale}px`,
+      fontSize: `${(element.fontSize || 12) * scale}px`,
+      fontFamily: element.font || 'Arial',
+      fontWeight: element.fontWeight || 400,
+      fontStyle: element.italic ? 'italic' : 'normal',
       textDecoration: [
-        element.font.underline ? 'underline' : '',
-        element.font.strikethrough ? 'line-through' : '',
+        element.underline ? 'underline' : '',
+        element.lineThrough ? 'line-through' : '',
       ]
         .filter(Boolean)
         .join(' '),
-      color: element.color,
-      textAlign: element.align,
+      color: element.fill || '#000000',
+      textAlign: element.align === 'r' ? 'right' : element.align === 'c' ? 'center' : element.align === 'j' ? 'justify' : 'left',
       lineHeight: 1.2, // Match Konva default
       background: 'transparent',
       border: 'none',
@@ -63,7 +63,7 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
       overflow: 'hidden',
       zIndex: 1000, // Ensure it's on top
       transformOrigin: 'top left',
-      transform: `rotate(${element.rotation}deg)`,
+      transform: `rotate(${element.r || 0}deg)`,
     }
 
     setStyle(newStyle)
