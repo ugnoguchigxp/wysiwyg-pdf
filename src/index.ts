@@ -2,8 +2,10 @@ import type { } from './global'
 // Components
 
 // Bed Layout Components
-export * from './modules/bedlayout-dashboard/components/KonvaViewer'
+// Bed Layout Components
+export * from './components/canvas/KonvaViewer'
 export * from './modules/konva-editor/bedLayout/BedLayoutEditor'
+export * from './modules/konva-editor/bedLayout/BedLayoutViewer'
 export * from './modules/konva-editor/bedLayout/BedPrintLayout'
 export { PropertyPanel as BedPropertyPanel } from './modules/konva-editor/bedLayout/components/PropertyPanel'
 export {
@@ -28,7 +30,7 @@ export * from './types/schema'
 // export * from './modules/konva-editor/report-editor/hooks/useTemplateSave'; // Moved to app
 // export * from './modules/bedlayout-dashboard/hooks/useBedStatusSocket'; // Moved to app
 
-export * from './modules/bedlayout-dashboard/types'
+export * from './modules/konva-editor/bedlayout-dashboard/types'
 // export * from './modules/konva-editor/report-editor/pdf-editor/types/wysiwyg';
 export type {
   Element,

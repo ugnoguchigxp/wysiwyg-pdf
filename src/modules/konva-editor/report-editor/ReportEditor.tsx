@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useCallback } from 'react'
 import { WysiwygEditorToolbar } from './pdf-editor/components/Toolbar/WysiwygEditorToolbar'
 import { ReportKonvaEditor } from './ReportKonvaEditor'
 import { WysiwygPropertiesPanel } from './pdf-editor/components/PropertiesPanel/WysiwygPropertiesPanel'
@@ -29,6 +29,9 @@ export const ReportEditor: React.FC<ReportEditorProps> = ({
   // Focus ref for canvas
   const editorRef = useRef<React.ElementRef<typeof ReportKonvaEditor> | null>(null)
 
+  // Tool state
+  const [activeTool, setActiveTool] = useState<string>('select')
+
   // Manage current page (for now, default to first page or 'page1')
   // In a multi-page setup, we might need page navigation state.
   // Assuming single page editor or prop control for now, but to be "drop-in" we should default.
@@ -41,10 +44,19 @@ export const ReportEditor: React.FC<ReportEditorProps> = ({
     }
   }
 
+  const handleToolSelect = useCallback((tool: string) => {
+    setActiveTool(tool)
+    // Clear selection when switching to a tool (optional but good UX)
+    if (tool !== 'select') {
+      setSelectedElementId(null)
+      setSelectedCell(null)
+    }
+  }, [])
+
   return (
     <div className="flex h-full w-full overflow-hidden border border-theme-border bg-theme-bg-primary text-theme-text-primary">
       {/* Left Toolbar */}
-      <div className="w-16 border-r border-theme-border bg-theme-bg-secondary shrink-0 flex flex-col">
+      <div className="w-16 border-r border-theme-border bg-theme-bg-secondary shrink-0 flex flex-col z-10 relative">
         <WysiwygEditorToolbar
           zoom={zoom}
           onZoomChange={setZoom}
@@ -52,6 +64,8 @@ export const ReportEditor: React.FC<ReportEditorProps> = ({
           onTemplateChange={onTemplateChange}
           onSelectElement={(id) => setSelectedElementId(id)}
           currentPageId={currentPageId}
+          activeTool={activeTool}
+          onToolSelect={handleToolSelect}
         />
       </div>
 
@@ -66,6 +80,7 @@ export const ReportEditor: React.FC<ReportEditorProps> = ({
           onTemplateChange={onTemplateChange}
           currentPageId={currentPageId}
           onSelectedCellChange={setSelectedCell}
+          activeTool={activeTool}
         />
       </div>
 

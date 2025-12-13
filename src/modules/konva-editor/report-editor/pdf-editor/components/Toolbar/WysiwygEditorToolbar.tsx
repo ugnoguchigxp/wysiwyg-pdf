@@ -11,6 +11,7 @@ import {
   Home,
   Image as ImageIcon,
   Minus,
+  PenTool, // Import PenTool
   Pentagon,
   Shapes,
   Square,
@@ -21,8 +22,9 @@ import {
   Type,
   ZoomIn,
   ZoomOut,
+  MousePointer2, // Import MousePointer2 for Select
 } from 'lucide-react'
-import type React from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Tooltip,
@@ -51,6 +53,9 @@ const log = createContextLogger('WysiwygEditorToolbar')
 
 const TOOLBAR_BUTTON_CLASS =
   'w-10 h-10 flex items-center justify-center rounded border border-theme-border bg-theme-bg-tertiary text-theme-text-secondary hover:bg-theme-object-primary/20 transition-colors'
+const TOOLBAR_BUTTON_ACTIVE_CLASS =
+  'w-10 h-10 flex items-center justify-center rounded border border-theme-object-primary bg-theme-object-primary/10 text-theme-object-primary'
+
 
 const TrapezoidIcon = ({ size = 20, className = '', title = 'Trapezoid' }) => (
   <svg
@@ -77,6 +82,8 @@ interface IWysiwygEditorToolbarProps {
   onSelectElement: (elementId: string) => void
   currentPageId?: string
   i18nOverrides?: Record<string, string>
+  activeTool?: string
+  onToolSelect?: (tool: string) => void
 }
 
 export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
@@ -87,8 +94,11 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
   onSelectElement,
   currentPageId,
   i18nOverrides,
+  activeTool = 'select',
+  onToolSelect,
 }) => {
   const { t } = useTranslation()
+
 
   // Helper to resolve translation: Override -> i18next -> Default
   const resolveText = (key: string, defaultValue?: string) => {
@@ -128,6 +138,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
     onTemplateChange(nextDoc)
     // Selection is handled by parent's pending logic via Effect
     onSelectElement(element.id)
+    onToolSelect?.('select') // Force select tool after adding
     log.debug('Element added from toolbar', { id: element.id, type: element.type })
   }
 
@@ -396,6 +407,51 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
   return (
     <div className="flex flex-col items-center gap-2 p-2 bg-theme-bg-secondary border-r border-theme-border text-theme-text-secondary">
       <TooltipProvider>
+        {/* Select Tool */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span>
+              <button
+                type="button"
+                onClick={() => {
+                  log.debug('Select Tool Clicked')
+                  console.log('Calling onToolSelect', !!onToolSelect)
+                  onToolSelect?.('select')
+                }}
+                className={activeTool === 'select' ? TOOLBAR_BUTTON_ACTIVE_CLASS : TOOLBAR_BUTTON_CLASS}
+                aria-label={resolveText('toolbar_select', 'Select')}
+              >
+                <MousePointer2 size={20} />
+              </button>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="right">{resolveText('toolbar_select', 'Select')}</TooltipContent>
+        </Tooltip>
+
+        {/* Signature Tool */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span>
+              <button
+                type="button"
+                onClick={() => {
+                  log.debug('Signature Tool Clicked')
+                  console.log('Calling onToolSelect', !!onToolSelect)
+                  onToolSelect?.('signature')
+                }}
+                className={activeTool === 'signature' ? TOOLBAR_BUTTON_ACTIVE_CLASS : TOOLBAR_BUTTON_CLASS}
+                aria-label={resolveText('toolbar_signature', 'Signature')}
+              >
+                <PenTool size={20} />
+              </button>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="right">{resolveText('toolbar_signature', 'Signature')}</TooltipContent>
+        </Tooltip>
+
+        {/* Divider */}
+        <div className="border-t border-theme-border my-1 w-full" />
+
         {/* Add Text Button */}
         <Tooltip>
           <TooltipTrigger asChild>
@@ -519,6 +575,6 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
           <ZoomOut size={18} />
         </button>
       </div>
-    </div>
+    </div >
   )
 }

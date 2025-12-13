@@ -21,6 +21,7 @@ import type {
   ITableElement,
   ITextElement,
   Unit,
+  ISignatureElement,
 } from '../../../../../types/canvas'
 
 export type {
@@ -40,6 +41,7 @@ export type {
   ILineElement,
   IImageElement,
   ITableElement,
+  ISignatureElement,
   Element,
 }
 
@@ -49,10 +51,10 @@ export type PageSize =
   | 'B5'
   | 'Letter'
   | {
-      width: number
-      height: number
-      unit: Unit
-    }
+    width: number
+    height: number
+    unit: Unit
+  }
 
 export interface ITemplateMeta {
   id?: string

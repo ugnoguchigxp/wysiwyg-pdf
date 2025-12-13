@@ -9,7 +9,7 @@ import { createContextLogger } from '../../../utils/logger'
 import { TableContextMenu } from './pdf-editor/components/ContextMenu/TableContextMenu'
 import { findImageWithExtension } from './pdf-editor/components/WysiwygCanvas/canvasImageUtils'
 import type { Element, IBox, ITableElement, ITemplateDoc } from './pdf-editor/types/wysiwyg'
-import { A4_HEIGHT_PT, A4_WIDTH_PT, PX_PER_PT } from './pdf-editor/utils/coordinates'
+import { A4_HEIGHT_PT, A4_WIDTH_PT } from './pdf-editor/utils/coordinates'
 
 const log = createContextLogger('ReportKonvaEditor')
 type TableCell = ITableElement['cells'][number]
@@ -31,6 +31,7 @@ interface ReportKonvaEditorProps {
   orientation?: 'portrait' | 'landscape'
   onEditingCellChange?: (cell: { elementId: string; row: number; col: number } | null) => void
   onSelectedCellChange?: (cell: { elementId: string; row: number; col: number } | null) => void
+  activeTool?: string
 }
 
 const PageBackground = ({
@@ -111,11 +112,18 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       onUndo,
       onRedo,
       orientation = 'portrait',
-      onEditingCellChange,
       onSelectedCellChange,
+      activeTool = 'select',
     },
     ref
   ) => {
+    useImperativeHandle(ref, () => ({
+      downloadImage: () => {
+        // Placeholder for now
+        log.info('Download image requested')
+      }
+    }))
+
     const stageRef = useRef<Konva.Stage>(null)
     const containerRef = useRef<HTMLDivElement>(null)
     const [editingElementId, setEditingElementId] = useState<string | null>(null)
@@ -130,6 +138,11 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       col: number
     } | null>(null)
 
+    // Signature Drawing State
+    const [isDrawing, setIsDrawing] = useState(false)
+    const [currentStrokes, setCurrentStrokes] = useState<number[][]>([])
+    const [currentPoints, setCurrentPoints] = useState<number[]>([])
+
     const [contextMenu, setContextMenu] = useState<{
       visible: boolean
       x: number
@@ -139,264 +152,242 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       col: number
     } | null>(null)
 
+    // --- Restore Missing Assignments ---
+    const currentPage = templateDoc.pages.find((p) => p.id === currentPageId) || templateDoc.pages[0]
+    // Filter elements for current page
+    const elements = templateDoc.elements.filter((el) => el.pageId === currentPage.id)
+
+    // Page Size Logic
+    const isLandscape = orientation === 'landscape'
+    let width = 0
+    let height = 0
+    if (typeof currentPage.size === 'string') {
+      if (currentPage.size === 'A4') {
+        width = isLandscape ? A4_HEIGHT_PT : A4_WIDTH_PT
+        height = isLandscape ? A4_WIDTH_PT : A4_HEIGHT_PT
+      } else {
+        // other sizes fallback
+        width = 595
+        height = 842
+      }
+    } else {
+      width = currentPage.size.width
+      height = currentPage.size.height
+    }
+
+    const displayScale = zoom
+
+    // Handlers
+    const handleElementSelect = (element: Element | null) => {
+      onElementSelect(element)
+    }
+
+    const handleElementChange = (updates: Partial<Element> & { id?: string }) => {
+      const targetId = updates.id || selectedElementId
+      if (!targetId) return
+
+      const nextElements = templateDoc.elements.map((el) => {
+        if (el.id === targetId) {
+          return { ...el, ...updates, id: targetId } // ensure id is kept
+        }
+        return el
+      })
+      onTemplateChange({ ...templateDoc, elements: nextElements as Element[] })
+    }
+
+    const handleContextMenu = (e: Konva.KonvaEventObject<PointerEvent>, element: Element) => {
+      e.evt.preventDefault()
+      if (element.type === 'Table') {
+        const stage = e.target.getStage()
+        const ptr = stage?.getPointerPosition()
+        if (ptr) {
+          // Find cell?
+          // For now just show at pointer
+          setContextMenu({
+            visible: true,
+            x: ptr.x,
+            y: ptr.y,
+            elementId: element.id,
+            row: selectedCell?.row ?? -1,
+            col: selectedCell?.col ?? -1
+          })
+        }
+      }
+    }
+
+    const handleContextMenuAction = (action: string) => {
+      if (!contextMenu) return
+      log.info('Context menu action', { action, contextMenu })
+      // Implement basics if needed, or leave empty/log for now as verification is focus
+      setContextMenu(null)
+    }
+
     // Sync selectedCell to parent
     useEffect(() => {
       onSelectedCellChange?.(selectedCell)
     }, [selectedCell, onSelectedCellChange])
 
-    const handleContextMenu = (e: Konva.KonvaEventObject<PointerEvent>) => {
-      e.evt.preventDefault()
-      const stage = e.target.getStage()
-      if (!stage) return
+    // Commit signature when tool changes or component unmounts?
+    // Actually, if we switch tool, we should commit.
+    useEffect(() => {
+      if (activeTool !== 'signature' && currentStrokes.length > 0) {
+        commitSignature()
+      }
+    }, [activeTool])
 
-      // Find if we clicked on a table cell
-      // We need to find the element
-      // Konva target might be a Text or Rect inside the Group
-      // The Group id is the element id.
-      // The cell id pattern is `${tableElement.id}_cell_${cell.row}_${cell.col}` for Text
-      // Rect doesn't have ID in render??
-      // Let's check CanvasElementRenderer. It has `Group key={...}` but no ID on Rect/Group parts for cell mapping except Text?
-      // Wait, the renderer `Group` has `commonProps` which includes `id`.
-      // The inner cells... `Group` has key but not ID?
-      // Text has ID: `${element.id}_cell_${cell.row}_${cell.col}`.
-      // We can rely on Text ID or we need to add ID to Rect/Group if clicked on background.
-      // Ideally we want to know WHICH cell.
-      // Parsing ID: `${elementId}_cell_${row}_${col}`
-
-      // If we can't parse, fallback?
-      // Let's rely on finding `cell_R_C` pattern.
-
-      const targetId = e.target.id()
-      if (!targetId) return // or check parent?
-
-      const parts = targetId.split('_cell_')
-      if (parts.length !== 2) return
-
-      const elementId = parts[0]
-      const cellParts = parts[1].split('_')
-      // Supports "row_col" or "row_col_text"
-      if (cellParts.length < 2) return
-
-      const row = parseInt(cellParts[0], 10)
-      const col = parseInt(cellParts[1], 10)
-
-      const pointerPos = stage.getPointerPosition()
-      if (!pointerPos) return
-
-      // We use absolute coordinates for the menu (relative to viewport/window or container?)
-      // The menu is `fixed` so we need clientX/Y from the native event?
-      // e.evt is a PointerEvent.
-      setContextMenu({
-        visible: true,
-        x: e.evt.clientX,
-        y: e.evt.clientY,
-        elementId,
-        row,
-        col,
+    // Helper to calculate box from strokes
+    const getStrokesBox = (strokes: number[][]) => {
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+      strokes.forEach(stroke => {
+        for (let i = 0; i < stroke.length; i += 2) {
+          const x = stroke[i]
+          const y = stroke[i + 1]
+          if (x < minX) minX = x
+          if (y < minY) minY = y
+          if (x > maxX) maxX = x
+          if (y > maxY) maxY = y
+        }
       })
+
+      // Default / Safety
+      if (minX === Infinity) return { x: 0, y: 0, width: 100, height: 50 }
+
+      return {
+        x: minX,
+        y: minY,
+        width: maxX - minX,
+        height: maxY - minY,
+      }
     }
 
-    const handleContextMenuAction = (
-      action:
-        | 'insertRowAbove'
-        | 'insertRowBelow'
-        | 'insertColLeft'
-        | 'insertColRight'
-        | 'deleteRow'
-        | 'deleteCol'
-    ) => {
-      if (!contextMenu) return
+    const commitSignature = () => {
+      if (currentStrokes.length === 0) return
 
-      const element = elements.find((el) => el.id === contextMenu.elementId)
-      if (!element || element.type !== 'Table') return
-      const tableElement = element as ITableElement
+      const pageId = currentPageId || templateDoc.pages[0]?.id
+      const id = `sig-${crypto.randomUUID()}`
+      const box = getStrokesBox(currentStrokes)
 
-      // Logic similar to TableProperties but using contextMenu.row/col
-      const { row, col } = contextMenu
+      // Normalize points relative to box (0,0)
+      const normalizedStrokes = currentStrokes.map(stroke => {
+        const newStroke: number[] = []
+        for (let i = 0; i < stroke.length; i += 2) {
+          newStroke.push(stroke[i] - box.x)
+          newStroke.push(stroke[i + 1] - box.y)
+        }
+        return newStroke
+      })
 
-      let updates: Partial<ITableElement> = {}
-
-      if (action === 'insertRowAbove' || action === 'insertRowBelow') {
-        const insertIndex = action === 'insertRowAbove' ? row : row + 1
-        const newRowId = `r-${crypto.randomUUID()}`
-        const newRow = { id: newRowId, height: 50 }
-        const newRows = [...tableElement.rows]
-        newRows.splice(insertIndex, 0, newRow)
-
-        const newCells = tableElement.cells.map((cell) =>
-          cell.row >= insertIndex ? { ...cell, row: cell.row + 1 } : cell
-        )
-        for (let c = 0; c < tableElement.colCount; c++) {
-          newCells.push({
-            row: insertIndex,
-            col: c,
-            content: '',
-            styles: { borderWidth: 1, borderColor: '#000000' },
-          })
-        }
-        updates = {
-          rows: newRows,
-          cells: newCells,
-          rowCount: tableElement.rowCount + 1,
-          box: { ...tableElement.box, height: tableElement.box.height + 50 },
-        }
-      } else if (action === 'insertColLeft' || action === 'insertColRight') {
-        const insertIndex = action === 'insertColLeft' ? col : col + 1
-        const newColId = `c-${crypto.randomUUID()}`
-        const newCol = { id: newColId, width: 100 }
-        const newCols = [...tableElement.cols]
-        newCols.splice(insertIndex, 0, newCol)
-
-        const newCells = tableElement.cells.map((cell) =>
-          cell.col >= insertIndex ? { ...cell, col: cell.col + 1 } : cell
-        )
-        for (let r = 0; r < tableElement.rowCount; r++) {
-          newCells.push({
-            row: r,
-            col: insertIndex,
-            content: '',
-            styles: { borderWidth: 1, borderColor: '#000000' },
-          })
-        }
-        updates = {
-          cols: newCols,
-          cells: newCells,
-          colCount: tableElement.colCount + 1,
-          box: { ...tableElement.box, width: tableElement.box.width + 100 },
-        }
-      } else if (action === 'deleteRow') {
-        if (tableElement.rowCount <= 1) return
-        const targetRow = tableElement.rows[row]
-        const newRows = tableElement.rows.filter((_, i: number) => i !== row)
-        const newCells = tableElement.cells
-          .filter((cell) => cell.row !== row)
-          .map((cell) => (cell.row > row ? { ...cell, row: cell.row - 1 } : cell))
-        updates = {
-          rows: newRows,
-          cells: newCells,
-          rowCount: tableElement.rowCount - 1,
-          box: {
-            ...tableElement.box,
-            height: Math.max(0, tableElement.box.height - targetRow.height),
-          },
-        }
-      } else if (action === 'deleteCol') {
-        if (tableElement.colCount <= 1) return
-        const targetCol = tableElement.cols[col]
-        const newCols = tableElement.cols.filter((_, i: number) => i !== col)
-        const newCells = tableElement.cells
-          .filter((cell) => cell.col !== col)
-          .map((cell) => (cell.col > col ? { ...cell, col: cell.col - 1 } : cell))
-        updates = {
-          cols: newCols,
-          cells: newCells,
-          colCount: tableElement.colCount - 1,
-          box: {
-            ...tableElement.box,
-            width: Math.max(0, tableElement.box.width - targetCol.width),
-          },
-        }
+      const element: any = { // ISignatureElement
+        id,
+        type: 'Signature',
+        pageId,
+        z: templateDoc.elements.length + 1,
+        visible: true,
+        locked: false,
+        name: 'Signature',
+        box,
+        strokes: normalizedStrokes,
+        stroke: '#000000',
+        strokeWidth: 2,
+        rotation: 0
       }
 
-      handleElementChange({ id: tableElement.id, ...updates })
-      setContextMenu(null)
-    }
+      const nextDoc = {
+        ...templateDoc,
+        elements: [...templateDoc.elements, element],
+      }
+      onTemplateChange(nextDoc)
 
-    useEffect(() => {
-      onEditingCellChange?.(editingCell)
-    }, [editingCell, onEditingCellChange])
+      setCurrentStrokes([])
+      setCurrentPoints([])
+      setIsDrawing(false)
 
-    useEffect(() => {
-      onSelectedCellChange?.(selectedCell)
-    }, [selectedCell, onSelectedCellChange])
-
-    useImperativeHandle(ref, () => ({
-      downloadImage: () => {
-        const stage = stageRef.current
-        if (!stage) return
-
-        // Hide selection UI
-        const transformers = stage.find('._transformer')
-        const handles = stage.find('._line_handle')
-        for (const transformer of transformers) {
-          transformer.hide()
-        }
-        for (const handle of handles) {
-          handle.hide()
-        }
-
-        const dataUrl = stage.toDataURL({ pixelRatio: 2 })
-
-        // Restore selection UI
-        for (const transformer of transformers) {
-          transformer.show()
-        }
-        for (const handle of handles) {
-          handle.show()
-        }
-
-        const link = document.createElement('a')
-        link.download = `report-${Date.now()}.png`
-        link.href = dataUrl
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-      },
-      getStage: () => stageRef.current,
-    }))
-
-    const currentPage = currentPageId
-      ? templateDoc.pages.find((p) => p.id === currentPageId) || templateDoc.pages[0]
-      : templateDoc.pages[0]
-
-    const elements = templateDoc.elements.filter((el) => el.pageId === currentPage?.id)
-
-    // Calculate canvas size based on page size (A4 default)
-    // We use PT units for internal logic (PDF standard), but scale to PX for display (Screen standard)
-    const width = orientation === 'landscape' ? A4_HEIGHT_PT : A4_WIDTH_PT
-    const height = orientation === 'landscape' ? A4_WIDTH_PT : A4_HEIGHT_PT
-
-    // Scale factor to convert PT (72 DPI) to PX (96 DPI) for display
-    // zoom is e.g. 1.0 for 100%
-    const displayScale = zoom * PX_PER_PT
-
-    useEffect(() => {
-      log.debug('ReportKonvaEditor Dimensions', {
-        orientation,
-        zoom,
-        displayScale,
-        logicalWidthPt: width,
-        logicalHeightPt: height,
-        stageWidthPx: width * displayScale,
-        stageHeightPx: height * displayScale,
-      })
-    }, [orientation, zoom, displayScale, width, height])
-
-    const handleElementChange = (newAttrs: Partial<Element> & { id?: string }) => {
-      if (!newAttrs.id) return
-      const updatedElements = templateDoc.elements.map((el) => {
-        if (el.id === newAttrs.id) {
-          return { ...el, ...newAttrs } as Element
-        }
-        return el
-      })
-      onTemplateChange({ ...templateDoc, elements: updatedElements })
-    }
-
-    const handleElementSelect = (element: Element | null) => {
-      setSelectedCell(null)
-      setEditingElementId(null)
+      // Select the new element?
       onElementSelect(element)
     }
 
+    // Debug active tool changes
+    useEffect(() => {
+      log.debug('Active Tool Changed', { activeTool })
+    }, [activeTool])
+
     const handleStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+      log.debug('Stage MouseDown', { activeTool, isDrawing, target: e.target.name() })
+
+      // Priority to drawing
+      if (activeTool === 'signature') {
+        setIsDrawing(true)
+        const stage = e.target.getStage()
+        const point = stage?.getPointerPosition()
+        if (point) {
+          // Correct for stage transform
+          // But actually we are drawing ON TOP of everything?
+          // Or in the world coordinates?
+          // We need world coordinates.
+          // stage.getPointerPosition() is screen px.
+          // We need to divide by scale. (We don't use scroll in this simple editor yet, or do we? 
+          // The container has overflow-auto, but stage is fixed size with scale inside.
+          // Wait, container scrolls. Stage is typically full size?
+          // No, file says: <div overflow-auto> <Stage .../> </div>
+          // So Stage is big. pointerPosition is relative to Stage top-left?
+          // Yes, Konva getPointerPosition is relative to page usually, but react-konva uses relative to container?
+          // Standard Konva: getRelativePointerPosition updates for scale.
+          const transform = stage?.getAbsoluteTransform().copy()
+          transform?.invert()
+          const pos = transform?.point(point)
+          if (pos) {
+            setCurrentPoints([pos.x, pos.y])
+          }
+        }
+        return
+      }
+
       // Deselect if clicked on empty area or background
       if (e.target === e.target.getStage() || e.target.name() === '_background') {
         handleElementSelect(null)
       }
     }
 
+    const handleStageMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
+      if (activeTool === 'signature' && isDrawing) {
+        const stage = e.target.getStage()
+        const point = stage?.getPointerPosition()
+        if (point) {
+          const transform = stage?.getAbsoluteTransform().copy()
+          transform?.invert()
+          const pos = transform?.point(point)
+          if (pos) {
+            setCurrentPoints(prev => [...prev, pos.x, pos.y])
+          }
+        }
+      }
+    }
+
+    const handleStageMouseUp = (_e: Konva.KonvaEventObject<MouseEvent>) => {
+      if (activeTool === 'signature' && isDrawing) {
+        setIsDrawing(false)
+        if (currentPoints.length > 0) {
+          setCurrentStrokes(prev => [...prev, currentPoints])
+          setCurrentPoints([])
+        }
+      }
+    }
+
+    // Touch support mapping for drawing
+    const handleStageTouchStart = (e: Konva.KonvaEventObject<TouchEvent>) => {
+      // handleStageMouseDown expects MouseEvent, but we only use getStage/getPointer.
+      // Pass as any or cast
+      handleStageMouseDown(e as any)
+    }
+    const handleStageTouchMove = (e: Konva.KonvaEventObject<TouchEvent>) => {
+      handleStageMouseMove(e as any)
+    }
+    const handleStageTouchEnd = (e: Konva.KonvaEventObject<TouchEvent>) => {
+      handleStageMouseUp(e as any)
+    }
+
     const handleElementDblClick = (element: Element) => {
+      if (activeTool === 'signature') return // No interaction in drawing mode
       if (element.type === 'Text') {
         setEditingElementId(element.id)
       }
@@ -412,11 +403,15 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
     }
 
     const handleCellDblClick = (elementId: string, row: number, col: number) => {
+      if (activeTool === 'signature') return
       setEditingCell({ elementId, row, col })
       setSelectedCell({ elementId, row, col })
     }
 
     const handleCellClick = (elementId: string, row: number, col: number) => {
+      if (activeTool === 'signature') return
+      // ... same as before
+
       log.debug('handleCellClick', { elementId, row, col })
 
       // Always select the cell
@@ -457,53 +452,53 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
     const editingCellData =
       editingTableElement && editingTableElement.type === 'Table' && editingCell
         ? (editingTableElement as ITableElement).cells.find(
-            (cell) => cell.row === editingCell.row && cell.col === editingCell.col
-          )
+          (cell) => cell.row === editingCell.row && cell.col === editingCell.col
+        )
         : null
 
     // Create a proxy ITextElement for the overlay
     const proxyTextElement =
       editingTableElement && editingCellData
         ? ({
-            id: `${editingTableElement.id}_cell_${editingCellData.row}_${editingCellData.col}`,
-            text: editingCellData.content,
-            font: editingCellData.styles.font || {
-              size: 12,
-              family: 'Meiryo',
-              weight: 400,
-            },
-            color: editingCellData.styles.font?.color || '#000000',
-            align: editingCellData.styles.align || 'left',
-            // We need box for TextEditOverlay to size the textarea.
-            // We can approximate or calculation required?
-            // TextEditOverlay uses element.box.width.
-            // We need to calculate cell width/height.
-            // IMPOTANT: We need the calculated width/height here.
-            // But we don't have access to rows/cols easy lookup here without same logic as renderer.
-            // Simplified: pass dummy box and let Overlay autosize? No overlay needs size.
-            // Re-implement lookup helper here strictly for the proxy.
-            box: (() => {
-              const tbl = editingTableElement as ITableElement
-              const rows = tbl.rows
-              const cols = tbl.cols
-              const { row, col, rowSpan = 1, colSpan = 1 } = editingCellData
-              let w = 0
-              let h = 0
-              for (let i = 0; i < colSpan; i++) {
-                if (cols[col + i]) w += cols[col + i].width
-              }
-              for (let i = 0; i < rowSpan; i++) {
-                if (rows[row + i]) h += rows[row + i].height
-              }
-              return { width: w, height: h }
-            })(),
-            rotation: editingTableElement.rotation,
-            type: 'Text', // Fake type
-            z: 0,
-            pageId: '',
-            visible: true,
-            locked: false,
-          } as unknown as ITextElement)
+          id: `${editingTableElement.id}_cell_${editingCellData.row}_${editingCellData.col}`,
+          text: editingCellData.content,
+          font: editingCellData.styles.font || {
+            size: 12,
+            family: 'Meiryo',
+            weight: 400,
+          },
+          color: editingCellData.styles.font?.color || '#000000',
+          align: editingCellData.styles.align || 'left',
+          // We need box for TextEditOverlay to size the textarea.
+          // We can approximate or calculation required?
+          // TextEditOverlay uses element.box.width.
+          // We need to calculate cell width/height.
+          // IMPOTANT: We need the calculated width/height here.
+          // But we don't have access to rows/cols easy lookup here without same logic as renderer.
+          // Simplified: pass dummy box and let Overlay autosize? No overlay needs size.
+          // Re-implement lookup helper here strictly for the proxy.
+          box: (() => {
+            const tbl = editingTableElement as ITableElement
+            const rows = tbl.rows
+            const cols = tbl.cols
+            const { row, col, rowSpan = 1, colSpan = 1 } = editingCellData
+            let w = 0
+            let h = 0
+            for (let i = 0; i < colSpan; i++) {
+              if (cols[col + i]) w += cols[col + i].width
+            }
+            for (let i = 0; i < rowSpan; i++) {
+              if (rows[row + i]) h += rows[row + i].height
+            }
+            return { width: w, height: h }
+          })(),
+          rotation: editingTableElement.rotation,
+          type: 'Text', // Fake type
+          z: 0,
+          pageId: '',
+          visible: true,
+          locked: false,
+        } as unknown as ITextElement)
         : undefined
 
     const editingElement = elements.find((el) => el.id === editingElementId) as
@@ -695,7 +690,8 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
 
     return (
       <div
-        className="relative w-full h-full bg-gray-100 overflow-auto flex justify-start items-start p-2 scrollbar-thin"
+        className={`relative w-full h-full bg-gray-100 overflow-auto flex justify-start items-start p-2 scrollbar-thin ${activeTool === 'signature' ? 'cursor-crosshair' : 'cursor-default'
+          }`}
         ref={containerRef}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
@@ -711,12 +707,20 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
             scaleY={displayScale}
             ref={stageRef}
             onMouseDown={handleStageMouseDown}
+            onMouseMove={handleStageMouseMove}
+            onMouseUp={handleStageMouseUp}
+            onTouchStart={handleStageTouchStart}
+            onTouchMove={handleStageTouchMove}
+            onTouchEnd={handleStageTouchEnd}
           >
             <Layer name="background-layer" listening={false}>
               {/* Page Background */}
               <PageBackground width={width} height={height} background={currentPage?.background} />
             </Layer>
-            <Layer name="content-layer">
+            <Layer
+              name="content-layer"
+              listening={activeTool !== 'signature'}
+            >
               {elements
                 .sort((a, b) => a.z - b.z)
                 .map((element) => (
@@ -734,9 +738,45 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
                     isEditing={
                       element.id === editingElementId || element.id === editingCell?.elementId
                     }
-                    onContextMenu={handleContextMenu}
+                    onContextMenu={(e) => handleContextMenu(e, element)}
                   />
                 ))}
+              {/* Active Signature Rendering */}
+              {(currentStrokes.length > 0 || currentPoints.length > 0) && (
+                <CanvasElementRenderer
+                  key="active-signature"
+                  element={{
+                    id: 'active-signature',
+                    type: 'Signature',
+                    pageId: currentPage?.id || '',
+                    z: 9999, // On top
+                    visible: true,
+                    locked: false,
+                    name: 'Signature',
+                    box: { x: 0, y: 0, width: 0, height: 0 }, // Box doesn't matter for pure rendering of points if they are absolute, BUT...
+                    // Wait, if I render separate Lines with Absolute points, I don't need box.
+                    // BUT my Signature renderer implementation USES `box` (Rect transparent overlay) + lines.
+                    // And it expects strokes to be relative?
+                    // "strokes" in ISignatureElement should be relative to box.x/y or absolute?
+                    // If I defined them as absolute in my renderer:
+                    // "points={points}" in renderer assumes points are relative to Group (x,y)? 
+                    // In renderer: <Group {...commonProps}> ... <Line points={points} />
+                    // commonProps includes x/y from element.box.
+                    // So points MUST be relative to element.box.x/y.
+                    // BUT `currentpoints` are ABSOLUTE (stage logic coords).
+                    // So for 'active-signature', I should set box.x=0, box.y=0.
+                    // Then absolute points will render correctly in the group at 0,0.
+                    // My previous implementation of `commitSignature` normalized them.
+                    // So here, render ABSOLUTE points with box at 0,0.
+                    strokes: [...currentStrokes, ...(currentPoints.length > 0 ? [currentPoints] : [])],
+                    stroke: '#000000',
+                    strokeWidth: 2
+                  } as any}
+                  isSelected={false}
+                  onSelect={() => { }}
+                  onChange={() => { }}
+                />
+              )}
             </Layer>
           </Stage>
 

@@ -38,7 +38,7 @@ const applyStyleUpdates = (
     nextStyles.font = { ...(styles.font || {}), ...updates.font }
   }
 
-  ;(Object.keys(updates) as Array<keyof TableCellStyles>).forEach((key) => {
+  ; (Object.keys(updates) as Array<keyof TableCellStyles>).forEach((key) => {
     if (key === 'font') return
     const value = updates[key]
     if (value !== undefined) {
@@ -60,14 +60,21 @@ interface TablePropertiesProps {
   // or simple index inputs.
   // Better: We receive the editingCell from parent if available.
   selectedCell?: { row: number; col: number } | null
+  i18nOverrides?: Record<string, string>
 }
 
 export const TableProperties: React.FC<TablePropertiesProps> = ({
   element,
   onUpdate,
   selectedCell,
+  i18nOverrides,
 }) => {
   const { t } = useTranslation()
+
+  const resolveText = (key: string, defaultValue?: string) => {
+    if (i18nOverrides && i18nOverrides[key]) return i18nOverrides[key]
+    return t(key, defaultValue ?? key)
+  }
 
   const updateCurrentCell = (updates: Partial<TableCellStyles>) => {
     if (!selectedCell) return
@@ -111,11 +118,11 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
 
   const currentCellData = selectedCell
     ? element.cells.find((c) => c.row === selectedCell.row && c.col === selectedCell.col) || {
-        row: selectedCell.row,
-        col: selectedCell.col,
-        content: '',
-        styles: {},
-      }
+      row: selectedCell.row,
+      col: selectedCell.col,
+      content: '',
+      styles: {},
+    }
     : null
 
   // Use first cell as default for global controls or fallback
@@ -157,8 +164,8 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
       <div>
         <h4 className={headingClass}>
           {isGlobal
-            ? t('properties_table_global_style', 'Table Style (All Cells)')
-            : t('properties_table_cell_style', 'Cell Style')}
+            ? resolveText('properties_table_global_style', 'Table Style (All Cells)')
+            : resolveText('properties_table_cell_style', 'Cell Style')}
         </h4>
 
         {isGlobal && (
@@ -166,12 +173,13 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
             label="Repeater Source (Array)"
             binding={element.binding}
             onUpdate={(binding) => onUpdate({ binding })}
+            i18nOverrides={i18nOverrides}
           />
         )}
 
         {!isGlobal && selectedCell && (
           <div className="text-[10px] text-blue-500 mb-2">
-            {t('properties_table_selected_cell', 'Selected')}: R{selectedCell.row + 1}:C
+            {resolveText('properties_table_selected_cell', 'Selected')}: R{selectedCell.row + 1}:C
             {selectedCell.col + 1}
           </div>
         )}
@@ -181,7 +189,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
           <div>
             <div className="grid grid-cols-2 gap-1.5 mb-1.5">
               <div>
-                <label className={labelClass}>{t('properties_size', 'Size')}</label>
+                <label className={labelClass}>{resolveText('properties_size', 'Size')}</label>
                 <EditableSelect
                   value={activeFont.size}
                   onChange={(val) => handleFontUpdate({ size: Number(val) })}
@@ -190,7 +198,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                 />
               </div>
               <div>
-                <label className={labelClass}>{t('color', 'Color')}</label>
+                <label className={labelClass}>{resolveText('color', 'Color')}</label>
                 <input
                   type="color"
                   className="w-full h-8 rounded border border-theme-border bg-theme-bg-primary"
@@ -209,17 +217,16 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                       onClick={() =>
                         handleFontUpdate({ weight: activeFont.weight === 700 ? 400 : 700 })
                       }
-                      className={`p-1 rounded border ${
-                        activeFont.weight === 700
-                          ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
-                          : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
-                      }`}
+                      className={`p-1 rounded border ${activeFont.weight === 700
+                        ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
+                        : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
+                        }`}
                     >
                       <Bold size={14} />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>{t('properties_font_style_bold')}</p>
+                    <p>{resolveText('properties_font_style_bold', 'Bold')}</p>
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>
@@ -227,17 +234,16 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                     <button
                       type="button"
                       onClick={() => handleFontUpdate({ italic: !activeFont.italic })}
-                      className={`p-1 rounded border ${
-                        activeFont.italic
-                          ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
-                          : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
-                      }`}
+                      className={`p-1 rounded border ${activeFont.italic
+                        ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
+                        : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
+                        }`}
                     >
                       <Italic size={14} />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>{t('properties_font_style_italic')}</p>
+                    <p>{resolveText('properties_font_style_italic', 'Italic')}</p>
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>
@@ -245,17 +251,16 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                     <button
                       type="button"
                       onClick={() => handleFontUpdate({ underline: !activeFont.underline })}
-                      className={`p-1 rounded border ${
-                        activeFont.underline
-                          ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
-                          : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
-                      }`}
+                      className={`p-1 rounded border ${activeFont.underline
+                        ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
+                        : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
+                        }`}
                     >
                       <Underline size={14} />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>{t('properties_font_style_underline')}</p>
+                    <p>{resolveText('properties_font_style_underline', 'Underline')}</p>
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>
@@ -263,17 +268,16 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                     <button
                       type="button"
                       onClick={() => handleFontUpdate({ strikethrough: !activeFont.strikethrough })}
-                      className={`p-1 rounded border ${
-                        activeFont.strikethrough
-                          ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
-                          : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
-                      }`}
+                      className={`p-1 rounded border ${activeFont.strikethrough
+                        ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
+                        : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
+                        }`}
                     >
                       <Strikethrough size={14} />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>{t('properties_font_style_strikethrough')}</p>
+                    <p>{resolveText('properties_font_style_strikethrough', 'Strikethrough')}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -283,7 +287,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
           {/* Alignment */}
           <div>
             <label className={`${labelClass} font-medium`}>
-              {t('properties_align', 'Alignment')}
+              {resolveText('properties_align', 'Alignment')}
             </label>
             <div className="flex bg-theme-bg-primary rounded border border-theme-border p-0.5 mb-2">
               <TooltipProvider>
@@ -298,7 +302,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>{t('side_left')}</p>
+                    <p>{resolveText('side_left', 'Left')}</p>
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>
@@ -312,7 +316,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>{t('center')}</p>
+                    <p>{resolveText('center', 'Center')}</p>
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>
@@ -326,7 +330,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>{t('side_right')}</p>
+                    <p>{resolveText('side_right', 'Right')}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -336,7 +340,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
           {/* Vertical Align */}
           <div>
             <label className={`${labelClass} font-medium`}>
-              {t('properties_vertical_align', 'Vertical Align')}
+              {resolveText('properties_vertical_align', 'Vertical Align')}
             </label>
             <div className="flex bg-theme-bg-primary rounded border border-theme-border p-0.5 mb-2">
               <TooltipProvider>
@@ -351,7 +355,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>{t('side_top')}</p>
+                    <p>{resolveText('side_top', 'Top')}</p>
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>
@@ -365,7 +369,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>{t('center')}</p>
+                    <p>{resolveText('center', 'Center')}</p>
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>
@@ -379,7 +383,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>{t('side_bottom')}</p>
+                    <p>{resolveText('side_bottom', 'Bottom')}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -389,7 +393,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
           {/* Background Color */}
           <div>
             <label className={labelClass}>
-              {t('properties_background_color', 'Background Color')}
+              {resolveText('properties_background_color', 'Background Color')}
             </label>
             <div className="flex items-center gap-2">
               <input
@@ -403,7 +407,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
 
           {/* Border Width */}
           <div>
-            <label className={labelClass}>{t('properties_border_width', 'Border Width')}</label>
+            <label className={labelClass}>{resolveText('properties_border_width', 'Border Width')}</label>
             <input
               type="number"
               min={0}
@@ -415,7 +419,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
 
           {/* Border Color */}
           <div>
-            <label className={labelClass}>{t('properties_border_color', 'Border Color')}</label>
+            <label className={labelClass}>{resolveText('properties_border_color', 'Border Color')}</label>
             <div className="flex items-center gap-2">
               <input
                 type="color"

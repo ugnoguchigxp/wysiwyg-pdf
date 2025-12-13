@@ -227,7 +227,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           type="button"
           onClick={onZoomIn}
           className={`${TOOLBAR_BUTTON_CLASS} disabled:opacity-50`}
-          aria-label="Zoom in"
+          aria-label={resolveText('toolbar_zoom_in', 'Zoom in')}
           disabled={zoom >= 2}
         >
           <ZoomIn size={18} />
@@ -235,7 +235,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         <button
           type="button"
           className="text-theme-text-secondary text-xs font-medium hover:text-theme-object-primary transition-colors"
-          aria-label="Reset zoom"
+          aria-label={resolveText('toolbar_zoom_reset', 'Reset zoom')}
           // Assuming no reset handler passed yet, just display
           onClick={() => { }}
         >
@@ -245,7 +245,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           type="button"
           onClick={onZoomOut}
           className={`${TOOLBAR_BUTTON_CLASS} disabled:opacity-50`}
-          aria-label="Zoom out"
+          aria-label={resolveText('toolbar_zoom_out', 'Zoom out')}
           disabled={zoom <= 0.25}
         >
           <ZoomOut size={18} />

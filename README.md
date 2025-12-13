@@ -273,7 +273,7 @@ The property panel (`WysiwygPropertiesPanel`) updates the selected element's att
 
 If your application uses different translation keys or if you want to override specific labels without setting up a full i18next resource bundle, you can use the `i18nOverrides` prop.
 
-This prop is supported by `EditorHeader`, `WysiwygEditorToolbar`, and `BedToolbar`.
+This prop is supported by `EditorHeader`, `WysiwygEditorToolbar`, `BedToolbar`, `WysiwygPropertiesPanel`, and `PropertyPanel` (BedLayout).
 
 ```tsx
 <EditorHeader
@@ -284,11 +284,20 @@ This prop is supported by `EditorHeader`, `WysiwygEditorToolbar`, and `BedToolba
     'save': 'Save Changes',
   }}
 />
+
+<WysiwygPropertiesPanel
+  // ...
+  i18nOverrides={{
+    'properties_layout': 'Layout Settings',
+    'properties_text_align': 'Alignment',
+  }}
+/>
 ```
 
 Common keys you might want to override:
 - **Header**: `editor_orientation`, `save`, `back`, `toolbar_undo`, `toolbar_redo`
 - **Toolbar**: `toolbar_text`, `toolbar_image`, `toolbar_shape`, `toolbar_line`
+- **Properties**: `properties_layout`, `properties_font`, `color`, `position`
 
 ## Development (in this repository)
 

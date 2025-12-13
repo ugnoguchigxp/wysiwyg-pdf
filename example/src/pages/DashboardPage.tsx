@@ -1,9 +1,9 @@
 import React from 'react'
-import { FileText, LayoutTemplate, Moon, Sun } from 'lucide-react'
+import { FileText, LayoutTemplate, Moon, Sun, Monitor } from 'lucide-react'
 
 
 interface DashboardPageProps {
-    onNavigate: (page: 'report' | 'bed') => void
+    onNavigate: (page: 'report' | 'bed' | 'viewer') => void
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
@@ -27,11 +27,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                 </button>
             </header>
 
-            <main className="flex-1 flex items-center justify-center p-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full">
+            <main className="flex-1 flex items-center justify-center p-8 overflow-auto">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl w-full">
                     <button
                         onClick={() => onNavigate('report')}
-                        className="flex flex-col items-center justify-center p-12 rounded-xl border-2 border-theme-border bg-theme-bg-secondary hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200 group"
+                        className="flex flex-col items-center justify-center p-12 rounded-xl border-2 border-theme-border bg-theme-bg-secondary hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200 group h-80"
                     >
                         <div className="w-24 h-24 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
                             <FileText className="w-12 h-12 text-blue-600 dark:text-blue-400" />
@@ -44,7 +44,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
 
                     <button
                         onClick={() => onNavigate('bed')}
-                        className="flex flex-col items-center justify-center p-12 rounded-xl border-2 border-theme-border bg-theme-bg-secondary hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-200 group"
+                        className="flex flex-col items-center justify-center p-12 rounded-xl border-2 border-theme-border bg-theme-bg-secondary hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-200 group h-80"
                     >
                         <div className="w-24 h-24 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
                             <LayoutTemplate className="w-12 h-12 text-purple-600 dark:text-purple-400" />
@@ -52,6 +52,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                         <h2 className="text-2xl font-bold mb-2 text-theme-text-primary">Bed Layout Editor</h2>
                         <p className="text-theme-text-secondary text-center">
                             Design hospital ward layouts and manage bed positions.
+                        </p>
+                    </button>
+
+                    <button
+                        onClick={() => onNavigate('viewer')}
+                        className="flex flex-col items-center justify-center p-12 rounded-xl border-2 border-theme-border bg-theme-bg-secondary hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200 group h-80"
+                    >
+                        <div className="w-24 h-24 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
+                            <Monitor className="w-12 h-12 text-green-600 dark:text-green-400" />
+                        </div>
+                        <h2 className="text-2xl font-bold mb-2 text-theme-text-primary">Viewer Demo</h2>
+                        <p className="text-theme-text-secondary text-center">
+                            Live dashboard view of a ward with patient status and vitals.
                         </p>
                     </button>
                 </div>

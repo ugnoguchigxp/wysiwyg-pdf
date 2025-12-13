@@ -44,13 +44,14 @@ import { TableProperties } from './TableProperties'
 
 const log = createContextLogger('WysiwygPropertiesPanel')
 
-interface WysiwygPropertiesPanelProps {
+export interface WysiwygPropertiesPanelProps {
   templateDoc: ITemplateDoc
   selectedElementId: string | null
   selectedCell?: { elementId: string; row: number; col: number } | null
   onTemplateChange: (newDoc: ITemplateDoc) => void
   currentPageId: string
   schema?: IDataSchema
+  i18nOverrides?: Record<string, string>
 }
 
 // --- Local UI Components matching Root Design System (Dense Variant) ---
@@ -99,8 +100,16 @@ const PropertiesSubsectionTitle: React.FC<{ children: React.ReactNode }> = ({ ch
 
 const sectionCardClass = 'mb-6'
 
-const ImagePreview: React.FC<{ assetId: string }> = ({ assetId }) => {
+const ImagePreview: React.FC<{
+  assetId: string
+  i18nOverrides?: Record<string, string>
+}> = ({ assetId, i18nOverrides }) => {
   const { t } = useTranslation()
+  const resolveText = (key: string, defaultValue?: string) => {
+    if (i18nOverrides && i18nOverrides[key]) return i18nOverrides[key]
+    return t(key, defaultValue ?? key)
+  }
+
   const [src, setSrc] = useState<string | null>(null)
   const [status, setStatus] = useState<'loading' | 'loaded' | 'error'>('loading')
 
@@ -138,7 +147,7 @@ const ImagePreview: React.FC<{ assetId: string }> = ({ assetId }) => {
   if (status === 'loading') {
     return (
       <div className="w-full h-20 bg-theme-bg-tertiary border border-theme-border rounded flex items-center justify-center text-xs text-theme-text-secondary">
-        {t('loading')}
+        {resolveText('loading', 'Loading...')}
       </div>
     )
   }
@@ -146,7 +155,7 @@ const ImagePreview: React.FC<{ assetId: string }> = ({ assetId }) => {
   if (status === 'error') {
     return (
       <div className="w-full h-20 bg-theme-bg-tertiary border border-theme-border rounded flex items-center justify-center text-xs text-red-500">
-        {t('no_image')}
+        {resolveText('no_image', 'No Image')}
       </div>
     )
   }
@@ -167,8 +176,15 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
   onTemplateChange,
   currentPageId,
   schema,
+  i18nOverrides,
 }) => {
   const { t } = useTranslation()
+
+  const resolveText = (key: string, defaultValue?: string) => {
+    if (i18nOverrides && i18nOverrides[key]) return i18nOverrides[key]
+    return t(key, defaultValue ?? key)
+  }
+
   const [activeBindingMode, setActiveBindingMode] = React.useState<'field' | 'repeater' | null>(
     null
   )
@@ -217,10 +233,12 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
 
     return (
       <div className={sectionCardClass}>
-        <PropertiesSectionTitle>{t('properties_page_background')}</PropertiesSectionTitle>
+        <PropertiesSectionTitle>
+          {resolveText('properties_page_background', 'Page Background')}
+        </PropertiesSectionTitle>
         <div className="mb-2">
           <PropertiesLabel htmlFor="page-bg-color">
-            {t('properties_background_color')}
+            {resolveText('properties_background_color', 'Background Color')}
           </PropertiesLabel>
           <div className="flex items-center gap-2">
             <PropertiesInput
@@ -233,7 +251,9 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
           </div>
         </div>
         <div>
-          <PropertiesLabel>{t('properties_background_image')}</PropertiesLabel>
+          <PropertiesLabel>
+            {resolveText('properties_background_image', 'Background Image')}
+          </PropertiesLabel>
           <PropertiesInput
             type="file"
             accept="image/*"
@@ -253,13 +273,13 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
           />
           {bg.imageId && (
             <div className="mt-2">
-              <PropertiesLabel>{t('properties_preview')}</PropertiesLabel>
-              <ImagePreview assetId={bg.imageId} />
+              <PropertiesLabel>{resolveText('properties_preview', 'Preview')}</PropertiesLabel>
+              <ImagePreview assetId={bg.imageId} i18nOverrides={i18nOverrides} />
               <button
                 onClick={() => updatePageBackground({ imageId: undefined })}
                 className="mt-1 text-xs text-red-500 hover:underline"
               >
-                {t('delete')}
+                {resolveText('delete', 'Delete')}
               </button>
             </div>
           )}
@@ -322,29 +342,78 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
   const buildId = (suffix: string) => `${selectedElement.id}-${suffix}`
 
   const typeLabelMap: Record<Element['type'], string> = {
-    Group: t('properties_element_group'),
-    Text: t('properties_element_text'),
-    Rect: t('properties_element_rect'),
-    Triangle: t('properties_element_triangle'),
-    Trapezoid: t('properties_element_trapezoid'),
-    Circle: t('properties_element_circle'),
-    Diamond: t('properties_element_diamond'),
-    Cylinder: t('properties_element_cylinder'),
-    Heart: t('properties_element_heart'),
-    Star: t('properties_element_star'),
-    Pentagon: t('properties_element_pentagon'),
-    Hexagon: t('properties_element_hexagon'),
-    ArrowUp: t('properties_element_arrow_up'),
-    ArrowDown: t('properties_element_arrow_down'),
-    ArrowLeft: t('properties_element_arrow_left'),
-    ArrowRight: t('properties_element_arrow_right'),
-    Tree: t('properties_element_tree'),
-    House: t('properties_element_house'),
-    Line: t('properties_element_line'),
-    Image: t('properties_element_image'),
-    Table: t('properties_element_table'),
-    Bed: t('toolbar_bed'),
+    Group: resolveText('properties_element_group', 'Group'),
+    Text: resolveText('properties_element_text', 'Text'),
+    Rect: resolveText('properties_element_rect', 'Rectangle'),
+    Triangle: resolveText('properties_element_triangle', 'Triangle'),
+    Trapezoid: resolveText('properties_element_trapezoid', 'Trapezoid'),
+    Circle: resolveText('properties_element_circle', 'Circle'),
+    Diamond: resolveText('properties_element_diamond', 'Diamond'),
+    Cylinder: resolveText('properties_element_cylinder', 'Cylinder'),
+    Heart: resolveText('properties_element_heart', 'Heart'),
+    Star: resolveText('properties_element_star', 'Star'),
+    Pentagon: resolveText('properties_element_pentagon', 'Pentagon'),
+    Hexagon: resolveText('properties_element_hexagon', 'Hexagon'),
+    ArrowUp: resolveText('properties_element_arrow_up', 'Arrow Up'),
+    ArrowDown: resolveText('properties_element_arrow_down', 'Arrow Down'),
+    ArrowLeft: resolveText('properties_element_arrow_left', 'Arrow Left'),
+    ArrowRight: resolveText('properties_element_arrow_right', 'Arrow Right'),
+    Tree: resolveText('properties_element_tree', 'Tree'),
+    House: resolveText('properties_element_house', 'House'),
+    Line: resolveText('properties_element_line', 'Line'),
+    Image: resolveText('properties_element_image', 'Image'),
+    Table: resolveText('properties_element_table', 'Table'),
+    Bed: resolveText('toolbar_bed', 'Bed'),
     Chart: 'Chart',
+    Signature: resolveText('toolbar_signature', 'Signature'),
+  }
+
+  const renderSignatureProps = () => {
+    if (selectedElement.type !== 'Signature') return null
+    const signature = selectedElement as any // Cast to ISignatureElement
+
+    return (
+      <div className="mb-4 space-y-3">
+        {/* Stroke Color */}
+        <div>
+          <PropertiesLabel htmlFor={buildId('stroke-color')}>
+            {resolveText('properties_stroke_color', 'Stroke Color')}
+          </PropertiesLabel>
+          <PropertiesInput
+            id={buildId('stroke-color')}
+            type="color"
+            value={signature.stroke ?? '#000000'}
+            onChange={(e) =>
+              updateElement({
+                stroke: e.target.value,
+              } as any)
+            }
+            className="h-9 p-1 cursor-pointer"
+          />
+        </div>
+
+        {/* Stroke Width */}
+        <div>
+          <PropertiesLabel htmlFor={buildId('stroke-width')}>
+            {resolveText('properties_stroke_width', 'Thickness')} (px)
+          </PropertiesLabel>
+          <PropertiesInput
+            id={buildId('stroke-width')}
+            type="number"
+            min="1"
+            value={signature.strokeWidth ?? 2}
+            onChange={(e) => {
+              const val = Number(e.target.value)
+              if (val > 0) {
+                updateElement({
+                  strokeWidth: val,
+                } as any)
+              }
+            }}
+          />
+        </div>
+      </div>
+    )
   }
 
   const renderBindingProps = () => {
@@ -355,7 +424,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
 
     if (!validTypes.includes(element.type) && !isGlobalTable) return null
 
-    const label = t('data_binding')
+    const label = resolveText('data_binding', 'Data Binding')
     const mode = element.type === 'Table' ? 'repeater' : 'field'
 
     return (
@@ -364,6 +433,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
         binding={element.binding}
         onUpdate={(binding) => updateElement({ binding })}
         onOpenModal={() => openBindingModal(mode)}
+        i18nOverrides={i18nOverrides}
       />
     )
   }
@@ -386,7 +456,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
               <PropertiesLabel htmlFor={buildId('font-size')}>
-                {t('properties_size')}
+                {resolveText('properties_size', 'Size')}
               </PropertiesLabel>
               <Select
                 value={String(textEl.font.size)}
@@ -409,7 +479,9 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
               </Select>
             </div>
             <div>
-              <PropertiesLabel htmlFor={buildId('font-color')}>{t('color')}</PropertiesLabel>
+              <PropertiesLabel htmlFor={buildId('font-color')}>
+                {resolveText('color', 'Color')}
+              </PropertiesLabel>
               <PropertiesInput
                 id={buildId('font-color')}
                 type="color"
@@ -437,17 +509,16 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
                       font: { ...textEl.font, weight: textEl.font.weight === 700 ? 400 : 700 },
                     } as Partial<ITextElement>)
                   }
-                  className={`p-1 rounded border ${
-                    textEl.font.weight === 700
-                      ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
-                      : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
-                  }`}
+                  className={`p-1 rounded border ${textEl.font.weight === 700
+                    ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
+                    : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
+                    }`}
                 >
                   <Bold size={14} />
                 </button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>{t('properties_font_style_bold')}</p>
+                <p>{resolveText('properties_font_style_bold', 'Bold')}</p>
               </TooltipContent>
             </Tooltip>
 
@@ -460,17 +531,16 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
                       font: { ...textEl.font, italic: !textEl.font.italic },
                     } as Partial<ITextElement>)
                   }
-                  className={`p-1 rounded border ${
-                    textEl.font.italic
-                      ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
-                      : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
-                  }`}
+                  className={`p-1 rounded border ${textEl.font.italic
+                    ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
+                    : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
+                    }`}
                 >
                   <Italic size={14} />
                 </button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>{t('properties_font_style_italic')}</p>
+                <p>{resolveText('properties_font_style_italic', 'Italic')}</p>
               </TooltipContent>
             </Tooltip>
 
@@ -483,17 +553,16 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
                       font: { ...textEl.font, underline: !textEl.font.underline },
                     } as Partial<ITextElement>)
                   }
-                  className={`p-1 rounded border ${
-                    textEl.font.underline
-                      ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
-                      : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
-                  }`}
+                  className={`p-1 rounded border ${textEl.font.underline
+                    ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
+                    : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
+                    }`}
                 >
                   <Underline size={14} />
                 </button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>{t('properties_font_style_underline')}</p>
+                <p>{resolveText('properties_font_style_underline', 'Underline')}</p>
               </TooltipContent>
             </Tooltip>
 
@@ -506,25 +575,24 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
                       font: { ...textEl.font, strikethrough: !textEl.font.strikethrough },
                     } as Partial<ITextElement>)
                   }
-                  className={`p-1 rounded border ${
-                    textEl.font.strikethrough
-                      ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
-                      : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
-                  }`}
+                  className={`p-1 rounded border ${textEl.font.strikethrough
+                    ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
+                    : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
+                    }`}
                 >
                   <Strikethrough size={14} />
                 </button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>{t('properties_font_style_strikethrough')}</p>
+                <p>{resolveText('properties_font_style_strikethrough', 'Strikethrough')}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
 
-        {/* Text Align */}
+        {/* Alignment */}
         <div>
-          <PropertiesLabel>{t('properties_text_align')}</PropertiesLabel>
+          <PropertiesLabel>{resolveText('properties_align', 'Alignment')}</PropertiesLabel>
           <div className="flex bg-theme-bg-primary rounded border border-theme-border p-0.5">
             <TooltipProvider>
               <Tooltip>
@@ -532,17 +600,16 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
                   <button
                     type="button"
                     onClick={() => updateElement({ align: 'left' } as Partial<ITextElement>)}
-                    className={`flex-1 flex items-center justify-center py-1 rounded ${
-                      textEl.align === 'left'
-                        ? 'bg-theme-bg-tertiary text-theme-accent'
-                        : 'text-theme-text-secondary hover:bg-theme-bg-secondary'
-                    }`}
+                    className={`flex-1 flex items-center justify-center py-1 rounded ${textEl.align === 'left'
+                      ? 'bg-theme-bg-tertiary text-theme-accent'
+                      : 'text-theme-text-secondary hover:bg-theme-bg-secondary'
+                      }`}
                   >
                     <AlignLeft size={14} />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>{t('side_left')}</p>
+                  <p>{resolveText('side_left', 'Left')}</p>
                 </TooltipContent>
               </Tooltip>
 
@@ -551,17 +618,16 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
                   <button
                     type="button"
                     onClick={() => updateElement({ align: 'center' } as Partial<ITextElement>)}
-                    className={`flex-1 flex items-center justify-center py-1 rounded ${
-                      textEl.align === 'center'
-                        ? 'bg-theme-bg-tertiary text-theme-accent'
-                        : 'text-theme-text-secondary hover:bg-theme-bg-secondary'
-                    }`}
+                    className={`flex-1 flex items-center justify-center py-1 rounded ${textEl.align === 'center'
+                      ? 'bg-theme-bg-tertiary text-theme-accent'
+                      : 'text-theme-text-secondary hover:bg-theme-bg-secondary'
+                      }`}
                   >
                     <AlignCenter size={14} />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>{t('center')}</p>
+                  <p>{resolveText('center', 'Center')}</p>
                 </TooltipContent>
               </Tooltip>
 
@@ -570,17 +636,16 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
                   <button
                     type="button"
                     onClick={() => updateElement({ align: 'right' } as Partial<ITextElement>)}
-                    className={`flex-1 flex items-center justify-center py-1 rounded ${
-                      textEl.align === 'right'
-                        ? 'bg-theme-bg-tertiary text-theme-accent'
-                        : 'text-theme-text-secondary hover:bg-theme-bg-secondary'
-                    }`}
+                    className={`flex-1 flex items-center justify-center py-1 rounded ${textEl.align === 'right'
+                      ? 'bg-theme-bg-tertiary text-theme-accent'
+                      : 'text-theme-text-secondary hover:bg-theme-bg-secondary'
+                      }`}
                   >
                     <AlignRight size={14} />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>{t('side_right')}</p>
+                  <p>{resolveText('side_right', 'Right')}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -618,11 +683,11 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
       <div className="mb-6 space-y-4">
         {/* Colors */}
         <div>
-          <PropertiesSubsectionTitle>{t('color')}</PropertiesSubsectionTitle>
+          <PropertiesSubsectionTitle>{resolveText('color', 'Color')}</PropertiesSubsectionTitle>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <PropertiesLabel htmlFor={buildId('fill-color')}>
-                {t('properties_fill_color')}
+                {resolveText('properties_fill_color', 'Fill Color')}
               </PropertiesLabel>
               <PropertiesInput
                 id={buildId('fill-color')}
@@ -638,7 +703,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
             </div>
             <div>
               <PropertiesLabel htmlFor={buildId('stroke-color')}>
-                {t('properties_border')}
+                {resolveText('properties_border', 'Border')}
               </PropertiesLabel>
               <PropertiesInput
                 id={buildId('stroke-color')}
@@ -660,9 +725,9 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
 
         {/* Stroke width */}
         <div>
-          <PropertiesSubsectionTitle>{t('properties_border')}</PropertiesSubsectionTitle>
+          <PropertiesSubsectionTitle>{resolveText('properties_border', 'Border')}</PropertiesSubsectionTitle>
           <PropertiesLabel htmlFor={buildId('stroke-width')}>
-            {t('properties_line_width')}
+            {resolveText('properties_line_width', 'Line Width')}
           </PropertiesLabel>
           <PropertiesInput
             id={buildId('stroke-width')}
@@ -689,12 +754,12 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
     const arrowOptions: ShapeOption[] = [
       {
         value: 'none',
-        label: t('properties_arrow_none'),
+        label: resolveText('properties_arrow_none', 'None'),
         icon: <div className="w-4 h-0.5 bg-current" />,
       },
       {
         value: 'standard',
-        label: t('properties_arrow_standard'),
+        label: resolveText('properties_arrow_standard', 'Standard'),
         icon: (
           <svg
             width="16"
@@ -704,17 +769,17 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
             stroke="currentColor"
             strokeWidth="1.5"
           >
-            <title>{t('properties_arrow_standard')}</title>
+            <title>{resolveText('properties_arrow_standard', 'Standard')}</title>
             <path d="M12 8H2m0 0l4-4m-4 4l4 4" />
           </svg>
         ),
       },
       {
         value: 'filled',
-        label: t('properties_arrow_filled'),
+        label: resolveText('properties_arrow_filled', 'Filled'),
         icon: (
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" stroke="none">
-            <title>{t('properties_arrow_filled')}</title>
+            <title>{resolveText('properties_arrow_filled', 'Filled')}</title>
             <path d="M2 8l6-4v8z" />
             <path d="M8 8h6" stroke="currentColor" strokeWidth="1.5" />
           </svg>
@@ -722,10 +787,10 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
       },
       {
         value: 'triangle',
-        label: t('properties_arrow_triangle'),
+        label: resolveText('properties_arrow_triangle', 'Triangle'),
         icon: (
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" stroke="none">
-            <title>{t('properties_arrow_triangle')}</title>
+            <title>{resolveText('properties_arrow_triangle', 'Triangle')}</title>
             <path d="M2 8l6-4v8z" />
             <path d="M8 8h6" stroke="currentColor" strokeWidth="1.5" />
           </svg>
@@ -733,7 +798,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
       },
       {
         value: 'open',
-        label: t('properties_arrow_open'),
+        label: resolveText('properties_arrow_open', 'Open'),
         icon: (
           <svg
             width="16"
@@ -743,7 +808,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
             stroke="currentColor"
             strokeWidth="1.5"
           >
-            <title>{t('properties_arrow_open')}</title>
+            <title>{resolveText('properties_arrow_open', 'Open')}</title>
             <path d="M6 4l-4 4 4 4" />
             <path d="M2 8h10" />
           </svg>
@@ -751,10 +816,10 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
       },
       {
         value: 'circle',
-        label: t('properties_arrow_circle'),
+        label: resolveText('properties_arrow_circle', 'Circle'),
         icon: (
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" stroke="none">
-            <title>{t('properties_arrow_circle')}</title>
+            <title>{resolveText('properties_arrow_circle', 'Circle')}</title>
             <circle cx="4" cy="8" r="3" />
             <path d="M7 8h7" stroke="currentColor" strokeWidth="1.5" />
           </svg>
@@ -762,10 +827,10 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
       },
       {
         value: 'diamond',
-        label: t('properties_arrow_diamond'),
+        label: resolveText('properties_arrow_diamond', 'Diamond'),
         icon: (
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" stroke="none">
-            <title>{t('properties_arrow_diamond')}</title>
+            <title>{resolveText('properties_arrow_diamond', 'Diamond')}</title>
             <path d="M2 8l3-3 3 3-3 3z" />
             <path d="M8 8h6" stroke="currentColor" strokeWidth="1.5" />
           </svg>
@@ -773,10 +838,10 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
       },
       {
         value: 'square',
-        label: t('properties_arrow_square'),
+        label: resolveText('properties_arrow_square', 'Square'),
         icon: (
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" stroke="none">
-            <title>{t('properties_arrow_square')}</title>
+            <title>{resolveText('properties_arrow_square', 'Square')}</title>
             <rect x="2" y="5" width="6" height="6" />
             <path d="M8 8h6" stroke="currentColor" strokeWidth="1.5" />
           </svg>
@@ -787,7 +852,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
     const lineStyleOptions: ShapeOption[] = [
       {
         value: 'solid',
-        label: t('properties_line_style_solid'),
+        label: resolveText('properties_line_style_solid', 'Solid'),
         icon: (
           <svg
             width="24"
@@ -797,14 +862,14 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
             stroke="currentColor"
             strokeWidth="2"
           >
-            <title>{t('properties_line_style_solid')}</title>
+            <title>{resolveText('properties_line_style_solid', 'Solid')}</title>
             <line x1="0" y1="4" x2="24" y2="4" />
           </svg>
         ),
       },
       {
         value: 'dashed',
-        label: t('properties_line_style_dashed'),
+        label: resolveText('properties_line_style_dashed', 'Dashed'),
         icon: (
           <svg
             width="24"
@@ -814,14 +879,14 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
             stroke="currentColor"
             strokeWidth="2"
           >
-            <title>{t('properties_line_style_dashed')}</title>
+            <title>{resolveText('properties_line_style_dashed', 'Dashed')}</title>
             <line x1="0" y1="4" x2="24" y2="4" strokeDasharray="6 4" />
           </svg>
         ),
       },
       {
         value: 'dotted',
-        label: t('properties_line_style_dotted'),
+        label: resolveText('properties_line_style_dotted', 'Dotted'),
         icon: (
           <svg
             width="24"
@@ -831,7 +896,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
             stroke="currentColor"
             strokeWidth="2"
           >
-            <title>{t('properties_line_style_dotted')}</title>
+            <title>{resolveText('properties_line_style_dotted', 'Dotted')}</title>
             <line x1="0" y1="4" x2="24" y2="4" strokeDasharray="2 4" />
           </svg>
         ),
@@ -860,7 +925,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
         {/* Line Color */}
         <div>
           <PropertiesLabel htmlFor={buildId('line-color')}>
-            {t('properties_line_color')}
+            {resolveText('properties_line_color', 'Line Color')}
           </PropertiesLabel>
           <PropertiesInput
             id={buildId('line-color')}
@@ -878,7 +943,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
         {/* Line Width */}
         <div>
           <PropertiesLabel htmlFor={buildId('line-width')}>
-            {t('properties_line_width')} (px)
+            {resolveText('properties_line_width', 'Line Width')} (px)
           </PropertiesLabel>
           <PropertiesInput
             id={buildId('line-width')}
@@ -898,7 +963,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
 
         {/* Line Style */}
         <div>
-          <PropertiesLabel>{t('properties_line_style')}</PropertiesLabel>
+          <PropertiesLabel>{resolveText('properties_line_style', 'Line Style')}</PropertiesLabel>
           <ShapeSelector
             value={getLineStyleValue(line.stroke.dash)}
             onChange={handleLineStyleChange}
@@ -909,7 +974,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
         {/* Start Arrow */}
         <div>
           <PropertiesLabel htmlFor={buildId('start-arrow')}>
-            {t('properties_arrow_start')}
+            {resolveText('properties_arrow_start', 'Start Arrow')}
           </PropertiesLabel>
           <ShapeSelector
             value={line.startArrow || 'none'}
@@ -925,7 +990,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
         {/* End Arrow */}
         <div>
           <PropertiesLabel htmlFor={buildId('end-arrow')}>
-            {t('properties_arrow_end')}
+            {resolveText('properties_arrow_end', 'End Arrow')}
           </PropertiesLabel>
           <ShapeSelector
             value={line.endArrow || 'none'}
@@ -950,11 +1015,11 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
 
     return (
       <div className={sectionCardClass}>
-        <PropertiesSectionTitle>{t('properties_layout')}</PropertiesSectionTitle>
+        <PropertiesSectionTitle>{resolveText('properties_layout', 'Layout')}</PropertiesSectionTitle>
 
         {/* Position */}
         <div className="mb-4">
-          <PropertiesSubsectionTitle>{t('position')}</PropertiesSubsectionTitle>
+          <PropertiesSubsectionTitle>{resolveText('position', 'Position')}</PropertiesSubsectionTitle>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <PropertiesLabel htmlFor={buildId('position-x')}>X</PropertiesLabel>
@@ -989,11 +1054,11 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
 
         {/* Size */}
         <div>
-          <PropertiesSubsectionTitle>{t('properties_size')}</PropertiesSubsectionTitle>
+          <PropertiesSubsectionTitle>{resolveText('properties_size', 'Size')}</PropertiesSubsectionTitle>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <PropertiesLabel htmlFor={buildId('size-width')}>
-                {t('properties_width')}
+                {resolveText('properties_width', 'Width')}
               </PropertiesLabel>
               <PropertiesInput
                 id={buildId('size-width')}
@@ -1009,7 +1074,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
             </div>
             <div>
               <PropertiesLabel htmlFor={buildId('size-height')}>
-                {t('properties_height')}
+                {resolveText('properties_height', 'Height')}
               </PropertiesLabel>
               <PropertiesInput
                 id={buildId('size-height')}
@@ -1070,7 +1135,9 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
     return (
       <div className="mb-6 space-y-4">
         <div>
-          <PropertiesLabel>{t('properties_select_image')}</PropertiesLabel>
+          <PropertiesLabel>
+            {resolveText('properties_select_image', 'Select Image')}
+          </PropertiesLabel>
           <PropertiesInput
             type="file"
             accept="image/*"
@@ -1080,8 +1147,8 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
         </div>
         {image.assetId && (
           <div className="mt-2">
-            <PropertiesLabel>{t('properties_preview')}</PropertiesLabel>
-            <ImagePreview assetId={image.assetId} />
+            <PropertiesLabel>{resolveText('properties_preview', 'Preview')}</PropertiesLabel>
+            <ImagePreview assetId={image.assetId} i18nOverrides={i18nOverrides} />
           </div>
         )}
       </div>
@@ -1097,6 +1164,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
         selectedCell={
           selectedCell && selectedCell.elementId === selectedElement.id ? selectedCell : null
         }
+        i18nOverrides={i18nOverrides}
       />
     )
   }
@@ -1116,6 +1184,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
       {renderLineProps()}
       {renderImageProps()}
       {renderTableProps()}
+      {renderSignatureProps()}
 
       {renderLayoutSection()}
       {/* Modal */}
@@ -1131,3 +1200,6 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
     </div>
   )
 }
+
+
+

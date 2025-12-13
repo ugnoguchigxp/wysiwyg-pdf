@@ -7,8 +7,8 @@ import {
   Download,
   Image as ImageIcon,
   Save,
-  CircleHelp,
 } from 'lucide-react'
+import { Button } from '../../../../../../components/ui/Button'
 
 export interface EditorHeaderProps {
   templateName: string
@@ -124,13 +124,14 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
 
         <div className="h-6 w-px bg-theme-border mx-1" />
 
-        <button
+        <Button
+          variant="circle-help"
+          size="circle"
           onClick={onShowShortcuts}
-          className="p-2 rounded-md hover:bg-theme-bg-tertiary text-theme-text-secondary transition-colors"
           title={resolveText('toolbar_shortcuts', 'Shortcuts')}
         >
-          <CircleHelp className="w-4 h-4" />
-        </button>
+          ?
+        </Button>
 
         <div className="h-6 w-px bg-theme-border mx-1" />
 
@@ -140,7 +141,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
           className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-theme-text-primary hover:bg-theme-bg-tertiary rounded-md border border-theme-border transition-colors shadow-sm"
         >
           <ImageIcon className="w-4 h-4" />
-          Image
+          {resolveText('header_image', 'Image')}
         </button>
 
         <button
@@ -148,7 +149,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
           className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-theme-text-primary hover:bg-theme-bg-tertiary rounded-md border border-theme-border transition-colors shadow-sm"
         >
           <Download className="w-4 h-4" />
-          PDF
+          {resolveText('header_pdf', 'PDF')}
         </button>
 
         <button

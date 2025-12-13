@@ -57,6 +57,7 @@ interface CanvasElementRendererProps {
   editingCell?: { elementId: string; row: number; col: number } | null
   selectedCell?: { row: number; col: number } | null
   isEditing?: boolean
+  readOnly?: boolean
   renderCustom?: (
     element: Element,
     commonProps: CanvasElementCommonProps,
@@ -177,6 +178,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
   editingCell,
   selectedCell,
   renderCustom,
+  readOnly,
 }) => {
   const shapeRef = useRef<Konva.Node | null>(null)
   const trRef = useRef<Konva.Transformer | null>(null)
@@ -370,7 +372,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
     width: boxedElement?.box.width ?? 0,
     height: boxedElement?.box.height ?? 0,
     rotation: element.rotation || 0,
-    draggable: !element.locked,
+    draggable: readOnly ? false : !element.locked,
     onMouseDown: onSelect,
     onTap: onSelect,
     onDblClick,
@@ -948,7 +950,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
                     draggable
                     onDragStart={(e) => {
                       e.cancelBubble = true
-                      ;(e.target as Konva.Shape).fill('rgba(59, 130, 246, 0.5)') // Visual feedback
+                        ; (e.target as Konva.Shape).fill('rgba(59, 130, 246, 0.5)') // Visual feedback
                     }}
                     onMouseDown={(e) => {
                       e.cancelBubble = true
@@ -1018,7 +1020,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
                     draggable
                     onDragStart={(e) => {
                       e.cancelBubble = true
-                      ;(e.target as Konva.Shape).fill('rgba(59, 130, 246, 0.5)') // Visual feedback
+                        ; (e.target as Konva.Shape).fill('rgba(59, 130, 246, 0.5)') // Visual feedback
                     }}
                     onMouseDown={(e) => {
                       e.cancelBubble = true
@@ -1078,6 +1080,32 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
             element={imageElement}
             commonProps={commonProps}
           />
+        )
+      }
+      case 'Signature': {
+        const sigElement = element as any // Cast to any or define ISignatureElement import
+        const { box, strokes, stroke, strokeWidth } = sigElement
+        return (
+          <Group {...commonProps}>
+            {/* Transparent rect to catch events on the whole bounding box */}
+            <Rect
+              width={box.width}
+              height={box.height}
+              fill="transparent"
+            />
+            {strokes.map((points: number[], i: number) => (
+              <Line
+                key={i}
+                points={points}
+                stroke={stroke}
+                strokeWidth={strokeWidth}
+                tension={0.5}
+                lineCap="round"
+                lineJoin="round"
+                bezier={false} // Use tension for freehand smoothing
+              />
+            ))}
+          </Group>
         )
       }
       case 'Line': {

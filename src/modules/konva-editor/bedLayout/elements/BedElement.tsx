@@ -116,8 +116,8 @@ export const BedElement: React.FC<BedElementProps> = ({
 
           const renderLines = isOccupied
             ? [label, patientName, bloodPressure, alertMessage].filter(
-                (l): l is string => typeof l === 'string' && l !== ''
-              )
+              (l): l is string => typeof l === 'string' && l !== ''
+            )
             : [label]
 
           // Debug rendering
@@ -129,9 +129,9 @@ export const BedElement: React.FC<BedElementProps> = ({
           return renderLines.map((text, index) => (
             <OutlinedText
               key={index}
-              x={-element.box.width * 1.5}
+              x={0}
               y={startY + index * fontSize * lineHeight}
-              width={element.box.width * 4}
+              width={element.box.width}
               text={text}
               fontSize={fontSize}
               fontFamily="Meiryo"

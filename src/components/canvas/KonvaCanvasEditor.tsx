@@ -39,6 +39,10 @@ interface KonvaCanvasEditorProps {
   onUndo?: () => void
   onRedo?: () => void
   onDelete?: () => void
+  // Stage events injection
+  onStageMouseDown?: (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void
+  onStageMouseMove?: (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void
+  onStageMouseUp?: (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void
 }
 
 type BoxElement = Extract<CanvasElement, { box: IBox }>
@@ -61,6 +65,9 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       onUndo,
       onRedo,
       onDelete,
+      onStageMouseDown,
+      onStageMouseMove,
+      onStageMouseUp,
     },
     ref
   ) => {
@@ -172,11 +179,50 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
             scaleY={zoom}
             ref={stageRef}
             onMouseDown={(e) => {
-              // Clicked on stage or paper background
-              if (e.target === e.target.getStage() || e.target.name() === 'paper-background') {
+              // Priority to passed handler (e.g. for drawing)
+              if (onStageMouseDown) {
+                onStageMouseDown(e)
+                // If drawing, we might want to stop propagation or prevent default selection logic
+                // For now, let's assume if onStageMouseDown is provided, it handles logic.
+                // But we also need selection clearing if NOT drawing.
+                // We can check e.cancelBubble or similar if the handler decides to consume it?
+                // Or simple check:
+              }
+
+              // Clicked on stage or paper background -> Clear selection
+              // ONLY if NOT handled by element click (bubbling)
+              // But passed onStageMouseDown might be for drawing tools which capture everything.
+              if (
+                !onStageMouseDown && // If external handler exists, assume it manages selection or decides to clear
+                (e.target === e.target.getStage() || e.target.name() === 'paper-background')
+              ) {
+                handleSelect(null, e)
+                setEditingElementId(null)
+              } else if (!onStageMouseDown && e.target === e.target.getStage()) {
+                handleSelect(null, e) // Fallback
+              }
+            }}
+            onMouseMove={(e) => {
+              onStageMouseMove?.(e)
+            }}
+            onMouseUp={(e) => {
+              onStageMouseUp?.(e)
+            }}
+            onTouchStart={(e) => {
+              onStageMouseDown?.(e)
+              if (
+                !onStageMouseDown &&
+                (e.target === e.target.getStage() || e.target.name() === 'paper-background')
+              ) {
                 handleSelect(null, e)
                 setEditingElementId(null)
               }
+            }}
+            onTouchMove={(e) => {
+              onStageMouseMove?.(e)
+            }}
+            onTouchEnd={(e) => {
+              onStageMouseUp?.(e)
             }}
           >
             <Layer>

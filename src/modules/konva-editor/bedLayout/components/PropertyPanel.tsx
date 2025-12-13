@@ -33,12 +33,13 @@ import type {
   ITextElement,
 } from '../../types'
 
-interface PropertyPanelProps {
+export interface PropertyPanelProps {
   selectedElement: BedLayoutElement | null
   onChange: (id: string, newAttrs: Partial<BedLayoutElement>) => void
   onDelete: (id: string) => void
   document?: BedLayoutDocument
   onDocumentChange?: (newDoc: BedLayoutDocument) => void
+  i18nOverrides?: Record<string, string>
 }
 
 const labelClass = 'block text-[11px] text-theme-text-secondary mb-0.5'
@@ -47,8 +48,14 @@ const inputClass =
   'w-full px-1.5 py-1 border border-theme-border rounded text-[11px] bg-theme-bg-primary text-theme-text-primary focus:outline-none focus:ring-1 focus:ring-theme-accent'
 const sectionCardClass = 'mb-2.5 p-2.5 bg-theme-bg-tertiary rounded border border-theme-border'
 
-const ImagePreview: React.FC<{ assetId: string }> = ({ assetId }) => {
+const ImagePreview: React.FC<{ assetId: string, i18nOverrides?: Record<string, string> }> = ({ assetId, i18nOverrides }) => {
   const { t } = useTranslation()
+
+  const resolveText = (key: string, defaultValue?: string) => {
+    if (i18nOverrides && i18nOverrides[key]) return i18nOverrides[key]
+    return t(key, defaultValue ?? key)
+  }
+
   const [src, setSrc] = useState<string | null>(null)
   const [status, setStatus] = useState<'loading' | 'loaded' | 'error'>('loading')
 
@@ -85,7 +92,7 @@ const ImagePreview: React.FC<{ assetId: string }> = ({ assetId }) => {
   if (status === 'loading') {
     return (
       <div className="w-full h-20 bg-theme-bg-tertiary border border-theme-border rounded flex items-center justify-center text-xs text-theme-text-secondary">
-        {t('loading')}
+        {resolveText('loading', 'Loading...')}
       </div>
     )
   }
@@ -93,7 +100,7 @@ const ImagePreview: React.FC<{ assetId: string }> = ({ assetId }) => {
   if (status === 'error') {
     return (
       <div className="w-full h-20 bg-theme-bg-tertiary border border-theme-border rounded flex items-center justify-center text-xs text-red-500">
-        {t('no_image')}
+        {resolveText('no_image', 'No image')}
       </div>
     )
   }
@@ -112,8 +119,14 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
   onChange,
   document,
   onDocumentChange,
+  i18nOverrides,
 }) => {
   const { t } = useTranslation()
+
+  const resolveText = (key: string, defaultValue?: string) => {
+    if (i18nOverrides && i18nOverrides[key]) return i18nOverrides[key]
+    return t(key, defaultValue ?? key)
+  }
 
   if (!selectedElement) {
     if (!document || !onDocumentChange) return null
@@ -121,11 +134,11 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
     return (
       <div className="w-64 bg-theme-bg-secondary border-l border-theme-border p-4 overflow-y-auto text-theme-text-primary">
         <h3 className="text-sm font-semibold mb-4 text-theme-text-primary">
-          {t('properties_layout')}
+          {resolveText('properties_layout', 'Layout')}
         </h3>
         <div className="space-y-4">
           <div>
-            <label className={labelClass}>{t('properties_width')}</label>
+            <label className={labelClass}>{resolveText('properties_width', 'Width')}</label>
             <input
               type="number"
               value={document.layout.width}
@@ -139,7 +152,7 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
             />
           </div>
           <div>
-            <label className={labelClass}>{t('properties_height')}</label>
+            <label className={labelClass}>{resolveText('properties_height', 'Height')}</label>
             <input
               type="number"
               value={document.layout.height}
@@ -192,26 +205,26 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
   const buildId = (suffix: string) => `prop-${selectedElement.id}-${suffix}`
 
   const typeLabelMap: Record<string, string> = {
-    Text: t('properties_element_text'),
-    Rect: t('properties_element_rect'),
-    Triangle: t('properties_element_triangle'),
-    Trapezoid: t('properties_element_trapezoid'),
-    Circle: t('properties_element_circle'),
-    Diamond: t('properties_element_diamond'),
-    Cylinder: t('properties_element_cylinder'),
-    Heart: t('properties_element_heart'),
-    Star: t('properties_element_star'),
-    Pentagon: t('properties_element_pentagon'),
-    Hexagon: t('properties_element_hexagon'),
-    ArrowUp: t('properties_element_arrow_up'),
-    ArrowDown: t('properties_element_arrow_down'),
-    ArrowLeft: t('properties_element_arrow_left'),
-    ArrowRight: t('properties_element_arrow_right'),
-    Tree: t('properties_element_tree'),
-    House: t('properties_element_house'),
-    Line: t('properties_element_line'),
-    Image: t('properties_element_image'),
-    Bed: t('toolbar_bed'),
+    Text: resolveText('properties_element_text', 'Text'),
+    Rect: resolveText('properties_element_rect', 'Rectangle'),
+    Triangle: resolveText('properties_element_triangle', 'Triangle'),
+    Trapezoid: resolveText('properties_element_trapezoid', 'Trapezoid'),
+    Circle: resolveText('properties_element_circle', 'Circle'),
+    Diamond: resolveText('properties_element_diamond', 'Diamond'),
+    Cylinder: resolveText('properties_element_cylinder', 'Cylinder'),
+    Heart: resolveText('properties_element_heart', 'Heart'),
+    Star: resolveText('properties_element_star', 'Star'),
+    Pentagon: resolveText('properties_element_pentagon', 'Pentagon'),
+    Hexagon: resolveText('properties_element_hexagon', 'Hexagon'),
+    ArrowUp: resolveText('properties_element_arrow_up', 'Arrow Up'),
+    ArrowDown: resolveText('properties_element_arrow_down', 'Arrow Down'),
+    ArrowLeft: resolveText('properties_element_arrow_left', 'Arrow Left'),
+    ArrowRight: resolveText('properties_element_arrow_right', 'Arrow Right'),
+    Tree: resolveText('properties_element_tree', 'Tree'),
+    House: resolveText('properties_element_house', 'House'),
+    Line: resolveText('properties_element_line', 'Line'),
+    Image: resolveText('properties_element_image', 'Image'),
+    Bed: resolveText('toolbar_bed', 'Bed'),
   }
 
   const renderTextProps = () => {
@@ -241,13 +254,13 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
     return (
       <div className={sectionCardClass}>
         <h4 className="text-xs font-medium text-theme-text-primary mb-2">
-          {t('properties_element_text')}
+          {resolveText('properties_element_text', 'Text')}
         </h4>
 
         {/* Font Family & Size */}
         <div className="grid grid-cols-2 gap-2 mb-3">
           <div>
-            <label className={labelClass}>{t('properties_font')}</label>
+            <label className={labelClass}>{resolveText('properties_font', 'Font')}</label>
             <select
               value={textEl.font.family}
               onChange={(e) =>
@@ -264,7 +277,7 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
             </select>
           </div>
           <div>
-            <label className={labelClass}>{t('properties_font_size')}</label>
+            <label className={labelClass}>{resolveText('properties_font_size', 'Size')}</label>
             <EditableSelect
               value={textEl.font.size.toString()}
               onChange={(val: string) =>
@@ -280,7 +293,7 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
 
         {/* Color */}
         <div className="mb-3">
-          <label className={labelClass}>{t('color')}</label>
+          <label className={labelClass}>{resolveText('color', 'Color')}</label>
           <div className="flex items-center gap-2">
             <input
               type="color"
@@ -307,17 +320,16 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
                       font: { ...textEl.font, weight: textEl.font.weight === 700 ? 400 : 700 },
                     } as Partial<ITextElement>)
                   }
-                  className={`p-1 rounded border ${
-                    textEl.font.weight === 700
-                      ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
-                      : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
-                  }`}
+                  className={`p-1 rounded border ${textEl.font.weight === 700
+                    ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
+                    : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
+                    }`}
                 >
                   <Bold size={14} />
                 </button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>{t('properties_font_style_bold')}</p>
+                <p>{resolveText('properties_font_style_bold', 'Bold')}</p>
               </TooltipContent>
             </Tooltip>
 
@@ -330,17 +342,16 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
                       font: { ...textEl.font, italic: !textEl.font.italic },
                     } as Partial<ITextElement>)
                   }
-                  className={`p-1 rounded border ${
-                    textEl.font.italic
-                      ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
-                      : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
-                  }`}
+                  className={`p-1 rounded border ${textEl.font.italic
+                    ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
+                    : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
+                    }`}
                 >
                   <Italic size={14} />
                 </button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>{t('properties_font_style_italic')}</p>
+                <p>{resolveText('properties_font_style_italic', 'Italic')}</p>
               </TooltipContent>
             </Tooltip>
 
@@ -353,17 +364,16 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
                       font: { ...textEl.font, underline: !textEl.font.underline },
                     } as Partial<ITextElement>)
                   }
-                  className={`p-1 rounded border ${
-                    textEl.font.underline
-                      ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
-                      : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
-                  }`}
+                  className={`p-1 rounded border ${textEl.font.underline
+                    ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
+                    : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
+                    }`}
                 >
                   <Underline size={14} />
                 </button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>{t('properties_font_style_underline')}</p>
+                <p>{resolveText('properties_font_style_underline', 'Underline')}</p>
               </TooltipContent>
             </Tooltip>
 
@@ -376,17 +386,16 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
                       font: { ...textEl.font, strikethrough: !textEl.font.strikethrough },
                     } as Partial<ITextElement>)
                   }
-                  className={`p-1 rounded border ${
-                    textEl.font.strikethrough
-                      ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
-                      : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
-                  }`}
+                  className={`p-1 rounded border ${textEl.font.strikethrough
+                    ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
+                    : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
+                    }`}
                 >
                   <Strikethrough size={14} />
                 </button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>{t('properties_font_style_strikethrough')}</p>
+                <p>{resolveText('properties_font_style_strikethrough', 'Strikethrough')}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -394,7 +403,9 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
 
         {/* Text Align */}
         <div>
-          <label className={`${labelClass} font-medium`}>{t('properties_text_align')}</label>
+          <label className={`${labelClass} font-medium`}>
+            {resolveText('properties_text_align', 'Align')}
+          </label>
           <div className="flex bg-theme-bg-primary rounded border border-theme-border p-0.5">
             <TooltipProvider>
               <Tooltip>
@@ -402,17 +413,16 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
                   <button
                     type="button"
                     onClick={() => updateElement({ align: 'left' } as Partial<ITextElement>)}
-                    className={`flex-1 flex items-center justify-center py-1 rounded ${
-                      textEl.align === 'left'
-                        ? 'bg-theme-bg-tertiary text-theme-accent'
-                        : 'text-theme-text-secondary hover:bg-theme-bg-secondary'
-                    }`}
+                    className={`flex-1 flex items-center justify-center py-1 rounded ${textEl.align === 'left'
+                      ? 'bg-theme-bg-tertiary text-theme-accent'
+                      : 'text-theme-text-secondary hover:bg-theme-bg-secondary'
+                      }`}
                   >
                     <AlignLeft size={14} />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>{t('side_left')}</p>
+                  <p>{resolveText('side_left', 'Left')}</p>
                 </TooltipContent>
               </Tooltip>
 
@@ -421,17 +431,16 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
                   <button
                     type="button"
                     onClick={() => updateElement({ align: 'center' } as Partial<ITextElement>)}
-                    className={`flex-1 flex items-center justify-center py-1 rounded ${
-                      textEl.align === 'center'
-                        ? 'bg-theme-bg-tertiary text-theme-accent'
-                        : 'text-theme-text-secondary hover:bg-theme-bg-secondary'
-                    }`}
+                    className={`flex-1 flex items-center justify-center py-1 rounded ${textEl.align === 'center'
+                      ? 'bg-theme-bg-tertiary text-theme-accent'
+                      : 'text-theme-text-secondary hover:bg-theme-bg-secondary'
+                      }`}
                   >
                     <AlignCenter size={14} />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>{t('center')}</p>
+                  <p>{resolveText('center', 'Center')}</p>
                 </TooltipContent>
               </Tooltip>
 
@@ -440,17 +449,16 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
                   <button
                     type="button"
                     onClick={() => updateElement({ align: 'right' } as Partial<ITextElement>)}
-                    className={`flex-1 flex items-center justify-center py-1 rounded ${
-                      textEl.align === 'right'
-                        ? 'bg-theme-bg-tertiary text-theme-accent'
-                        : 'text-theme-text-secondary hover:bg-theme-bg-secondary'
-                    }`}
+                    className={`flex-1 flex items-center justify-center py-1 rounded ${textEl.align === 'right'
+                      ? 'bg-theme-bg-tertiary text-theme-accent'
+                      : 'text-theme-text-secondary hover:bg-theme-bg-secondary'
+                      }`}
                   >
                     <AlignRight size={14} />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>{t('side_right')}</p>
+                  <p>{resolveText('side_right', 'Right')}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -487,15 +495,15 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
     return (
       <div className={sectionCardClass}>
         <h4 className="text-xs font-medium text-theme-text-primary mb-2">
-          {t('properties_shape_style')}
+          {resolveText('properties_shape_style', 'Shape Style')}
         </h4>
         {/* Colors */}
         <div>
-          <h5 className={`${headingClass} font-medium`}>{t('color')}</h5>
+          <h5 className={`${headingClass} font-medium`}>{resolveText('color', 'Color')}</h5>
           <div className="grid grid-cols-2 gap-1.5">
             <div>
               <label className={labelClass} htmlFor={buildId('fill-color')}>
-                {t('properties_fill_color')}
+                {resolveText('properties_fill_color', 'Fill Color')}
               </label>
               <input
                 id={buildId('fill-color')}
@@ -511,7 +519,7 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
             </div>
             <div>
               <label className={labelClass} htmlFor={buildId('stroke-color')}>
-                {t('properties_border')}
+                {resolveText('properties_border', 'Border')}
               </label>
               <input
                 id={buildId('stroke-color')}
@@ -534,7 +542,7 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
         {/* Stroke width */}
         <div className="mt-3">
           <label className={labelClass} htmlFor={buildId('stroke-width')}>
-            {t('properties_line_width')}
+            {resolveText('properties_line_width', 'Line Width')}
           </label>
           <input
             id={buildId('stroke-width')}
@@ -562,12 +570,12 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
     const arrowOptions: ShapeOption[] = [
       {
         value: 'none',
-        label: t('properties_arrow_none'),
+        label: resolveText('properties_arrow_none', 'None'),
         icon: <div className="w-4 h-0.5 bg-current" />,
       },
       {
         value: 'standard',
-        label: t('properties_arrow_standard'),
+        label: resolveText('properties_arrow_standard', 'Standard'),
         icon: (
           <svg
             width="16"
@@ -577,17 +585,17 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
             stroke="currentColor"
             strokeWidth="1.5"
           >
-            <title>{t('properties_arrow_standard')}</title>
+            <title>{resolveText('properties_arrow_standard', 'Standard')}</title>
             <path d="M12 8H2m0 0l4-4m-4 4l4 4" />
           </svg>
         ),
       },
       {
         value: 'filled',
-        label: t('properties_arrow_filled'),
+        label: resolveText('properties_arrow_filled', 'Filled'),
         icon: (
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" stroke="none">
-            <title>{t('properties_arrow_filled')}</title>
+            <title>{resolveText('properties_arrow_filled', 'Filled')}</title>
             <path d="M2 8l6-4v8z" />
             <path d="M8 8h6" stroke="currentColor" strokeWidth="1.5" />
           </svg>
@@ -595,10 +603,10 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
       },
       {
         value: 'triangle',
-        label: t('properties_arrow_triangle'),
+        label: resolveText('properties_arrow_triangle', 'Triangle'),
         icon: (
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" stroke="none">
-            <title>{t('properties_arrow_triangle')}</title>
+            <title>{resolveText('properties_arrow_triangle', 'Triangle')}</title>
             <path d="M2 8l6-4v8z" />
             <path d="M8 8h6" stroke="currentColor" strokeWidth="1.5" />
           </svg>
@@ -606,7 +614,7 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
       },
       {
         value: 'open',
-        label: t('properties_arrow_open'),
+        label: resolveText('properties_arrow_open', 'Open'),
         icon: (
           <svg
             width="16"
@@ -616,7 +624,7 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
             stroke="currentColor"
             strokeWidth="1.5"
           >
-            <title>{t('properties_arrow_open')}</title>
+            <title>{resolveText('properties_arrow_open', 'Open')}</title>
             <path d="M6 4l-4 4 4 4" />
             <path d="M2 8h10" />
           </svg>
@@ -624,10 +632,10 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
       },
       {
         value: 'circle',
-        label: t('properties_arrow_circle'),
+        label: resolveText('properties_arrow_circle', 'Circle'),
         icon: (
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" stroke="none">
-            <title>{t('properties_arrow_circle')}</title>
+            <title>{resolveText('properties_arrow_circle', 'Circle')}</title>
             <circle cx="4" cy="8" r="3" />
             <path d="M7 8h7" stroke="currentColor" strokeWidth="1.5" />
           </svg>
@@ -635,10 +643,10 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
       },
       {
         value: 'diamond',
-        label: t('properties_arrow_diamond'),
+        label: resolveText('properties_arrow_diamond', 'Diamond'),
         icon: (
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" stroke="none">
-            <title>{t('properties_arrow_diamond')}</title>
+            <title>{resolveText('properties_arrow_diamond', 'Diamond')}</title>
             <path d="M2 8l3-3 3 3-3 3z" />
             <path d="M8 8h6" stroke="currentColor" strokeWidth="1.5" />
           </svg>
@@ -646,10 +654,10 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
       },
       {
         value: 'square',
-        label: t('properties_arrow_square'),
+        label: resolveText('properties_arrow_square', 'Square'),
         icon: (
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" stroke="none">
-            <title>{t('properties_arrow_square')}</title>
+            <title>{resolveText('properties_arrow_square', 'Square')}</title>
             <rect x="2" y="5" width="6" height="6" />
             <path d="M8 8h6" stroke="currentColor" strokeWidth="1.5" />
           </svg>
@@ -660,7 +668,7 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
     const lineStyleOptions: ShapeOption[] = [
       {
         value: 'solid',
-        label: t('properties_line_style_solid'),
+        label: resolveText('properties_line_style_solid', 'Solid'),
         icon: (
           <svg
             width="24"
@@ -670,14 +678,14 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
             stroke="currentColor"
             strokeWidth="2"
           >
-            <title>{t('properties_line_style_solid')}</title>
+            <title>{resolveText('properties_line_style_solid', 'Solid')}</title>
             <line x1="0" y1="4" x2="24" y2="4" />
           </svg>
         ),
       },
       {
         value: 'dashed',
-        label: t('properties_line_style_dashed'),
+        label: resolveText('properties_line_style_dashed', 'Dashed'),
         icon: (
           <svg
             width="24"
@@ -687,14 +695,14 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
             stroke="currentColor"
             strokeWidth="2"
           >
-            <title>{t('properties_line_style_dashed')}</title>
+            <title>{resolveText('properties_line_style_dashed', 'Dashed')}</title>
             <line x1="0" y1="4" x2="24" y2="4" strokeDasharray="6 4" />
           </svg>
         ),
       },
       {
         value: 'dotted',
-        label: t('properties_line_style_dotted'),
+        label: resolveText('properties_line_style_dotted', 'Dotted'),
         icon: (
           <svg
             width="24"
@@ -704,7 +712,7 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
             stroke="currentColor"
             strokeWidth="2"
           >
-            <title>{t('properties_line_style_dotted')}</title>
+            <title>{resolveText('properties_line_style_dotted', 'Dotted')}</title>
             <line x1="0" y1="4" x2="24" y2="4" strokeDasharray="2 4" />
           </svg>
         ),
@@ -730,12 +738,12 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
     return (
       <div className={sectionCardClass}>
         <h4 className="text-xs font-medium text-theme-text-primary mb-2">
-          {t('properties_shape_style')}
+          {resolveText('properties_shape_style', 'Shape Style')}
         </h4>
         {/* Line Color */}
         <div className="mb-3">
           <label className={`${labelClass} font-medium`} htmlFor={buildId('line-color')}>
-            {t('properties_line_color')}
+            {resolveText('properties_line_color', 'Line Color')}
           </label>
           <input
             id={buildId('line-color')}
@@ -753,7 +761,7 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
         {/* Line Width */}
         <div className="mb-3">
           <label className={`${labelClass} font-medium`} htmlFor={buildId('line-width')}>
-            {t('properties_line_width')} (px)
+            {resolveText('properties_line_width', 'Line Width')} (px)
           </label>
           <input
             id={buildId('line-width')}
@@ -774,7 +782,9 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
 
         {/* Line Style */}
         <div className="mb-3">
-          <label className={`${labelClass} font-medium`}>{t('properties_line_style')}</label>
+          <label className={`${labelClass} font-medium`}>
+            {resolveText('properties_line_style', 'Line Style')}
+          </label>
           <ShapeSelector
             value={getLineStyleValue(line.stroke.dash)}
             onChange={handleLineStyleChange}
@@ -785,7 +795,7 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
         {/* Start Arrow */}
         <div className="mb-3">
           <label className={`${labelClass} font-medium`} htmlFor={buildId('start-arrow')}>
-            {t('properties_arrow_start')}
+            {resolveText('properties_arrow_start', 'Start Arrow')}
           </label>
           <ShapeSelector
             value={line.startArrow || 'none'}
@@ -801,7 +811,7 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
         {/* End Arrow */}
         <div>
           <label className={`${labelClass} font-medium`} htmlFor={buildId('end-arrow')}>
-            {t('properties_arrow_end')}
+            {resolveText('properties_arrow_end', 'End Arrow')}
           </label>
           <ShapeSelector
             value={line.endArrow || 'none'}
@@ -827,11 +837,11 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
     return (
       <div className={sectionCardClass}>
         <h4 className="text-xs font-medium text-theme-text-primary mb-2">
-          {t('properties_bed_info')}
+          {resolveText('properties_bed_info', 'Bed Info')}
         </h4>
         <div className="space-y-3">
           <div>
-            <label className={labelClass}>{t('properties_label')}</label>
+            <label className={labelClass}>{resolveText('properties_label', 'Label')}</label>
             <input
               type="text"
               value={bed.label || ''}
@@ -840,7 +850,7 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
             />
           </div>
           <div>
-            <label className={labelClass}>{t('properties_orientation')}</label>
+            <label className={labelClass}>{resolveText('properties_orientation', 'Orientation')}</label>
             <select
               value={bed.orientation || 'vertical'}
               onChange={(e) => {
@@ -865,8 +875,8 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
               }}
               className={inputClass}
             >
-              <option value="vertical">{t('properties_orientation_vertical')}</option>
-              <option value="horizontal">{t('properties_orientation_horizontal')}</option>
+              <option value="vertical">{resolveText('properties_orientation_vertical', 'Vertical')}</option>
+              <option value="horizontal">{resolveText('properties_orientation_horizontal', 'Horizontal')}</option>
             </select>
           </div>
         </div>
@@ -886,9 +896,19 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
       reader.onload = (event) => {
         const dataUrl = event.target?.result as string
         if (dataUrl) {
-          // Update both assetId and src to ensure CanvasRenderer picks it up
-          // CanvasRenderer prioritizes src, so we must update it.
-          updateElement({ assetId: dataUrl, src: dataUrl } as Partial<IImageElement>)
+          const img = new Image()
+          img.onload = () => {
+            updateElement({
+              assetId: dataUrl,
+              src: dataUrl,
+              box: {
+                ...image.box,
+                width: img.naturalWidth,
+                height: img.naturalHeight,
+              },
+            } as Partial<IImageElement>)
+          }
+          img.src = dataUrl
         }
       }
       reader.readAsDataURL(file)
@@ -897,11 +917,13 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
     return (
       <div className={sectionCardClass}>
         <h4 className="text-xs font-medium text-theme-text-primary mb-2">
-          {t('properties_element_image')}
+          {resolveText('properties_element_image', 'Image')}
         </h4>
         <div className="mb-4 space-y-3">
           <div>
-            <label className={`${labelClass} font-medium`}>{t('properties_select_image')}</label>
+            <label className={`${labelClass} font-medium`}>
+              {resolveText('properties_select_image', 'Select Image')}
+            </label>
             <input
               type="file"
               accept="image/*"
@@ -911,8 +933,8 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
           </div>
           {image.assetId && (
             <div className="mt-2">
-              <p className={labelClass}>{t('properties_preview')}</p>
-              <ImagePreview assetId={image.assetId} />
+              <p className={labelClass}>{resolveText('properties_preview', 'Preview')}</p>
+              <ImagePreview assetId={image.assetId} i18nOverrides={i18nOverrides} />
             </div>
           )}
         </div>
@@ -927,12 +949,12 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
     return (
       <div className={sectionCardClass}>
         <h4 className="text-xs font-medium text-theme-text-primary mb-2">
-          {t('properties_layout')}
+          {resolveText('properties_layout', 'Layout')}
         </h4>
 
         {/* Position */}
         <div className="mb-3">
-          <h5 className={headingClass}>{t('position')}</h5>
+          <h5 className={headingClass}>{resolveText('position', 'Position')}</h5>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className={labelClass} htmlFor={buildId('position-x')}>
@@ -973,11 +995,11 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
 
         {/* Size */}
         <div>
-          <h5 className={headingClass}>{t('properties_size')}</h5>
+          <h5 className={headingClass}>{resolveText('properties_size', 'Size')}</h5>
           <div className="grid grid-cols-2 gap-1.5">
             <div>
               <label className={labelClass} htmlFor={buildId('size-width')}>
-                {t('properties_width')}
+                {resolveText('properties_width', 'Width')}
               </label>
               <input
                 id={buildId('size-width')}
@@ -994,7 +1016,7 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
             </div>
             <div>
               <label className={labelClass} htmlFor={buildId('size-height')}>
-                {t('properties_height')}
+                {resolveText('properties_height', 'Height')}
               </label>
               <input
                 id={buildId('size-height')}

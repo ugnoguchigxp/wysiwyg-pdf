@@ -36,17 +36,17 @@ const RenderBed = ({ element }: { element: IBedElement }) => {
   // Pillow style
   const pillowStyle: React.CSSProperties = isVertical
     ? {
-        top: '5px',
-        left: '10%',
-        width: '80%',
-        height: '20px',
-      }
+      top: '5px',
+      left: '10%',
+      width: '80%',
+      height: '20px',
+    }
     : {
-        top: '10%',
-        left: '5px',
-        width: '20px',
-        height: '80%',
-      }
+      top: '10%',
+      left: '5px',
+      width: '20px',
+      height: '80%',
+    }
 
   // Text Halo effect (simulated with text-shadow)
   const textHalo =
@@ -144,8 +144,14 @@ const RenderBed = ({ element }: { element: IBedElement }) => {
   )
 }
 
-const BedPrintElement: React.FC<{ element: CanvasElement }> = ({ element }) => {
+const BedPrintElement: React.FC<{ element: CanvasElement, i18nOverrides?: Record<string, string> }> = ({ element, i18nOverrides }) => {
   const { t } = useTranslation()
+
+  const resolveText = (key: string, defaultValue?: string) => {
+    if (i18nOverrides && i18nOverrides[key]) return i18nOverrides[key]
+    return t(key, defaultValue ?? key)
+  }
+
   if (!element.visible) return null
 
   // Line handling
@@ -232,7 +238,7 @@ const BedPrintElement: React.FC<{ element: CanvasElement }> = ({ element }) => {
     return (
       <div style={style}>
         <svg width="100%" height="100%" style={{ overflow: 'visible' }}>
-          <title>{t('bed_layout_shape_preview', 'Bed layout shape')}</title>
+          <title>{resolveText('bed_layout_shape_preview', 'Bed layout shape')}</title>
           <RenderShape element={element as IShapeElement} />
         </svg>
       </div>
@@ -246,7 +252,7 @@ const BedPrintElement: React.FC<{ element: CanvasElement }> = ({ element }) => {
         {imageEl.src ? (
           <img
             src={imageEl.src}
-            alt={t('bed_layout_image_preview', 'Asset preview')}
+            alt={resolveText('bed_layout_image_preview', 'Asset preview')}
             style={{
               width: '100%',
               height: '100%',
@@ -268,7 +274,7 @@ const BedPrintElement: React.FC<{ element: CanvasElement }> = ({ element }) => {
               color: 'gray',
             }}
           >
-            {t('no_image')}
+            {resolveText('no_image', 'No image')}
           </div>
         )}
       </div>
@@ -278,8 +284,8 @@ const BedPrintElement: React.FC<{ element: CanvasElement }> = ({ element }) => {
   return null
 }
 
-export const BedPrintLayout = React.forwardRef<HTMLDivElement, { document: BedLayoutDocument }>(
-  ({ document }, ref) => {
+export const BedPrintLayout = React.forwardRef<HTMLDivElement, { document: BedLayoutDocument, i18nOverrides?: Record<string, string> }>(
+  ({ document, i18nOverrides }, ref) => {
     const { width, height } = document.layout
 
     return (
@@ -297,7 +303,7 @@ export const BedPrintLayout = React.forwardRef<HTMLDivElement, { document: BedLa
           {document.elementOrder.map((id) => {
             const element = document.elementsById[id]
             if (!element) return null
-            return <BedPrintElement key={id} element={element} />
+            return <BedPrintElement key={id} element={element} i18nOverrides={i18nOverrides} />
           })}
         </div>
       </div>

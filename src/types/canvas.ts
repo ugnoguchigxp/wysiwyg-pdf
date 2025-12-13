@@ -29,7 +29,8 @@ export type ElementType =
   | 'Group'
   | 'Guide'
   | 'Bed'
-  | 'Chart' // Added Chart element
+  | 'Chart'
+  | 'Signature'
 
 export type BindingType = 'field' | 'expr' | 'repeater'
 
@@ -122,22 +123,22 @@ export interface ITextElement extends IElementBase {
 
 export interface IShapeElement extends IElementBase {
   type:
-    | 'Rect'
-    | 'Triangle'
-    | 'Trapezoid'
-    | 'Circle'
-    | 'Diamond'
-    | 'Cylinder'
-    | 'Heart'
-    | 'Star'
-    | 'Pentagon'
-    | 'Hexagon'
-    | 'ArrowUp'
-    | 'ArrowDown'
-    | 'ArrowLeft'
-    | 'ArrowRight'
-    | 'Tree'
-    | 'House'
+  | 'Rect'
+  | 'Triangle'
+  | 'Trapezoid'
+  | 'Circle'
+  | 'Diamond'
+  | 'Cylinder'
+  | 'Heart'
+  | 'Star'
+  | 'Pentagon'
+  | 'Hexagon'
+  | 'ArrowUp'
+  | 'ArrowDown'
+  | 'ArrowLeft'
+  | 'ArrowRight'
+  | 'Tree'
+  | 'House'
   box: IBox
   stroke: {
     color: string
@@ -273,6 +274,14 @@ export interface IChartElement extends IElementBase {
   }
 }
 
+export interface ISignatureElement extends IElementBase {
+  type: 'Signature'
+  box: IBox
+  strokes: number[][] // Each stroke is an array of [x, y, x, y, ...]
+  stroke: string // Color
+  strokeWidth: number
+}
+
 export type CanvasElement =
   | ITextElement
   | IShapeElement
@@ -282,3 +291,4 @@ export type CanvasElement =
   | IBedElement
   | IGroupElement
   | IChartElement
+  | ISignatureElement

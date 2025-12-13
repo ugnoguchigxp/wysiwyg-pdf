@@ -3,6 +3,8 @@ import { DashboardPage } from './pages/DashboardPage'
 import { ReportEditorPage } from './pages/ReportEditorPage'
 import { BedLayoutEditorPage } from './pages/BedLayoutEditorPage'
 
+import { ViewerPage } from './pages/ViewerPage'
+
 // Simple Hash Router Hook
 const useHashLocation = () => {
   const [location, setLocation] = useState(window.location.hash.replace('#', '') || '/')
@@ -33,6 +35,10 @@ function App() {
 
   if (location === '/bed') {
     return <BedLayoutEditorPage onBack={() => navigate('/')} />
+  }
+
+  if (location === '/viewer') {
+    return <ViewerPage onBack={() => navigate('/')} />
   }
 
   return <DashboardPage onNavigate={(page) => navigate(`/${page}`)} />

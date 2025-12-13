@@ -322,9 +322,14 @@ const RenderTable = ({ element }: { element: ITableElement }) => {
   )
 }
 
-const PrintElement = ({ element }: { element: Element }) => {
+const PrintElement = ({ element, i18nOverrides }: { element: Element, i18nOverrides?: Record<string, string> }) => {
   const { t } = useTranslation()
   const [imageSrc, setImageSrc] = useState<string | null>(null)
+
+  const resolveText = (key: string, defaultValue?: string) => {
+    if (i18nOverrides && i18nOverrides[key]) return i18nOverrides[key]
+    return t(key, defaultValue ?? key)
+  }
 
   useEffect(() => {
     if (element.type === 'Image') {
@@ -416,7 +421,7 @@ const PrintElement = ({ element }: { element: Element }) => {
     return (
       <div style={style}>
         <svg width="100%" height="100%" style={{ overflow: 'visible' }}>
-          <title>{t('shape_preview', 'Shape preview')}</title>
+          <title>{resolveText('shape_preview', 'Shape preview')}</title>
           <RenderShape element={element as IShapeElement} />
         </svg>
       </div>
@@ -429,7 +434,7 @@ const PrintElement = ({ element }: { element: Element }) => {
         {imageSrc ? (
           <img
             src={imageSrc}
-            alt={t('report_image_alt', 'Report asset')}
+            alt={resolveText('report_image_alt', 'Report asset')}
             style={{
               width: '100%',
               height: '100%',
@@ -450,7 +455,7 @@ const PrintElement = ({ element }: { element: Element }) => {
               color: 'gray',
             }}
           >
-            {t('no_image')}
+            {resolveText('no_image', 'No image')}
           </div>
         )}
       </div>
@@ -466,8 +471,8 @@ const PrintElement = ({ element }: { element: Element }) => {
 
 export const PrintLayout = React.forwardRef<
   HTMLDivElement,
-  { doc: ITemplateDoc; orientation?: 'portrait' | 'landscape' }
->(({ doc, orientation = 'portrait' }, ref) => {
+  { doc: ITemplateDoc; orientation?: 'portrait' | 'landscape'; i18nOverrides?: Record<string, string> }
+>(({ doc, orientation = 'portrait', i18nOverrides }, ref) => {
   const totalPages = doc.pages.length
 
   const isLandscape = orientation === 'landscape'
@@ -519,7 +524,7 @@ export const PrintLayout = React.forwardRef<
           {doc.elements // Use doc.elements here and filter
             .filter((el) => el.pageId === page.id)
             .map((element) => (
-              <PrintElement key={element.id} element={element} />
+              <PrintElement key={element.id} element={element} i18nOverrides={i18nOverrides} />
             ))}
         </div>
 

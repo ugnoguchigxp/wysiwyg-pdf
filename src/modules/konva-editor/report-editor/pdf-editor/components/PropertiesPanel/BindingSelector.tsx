@@ -9,6 +9,7 @@ interface BindingSelectorProps {
   onUpdate: (binding: IBinding | undefined) => void
   label?: string
   onOpenModal?: () => void
+  i18nOverrides?: Record<string, string>
 }
 
 export const BindingSelector: React.FC<BindingSelectorProps> = ({
@@ -16,9 +17,16 @@ export const BindingSelector: React.FC<BindingSelectorProps> = ({
   onUpdate,
   label = 'Data Binding',
   onOpenModal,
+  i18nOverrides,
 }) => {
   const { t } = useTranslation()
-  const displayLabel = label === 'Data Binding' ? t('data_binding') : label
+
+  const resolveText = (key: string, defaultValue?: string) => {
+    if (i18nOverrides && i18nOverrides[key]) return i18nOverrides[key]
+    return t(key, defaultValue ?? key)
+  }
+
+  const displayLabel = label === 'Data Binding' ? resolveText('data_binding', 'Data Binding') : label
 
   if (!binding) {
     return (
@@ -51,7 +59,7 @@ export const BindingSelector: React.FC<BindingSelectorProps> = ({
         </div>
         {binding.sourceId && (
           <div className="text-[10px] text-gray-500 mt-0.5">
-            {t('data_binding_source')}: {binding.sourceId}
+            {resolveText('data_binding_source', 'Source')}: {binding.sourceId}
           </div>
         )}
       </div>
@@ -62,7 +70,7 @@ export const BindingSelector: React.FC<BindingSelectorProps> = ({
           onClick={() => onUpdate(undefined)}
           type="button"
         >
-          {t('data_binding_remove')}
+          {resolveText('data_binding_remove', 'Remove')}
         </button>
         {onOpenModal && (
           <button
@@ -70,7 +78,7 @@ export const BindingSelector: React.FC<BindingSelectorProps> = ({
             onClick={onOpenModal}
             type="button"
           >
-            {t('data_binding_change')}
+            {resolveText('data_binding_change', 'Change')}
           </button>
         )}
       </div>
