@@ -31,6 +31,7 @@ import type {
   IImageElement,
   ILineElement,
   IShapeElement,
+  ISignatureElement,
   ITableElement,
   ITemplateDoc,
   ITextElement,
@@ -370,7 +371,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
 
   const renderSignatureProps = () => {
     if (selectedElement.type !== 'Signature') return null
-    const signature = selectedElement as any // Cast to ISignatureElement
+    const signature = selectedElement as ISignatureElement
 
     return (
       <div className="mb-4 space-y-3">
@@ -386,7 +387,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
             onChange={(e) =>
               updateElement({
                 stroke: e.target.value,
-              } as any)
+              } as Partial<ISignatureElement>)
             }
             className="h-9 p-1 cursor-pointer"
           />
@@ -407,7 +408,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
               if (val > 0) {
                 updateElement({
                   strokeWidth: val,
-                } as any)
+                } as Partial<ISignatureElement>)
               }
             }}
           />

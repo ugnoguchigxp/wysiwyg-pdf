@@ -14,7 +14,7 @@ export interface EditorHeaderProps {
   templateName: string
   onTemplateNameChange: (name: string) => void
   orientation: string
-  onOrientationChange: (orientation: any) => void
+  onOrientationChange: (orientation: 'portrait' | 'landscape') => void
   orientationOptions?: { label: string; value: string }[]
   canUndo: boolean
   canRedo: boolean
@@ -91,7 +91,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
           </span>
           <select
             value={orientation}
-            onChange={(e) => onOrientationChange(e.target.value)}
+            onChange={(e) => onOrientationChange(e.target.value as 'portrait' | 'landscape')}
             className="text-xs bg-transparent border-none focus:ring-0 text-theme-text-primary cursor-pointer outline-none"
           >
             {currentOptions.map((opt) => (

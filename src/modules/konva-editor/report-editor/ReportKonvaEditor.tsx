@@ -1,5 +1,5 @@
 import type Konva from 'konva'
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { Image as KonvaImage, Rect as KonvaRect, Layer, Stage } from 'react-konva'
 import { CanvasElementRenderer } from '../../../components/canvas/CanvasElementRenderer'
 import { useKeyboardShortcuts } from '../../../components/canvas/hooks/useKeyboardShortcuts'
@@ -8,7 +8,7 @@ import type { ITextElement } from '../../../types/canvas'
 import { createContextLogger } from '../../../utils/logger'
 import { TableContextMenu } from './pdf-editor/components/ContextMenu/TableContextMenu'
 import { findImageWithExtension } from './pdf-editor/components/WysiwygCanvas/canvasImageUtils'
-import type { Element, IBox, ITableElement, ITemplateDoc } from './pdf-editor/types/wysiwyg'
+import type { Element, IBox, ISignatureElement, ITableElement, ITemplateDoc } from './pdf-editor/types/wysiwyg'
 import { A4_HEIGHT_PT, A4_WIDTH_PT } from './pdf-editor/utils/coordinates'
 
 const log = createContextLogger('ReportKonvaEditor')
@@ -227,16 +227,8 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       onSelectedCellChange?.(selectedCell)
     }, [selectedCell, onSelectedCellChange])
 
-    // Commit signature when tool changes or component unmounts?
-    // Actually, if we switch tool, we should commit.
-    useEffect(() => {
-      if (activeTool !== 'signature' && currentStrokes.length > 0) {
-        commitSignature()
-      }
-    }, [activeTool])
-
     // Helper to calculate box from strokes
-    const getStrokesBox = (strokes: number[][]) => {
+    const getStrokesBox = useCallback((strokes: number[][]) => {
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
       strokes.forEach(stroke => {
         for (let i = 0; i < stroke.length; i += 2) {
@@ -258,9 +250,9 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
         width: maxX - minX,
         height: maxY - minY,
       }
-    }
+    }, [])
 
-    const commitSignature = () => {
+    const commitSignature = useCallback(() => {
       if (currentStrokes.length === 0) return
 
       const pageId = currentPageId || templateDoc.pages[0]?.id
@@ -277,7 +269,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
         return newStroke
       })
 
-      const element: any = { // ISignatureElement
+      const element: ISignatureElement = {
         id,
         type: 'Signature',
         pageId,
@@ -304,7 +296,16 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
 
       // Select the new element?
       onElementSelect(element)
-    }
+    }, [currentStrokes, currentPageId, templateDoc, getStrokesBox, onTemplateChange, onElementSelect])
+
+    // Commit signature when tool changes or component unmounts?
+    // Actually, if we switch tool, we should commit.
+    useEffect(() => {
+      if (activeTool !== 'signature' && currentStrokes.length > 0) {
+        commitSignature()
+      }
+    }, [activeTool, commitSignature, currentStrokes.length])
+
 
     // Debug active tool changes
     useEffect(() => {
@@ -376,14 +377,14 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
     // Touch support mapping for drawing
     const handleStageTouchStart = (e: Konva.KonvaEventObject<TouchEvent>) => {
       // handleStageMouseDown expects MouseEvent, but we only use getStage/getPointer.
-      // Pass as any or cast
-      handleStageMouseDown(e as any)
+      // Cast safely via unknown
+      handleStageMouseDown(e as unknown as Konva.KonvaEventObject<MouseEvent>)
     }
     const handleStageTouchMove = (e: Konva.KonvaEventObject<TouchEvent>) => {
-      handleStageMouseMove(e as any)
+      handleStageMouseMove(e as unknown as Konva.KonvaEventObject<MouseEvent>)
     }
     const handleStageTouchEnd = (e: Konva.KonvaEventObject<TouchEvent>) => {
-      handleStageMouseUp(e as any)
+      handleStageMouseUp(e as unknown as Konva.KonvaEventObject<MouseEvent>)
     }
 
     const handleElementDblClick = (element: Element) => {
@@ -771,7 +772,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
                     strokes: [...currentStrokes, ...(currentPoints.length > 0 ? [currentPoints] : [])],
                     stroke: '#000000',
                     strokeWidth: 2
-                  } as any}
+                  } as unknown as ISignatureElement}
                   isSelected={false}
                   onSelect={() => { }}
                   onChange={() => { }}

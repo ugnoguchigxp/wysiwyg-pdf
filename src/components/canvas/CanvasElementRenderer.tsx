@@ -21,6 +21,7 @@ import type {
   IChartElement,
   IImageElement,
   ILineElement,
+  ISignatureElement,
   ITableElement,
 } from '../../types/canvas'
 import { LineMarker } from './LineMarker'
@@ -1083,7 +1084,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
         )
       }
       case 'Signature': {
-        const sigElement = element as any // Cast to any or define ISignatureElement import
+        const sigElement = element as ISignatureElement
         const { box, strokes, stroke, strokeWidth } = sigElement
         return (
           <Group {...commonProps}>

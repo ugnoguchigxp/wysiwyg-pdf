@@ -11,5 +11,5 @@ export interface BedStatusData {
     }
     alerts?: string[]
     isOccupied?: boolean
-    customData?: Record<string, any>
+    customData?: Record<string, unknown>
 }
