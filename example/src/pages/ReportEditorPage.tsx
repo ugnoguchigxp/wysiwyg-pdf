@@ -112,7 +112,7 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
     }
 
     const handleSave = () => {
-        console.log('Save document:', doc)
+        console.log('Save document:', JSON.stringify(doc, null, 2))
         alert(t('editor_save_success') || 'Saved! (Check Console)')
     }
 

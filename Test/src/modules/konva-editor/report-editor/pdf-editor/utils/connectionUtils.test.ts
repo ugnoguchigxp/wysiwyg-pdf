@@ -75,6 +75,8 @@ describe('connectionUtils', () => {
   it('findNearbyConnectionPoint skips lines and excluded element', () => {
     const elements: IEditorItem[] = [
       line({ id: 'l1' }),
+      // Unsupported shape type should be ignored
+      ({ id: 'u1', type: 'triangle', x: 0, y: 0, width: 10, height: 10, style: {} } as unknown as IEditorItem),
       rect({ id: 'r1', x: 0, y: 0, width: 10, height: 10 }),
     ]
 
@@ -182,7 +184,7 @@ describe('connectionUtils', () => {
   it('updateLineConnectionPositions ignores missing/wrong-type connected elements', () => {
     const l = line({
       id: 'l1',
-      startConnection: { elementId: 'missing', connectionPoint: 'top-left' },
+      startConnection: { elementId: 'line-2', connectionPoint: 'top-left' },
       endConnection: { elementId: 'line-2', connectionPoint: 'top-left' },
     })
 

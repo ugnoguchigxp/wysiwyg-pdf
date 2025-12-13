@@ -42,8 +42,6 @@ export function useEditorHistory<T extends FormDocument | BedLayoutDocument>(
     if (past.length === 0) return
 
     const operation = past[past.length - 1]
-    if (!operation) return // Should not happen given length check
-
     const newPast = past.slice(0, past.length - 1)
 
     // Revert operation on document
@@ -58,8 +56,6 @@ export function useEditorHistory<T extends FormDocument | BedLayoutDocument>(
     if (future.length === 0) return
 
     const operation = future[0]
-    if (!operation) return
-
     const newFuture = future.slice(1)
 
     // Re-apply operation on document

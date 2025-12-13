@@ -12,6 +12,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
       reportsDirectory: './coverage',
+      // Project-wide coverage (runtime code)
       include: ['src/**/*.{ts,tsx}'],
       exclude: [
         '**/*.d.ts',
@@ -19,12 +20,18 @@ export default defineConfig({
         'example/**',
         'Test/**',
         'src/global.d.ts',
+        // Type-only / barrel exports (exclude from coverage)
+        'src/index.ts',
+        'src/types/**',
+        'src/modules/**/types.ts',
+        'src/modules/**/types/**',
+        'src/modules/**/pdf-editor/types/**',
       ],
       thresholds: {
-        lines: 0,
-        functions: 0,
-        branches: 0,
-        statements: 0,
+        lines: 70,
+        functions: 70,
+        branches: 70,
+        statements: 70,
       },
     },
   },

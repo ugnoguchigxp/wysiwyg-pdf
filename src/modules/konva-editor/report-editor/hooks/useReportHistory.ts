@@ -50,8 +50,6 @@ export function useReportHistory(initialDocument: Doc): UseHistoryReturn {
       const newPast = prev.past.slice(0, prev.past.length - 1)
       const newPresent = prev.past[prev.past.length - 1]
 
-      if (!newPresent) return prev
-
       return {
         past: newPast,
         present: newPresent,
@@ -66,8 +64,6 @@ export function useReportHistory(initialDocument: Doc): UseHistoryReturn {
 
       const newFuture = prev.future.slice(1)
       const newPresent = prev.future[0]
-
-      if (!newPresent) return prev
 
       return {
         past: [...prev.past, prev.present],

@@ -105,9 +105,7 @@ export const SimpleTreeTable = <TData, TValue = unknown>({
                           paddingLeft:
                             row.depth > 0
                               ? `${row.depth * 1.5}rem`
-                              : row.getCanExpand()
-                                ? 0
-                                : '1.25rem',
+                              : '1.25rem',
                         }}
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
