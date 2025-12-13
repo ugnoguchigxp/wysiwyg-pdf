@@ -1,3 +1,4 @@
+import { PEN_CURSOR_URL } from '../cursors'
 import type Konva from 'konva'
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { Image as KonvaImage, Rect as KonvaRect, Layer, Stage } from 'react-konva'
@@ -29,9 +30,9 @@ interface ReportKonvaEditorProps {
   onUndo?: () => void
   onRedo?: () => void
   orientation?: 'portrait' | 'landscape'
-  onEditingCellChange?: (cell: { elementId: string; row: number; col: number } | null) => void
   onSelectedCellChange?: (cell: { elementId: string; row: number; col: number } | null) => void
   activeTool?: string
+  drawingSettings?: { stroke: string; strokeWidth: number }
 }
 
 const PageBackground = ({
@@ -113,14 +114,21 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       onRedo,
       orientation = 'portrait',
       onSelectedCellChange,
-      activeTool = 'select',
+      activeTool,
+      drawingSettings = { stroke: '#000000', strokeWidth: 2 },
     },
     ref
   ) => {
     useImperativeHandle(ref, () => ({
       downloadImage: () => {
-        // Placeholder for now
-        log.info('Download image requested')
+        if (!stageRef.current) return
+        const dataURL = stageRef.current.toDataURL({ pixelRatio: 2 })
+        const link = document.createElement('a')
+        link.download = `report-${Date.now()}.png`
+        link.href = dataURL
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
       }
     }))
 
@@ -279,8 +287,8 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
         name: 'Signature',
         box,
         strokes: normalizedStrokes,
-        stroke: '#000000',
-        strokeWidth: 2,
+        stroke: drawingSettings.stroke,
+        strokeWidth: drawingSettings.strokeWidth,
         rotation: 0
       }
 
@@ -691,8 +699,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
 
     return (
       <div
-        className={`relative w-full h-full bg-gray-100 overflow-auto flex justify-start items-start p-2 scrollbar-thin ${activeTool === 'signature' ? 'cursor-crosshair' : 'cursor-default'
-          }`}
+        className="relative w-full h-full bg-gray-100 overflow-auto flex justify-start items-start p-2 scrollbar-thin cursor-default"
         ref={containerRef}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
@@ -713,6 +720,9 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
             onTouchStart={handleStageTouchStart}
             onTouchMove={handleStageTouchMove}
             onTouchEnd={handleStageTouchEnd}
+            style={{
+              cursor: activeTool === 'signature' ? PEN_CURSOR_URL : 'default'
+            }}
           >
             <Layer name="background-layer" listening={false}>
               {/* Page Background */}
@@ -770,8 +780,8 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
                     // My previous implementation of `commitSignature` normalized them.
                     // So here, render ABSOLUTE points with box at 0,0.
                     strokes: [...currentStrokes, ...(currentPoints.length > 0 ? [currentPoints] : [])],
-                    stroke: '#000000',
-                    strokeWidth: 2
+                    stroke: drawingSettings.stroke,
+                    strokeWidth: drawingSettings.strokeWidth,
                   } as unknown as ISignatureElement}
                   isSelected={false}
                   onSelect={() => { }}

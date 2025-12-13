@@ -53,6 +53,10 @@ export interface WysiwygPropertiesPanelProps {
   currentPageId: string
   schema?: IDataSchema
   i18nOverrides?: Record<string, string>
+  activeTool?: string
+  onToolSelect?: (tool: string) => void
+  drawingSettings?: { stroke: string; strokeWidth: number }
+  onDrawingSettingsChange?: (settings: { stroke: string; strokeWidth: number }) => void
 }
 
 // --- Local UI Components matching Root Design System (Dense Variant) ---
@@ -178,6 +182,10 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
   currentPageId,
   schema,
   i18nOverrides,
+  activeTool,
+  onToolSelect,
+  drawingSettings,
+  onDrawingSettingsChange,
 }) => {
   const { t } = useTranslation()
 
@@ -185,6 +193,60 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
     if (i18nOverrides && i18nOverrides[key]) return i18nOverrides[key]
     return t(key, defaultValue ?? key)
   }
+
+  const renderSignaturePanelContent = (
+    data: { stroke: string; strokeWidth: number },
+    onUpdate: (updates: Partial<ISignatureElement>) => void,
+    showFinishButton: boolean
+  ) => (
+    <div className="mb-4 space-y-3">
+      <PropertiesSectionTitle>{resolveText('toolbar_signature', 'Signature')}</PropertiesSectionTitle>
+
+      {/* Stroke Color */}
+      <div>
+        <PropertiesLabel>
+          {resolveText('properties_stroke_color', 'Stroke Color')}
+        </PropertiesLabel>
+        <PropertiesInput
+          type="color"
+          value={data.stroke}
+          onChange={(e) => onUpdate({ stroke: e.target.value })}
+          className="h-9 p-1 cursor-pointer"
+        />
+      </div>
+
+      {/* Stroke Width */}
+      <div>
+        <PropertiesLabel>
+          {resolveText('properties_stroke_width', 'Thickness')} (px)
+        </PropertiesLabel>
+        <PropertiesInput
+          type="number"
+          min="1"
+          value={data.strokeWidth}
+          onChange={(e) => {
+            const val = Number(e.target.value)
+            if (val > 0) onUpdate({ strokeWidth: val })
+          }}
+        />
+      </div>
+
+      {showFinishButton && (
+        <div className="mt-4 pt-4 border-t border-theme-border">
+          <p className="text-xs text-theme-text-secondary mb-3">
+            {resolveText('signature_instruction', 'Drag on canvas to draw.')}
+          </p>
+          <button
+            type="button"
+            onClick={() => onToolSelect?.('select')}
+            className="w-full flex items-center justify-center py-2 px-4 rounded bg-theme-object-primary text-white hover:bg-theme-object-primary/90 transition-colors"
+          >
+            {resolveText('properties_finish_drawing', 'Finish Drawing')}
+          </button>
+        </div>
+      )}
+    </div>
+  )
 
   const [activeBindingMode, setActiveBindingMode] = React.useState<'field' | 'repeater' | null>(
     null
@@ -289,6 +351,29 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
     )
   }
 
+  // --- Render Signature Panel (When Pen Tool is Active) ---
+  if (activeTool === 'signature' && !selectedElement) {
+    return (
+      <div className="w-72 bg-theme-bg-secondary border-l border-theme-border p-5 overflow-y-auto text-theme-text-primary">
+        <div className={sectionCardClass}>
+          {renderSignaturePanelContent(
+            drawingSettings || { stroke: '#000000', strokeWidth: 2 },
+            (updates) => {
+              if (onDrawingSettingsChange && drawingSettings) {
+                // simplistic merge
+                const newSettings = { ...drawingSettings }
+                if (updates.stroke !== undefined) newSettings.stroke = updates.stroke
+                if (updates.strokeWidth !== undefined) newSettings.strokeWidth = updates.strokeWidth
+                onDrawingSettingsChange(newSettings)
+              }
+            },
+            true // Show finish button
+          )}
+        </div>
+      </div>
+    )
+  }
+
   // 要素未選択時はページ背景プロパティのみ表示
   if (!selectedElement) {
     return (
@@ -369,51 +454,19 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
     Signature: resolveText('toolbar_signature', 'Signature'),
   }
 
+
+
   const renderSignatureProps = () => {
     if (selectedElement.type !== 'Signature') return null
     const signature = selectedElement as ISignatureElement
 
-    return (
-      <div className="mb-4 space-y-3">
-        {/* Stroke Color */}
-        <div>
-          <PropertiesLabel htmlFor={buildId('stroke-color')}>
-            {resolveText('properties_stroke_color', 'Stroke Color')}
-          </PropertiesLabel>
-          <PropertiesInput
-            id={buildId('stroke-color')}
-            type="color"
-            value={signature.stroke ?? '#000000'}
-            onChange={(e) =>
-              updateElement({
-                stroke: e.target.value,
-              } as Partial<ISignatureElement>)
-            }
-            className="h-9 p-1 cursor-pointer"
-          />
-        </div>
-
-        {/* Stroke Width */}
-        <div>
-          <PropertiesLabel htmlFor={buildId('stroke-width')}>
-            {resolveText('properties_stroke_width', 'Thickness')} (px)
-          </PropertiesLabel>
-          <PropertiesInput
-            id={buildId('stroke-width')}
-            type="number"
-            min="1"
-            value={signature.strokeWidth ?? 2}
-            onChange={(e) => {
-              const val = Number(e.target.value)
-              if (val > 0) {
-                updateElement({
-                  strokeWidth: val,
-                } as Partial<ISignatureElement>)
-              }
-            }}
-          />
-        </div>
-      </div>
+    return renderSignaturePanelContent(
+      {
+        stroke: signature.stroke ?? '#000000',
+        strokeWidth: signature.strokeWidth ?? 2,
+      },
+      (updates) => updateElement(updates),
+      false // No finish button when selecting existing
     )
   }
 

@@ -1113,6 +1113,9 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
         const lineElement = element
         const { startPoint, endPoint, stroke, startArrow, endArrow } = lineElement
 
+        // Check for invalid line points to prevent crash
+        if (!startPoint || !endPoint) return null
+
         // Calculate angles for markers
         const dx = endPoint.x - startPoint.x
         const dy = endPoint.y - startPoint.y

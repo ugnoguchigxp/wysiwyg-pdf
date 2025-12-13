@@ -50,7 +50,7 @@ export const KonvaViewer = forwardRef<KonvaViewerHandle, KonvaViewerProps>(
                     >
                         <Layer>
                             {background}
-                            {elements
+                            {window.location.protocol !== 'file:' && elements?.slice() // Avoid mutating original array
                                 .sort((a, b) => a.z - b.z)
                                 .map((element) => (
                                     <CanvasElementRenderer

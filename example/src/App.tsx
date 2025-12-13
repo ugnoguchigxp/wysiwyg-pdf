@@ -4,6 +4,7 @@ import { ReportEditorPage } from './pages/ReportEditorPage'
 import { BedLayoutEditorPage } from './pages/BedLayoutEditorPage'
 
 import { ViewerPage } from './pages/ViewerPage'
+import { SignatureDemoPage } from './pages/SignatureDemoPage'
 
 // Simple Hash Router Hook
 const useHashLocation = () => {
@@ -39,6 +40,10 @@ function App() {
 
   if (location === '/viewer') {
     return <ViewerPage onBack={() => navigate('/')} />
+  }
+
+  if (location === '/signature') {
+    return <SignatureDemoPage onBack={() => navigate('/')} />
   }
 
   return <DashboardPage onNavigate={(page) => navigate(`/${page}`)} />

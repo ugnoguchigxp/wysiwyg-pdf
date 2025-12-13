@@ -7,6 +7,7 @@ import type {
   ILineElement,
   IPage,
   IShapeElement,
+  ISignatureElement,
   ITableElement,
   ITemplateDoc,
   ITextElement,
@@ -15,6 +16,29 @@ import { findImageWithExtension } from './WysiwygCanvas/canvasImageUtils'
 
 // Helper to render shapes as SVG
 // Helper to render shapes as SVG
+export const RenderSignature = ({ element }: { element: ISignatureElement }) => {
+  const { strokes, stroke, strokeWidth } = element
+  return (
+    <svg
+      width="100%"
+      height="100%"
+      style={{ overflow: 'visible' }}
+    >
+      {strokes.map((points, i) => (
+        <polyline
+          key={i}
+          points={points.join(' ')}
+          fill="none"
+          stroke={stroke || '#000'}
+          strokeWidth={strokeWidth || 2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ))}
+    </svg>
+  )
+}
+
 export const RenderShape = ({ element }: { element: IShapeElement }) => {
   const { width, height } = element.box
   const fill = element.fill.color || 'none'
@@ -464,6 +488,15 @@ const PrintElement = ({ element, i18nOverrides }: { element: Element, i18nOverri
 
   if (element.type === 'Table') {
     return <RenderTable element={element as ITableElement} />
+  }
+
+  if (element.type === 'Signature') {
+    const sigElement = element as ISignatureElement
+    return (
+      <div style={style}>
+        <RenderSignature element={sigElement} />
+      </div>
+    )
   }
 
   return null

@@ -74,6 +74,7 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
     } | null>(null)
     const [showShortcuts, setShowShortcuts] = useState(false)
     const [activeTool, setActiveTool] = useState<string>('select')
+    const [drawingSettings, setDrawingSettings] = useState({ stroke: '#000000', strokeWidth: 2 })
 
     // History Management
     const { document: doc, setDocument, undo, redo, canUndo, canRedo } = useReportHistory(INITIAL_DOC)
@@ -88,12 +89,6 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
         document.documentElement.setAttribute('data-theme', theme)
         document.documentElement.classList.toggle('dark', darkMode)
     }, [darkMode])
-
-    // Handle Selection
-    const handleElementSelect = (element: any | null) => {
-        setSelectedElementId(element?.id || null)
-        if (!element) setSelectedCell(null)
-    }
 
     // Print Logic
     const reactToPrintFn = useReactToPrint({
@@ -252,14 +247,19 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
                         templateDoc={doc}
                         zoom={zoom / 100}
                         selectedElementId={selectedElementId || undefined}
-                        onElementSelect={handleElementSelect}
+                        onElementSelect={(el) => {
+                            if (activeTool !== 'signature') {
+                                setSelectedElementId(el?.id ?? null)
+                            }
+                        }}
                         onTemplateChange={setDocument}
                         currentPageId={doc.pages[0]?.id}
                         onSelectedCellChange={setSelectedCell}
-                        onUndo={undo}
-                        onRedo={redo}
+                        onUndo={canUndo ? undo : undefined}
+                        onRedo={canRedo ? redo : undefined}
                         orientation={orientation}
                         activeTool={activeTool}
+                        drawingSettings={drawingSettings}
                     />
                 </div>
 
@@ -272,9 +272,14 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
                         currentPageId={doc.pages[0]?.id}
                         selectedCell={selectedCell}
                         schema={MOCK_SCHEMA}
+                        activeTool={activeTool}
+                        onToolSelect={setActiveTool}
+                        drawingSettings={drawingSettings}
+                        onDrawingSettingsChange={setDrawingSettings}
                         i18nOverrides={{
                             properties_layout: 'Page Layout',
                             properties_text_align: 'Text Align',
+                            properties_finish_drawing: 'Finish Drawing',
                         }}
                     />
                 </div>

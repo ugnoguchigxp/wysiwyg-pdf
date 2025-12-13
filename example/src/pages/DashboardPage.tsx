@@ -3,7 +3,7 @@ import { FileText, LayoutTemplate, Moon, Sun, Monitor } from 'lucide-react'
 
 
 interface DashboardPageProps {
-    onNavigate: (page: 'report' | 'bed' | 'viewer') => void
+    onNavigate: (page: 'report' | 'bed' | 'viewer' | 'signature') => void
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
@@ -65,6 +65,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                         <h2 className="text-2xl font-bold mb-2 text-theme-text-primary">Viewer Demo</h2>
                         <p className="text-theme-text-secondary text-center">
                             Live dashboard view of a ward with patient status and vitals.
+                        </p>
+                    </button>
+
+                    <button
+                        onClick={() => onNavigate('signature')}
+                        className="flex flex-col items-center justify-center p-12 rounded-xl border-2 border-theme-border bg-theme-bg-secondary hover:border-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all duration-200 group h-80"
+                    >
+                        <div className="w-24 h-24 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
+                            <FileText className="w-12 h-12 text-orange-600 dark:text-orange-400" />
+                        </div>
+                        <h2 className="text-2xl font-bold mb-2 text-theme-text-primary">Signature Demo</h2>
+                        <p className="text-theme-text-secondary text-center">
+                            Draw and save signatures.
                         </p>
                     </button>
                 </div>
