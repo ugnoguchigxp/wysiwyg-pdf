@@ -19,7 +19,7 @@ vi.mock('@/components/ui/DropdownMenu', () => ({
   ),
 }))
 
-import { Toolbar } from '@/features/bed-layout-editor/components/Toolbar'
+import { Toolbar } from '@/features/bed-layout-editor/components/Toolbar/Toolbar'
 
 describe('bedLayout Toolbar', () => {
   it('selects tools and handles zoom boundaries', () => {
@@ -30,15 +30,25 @@ describe('bedLayout Toolbar', () => {
     const { rerender } = render(
       <Toolbar
         activeTool="text"
-        onSelectTool={onSelectTool}
+        onToolSelect={onSelectTool}
+        onAddElement={vi.fn()}
+        onSelectElement={vi.fn()}
         zoom={1}
         onZoomIn={onZoomIn}
         onZoomOut={onZoomOut}
+        document={{
+          v: 1,
+          id: 'doc1',
+          title: 'Test Doc',
+          unit: 'px',
+          surfaces: [{ id: 'layout', type: 'canvas', w: 800, h: 600, margin: { t: 0, r: 0, b: 0, l: 0 } }],
+          nodes: [],
+        } as any}
       />
     )
 
     fireEvent.click(screen.getByLabelText('Image'))
-    expect(onSelectTool).toHaveBeenCalledWith('image')
+    expect(onSelectTool).toHaveBeenCalledWith('select')
 
     fireEvent.click(screen.getByLabelText('Zoom in'))
     expect(onZoomIn).toHaveBeenCalled()
@@ -48,10 +58,20 @@ describe('bedLayout Toolbar', () => {
     rerender(
       <Toolbar
         activeTool="text"
-        onSelectTool={onSelectTool}
+        onToolSelect={onSelectTool}
+        onAddElement={vi.fn()}
+        onSelectElement={vi.fn()}
         zoom={2}
         onZoomIn={onZoomIn}
         onZoomOut={onZoomOut}
+        document={{
+          v: 1,
+          id: 'doc1',
+          title: 'Test Doc',
+          unit: 'px',
+          surfaces: [{ id: 'layout', type: 'canvas', w: 800, h: 600, margin: { t: 0, r: 0, b: 0, l: 0 } }],
+          nodes: [],
+        } as any}
       />
     )
     expect(screen.getByLabelText('Zoom in')).toBeDisabled()
@@ -59,10 +79,20 @@ describe('bedLayout Toolbar', () => {
     rerender(
       <Toolbar
         activeTool="text"
-        onSelectTool={onSelectTool}
+        onToolSelect={onSelectTool}
+        onAddElement={vi.fn()}
+        onSelectElement={vi.fn()}
         zoom={0.25}
         onZoomIn={onZoomIn}
         onZoomOut={onZoomOut}
+        document={{
+          v: 1,
+          id: 'doc1',
+          title: 'Test Doc',
+          unit: 'px',
+          surfaces: [{ id: 'layout', type: 'canvas', w: 800, h: 600, margin: { t: 0, r: 0, b: 0, l: 0 } }],
+          nodes: [],
+        } as any}
       />
     )
     expect(screen.getByLabelText('Zoom out')).toBeDisabled()

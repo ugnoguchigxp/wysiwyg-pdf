@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type {
-  UnifiedNode,
-  LineNode,
-  ShapeNode,
-  ImageNode,
-  TextNode,
-  WidgetNode,
-  Doc
-} from '@/types/canvas'
 import { RenderLine, RenderShape } from '@/features/konva-editor/renderers/print/ReportPrintLayout'
 import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
+import type {
+  Doc,
+  ImageNode,
+  LineNode,
+  ShapeNode,
+  TextNode,
+  UnifiedNode,
+  WidgetNode,
+} from '@/types/canvas'
 
 const RenderBed = ({ element }: { element: WidgetNode }) => {
   const data = element.data || {}
@@ -43,17 +43,17 @@ const RenderBed = ({ element }: { element: WidgetNode }) => {
   // Pillow style
   const pillowStyle: React.CSSProperties = isVertical
     ? {
-      top: '5px',
-      left: '10%',
-      width: '80%',
-      height: '20px',
-    }
+        top: '5px',
+        left: '10%',
+        width: '80%',
+        height: '20px',
+      }
     : {
-      top: '10%',
-      left: '5px',
-      width: '20px',
-      height: '80%',
-    }
+        top: '10%',
+        left: '5px',
+        width: '20px',
+        height: '80%',
+      }
 
   const textHalo =
     '2px 0 0 white, -2px 0 0 white, 0 2px 0 white, 0 -2px 0 white, 1px 1px 0 white, -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white'
@@ -142,11 +142,14 @@ const RenderBed = ({ element }: { element: WidgetNode }) => {
   )
 }
 
-const BedPrintElement: React.FC<{ element: UnifiedNode, i18nOverrides?: Record<string, string> }> = ({ element, i18nOverrides }) => {
+const BedPrintElement: React.FC<{
+  element: UnifiedNode
+  i18nOverrides?: Record<string, string>
+}> = ({ element, i18nOverrides }) => {
   const { t } = useTranslation()
 
   const resolveText = (key: string, defaultValue?: string) => {
-    if (i18nOverrides && i18nOverrides[key]) return i18nOverrides[key]
+    if (i18nOverrides?.[key]) return i18nOverrides[key]
     return t(key, defaultValue ?? key)
   }
 
@@ -214,11 +217,7 @@ const BedPrintElement: React.FC<{ element: UnifiedNode, i18nOverrides?: Record<s
           display: 'flex',
           alignItems: 'flex-start',
           justifyContent:
-            textEl.align === 'c'
-              ? 'center'
-              : textEl.align === 'r'
-                ? 'flex-end'
-                : 'flex-start',
+            textEl.align === 'c' ? 'center' : textEl.align === 'r' ? 'flex-end' : 'flex-start',
           whiteSpace: 'pre-wrap',
         }}
       >
@@ -279,33 +278,34 @@ const BedPrintElement: React.FC<{ element: UnifiedNode, i18nOverrides?: Record<s
 export const BedPrintLayout = React.forwardRef<
   HTMLDivElement,
   { document: Doc; i18nOverrides?: Record<string, string>; surfaceId?: string }
->(
-  ({ document, i18nOverrides, surfaceId }, ref) => {
-    const resolvedSurfaceId =
-      surfaceId || document.surfaces.find((s) => s.type === 'canvas')?.id || document.surfaces[0]?.id || 'layout'
-    const surface = document.surfaces.find((s) => s.id === resolvedSurfaceId) || document.surfaces[0]
-    const width = surface?.w ?? 0
-    const height = surface?.h ?? 0
+>(({ document, i18nOverrides, surfaceId }, ref) => {
+  const resolvedSurfaceId =
+    surfaceId ||
+    document.surfaces.find((s) => s.type === 'canvas')?.id ||
+    document.surfaces[0]?.id ||
+    'layout'
+  const surface = document.surfaces.find((s) => s.id === resolvedSurfaceId) || document.surfaces[0]
+  const width = surface?.w ?? 0
+  const height = surface?.h ?? 0
 
-    const nodes = document.nodes.filter((n) => n.s === resolvedSurfaceId)
+  const nodes = document.nodes.filter((n) => n.s === resolvedSurfaceId)
 
-    return (
-      <div ref={ref} className="print-container">
-        <div
-          className="print-page"
-          style={{
-            width: `${width}px`,
-            height: `${height}px`,
-            backgroundColor: 'white',
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-        >
-          {nodes.map((element) => (
-            <BedPrintElement key={element.id} element={element} i18nOverrides={i18nOverrides} />
-          ))}
-        </div>
+  return (
+    <div ref={ref} className="print-container">
+      <div
+        className="print-page"
+        style={{
+          width: `${width}px`,
+          height: `${height}px`,
+          backgroundColor: 'white',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        {nodes.map((element) => (
+          <BedPrintElement key={element.id} element={element} i18nOverrides={i18nOverrides} />
+        ))}
       </div>
-    )
-  }
-)
+    </div>
+  )
+})

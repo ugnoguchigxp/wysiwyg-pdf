@@ -3,9 +3,9 @@ import {
   KonvaCanvasEditor,
   type KonvaCanvasEditorHandle,
 } from '@/components/canvas/KonvaCanvasEditor'
-import type { Doc, UnifiedNode, WidgetNode } from '@/types/canvas'
-import { PaperBackground } from '@/features/konva-editor/viewers/components/PaperBackground'
 import { BedElement } from '@/features/konva-editor/renderers/bed-elements/BedElement'
+import { PaperBackground } from '@/features/konva-editor/viewers/components/PaperBackground'
+import type { Doc, UnifiedNode, WidgetNode } from '@/types/canvas'
 
 interface KonvaEditorProps {
   document: Doc
@@ -77,8 +77,12 @@ export const BedLayoutEditor = React.forwardRef<BedLayoutEditorHandle, KonvaEdit
       },
     }))
     const resolvedSurfaceId =
-      surfaceId || document.surfaces.find((s) => s.type === 'canvas')?.id || document.surfaces[0]?.id || 'layout'
-    const surface = document.surfaces.find((s) => s.id === resolvedSurfaceId) || document.surfaces[0]
+      surfaceId ||
+      document.surfaces.find((s) => s.type === 'canvas')?.id ||
+      document.surfaces[0]?.id ||
+      'layout'
+    const surface =
+      document.surfaces.find((s) => s.id === resolvedSurfaceId) || document.surfaces[0]
     const paperWidth = surface?.w ?? 0
     const paperHeight = surface?.h ?? 0
 

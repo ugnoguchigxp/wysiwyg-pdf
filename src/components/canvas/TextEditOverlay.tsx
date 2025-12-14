@@ -52,7 +52,14 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
         .filter(Boolean)
         .join(' '),
       color: element.fill || '#000000',
-      textAlign: element.align === 'r' ? 'right' : element.align === 'c' ? 'center' : element.align === 'j' ? 'justify' : 'left',
+      textAlign:
+        element.align === 'r'
+          ? 'right'
+          : element.align === 'c'
+            ? 'center'
+            : element.align === 'j'
+              ? 'justify'
+              : 'left',
       lineHeight: 1.2, // Match Konva default
       background: 'transparent',
       border: 'none',

@@ -1,7 +1,6 @@
-import { createContextLogger } from '@/utils/logger'
-
 import type { Dispatch, SetStateAction } from 'react'
 import type { ImageNode, TableNode } from '@/types/canvas'
+import { createContextLogger } from '@/utils/logger'
 
 const log = createContextLogger('CanvasImageUtils')
 
@@ -83,15 +82,14 @@ export function drawImageElement(
 
   // Helper to load
   const loadAndCache = (source: string) => {
-    findImageWithExtension(source).then(res => {
+    findImageWithExtension(source).then((res) => {
       if (res) {
-        setImageCache(prev => new Map(prev).set(source, res.img))
+        setImageCache((prev) => new Map(prev).set(source, res.img))
         // Also cache by resolved URL if different?
-        if (res.url !== source) setImageCache(prev => new Map(prev).set(res.url, res.img))
+        if (res.url !== source) setImageCache((prev) => new Map(prev).set(res.url, res.img))
       }
     })
   }
-
 
   if (src.startsWith('data:') || src.startsWith('blob:') || src.startsWith('http')) {
     const cachedImg = imageCache.get(src)
@@ -116,7 +114,7 @@ export function drawImageElement(
   const baseUrl = `${base || ''}/assets/images/${src}`.replace(/([^:]\/\/)\/+/, '$1')
   let foundCachedImage = false
 
-  // Try finding in cache by potential URLs? 
+  // Try finding in cache by potential URLs?
   // This logic relies on `findImageWithExtension` populating cache with the key we used to lookup?
   // Actually `findImageWithExtension` returns the resolved URL.
   // We should probably rely on `findImageWithExtension` caching the RESULT URL, but we don't know it yet.
@@ -138,14 +136,13 @@ export function drawImageElement(
 
   if (!foundCachedImage) {
     // Trigger load
-    findImageWithExtension(src)
-      .then((result) => {
-        if (result) {
-          setImageCache((prev: Map<string, HTMLImageElement>) =>
-            new Map(prev).set(result.url, result.img)
-          )
-        }
-      })
+    findImageWithExtension(src).then((result) => {
+      if (result) {
+        setImageCache((prev: Map<string, HTMLImageElement>) =>
+          new Map(prev).set(result.url, result.img)
+        )
+      }
+    })
 
     // Loading placeholder
     ctx.fillStyle = '#3b82f6'
@@ -231,7 +228,8 @@ export function drawTableElement(ctx: CanvasRenderingContext2D, element: TableNo
       ctx.textBaseline = verticalAlign === 't' ? 'top' : verticalAlign === 'b' ? 'bottom' : 'middle'
 
       let textX = cx
-      const textY = verticalAlign === 't' ? cy + 4 : verticalAlign === 'b' ? cy + height - 4 : cy + height / 2
+      const textY =
+        verticalAlign === 't' ? cy + 4 : verticalAlign === 'b' ? cy + height - 4 : cy + height / 2
 
       // Horizontal Align
       if (align === 'c') {
@@ -266,7 +264,11 @@ export function drawBackgroundImage(
   if (!backgroundImageId) return
 
   // Check for Data URL (new behavior)
-  if (backgroundImageId.startsWith('data:') || backgroundImageId.startsWith('blob:') || backgroundImageId.startsWith('http')) {
+  if (
+    backgroundImageId.startsWith('data:') ||
+    backgroundImageId.startsWith('blob:') ||
+    backgroundImageId.startsWith('http')
+  ) {
     const cachedImage = backgroundImageCache.get(backgroundImageId)
     if (cachedImage?.complete) {
       ctx.drawImage(cachedImage, 0, 0, pageWidth, pageHeight)

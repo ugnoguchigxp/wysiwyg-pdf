@@ -11,6 +11,7 @@ import {
   Home,
   Image as ImageIcon,
   Minus,
+  MousePointer2,
   PenTool,
   Pentagon,
   Shapes,
@@ -22,33 +23,27 @@ import {
   Type,
   ZoomIn,
   ZoomOut,
-  MousePointer2,
 } from 'lucide-react'
-import React from 'react'
+import type React from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/Tooltip'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/DropdownMenu'
-import { createContextLogger } from '@/utils/logger'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/Tooltip'
+import { measureText } from '@/features/konva-editor/utils/textUtils'
 import type {
   Doc,
-  UnifiedNode,
-  TextNode,
-  ShapeNode,
-  LineNode,
   ImageNode,
+  LineNode,
+  ShapeNode,
   TableNode,
+  TextNode,
+  UnifiedNode,
 } from '@/types/canvas'
-import { measureText } from '@/features/konva-editor/utils/textUtils'
+import { createContextLogger } from '@/utils/logger'
 
 const log = createContextLogger('WysiwygEditorToolbar')
 
@@ -56,7 +51,6 @@ const TOOLBAR_BUTTON_CLASS =
   'w-10 h-10 flex items-center justify-center rounded border border-theme-border bg-theme-bg-tertiary text-theme-text-secondary hover:bg-theme-object-primary/20 transition-colors'
 const TOOLBAR_BUTTON_ACTIVE_CLASS =
   'w-10 h-10 flex items-center justify-center rounded border border-theme-object-primary bg-theme-object-primary/10 text-theme-object-primary'
-
 
 const TrapezoidIcon = ({ size = 20, className = '', title = 'Trapezoid' }) => (
   <svg
@@ -101,7 +95,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
   const { t } = useTranslation()
 
   const resolveText = (key: string, defaultValue?: string) => {
-    if (i18nOverrides && i18nOverrides[key]) return i18nOverrides[key]
+    if (i18nOverrides?.[key]) return i18nOverrides[key]
     return t(key, defaultValue ?? key)
   }
 
@@ -134,18 +128,18 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
   }
 
   const calculateInitialPosition = (surfaceId: string) => {
-    const surface = templateDoc.surfaces.find(s => s.id === surfaceId)
+    const surface = templateDoc.surfaces.find((s) => s.id === surfaceId)
     // Default to A4 size if surface not found (210mm * 297mm approx 595px * 842px at 72dpi, but let's assume px)
     const surfaceW = surface?.w ?? 800
     const surfaceH = surface?.h ?? 600
 
-    const nodesOnSurface = templateDoc.nodes.filter(n => n.s === surfaceId).length
+    const nodesOnSurface = templateDoc.nodes.filter((n) => n.s === surfaceId).length
     const offset = nodesOnSurface * (surfaceW * 0.01)
 
     return {
-      x: (surfaceW * 0.15) + offset,
-      y: (surfaceH * 0.15) + offset,
-      offset
+      x: surfaceW * 0.15 + offset,
+      y: surfaceH * 0.15 + offset,
+      offset,
     }
   }
 
@@ -287,14 +281,14 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
           // Minimal cells
           { r: 0, c: 0, v: '', borderW: 2, borderColor: '#000000' },
           { r: 0, c: 1, v: '', borderW: 2, borderColor: '#000000' },
-          { r: 0, c: 2, v: '', borderW: 2, borderColor: '#000000' }
-        ]
-      }
+          { r: 0, c: 2, v: '', borderW: 2, borderColor: '#000000' },
+        ],
+      },
     }
     // Fill all cells for completeness
     for (let r = 0; r < 3; r++) {
       for (let c = 0; c < 3; c++) {
-        if (!table.table.cells.find(cell => cell.r === r && cell.c === c)) {
+        if (!table.table.cells.find((cell) => cell.r === r && cell.c === c)) {
           table.table.cells.push({ r, c, v: '', borderW: 2, borderColor: '#000000' })
         }
       }
@@ -335,7 +329,9 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
               <button
                 type="button"
                 onClick={() => onToolSelect?.('select')}
-                className={activeTool === 'select' ? TOOLBAR_BUTTON_ACTIVE_CLASS : TOOLBAR_BUTTON_CLASS}
+                className={
+                  activeTool === 'select' ? TOOLBAR_BUTTON_ACTIVE_CLASS : TOOLBAR_BUTTON_CLASS
+                }
                 aria-label={resolveText('toolbar_select', 'Select')}
               >
                 <MousePointer2 size={20} />
@@ -352,14 +348,18 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
               <button
                 type="button"
                 onClick={() => onToolSelect?.('signature')}
-                className={activeTool === 'signature' ? TOOLBAR_BUTTON_ACTIVE_CLASS : TOOLBAR_BUTTON_CLASS}
+                className={
+                  activeTool === 'signature' ? TOOLBAR_BUTTON_ACTIVE_CLASS : TOOLBAR_BUTTON_CLASS
+                }
                 aria-label={resolveText('toolbar_signature', 'Signature')}
               >
                 <PenTool size={20} />
               </button>
             </span>
           </TooltipTrigger>
-          <TooltipContent side="right">{resolveText('toolbar_signature', 'Signature')}</TooltipContent>
+          <TooltipContent side="right">
+            {resolveText('toolbar_signature', 'Signature')}
+          </TooltipContent>
         </Tooltip>
 
         {/* Divider */}
@@ -377,7 +377,9 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
               <Type size={20} />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="right">{resolveText('toolbar_add_text', 'Add Text')}</TooltipContent>
+          <TooltipContent side="right">
+            {resolveText('toolbar_add_text', 'Add Text')}
+          </TooltipContent>
         </Tooltip>
 
         {/* Add Image Button */}
@@ -392,7 +394,9 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
               <ImageIcon size={20} />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="right">{resolveText('toolbar_add_image', 'Add Image')}</TooltipContent>
+          <TooltipContent side="right">
+            {resolveText('toolbar_add_image', 'Add Image')}
+          </TooltipContent>
         </Tooltip>
 
         {/* Add Line Button */}
@@ -488,6 +492,6 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
           <ZoomOut size={18} />
         </button>
       </div>
-    </div >
+    </div>
   )
 }

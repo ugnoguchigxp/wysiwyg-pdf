@@ -142,7 +142,7 @@ export const BedElement: React.FC<BedElementProps> = ({
             renderLines = [
               label || '',
               patientName !== '-' ? patientName : '',
-              bloodPressure !== '-' ? bloodPressure : ''
+              bloodPressure !== '-' ? bloodPressure : '',
             ]
           }
 

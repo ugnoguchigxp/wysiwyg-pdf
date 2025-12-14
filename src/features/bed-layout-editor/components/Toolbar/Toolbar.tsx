@@ -23,22 +23,25 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react'
-import React from 'react'
+import type React from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/Tooltip'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/DropdownMenu'
-import type { Doc, ImageNode, LineNode, ShapeNode, TextNode, UnifiedNode, WidgetNode } from '@/types/canvas'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/Tooltip'
 import { measureText } from '@/features/konva-editor/utils/textUtils'
+import type {
+  Doc,
+  ImageNode,
+  LineNode,
+  ShapeNode,
+  TextNode,
+  UnifiedNode,
+  WidgetNode,
+} from '@/types/canvas'
 
 export type ToolType = 'select' | 'text' | 'image' | 'bed' | 'shape' | 'line'
 
@@ -52,7 +55,7 @@ interface ToolbarProps {
   onZoomIn: () => void
   onZoomOut: () => void
   surfaceId?: string
-  // Legacy props (can be ignored or removed if parent doesn't pass them, 
+  // Legacy props (can be ignored or removed if parent doesn't pass them,
   // but keeping for interface compatibility if parent strictly types it)
   canUndo?: boolean
   canRedo?: boolean
@@ -99,7 +102,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   const { t } = useTranslation()
 
   const resolveText = (key: string, defaultValue?: string) => {
-    if (i18nOverrides && i18nOverrides[key]) return i18nOverrides[key]
+    if (i18nOverrides?.[key]) return i18nOverrides[key]
     return t(key, defaultValue ?? key)
   }
 
@@ -131,7 +134,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
   const getTargetSurfaceId = () => {
     if (surfaceId) return surfaceId
-    return document.surfaces.find((s) => s.type === 'canvas')?.id || document.surfaces[0]?.id || 'layout'
+    return (
+      document.surfaces.find((s) => s.type === 'canvas')?.id || document.surfaces[0]?.id || 'layout'
+    )
   }
 
   const calculateInitialPosition = (targetSurfaceId: string) => {
@@ -141,8 +146,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     const nodesOnSurface = document.nodes.filter((n) => n.s === targetSurfaceId).length
     const offset = nodesOnSurface * (surfaceW * 0.01)
     return {
-      x: (surfaceW * 0.15) + offset,
-      y: (surfaceH * 0.15) + offset,
+      x: surfaceW * 0.15 + offset,
+      y: surfaceH * 0.15 + offset,
     }
   }
 
@@ -390,7 +395,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             <TooltipContent side="right">{resolveText('toolbar_shape', 'Shape')}</TooltipContent>
           </Tooltip>
 
-          <DropdownMenuContent align="start" className="w-56 grid grid-cols-4 gap-1 p-2 bg-theme-bg-secondary border border-theme-border shadow-lg z-50">
+          <DropdownMenuContent
+            align="start"
+            className="w-56 grid grid-cols-4 gap-1 p-2 bg-theme-bg-secondary border border-theme-border shadow-lg z-50"
+          >
             {shapes.map((shape) => (
               <DropdownMenuItem
                 key={shape.type}
@@ -440,4 +448,3 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     </div>
   )
 }
-

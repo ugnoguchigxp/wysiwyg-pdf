@@ -29,9 +29,7 @@ export const TextElement: React.FC<TextElementProps> = ({
       fontSize={element.fontSize}
       fontFamily={element.font}
       fontStyle={`${element.fontWeight || 'normal'} ${element.italic ? 'italic' : ''}`}
-      textDecoration={
-        element.underline ? 'underline' : element.lineThrough ? 'line-through' : ''
-      }
+      textDecoration={element.underline ? 'underline' : element.lineThrough ? 'line-through' : ''}
       fill={element.fill}
       align={element.align ? alignMap[element.align] : 'left'}
       verticalAlign={element.vAlign === 'm' ? 'middle' : element.vAlign === 'b' ? 'bottom' : 'top'}

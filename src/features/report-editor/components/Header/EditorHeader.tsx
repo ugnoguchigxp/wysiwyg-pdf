@@ -1,14 +1,14 @@
-import React from 'react'
-import { useTranslation } from 'react-i18next'
 import {
   ChevronLeft,
-  Undo,
-  Redo,
   Download,
   Image as ImageIcon,
+  Redo,
   Save,
   Settings2,
+  Undo,
 } from 'lucide-react'
+import type React from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/Button'
 
 export interface EditorHeaderProps {
@@ -54,7 +54,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
 
   // Helper to resolve translation: Override -> i18next -> Default
   const resolveText = (key: string, defaultValue?: string) => {
-    if (i18nOverrides && i18nOverrides[key]) return i18nOverrides[key]
+    if (i18nOverrides?.[key]) return i18nOverrides[key]
     return t(key, defaultValue ?? key)
   }
 

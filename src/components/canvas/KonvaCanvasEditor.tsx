@@ -1,21 +1,16 @@
 import type Konva from 'konva'
 import type React from 'react'
-import {
-  forwardRef,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from 'react'
+import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
 import { Layer, Stage } from 'react-konva'
-import type { UnifiedNode, TextNode } from '../../types/canvas'
+import type { TextNode, UnifiedNode } from '../../types/canvas'
 import {
   type CanvasElementCommonProps,
   CanvasElementRenderer,
   type CanvasShapeRefCallback,
 } from './CanvasElementRenderer'
+import { GridLayer } from './GridLayer'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { TextEditOverlay } from './TextEditOverlay'
-import { GridLayer } from './GridLayer'
 
 export interface KonvaCanvasEditorHandle {
   getStage: () => Konva.Stage | null
@@ -213,23 +208,22 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
               gridSize={gridSize > 0 ? gridSize : 50}
             />
             <Layer>
-              {elements
-                .map((element) => (
-                  <CanvasElementRenderer
-                    key={element.id}
-                    element={element}
-                    isSelected={selectedIds.includes(element.id)}
-                    allElements={elements}
-                    onSelect={(e) => handleSelect(element.id, e)}
-                    onChange={(newAttrs) => onChange(element.id, newAttrs)}
-                    onDblClick={() => handleElementDblClick(element)}
-                    isEditing={element.id === editingElementId}
-                    renderCustom={renderCustom}
-                    snapStrength={snapStrength}
-                    showGrid={showGrid}
-                    gridSize={gridSize}
-                  />
-                ))}
+              {elements.map((element) => (
+                <CanvasElementRenderer
+                  key={element.id}
+                  element={element}
+                  isSelected={selectedIds.includes(element.id)}
+                  allElements={elements}
+                  onSelect={(e) => handleSelect(element.id, e)}
+                  onChange={(newAttrs) => onChange(element.id, newAttrs)}
+                  onDblClick={() => handleElementDblClick(element)}
+                  isEditing={element.id === editingElementId}
+                  renderCustom={renderCustom}
+                  snapStrength={snapStrength}
+                  showGrid={showGrid}
+                  gridSize={gridSize}
+                />
+              ))}
             </Layer>
           </Stage>
           {editingElement && (

@@ -29,12 +29,7 @@
     "noUncheckedSideEffectImports": true,
     "baseUrl": ".",
     "paths": {
-      "wysiwyg-pdf": [
-        "../src/index.ts"
-      ],
-      "wysiwyg-pdf/*": [
-        "../src/*"
-      ]
+      "wysiwyg-pdf": ["../dist/index.d.ts"]
     }
   },
   "include": [

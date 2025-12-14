@@ -1,9 +1,4 @@
-import type {
-  FormDocument,
-  BedLayoutDocument,
-  Doc,
-  UnifiedNode,
-} from '@/types/canvas'
+import type { BedLayoutDocument, Doc, FormDocument, UnifiedNode } from '@/types/canvas'
 
 export * from '@/types/canvas'
 
@@ -11,16 +6,16 @@ export * from '@/types/canvas'
 export type Operation =
   | { kind: 'create-element'; element: UnifiedNode }
   | {
-    kind: 'update-element'
-    id: string
-    prev: Partial<UnifiedNode>
-    next: Partial<UnifiedNode>
-  }
+      kind: 'update-element'
+      id: string
+      prev: Partial<UnifiedNode>
+      next: Partial<UnifiedNode>
+    }
   | {
-    kind: 'delete-element'
-    id: string
-    prevElement: UnifiedNode
-  }
+      kind: 'delete-element'
+      id: string
+      prevElement: UnifiedNode
+    }
   | { kind: 'reorder-elements'; prevOrder: string[]; nextOrder: string[] }
 
 // エディタ状態 (EditorState)
@@ -59,10 +54,10 @@ export type PageSize =
   | 'B5'
   | 'Letter'
   | {
-    width: number
-    height: number
-    unit: 'mm' | 'pt' | 'px' | 'in'
-  }
+      width: number
+      height: number
+      unit: 'mm' | 'pt' | 'px' | 'in'
+    }
 
 export interface ICanvasEditorProps {
   templateDoc: Doc | FormDocument | BedLayoutDocument // Unified Doc is preferred; legacy docs are supported for compatibility
@@ -77,4 +72,3 @@ export interface ICanvasEditorProps {
   isPresentationMode?: boolean
   currentPageId?: string // 現在表示するページID
 }
-

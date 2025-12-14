@@ -1,4 +1,4 @@
-import type { Doc, UnifiedNode, LineNode } from '../../konva-editor/types' // Ensure types exported or imported from canvas
+import type { Doc, LineNode, UnifiedNode } from '../../konva-editor/types' // Ensure types exported or imported from canvas
 
 interface BoundingBox {
   x: number

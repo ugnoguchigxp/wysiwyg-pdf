@@ -1,9 +1,10 @@
-import React, { useState, useRef, useCallback } from 'react'
+import type React from 'react'
+import { useCallback, useRef, useState } from 'react'
+import type { Doc, UnifiedNode } from '@/features/konva-editor/types'
+import type { IDataSchema } from '@/types/schema'
+import { WysiwygPropertiesPanel } from './components/PropertyPanel/WysiwygPropertiesPanel'
 import { WysiwygEditorToolbar } from './components/Toolbar/WysiwygEditorToolbar'
 import { ReportKonvaEditor } from './ReportKonvaEditor'
-import { WysiwygPropertiesPanel } from './components/PropertyPanel/WysiwygPropertiesPanel'
-import type { UnifiedNode, Doc } from '@/features/konva-editor/types'
-import type { IDataSchema } from '@/types/schema'
 
 export interface ReportEditorProps {
   templateDoc: Doc

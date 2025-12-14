@@ -9,15 +9,10 @@ import {
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import { EditableSelect } from '@/components/ui/EditableSelect'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/Tooltip'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/Tooltip'
+import { DEFAULT_FONT_FAMILIES } from '@/features/konva-editor/constants/propertyPanelConfig'
 import type { TableNode } from '@/types/canvas'
 import { BindingSelector } from './BindingSelector'
-import { DEFAULT_FONT_FAMILIES } from '@/features/konva-editor/constants/propertyPanelConfig'
 
 // Helper type for cell properties
 type CellProps = TableNode['table']['cells'][number]
@@ -38,7 +33,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
   const { t } = useTranslation()
 
   const resolveText = (key: string, defaultValue?: string) => {
-    if (i18nOverrides && i18nOverrides[key]) return i18nOverrides[key]
+    if (i18nOverrides?.[key]) return i18nOverrides[key]
     return t(key, defaultValue ?? key)
   }
 
@@ -47,7 +42,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
 
     if (selectedCell) {
       // Update specific cell
-      const index = newCells.findIndex(c => c.r === selectedCell.row && c.c === selectedCell.col)
+      const index = newCells.findIndex((c) => c.r === selectedCell.row && c.c === selectedCell.col)
       if (index >= 0) {
         newCells[index] = { ...newCells[index], ...updates }
       } else {
@@ -56,7 +51,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
           r: selectedCell.row,
           c: selectedCell.col,
           v: '',
-          ...updates
+          ...updates,
         })
       }
     } else {
@@ -89,7 +84,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
       for (let r = 0; r < rowCount; r++) {
         for (let c = 0; c < colCount; c++) {
           if (covered[r][c]) continue
-          if (!newCells.find(cell => cell.r === r && cell.c === c)) {
+          if (!newCells.find((cell) => cell.r === r && cell.c === c)) {
             // Initialize with activeData styles to ensure consistency
             // properties r, c, v will be overwritten/set below or are distinct
             const { r: _r, c: _c, v: _v, ...styles } = activeData
@@ -97,7 +92,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
               r,
               c,
               v: '',
-              ...styles
+              ...styles,
             } as CellProps)
           }
         }
@@ -131,7 +126,9 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
 
   let activeData: Partial<CellProps> = defaultCell
   if (selectedCell) {
-    const found = element.table.cells.find(c => c.r === selectedCell.row && c.c === selectedCell.col)
+    const found = element.table.cells.find(
+      (c) => c.r === selectedCell.row && c.c === selectedCell.col
+    )
     if (found) activeData = found
   } else {
     // Use first cell or defaults
@@ -140,7 +137,6 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
 
   const labelClass = 'block text-[11px] text-theme-text-secondary mb-0.5'
   const headingClass = 'text-[11px] font-medium text-theme-text-secondary mb-1.5'
-
 
   const fontSizes = [8, 9, 10, 10.5, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72]
   const borderWidthOptions = [0, 0.5, 1, 1.5, 2, 3, 4]
@@ -230,7 +226,9 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                       <AlignLeft size={14} />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent><p>{resolveText('side_left', 'Left')}</p></TooltipContent>
+                  <TooltipContent>
+                    <p>{resolveText('side_left', 'Left')}</p>
+                  </TooltipContent>
                 </Tooltip>
                 {/* Center */}
                 <Tooltip>
@@ -243,7 +241,9 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                       <AlignCenter size={14} />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent><p>{resolveText('center', 'Center')}</p></TooltipContent>
+                  <TooltipContent>
+                    <p>{resolveText('center', 'Center')}</p>
+                  </TooltipContent>
                 </Tooltip>
                 {/* Right */}
                 <Tooltip>
@@ -256,7 +256,9 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                       <AlignRight size={14} />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent><p>{resolveText('side_right', 'Right')}</p></TooltipContent>
+                  <TooltipContent>
+                    <p>{resolveText('side_right', 'Right')}</p>
+                  </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
@@ -279,7 +281,9 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                       <ArrowUpToLine size={14} />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent><p>{resolveText('top', 'Top')}</p></TooltipContent>
+                  <TooltipContent>
+                    <p>{resolveText('top', 'Top')}</p>
+                  </TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
@@ -292,7 +296,9 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                       <AlignVerticalJustifyCenter size={14} />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent><p>{resolveText('middle', 'Middle')}</p></TooltipContent>
+                  <TooltipContent>
+                    <p>{resolveText('middle', 'Middle')}</p>
+                  </TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
@@ -305,7 +311,9 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                       <ArrowDownToLine size={14} />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent><p>{resolveText('bottom', 'Bottom')}</p></TooltipContent>
+                  <TooltipContent>
+                    <p>{resolveText('bottom', 'Bottom')}</p>
+                  </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
@@ -325,16 +333,22 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
               />
             </div>
             <div>
-              <label className={labelClass}>{resolveText('properties_border_color', 'Border Color')}</label>
+              <label className={labelClass}>
+                {resolveText('properties_border_color', 'Border Color')}
+              </label>
               <input
                 type="color"
                 className="w-full h-8 rounded border border-theme-border bg-theme-bg-primary"
                 value={activeData.borderColor || activeData.border || '#000000'}
-                onChange={(e) => updateCells({ borderColor: e.target.value, border: e.target.value })}
+                onChange={(e) =>
+                  updateCells({ borderColor: e.target.value, border: e.target.value })
+                }
               />
             </div>
             <div>
-              <label className={labelClass}>{resolveText('properties_border_width', 'Border Width')}</label>
+              <label className={labelClass}>
+                {resolveText('properties_border_width', 'Border Width')}
+              </label>
               <EditableSelect
                 value={activeData.borderW ?? (activeData.border ? 1 : 0)}
                 onChange={(val) => updateCells({ borderW: Number(val) })}
@@ -343,7 +357,6 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
               />
             </div>
           </div>
-
         </div>
       </div>
     </div>

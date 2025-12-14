@@ -1,6 +1,6 @@
 import type Konva from 'konva'
 import type React from 'react'
-import { forwardRef, useCallback, useEffect, useRef, useState, useMemo } from 'react'
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Circle,
   Ellipse,
@@ -14,17 +14,17 @@ import {
   Transformer,
 } from 'react-konva'
 import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
-import { LineMarker } from './LineMarker'
 import type {
   Anchor,
-  UnifiedNode,
-  TextNode,
-  ShapeNode,
-  LineNode,
   ImageNode,
-  TableNode,
+  LineNode,
+  ShapeNode,
   SignatureNode,
+  TableNode,
+  TextNode,
+  UnifiedNode,
 } from '../../types/canvas'
+import { LineMarker } from './LineMarker'
 
 export type CanvasShapeRefCallback = (node: Konva.Node | null) => void
 
@@ -33,7 +33,9 @@ export type CanvasElementCommonProps = Konva.NodeConfig & {
 }
 
 // Helpers
-const isWHElement = (node: UnifiedNode): node is Extract<UnifiedNode, { w: number, h: number, x: number, y: number }> => {
+const isWHElement = (
+  node: UnifiedNode
+): node is Extract<UnifiedNode, { w: number; h: number; x: number; y: number }> => {
   return node.t !== 'line' // Line does not have w/h/x/y in the same way (pts only)
 }
 
@@ -225,7 +227,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
       trRef.current.nodes([shapeRef.current])
       trRef.current.getLayer()?.batchDraw()
     }
-  }, [isSelected, element.t, element.w, element.h])
+  }, [isSelected])
 
   // Text Auto-resize
   useEffect(() => {
@@ -260,7 +262,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
     let newY = node.y()
 
     // Shapes like Circle are drawn from center if we used offsetX, but here we render with explicit x/y/w/h usually.
-    // Let's check how we render shapes. 
+    // Let's check how we render shapes.
     // If we use standard Rect, x/y is top-left.
     // If we use Ellipse, x/y is center.
     // We should adjust consistent with renderer.
@@ -295,8 +297,8 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
         table: {
           ...tableElement.table,
           cols: newCols,
-          rows: newRows
-        }
+          rows: newRows,
+        },
       } as unknown as Partial<UnifiedNode>)
       return
     }
@@ -336,7 +338,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
       const line = element as LineNode
 
       // Update pts
-      const newPts = line.pts.map((p, i) => i % 2 === 0 ? p + dx : p + dy)
+      const newPts = line.pts.map((p, i) => (i % 2 === 0 ? p + dx : p + dy))
 
       onChange({
         id: element.id,
@@ -355,8 +357,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
     const targetId = element.id
     const connected = allElements.filter(
       (n): n is LineNode =>
-        n.t === 'line' &&
-        (n.startConn?.nodeId === targetId || n.endConn?.nodeId === targetId)
+        n.t === 'line' && (n.startConn?.nodeId === targetId || n.endConn?.nodeId === targetId)
     )
     if (connected.length === 0) return
 
@@ -379,14 +380,22 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
 
     const anchorPointForThis = (anchor: Anchor): { x: number; y: number } => {
       switch (anchor) {
-        case 'tl': return { x: topLeftX, y: topLeftY }
-        case 't': return { x: topLeftX + w / 2, y: topLeftY }
-        case 'tr': return { x: topLeftX + w, y: topLeftY }
-        case 'l': return { x: topLeftX, y: topLeftY + h / 2 }
-        case 'r': return { x: topLeftX + w, y: topLeftY + h / 2 }
-        case 'bl': return { x: topLeftX, y: topLeftY + h }
-        case 'b': return { x: topLeftX + w / 2, y: topLeftY + h }
-        case 'br': return { x: topLeftX + w, y: topLeftY + h }
+        case 'tl':
+          return { x: topLeftX, y: topLeftY }
+        case 't':
+          return { x: topLeftX + w / 2, y: topLeftY }
+        case 'tr':
+          return { x: topLeftX + w, y: topLeftY }
+        case 'l':
+          return { x: topLeftX, y: topLeftY + h / 2 }
+        case 'r':
+          return { x: topLeftX + w, y: topLeftY + h / 2 }
+        case 'bl':
+          return { x: topLeftX, y: topLeftY + h }
+        case 'b':
+          return { x: topLeftX + w / 2, y: topLeftY + h }
+        case 'br':
+          return { x: topLeftX + w, y: topLeftY + h }
         default:
           return { x: topLeftX + w / 2, y: topLeftY + h / 2 }
       }
@@ -512,7 +521,20 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
 
     switch (element.t) {
       case 'text': {
-        const { text, font, fontSize, fontWeight, italic, underline, lineThrough, fill, align, vAlign, stroke, strokeW } = element as TextNode
+        const {
+          text,
+          font,
+          fontSize,
+          fontWeight,
+          italic,
+          underline,
+          lineThrough,
+          fill,
+          align,
+          vAlign,
+          stroke,
+          strokeW,
+        } = element as TextNode
         return (
           <Text
             {...commonProps}
@@ -520,12 +542,25 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
             text={text}
             fontSize={fontSize}
             fontFamily={font}
-            fontStyle={`${italic ? 'italic ' : ''}${fontWeight && fontWeight >= 700 ? 'bold' : ''}`.trim() || 'normal'}
-            textDecoration={[underline ? 'underline' : '', lineThrough ? 'line-through' : ''].filter(Boolean).join(' ')}
+            fontStyle={
+              `${italic ? 'italic ' : ''}${fontWeight && fontWeight >= 700 ? 'bold' : ''}`.trim() ||
+              'normal'
+            }
+            textDecoration={[underline ? 'underline' : '', lineThrough ? 'line-through' : '']
+              .filter(Boolean)
+              .join(' ')}
             fill={fill}
             stroke={stroke}
             strokeWidth={strokeW}
-            align={align === 'l' ? 'left' : align === 'r' ? 'right' : align === 'c' ? 'center' : 'justify'}
+            align={
+              align === 'l'
+                ? 'left'
+                : align === 'r'
+                  ? 'right'
+                  : align === 'c'
+                    ? 'center'
+                    : 'justify'
+            }
             verticalAlign={vAlign === 't' ? 'top' : vAlign === 'b' ? 'bottom' : 'middle'}
             width={element.w}
           />
@@ -535,41 +570,171 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
         const shape = element as ShapeNode
         switch (shape.shape) {
           case 'rect':
-            return <Rect {...commonProps} fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} cornerRadius={shape.radius} />
+            return (
+              <Rect
+                {...commonProps}
+                fill={shape.fill}
+                stroke={shape.stroke}
+                strokeWidth={shape.strokeW}
+                cornerRadius={shape.radius}
+              />
+            )
           case 'circle':
             // Ellipse centered
-            return <Ellipse {...commonProps}
-              x={(shape.x || 0) + (shape.w || 0) / 2}
-              y={(shape.y || 0) + (shape.h || 0) / 2}
-              radiusX={(shape.w || 0) / 2}
-              radiusY={(shape.h || 0) / 2}
-              fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} />
+            return (
+              <Ellipse
+                {...commonProps}
+                x={(shape.x || 0) + (shape.w || 0) / 2}
+                y={(shape.y || 0) + (shape.h || 0) / 2}
+                radiusX={(shape.w || 0) / 2}
+                radiusY={(shape.h || 0) / 2}
+                fill={shape.fill}
+                stroke={shape.stroke}
+                strokeWidth={shape.strokeW}
+              />
+            )
           case 'triangle':
-            return <Line {...commonProps} points={[shape.w / 2, 0, shape.w, shape.h, 0, shape.h]} closed fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} />
+            return (
+              <Line
+                {...commonProps}
+                points={[shape.w / 2, 0, shape.w, shape.h, 0, shape.h]}
+                closed
+                fill={shape.fill}
+                stroke={shape.stroke}
+                strokeWidth={shape.strokeW}
+              />
+            )
           case 'diamond':
-            return <Line {...commonProps} points={[shape.w / 2, 0, shape.w, shape.h / 2, shape.w / 2, shape.h, 0, shape.h / 2]} closed fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} />
+            return (
+              <Line
+                {...commonProps}
+                points={[
+                  shape.w / 2,
+                  0,
+                  shape.w,
+                  shape.h / 2,
+                  shape.w / 2,
+                  shape.h,
+                  0,
+                  shape.h / 2,
+                ]}
+                closed
+                fill={shape.fill}
+                stroke={shape.stroke}
+                strokeWidth={shape.strokeW}
+              />
+            )
           case 'star':
-            return <Star {...commonProps} x={(shape.x || 0) + shape.w / 2} y={(shape.y || 0) + shape.h / 2} numPoints={5} innerRadius={Math.min(shape.w, shape.h) / 4} outerRadius={Math.min(shape.w, shape.h) / 2} fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} />
-          case 'trapezoid':
+            return (
+              <Star
+                {...commonProps}
+                x={(shape.x || 0) + shape.w / 2}
+                y={(shape.y || 0) + shape.h / 2}
+                numPoints={5}
+                innerRadius={Math.min(shape.w, shape.h) / 4}
+                outerRadius={Math.min(shape.w, shape.h) / 2}
+                fill={shape.fill}
+                stroke={shape.stroke}
+                strokeWidth={shape.strokeW}
+              />
+            )
+          case 'trapezoid': {
             const w = shape.w
             const h = shape.h
-            return <Line {...commonProps} points={[w * 0.2, 0, w * 0.8, 0, w, h, 0, h]} closed fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} />
+            return (
+              <Line
+                {...commonProps}
+                points={[w * 0.2, 0, w * 0.8, 0, w, h, 0, h]}
+                closed
+                fill={shape.fill}
+                stroke={shape.stroke}
+                strokeWidth={shape.strokeW}
+              />
+            )
+          }
           case 'cylinder':
             // Simplified cylinder: rect + ellipses (handling strictly via Path or multiple shapes is complex in single component return. Using Path for visual approximation)
             // Using simple Rect for now as fallback or Path if defined.
-            return <Rect {...commonProps} fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} />
+            return (
+              <Rect
+                {...commonProps}
+                fill={shape.fill}
+                stroke={shape.stroke}
+                strokeWidth={shape.strokeW}
+              />
+            )
           case 'arrow-u':
-            return <Path {...commonProps} data="M12 4l-8 8h6v8h4v-8h6z" fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} scaleX={shape.w / 24} scaleY={shape.h / 24} />
+            return (
+              <Path
+                {...commonProps}
+                data="M12 4l-8 8h6v8h4v-8h6z"
+                fill={shape.fill}
+                stroke={shape.stroke}
+                strokeWidth={shape.strokeW}
+                scaleX={shape.w / 24}
+                scaleY={shape.h / 24}
+              />
+            )
           case 'arrow-d':
-            return <Path {...commonProps} data="M12 20l-8-8h6v-8h4v8h6z" fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} scaleX={shape.w / 24} scaleY={shape.h / 24} />
+            return (
+              <Path
+                {...commonProps}
+                data="M12 20l-8-8h6v-8h4v8h6z"
+                fill={shape.fill}
+                stroke={shape.stroke}
+                strokeWidth={shape.strokeW}
+                scaleX={shape.w / 24}
+                scaleY={shape.h / 24}
+              />
+            )
           case 'arrow-l':
-            return <Path {...commonProps} data="M4 12l8-8v6h8v4h-8v6z" fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} scaleX={shape.w / 24} scaleY={shape.h / 24} />
+            return (
+              <Path
+                {...commonProps}
+                data="M4 12l8-8v6h8v4h-8v6z"
+                fill={shape.fill}
+                stroke={shape.stroke}
+                strokeWidth={shape.strokeW}
+                scaleX={shape.w / 24}
+                scaleY={shape.h / 24}
+              />
+            )
           case 'arrow-r':
-            return <Path {...commonProps} data="M20 12l-8-8v6h-8v4h8v6z" fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} scaleX={shape.w / 24} scaleY={shape.h / 24} />
+            return (
+              <Path
+                {...commonProps}
+                data="M20 12l-8-8v6h-8v4h8v6z"
+                fill={shape.fill}
+                stroke={shape.stroke}
+                strokeWidth={shape.strokeW}
+                scaleX={shape.w / 24}
+                scaleY={shape.h / 24}
+              />
+            )
           case 'tree':
-            return <Path {...commonProps} data="M12,2L2,12h4v8h12v-8h4L12,2z" fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} scaleX={shape.w / 24} scaleY={shape.h / 24} />
+            return (
+              <Path
+                {...commonProps}
+                data="M12,2L2,12h4v8h12v-8h4L12,2z"
+                fill={shape.fill}
+                stroke={shape.stroke}
+                strokeWidth={shape.strokeW}
+                scaleX={shape.w / 24}
+                scaleY={shape.h / 24}
+              />
+            )
           case 'house':
-            return <Path {...commonProps} data="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z" fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} scaleX={shape.w / 24} scaleY={shape.h / 24} />
+            return (
+              <Path
+                {...commonProps}
+                data="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"
+                fill={shape.fill}
+                stroke={shape.stroke}
+                strokeWidth={shape.strokeW}
+                scaleX={shape.w / 24}
+                scaleY={shape.h / 24}
+              />
+            )
           default:
             return <Rect {...commonProps} fill={shape.fill} stroke={shape.stroke} />
         }
@@ -581,28 +746,42 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
 
         const anchors: Anchor[] = ['tl', 't', 'tr', 'l', 'r', 'bl', 'b', 'br']
 
-        const getAnchorPoint = (n: UnifiedNode, anchor: Anchor): { x: number; y: number } | null => {
+        const getAnchorPoint = (
+          n: UnifiedNode,
+          anchor: Anchor
+        ): { x: number; y: number } | null => {
           if (n.t === 'line') return null
-          if (n.x === undefined || n.y === undefined || n.w === undefined || n.h === undefined) return null
+          if (n.x === undefined || n.y === undefined || n.w === undefined || n.h === undefined)
+            return null
           const x = n.x
           const y = n.y
           const w = n.w
           const h = n.h
           switch (anchor) {
-            case 'tl': return { x, y }
-            case 't': return { x: x + w / 2, y }
-            case 'tr': return { x: x + w, y }
-            case 'l': return { x, y: y + h / 2 }
-            case 'r': return { x: x + w, y: y + h / 2 }
-            case 'bl': return { x, y: y + h }
-            case 'b': return { x: x + w / 2, y: y + h }
-            case 'br': return { x: x + w, y: y + h }
+            case 'tl':
+              return { x, y }
+            case 't':
+              return { x: x + w / 2, y }
+            case 'tr':
+              return { x: x + w, y }
+            case 'l':
+              return { x, y: y + h / 2 }
+            case 'r':
+              return { x: x + w, y: y + h / 2 }
+            case 'bl':
+              return { x, y: y + h }
+            case 'b':
+              return { x: x + w / 2, y: y + h }
+            case 'br':
+              return { x: x + w, y: y + h }
             default:
               return { x: x + w / 2, y: y + h / 2 }
           }
         }
 
-        const resolveEndpoint = (conn: LineNode['startConn'] | LineNode['endConn'] | undefined): { x: number; y: number } | null => {
+        const resolveEndpoint = (
+          conn: LineNode['startConn'] | LineNode['endConn'] | undefined
+        ): { x: number; y: number } | null => {
           if (!conn) return null
           const target = nodesForSnap.find((n) => n.id === conn.nodeId)
           if (!target) return null
@@ -624,7 +803,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           pts[pts.length - 1] = resolvedEnd.y
         }
 
-        const snapStep = (showGrid && gridSize > 0) ? gridSize : (snapStrength > 0 ? snapStrength : 0)
+        const snapStep = showGrid && gridSize > 0 ? gridSize : snapStrength > 0 ? snapStrength : 0
 
         const snapToGrid = (pos: { x: number; y: number }) => {
           if (!snapStep) return pos
@@ -692,9 +871,8 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
 
           let nextPos = { x: e.target.x(), y: e.target.y() }
 
-          const other = pointIndex === 0
-            ? { x: base[endIdx], y: base[endIdx + 1] }
-            : { x: base[0], y: base[1] }
+          const other =
+            pointIndex === 0 ? { x: base[endIdx], y: base[endIdx + 1] } : { x: base[0], y: base[1] }
 
           if (e.evt.shiftKey) {
             nextPos = snap45(nextPos, other)
@@ -705,7 +883,8 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           // Connector snap (8-point anchors). Applied after grid/shift.
           const threshold = 12
           const showMargin = 80
-          let best: { nodeId: string; anchor: Anchor; x: number; y: number; dist2: number } | null = null
+          let best: { nodeId: string; anchor: Anchor; x: number; y: number; dist2: number } | null =
+            null
 
           const baseStroke = '#0f766e'
           const glowColor = '#34d399'
@@ -764,7 +943,8 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           if (best) {
             nextPos = { x: best.x, y: best.y }
             e.target.position(nextPos)
-            if (pointIndex === 0) startConnDraftRef.current = { nodeId: best.nodeId, anchor: best.anchor }
+            if (pointIndex === 0)
+              startConnDraftRef.current = { nodeId: best.nodeId, anchor: best.anchor }
             else endConnDraftRef.current = { nodeId: best.nodeId, anchor: best.anchor }
 
             const key = `${best.nodeId}:${best.anchor}`
@@ -801,7 +981,8 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           e.cancelBubble = true
           const next = lineDraftPtsRef.current
           const group = e.target.getParent()
-          if (group) (group as Konva.Group).draggable((readOnly ? false : !element.locked) && isSelected)
+          if (group)
+            (group as Konva.Group).draggable((readOnly ? false : !element.locked) && isSelected)
 
           if (anchorOverlayGroupRef.current) {
             anchorOverlayGroupRef.current.visible(false)
@@ -844,7 +1025,12 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
               if (dx !== 0 || dy !== 0) {
                 // If this line was connected, moving the whole line detaches it.
                 const newPts = pts.map((p, i) => (i % 2 === 0 ? p + dx : p + dy))
-                onChange({ id: element.id, pts: newPts, startConn: undefined, endConn: undefined } as unknown as Partial<UnifiedNode>)
+                onChange({
+                  id: element.id,
+                  pts: newPts,
+                  startConn: undefined,
+                  endConn: undefined,
+                } as unknown as Partial<UnifiedNode>)
               }
 
               // Reset group position to avoid mixing x/y offsets with absolute pts.
@@ -953,53 +1139,65 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
               )
             })()}
             {/* Endpoint drag handles (only when selected) */}
-            {isSelected && !readOnly && (() => {
-              return (
-                <>
-                  {/* Start point handle */}
-                  <Circle
-                    ref={(node) => {
-                      lineStartHandleRef.current = node
-                    }}
-                    name="line-handle-start"
-                    x={pts[0]}
-                    y={pts[1]}
-                    radius={6}
-                    fill="#ffffff"
-                    stroke="#3b82f6"
-                    strokeWidth={2}
-                    draggable
-                    onDragStart={startHandleDrag}
-                    onDragMove={(e) => moveHandleDrag(0, e)}
-                    onDragEnd={endHandleDrag}
-                    onMouseDown={(e) => { e.cancelBubble = true }}
-                  />
-                  {/* End point handle */}
-                  <Circle
-                    ref={(node) => {
-                      lineEndHandleRef.current = node
-                    }}
-                    name="line-handle-end"
-                    x={pts[pts.length - 2]}
-                    y={pts[pts.length - 1]}
-                    radius={6}
-                    fill="#ffffff"
-                    stroke="#3b82f6"
-                    strokeWidth={2}
-                    draggable
-                    onDragStart={startHandleDrag}
-                    onDragMove={(e) => moveHandleDrag(pts.length - 2, e)}
-                    onDragEnd={endHandleDrag}
-                    onMouseDown={(e) => { e.cancelBubble = true }}
-                  />
-                </>
-              )
-            })()}
+            {isSelected &&
+              !readOnly &&
+              (() => {
+                return (
+                  <>
+                    {/* Start point handle */}
+                    <Circle
+                      ref={(node) => {
+                        lineStartHandleRef.current = node
+                      }}
+                      name="line-handle-start"
+                      x={pts[0]}
+                      y={pts[1]}
+                      radius={6}
+                      fill="#ffffff"
+                      stroke="#3b82f6"
+                      strokeWidth={2}
+                      draggable
+                      onDragStart={startHandleDrag}
+                      onDragMove={(e) => moveHandleDrag(0, e)}
+                      onDragEnd={endHandleDrag}
+                      onMouseDown={(e) => {
+                        e.cancelBubble = true
+                      }}
+                    />
+                    {/* End point handle */}
+                    <Circle
+                      ref={(node) => {
+                        lineEndHandleRef.current = node
+                      }}
+                      name="line-handle-end"
+                      x={pts[pts.length - 2]}
+                      y={pts[pts.length - 1]}
+                      radius={6}
+                      fill="#ffffff"
+                      stroke="#3b82f6"
+                      strokeWidth={2}
+                      draggable
+                      onDragStart={startHandleDrag}
+                      onDragMove={(e) => moveHandleDrag(pts.length - 2, e)}
+                      onDragEnd={endHandleDrag}
+                      onMouseDown={(e) => {
+                        e.cancelBubble = true
+                      }}
+                    />
+                  </>
+                )
+              })()}
           </Group>
         )
       }
       case 'image': {
-        return <CanvasImage element={element as ImageNode} commonProps={commonProps} ref={handleShapeRef} />
+        return (
+          <CanvasImage
+            element={element as ImageNode}
+            commonProps={commonProps}
+            ref={handleShapeRef}
+          />
+        )
       }
       case 'table': {
         const tableElement = element as TableNode
@@ -1092,10 +1290,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
             const vAlign = cell?.vAlign || 'm'
 
             const isSelectedCell =
-              isSelected &&
-              _selectedCell &&
-              _selectedCell.row === r &&
-              _selectedCell.col === c
+              isSelected && _selectedCell && _selectedCell.row === r && _selectedCell.col === c
 
             const cellId = `${tableElement.id}_cell_${r}_${c}`
 
@@ -1179,8 +1374,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
                 fill="transparent"
                 draggable
                 dragBoundFunc={function (this: Konva.Node, pos) {
-                  const node = this
-                  const parent = node.getParent()
+                  const parent = this.getParent()
                   if (!parent) return pos
 
                   const transform = parent.getAbsoluteTransform().copy()
@@ -1248,8 +1442,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
                 fill="transparent"
                 draggable
                 dragBoundFunc={function (this: Konva.Node, pos) {
-                  const node = this
-                  const parent = node.getParent()
+                  const parent = this.getParent()
                   if (!parent) return pos
 
                   const transform = parent.getAbsoluteTransform().copy()
@@ -1362,7 +1555,14 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
             {/* Transparent hit box */}
             <Rect width={sig.w} height={sig.h} fill="transparent" />
             {sig.strokes.map((stroke, i) => (
-              <Line key={i} points={stroke} stroke={sig.stroke} strokeWidth={sig.strokeW} lineCap="round" lineJoin="round" />
+              <Line
+                key={i}
+                points={stroke}
+                stroke={sig.stroke}
+                strokeWidth={sig.strokeW}
+                lineCap="round"
+                lineJoin="round"
+              />
             ))}
           </Group>
         )
@@ -1371,7 +1571,22 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
       default:
         return null
     }
-  }, [element, commonProps, renderCustom, handleShapeRef, readOnly, isSelected, onChange])
+  }, [
+    element,
+    commonProps,
+    renderCustom,
+    handleShapeRef,
+    readOnly,
+    isSelected,
+    onChange,
+    _selectedCell,
+    allElements,
+    gridSize,
+    onCellClick,
+    onCellDblClick,
+    showGrid,
+    snapStrength,
+  ])
 
   return (
     <>
@@ -1381,7 +1596,16 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           key={`${element.id}-${element.w}-${element.h}`}
           ref={trRef as React.RefObject<Konva.Transformer>}
           rotateEnabled={true}
-          enabledAnchors={['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right', 'top-center', 'bottom-center']}
+          enabledAnchors={[
+            'top-left',
+            'top-right',
+            'bottom-left',
+            'bottom-right',
+            'middle-left',
+            'middle-right',
+            'top-center',
+            'bottom-center',
+          ]}
           boundBoxFunc={(oldBox, newBox) => {
             if (newBox.width < 5 || newBox.height < 5) return oldBox
             return newBox

@@ -1,7 +1,7 @@
+import { Keyboard } from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Modal, ModalFooter } from '@/components/ui/Modal'
-import { Keyboard } from 'lucide-react'
 
 interface ShortcutHelpModalProps {
   open: boolean

@@ -1,8 +1,8 @@
-import { cn } from '../../utils/utils'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
+import { cn } from '../../utils/utils'
 
 interface IModalProps extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Root> {
   trigger?: React.ReactNode

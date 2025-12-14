@@ -1,7 +1,7 @@
 import type Konva from 'konva'
 import type React from 'react'
-import { Circle, Group, Line } from 'react-konva'
 import { useEffect, useRef } from 'react'
+import { Circle, Group, Line } from 'react-konva'
 import type { LineNode } from '@/types/canvas'
 
 interface LineElementProps {
@@ -56,9 +56,8 @@ export const LineElement: React.FC<LineElementProps> = ({
     let newPos = { x: newX, y: newY }
 
     const basePts = draftPtsRef.current
-    const otherPoint = point === 'start'
-      ? { x: basePts[2], y: basePts[3] }
-      : { x: basePts[0], y: basePts[1] }
+    const otherPoint =
+      point === 'start' ? { x: basePts[2], y: basePts[3] } : { x: basePts[0], y: basePts[1] }
 
     if (e.evt.shiftKey) {
       newPos = snap45(newPos, otherPoint)
@@ -149,7 +148,9 @@ export const LineElement: React.FC<LineElementProps> = ({
             stroke="#3b82f6"
             strokeWidth={2}
             draggable
-            onMouseDown={(e) => { e.cancelBubble = true }}
+            onMouseDown={(e) => {
+              e.cancelBubble = true
+            }}
             onDragStart={(e) => {
               e.cancelBubble = true
               handlePointDragStart('start')
@@ -170,7 +171,9 @@ export const LineElement: React.FC<LineElementProps> = ({
             stroke="#3b82f6"
             strokeWidth={2}
             draggable
-            onMouseDown={(e) => { e.cancelBubble = true }}
+            onMouseDown={(e) => {
+              e.cancelBubble = true
+            }}
             onDragStart={(e) => {
               e.cancelBubble = true
               handlePointDragStart('end')

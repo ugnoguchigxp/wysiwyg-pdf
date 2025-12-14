@@ -7,18 +7,18 @@
 // Primitive Types
 // ========================================
 
-export type NodeId = string;   // nanoid (21 chars recommended)
-export type SurfaceId = string;
-export type LinkId = string;
-export type Color = string;    // Hex (#RRGGBB), rgba(), hsl() supported
-export type Unit = 'mm' | 'pt' | 'px' | 'in';
+export type NodeId = string // nanoid (21 chars recommended)
+export type SurfaceId = string
+export type LinkId = string
+export type Color = string // Hex (#RRGGBB), rgba(), hsl() supported
+export type Unit = 'mm' | 'pt' | 'px' | 'in'
 
 // ========================================
 // Document Root
 // ========================================
 
 export interface Doc {
-  v: 1                           // Schema version (number for compactness)
+  v: 1 // Schema version (number for compactness)
   id: string
   title: string
   unit: Unit
@@ -41,13 +41,13 @@ export interface Doc {
 
 export interface Surface {
   id: SurfaceId
-  type: 'page' | 'canvas'        // page=A4等, canvas=無限キャンバス
+  type: 'page' | 'canvas' // page=A4等, canvas=無限キャンバス
   w: number
   h: number
 
   // Page specific details
-  margin?: Margin                // For 'page' type
-  bg?: string                    // Color hex or image URL (data:image/...)
+  margin?: Margin // For 'page' type
+  bg?: string // Color hex or image URL (data:image/...)
 }
 
 export interface Margin {
@@ -69,12 +69,12 @@ export type UnifiedNode =
   | GroupNode
   | TableNode
   | SignatureNode
-  | WidgetNode;
+  | WidgetNode
 
 // Common properties for all nodes
 export interface BaseNode {
   id: NodeId
-  s: SurfaceId                   // Surface ID (short key name)
+  s: SurfaceId // Surface ID (short key name)
 
   // Note: 'z' is REMOVED. Use array index.
 
@@ -83,16 +83,16 @@ export interface BaseNode {
   y?: number
   w?: number
   h?: number
-  r?: number                     // Rotation in degrees (default: 0)
+  r?: number // Rotation in degrees (default: 0)
 
   // Common Style
-  opacity?: number               // 0-1
+  opacity?: number // 0-1
   locked?: boolean
   hidden?: boolean
   tags?: string[]
 
   // Binding (optional)
-  bind?: string                  // Simple path like "customer.name"
+  bind?: string // Simple path like "customer.name"
 
   // Metadata
   name?: string
@@ -100,19 +100,22 @@ export interface BaseNode {
 
 export interface TextNode extends BaseNode {
   t: 'text'
-  x: number; y: number; w: number; h: number // Required
+  x: number
+  y: number
+  w: number
+  h: number // Required
   text: string
 
   // Text Style
-  font?: string                  // Font family
+  font?: string // Font family
   fontSize?: number
-  fontWeight?: number            // 400, 700, etc.
+  fontWeight?: number // 400, 700, etc.
   italic?: boolean
   underline?: boolean
   lineThrough?: boolean
-  align?: 'l' | 'c' | 'r' | 'j'  // left/center/right/justify (short)
-  vAlign?: 't' | 'm' | 'b'       // top/middle/bottom (short)
-  fill?: Color                   // Text color
+  align?: 'l' | 'c' | 'r' | 'j' // left/center/right/justify (short)
+  vAlign?: 't' | 'm' | 'b' // top/middle/bottom (short)
+  fill?: Color // Text color
 
   // Border (for connector/label use cases)
   stroke?: Color
@@ -121,23 +124,26 @@ export interface TextNode extends BaseNode {
 
 export interface ShapeNode extends BaseNode {
   t: 'shape'
-  x: number; y: number; w: number; h: number // Required
+  x: number
+  y: number
+  w: number
+  h: number // Required
   shape: ShapeType
-  radius?: number                // Border radius for rect
+  radius?: number // Border radius for rect
 
   // Shape Style
   fill?: Color
   stroke?: Color
   strokeW?: number
   dash?: number[]
-  sides?: number                 // For polygon/star (vertex count)
+  sides?: number // For polygon/star (vertex count)
 }
 
 export interface LineNode extends BaseNode {
   t: 'line'
   // x, y, w, h are IGNORED/UNDEFINED for lines.
 
-  pts: number[]                  // Flat array: [x1,y1,x2,y2,...] ABSOLUTE coordinates
+  pts: number[] // Flat array: [x1,y1,x2,y2,...] ABSOLUTE coordinates
   arrows?: [ArrowType, ArrowType] // [start, end]
 
   // Optional connector behavior (draw.io-like)
@@ -153,35 +159,50 @@ export interface LineNode extends BaseNode {
 
 export interface ImageNode extends BaseNode {
   t: 'image'
-  x: number; y: number; w: number; h: number // Required
-  src: string                    // URL or base64
+  x: number
+  y: number
+  w: number
+  h: number // Required
+  src: string // URL or base64
 }
 
 export interface GroupNode extends BaseNode {
   t: 'group'
-  x: number; y: number; w: number; h: number // Bounding box of group
+  x: number
+  y: number
+  w: number
+  h: number // Bounding box of group
   children: NodeId[]
 }
 
 export interface TableNode extends BaseNode {
   t: 'table'
-  x: number; y: number; w: number; h: number // Required
+  x: number
+  y: number
+  w: number
+  h: number // Required
   table: TableData
 }
 
 export interface WidgetNode extends BaseNode {
   t: 'widget'
-  x: number; y: number; w: number; h: number // Required
-  widget: string                 // 'chart' | 'bed' | 'mindNode' | ...
+  x: number
+  y: number
+  w: number
+  h: number // Required
+  widget: string // 'chart' | 'bed' | 'mindNode' | ...
   data?: Record<string, unknown> // Flexible data storage
 }
 
 export interface SignatureNode extends BaseNode {
   t: 'signature'
-  x: number; y: number; w: number; h: number // Bounding box
-  strokes: number[][]            // Array of stroke paths: [[x1,y1,x2,y2,...], ...]
-  stroke: Color                  // Stroke color
-  strokeW: number                // Stroke width
+  x: number
+  y: number
+  w: number
+  h: number // Bounding box
+  strokes: number[][] // Array of stroke paths: [[x1,y1,x2,y2,...], ...]
+  stroke: Color // Stroke color
+  strokeW: number // Stroke width
 }
 
 // ========================================
@@ -189,25 +210,46 @@ export interface SignatureNode extends BaseNode {
 // ========================================
 
 export type ShapeType =
-  | 'rect' | 'circle' | 'triangle' | 'diamond'
-  | 'star' | 'pentagon' | 'hexagon'
-  | 'arrow-u' | 'arrow-d' | 'arrow-l' | 'arrow-r'
-  | 'trapezoid' | 'cylinder' | 'heart' | 'tree' | 'house'
+  | 'rect'
+  | 'circle'
+  | 'triangle'
+  | 'diamond'
+  | 'star'
+  | 'pentagon'
+  | 'hexagon'
+  | 'arrow-u'
+  | 'arrow-d'
+  | 'arrow-l'
+  | 'arrow-r'
+  | 'trapezoid'
+  | 'cylinder'
+  | 'heart'
+  | 'tree'
+  | 'house'
 
-export type ArrowType = 'none' | 'arrow' | 'circle' | 'diamond' | 'standard' | 'filled' | 'triangle' | 'open' | 'square'
+export type ArrowType =
+  | 'none'
+  | 'arrow'
+  | 'circle'
+  | 'diamond'
+  | 'standard'
+  | 'filled'
+  | 'triangle'
+  | 'open'
+  | 'square'
 
 export interface TableData {
-  rows: number[]                 // Row heights in Doc.unit (all rows must be specified)
-  cols: number[]                 // Column widths in Doc.unit (all columns must be specified)
-  cells: Cell[]                  // Sparse array: only non-empty cells need to be defined
+  rows: number[] // Row heights in Doc.unit (all rows must be specified)
+  cols: number[] // Column widths in Doc.unit (all columns must be specified)
+  cells: Cell[] // Sparse array: only non-empty cells need to be defined
 }
 
 export interface Cell {
-  r: number                      // Row index
-  c: number                      // Column index
-  rs?: number                    // Row span
-  cs?: number                    // Col span
-  v: string                      // Value/content
+  r: number // Row index
+  c: number // Column index
+  rs?: number // Row span
+  cs?: number // Col span
+  v: string // Value/content
   // Cell-specific styles
   bg?: string
   border?: string
@@ -226,10 +268,10 @@ export interface Cell {
 
 export interface Link {
   id: LinkId
-  s: SurfaceId                   // Surface where the link is rendered
-  from: NodeId                   // Both from/to nodes MUST be on the same Surface
-  to: NodeId                     // Cross-surface links are NOT supported
-  fromAnchor?: Anchor            // Default: 'auto'
+  s: SurfaceId // Surface where the link is rendered
+  from: NodeId // Both from/to nodes MUST be on the same Surface
+  to: NodeId // Cross-surface links are NOT supported
+  fromAnchor?: Anchor // Default: 'auto'
   toAnchor?: Anchor
   routing?: 'straight' | 'orthogonal' | 'bezier'
   stroke?: Color
@@ -244,7 +286,7 @@ export type Anchor = 'auto' | 't' | 'b' | 'l' | 'r' | 'tl' | 'tr' | 'bl' | 'br'
 // ========================================
 
 export interface BindingConfig {
-  sampleData: Record<string, unknown>  // Renamed from 'data' for clarity
+  sampleData: Record<string, unknown> // Renamed from 'data' for clarity
   sources?: DataSource[]
 }
 
@@ -261,26 +303,26 @@ export interface AnimationConfig {
 export interface Timeline {
   id: string
   surface: SurfaceId
-  duration: number               // Seconds
+  duration: number // Seconds
   loop?: boolean
   tracks: Track[]
 }
 
 export interface Track {
   node: NodeId
-  prop: string                   // e.g., 'x', 'y', 'opacity'
+  prop: string // e.g., 'x', 'y', 'opacity'
   keys: Keyframe[]
 }
 
 export interface Keyframe {
-  t: number                      // Time in seconds
+  t: number // Time in seconds
   v: number | string
   ease?: 'linear' | 'ease' | 'ease-in' | 'ease-out'
 }
 
 export interface SnapConfig {
-  grid?: number                  // Grid size
-  guides?: boolean               // Show alignment guides
+  grid?: number // Grid size
+  guides?: boolean // Show alignment guides
 }
 
 // ========================================

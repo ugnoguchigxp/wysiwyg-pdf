@@ -1,15 +1,23 @@
-import { PEN_CURSOR_URL } from '@/features/konva-editor/cursors'
 import type Konva from 'konva'
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { Image as KonvaImage, Rect as KonvaRect, Layer, Stage } from 'react-konva'
 import { CanvasElementRenderer } from '@/components/canvas/CanvasElementRenderer'
+import { GridLayer } from '@/components/canvas/GridLayer'
 import { useKeyboardShortcuts } from '@/components/canvas/hooks/useKeyboardShortcuts'
 import { TextEditOverlay } from '@/components/canvas/TextEditOverlay'
-import type { TextNode, UnifiedNode, Doc, Surface, SignatureNode, TableNode } from '@/types/canvas' // Direct import
-import { createContextLogger } from '@/utils/logger'
+import { PEN_CURSOR_URL } from '@/features/konva-editor/cursors'
 import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
+import type { Doc, SignatureNode, Surface, TableNode, TextNode, UnifiedNode } from '@/types/canvas' // Direct import
 import { simplifyPoints } from '@/utils/geometry'
-import { GridLayer } from '@/components/canvas/GridLayer'
+import { createContextLogger } from '@/utils/logger'
 import { TableContextMenu } from './components/ContextMenu/TableContextMenu'
 
 const log = createContextLogger('ReportKonvaEditor')
@@ -87,7 +95,7 @@ const PageBackground = ({
   const [image, setImage] = useState<HTMLImageElement | null>(null)
 
   const bg = surface.bg
-  const isColor = bg ? (bg.startsWith('#') || bg.startsWith('rgb')) : true
+  const isColor = bg ? bg.startsWith('#') || bg.startsWith('rgb') : true
 
   useEffect(() => {
     if (!bg || isColor) {
@@ -96,7 +104,7 @@ const PageBackground = ({
     }
 
     if (!bg.startsWith('http') && !bg.startsWith('data:')) {
-      findImageWithExtension(bg).then(res => {
+      findImageWithExtension(bg).then((res) => {
         if (res) setImage(res.img)
       })
     } else {
@@ -114,7 +122,7 @@ const PageBackground = ({
         y={0}
         width={width}
         height={height}
-        fill={isColor ? (bg || '#ffffff') : '#ffffff'}
+        fill={isColor ? bg || '#ffffff' : '#ffffff'}
         shadowColor="black"
         shadowBlur={10}
         shadowOpacity={0.1}
@@ -195,7 +203,8 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
     // const [contextMenu, setContextMenu] = useState<any>(null)
 
     // Current Surface (Page)
-    const currentSurface = templateDoc.surfaces.find((s) => s.id === currentPageId) || templateDoc.surfaces[0]
+    const currentSurface =
+      templateDoc.surfaces.find((s) => s.id === currentPageId) || templateDoc.surfaces[0]
 
     // Filter nodes for current surface
     const nodes = templateDoc.nodes.filter((n) => n.s === currentSurface.id)
@@ -215,9 +224,12 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
     }, [editingElementId, templateDoc.nodes])
 
     const selectedCellBox = useMemo(() => {
-      if (!selectedTable || !selectedCell || selectedCell.elementId !== selectedTable.id) return null
+      if (!selectedTable || !selectedCell || selectedCell.elementId !== selectedTable.id)
+        return null
 
-      const cell = selectedTable.table.cells.find((c) => c.r === selectedCell.row && c.c === selectedCell.col)
+      const cell = selectedTable.table.cells.find(
+        (c) => c.r === selectedCell.row && c.c === selectedCell.col
+      )
       const rs = cell?.rs || 1
       const cs = cell?.cs || 1
 
@@ -305,10 +317,15 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       onTemplateChange({ ...templateDoc, nodes: nextNodes })
     }
 
-    const handleTextUpdate = useCallback((text: string) => {
-      if (!editingElementId) return
-      handleElementChange({ id: editingElementId, text } as Partial<UnifiedNode> & { id?: string })
-    }, [editingElementId, handleElementChange])
+    const handleTextUpdate = useCallback(
+      (text: string) => {
+        if (!editingElementId) return
+        handleElementChange({ id: editingElementId, text } as Partial<UnifiedNode> & {
+          id?: string
+        })
+      },
+      [editingElementId, handleElementChange]
+    )
 
     const handleTextEditFinish = useCallback(() => {
       setEditingElementId(null)
@@ -332,7 +349,11 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       }
 
       const target = e.target
-      const idsToTry = [target.id(), target.getParent()?.id(), target.getParent()?.getParent()?.id()].filter(Boolean) as string[]
+      const idsToTry = [
+        target.id(),
+        target.getParent()?.id(),
+        target.getParent()?.getParent()?.id(),
+      ].filter(Boolean) as string[]
       let parsed: { elementId: string; row: number; col: number } | null = null
       for (const id of idsToTry) {
         parsed = parseFromId(id)
@@ -354,69 +375,76 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       })
     }
 
-    const applyTableUpdate = useCallback((elementId: string, updater: (t: TableNode) => TableNode) => {
-      const nextNodes = templateDoc.nodes.map((n) => {
-        if (n.id !== elementId || n.t !== 'table') return n
-        return updater(n as TableNode)
-      })
-      onTemplateChange({ ...templateDoc, nodes: nextNodes })
-    }, [onTemplateChange, templateDoc])
+    const applyTableUpdate = useCallback(
+      (elementId: string, updater: (t: TableNode) => TableNode) => {
+        const nextNodes = templateDoc.nodes.map((n) => {
+          if (n.id !== elementId || n.t !== 'table') return n
+          return updater(n as TableNode)
+        })
+        onTemplateChange({ ...templateDoc, nodes: nextNodes })
+      },
+      [onTemplateChange, templateDoc]
+    )
 
-    const handleContextMenuAction = useCallback((action:
-      | 'insertRowAbove'
-      | 'insertRowBelow'
-      | 'insertColLeft'
-      | 'insertColRight'
-      | 'deleteRow'
-      | 'deleteCol'
-      | 'mergeRight'
-      | 'mergeDown'
-      | 'unmerge'
-    ) => {
-      if (!contextMenu) return
-      const { elementId, row, col } = contextMenu
+    const handleContextMenuAction = useCallback(
+      (
+        action:
+          | 'insertRowAbove'
+          | 'insertRowBelow'
+          | 'insertColLeft'
+          | 'insertColRight'
+          | 'deleteRow'
+          | 'deleteCol'
+          | 'mergeRight'
+          | 'mergeDown'
+          | 'unmerge'
+      ) => {
+        if (!contextMenu) return
+        const { elementId, row, col } = contextMenu
 
-      applyTableUpdate(elementId, (table) => {
-        const rowCount = table.table.rows.length
-        const colCount = table.table.cols.length
-        const cells = [...table.table.cells]
+        applyTableUpdate(elementId, (table) => {
+          const rowCount = table.table.rows.length
+          const colCount = table.table.cols.length
+          const cells = [...table.table.cells]
 
-        const findCell = (r: number, c: number) => cells.find((cc) => cc.r === r && cc.c === c)
+          const findCell = (r: number, c: number) => cells.find((cc) => cc.r === r && cc.c === c)
 
-        const base = findCell(row, col) || { r: row, c: col, v: '' }
+          const base = findCell(row, col) || { r: row, c: col, v: '' }
 
-        const materializeCellAt = (
-          targetCells: typeof cells,
-          r: number,
-          c: number,
-          inheritFrom?: typeof base
-        ) => {
-          if (targetCells.find((cc) => cc.r === r && cc.c === c)) return
-          const { rs, cs, v, ...style } = (inheritFrom || base) as any
-          targetCells.push({ r, c, v: '', ...(style as object) })
-        }
+          const materializeCellAt = (
+            targetCells: typeof cells,
+            r: number,
+            c: number,
+            inheritFrom?: typeof base
+          ) => {
+            if (targetCells.find((cc) => cc.r === r && cc.c === c)) return
+            const { rs, cs, v, ...style } = (inheritFrom || base) as any
+            targetCells.push({ r, c, v: '', ...(style as object) })
+          }
 
-        const ensureBaseExists = () => {
-          if (!findCell(row, col)) cells.push({ ...base })
-        }
+          const ensureBaseExists = () => {
+            if (!findCell(row, col)) cells.push({ ...base })
+          }
 
-        const cellRect = (c: { r: number; c: number; rs?: number; cs?: number }) => {
-          const rs = c.rs || 1
-          const cs = c.cs || 1
-          return { r1: c.r, c1: c.c, r2: c.r + rs - 1, c2: c.c + cs - 1 }
-        }
+          const cellRect = (c: { r: number; c: number; rs?: number; cs?: number }) => {
+            const rs = c.rs || 1
+            const cs = c.cs || 1
+            return { r1: c.r, c1: c.c, r2: c.r + rs - 1, c2: c.c + cs - 1 }
+          }
 
-        const rectIntersects = (a: { r1: number; c1: number; r2: number; c2: number }, b: { r1: number; c1: number; r2: number; c2: number }) => {
-          return !(a.r2 < b.r1 || a.r1 > b.r2 || a.c2 < b.c1 || a.c1 > b.c2)
-        }
+          const rectIntersects = (
+            a: { r1: number; c1: number; r2: number; c2: number },
+            b: { r1: number; c1: number; r2: number; c2: number }
+          ) => {
+            return !(a.r2 < b.r1 || a.r1 > b.r2 || a.c2 < b.c1 || a.c1 > b.c2)
+          }
 
-        if (action === 'insertRowAbove' || action === 'insertRowBelow') {
-          const insertIndex = action === 'insertRowAbove' ? row : row + 1
-          const newRows = [...table.table.rows]
-          newRows.splice(insertIndex, 0, 50)
+          if (action === 'insertRowAbove' || action === 'insertRowBelow') {
+            const insertIndex = action === 'insertRowAbove' ? row : row + 1
+            const newRows = [...table.table.rows]
+            newRows.splice(insertIndex, 0, 50)
 
-          const nextCells = cells
-            .map((c) => {
+            const nextCells = cells.map((c) => {
               // Shift cells below
               if (c.r >= insertIndex) return { ...c, r: c.r + 1 }
               // Expand spans that cross insertion boundary
@@ -427,47 +455,55 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
               return c
             })
 
-          // Generate new cells for the inserted row
-          for (let c = 0; c < table.table.cols.length; c++) {
-            // Find template cell from the row where interaction happened (or closest neighbor)
-            // We clicked on 'row'.
-            // If invalid/missing, fallback to base (clicked cell) or defaults.
-            const template = cells.find(cell => cell.r === row && cell.c === c) || findCell(row, col)
-            if (template) {
-              const { r: _r, c: _c, v: _v, rs: _rs, cs: _cs, ...styles } = template
-              nextCells.push({
-                r: insertIndex,
-                c,
-                v: '',
-                ...styles,
-                // Reset spans for new cells
-                rs: 1,
-                cs: 1
-              })
-            } else {
-              // Fallback if sparse and no template found (create default)
-              nextCells.push({ r: insertIndex, c, v: '', rs: 1, cs: 1, borderW: 2, borderColor: '#000000' })
+            // Generate new cells for the inserted row
+            for (let c = 0; c < table.table.cols.length; c++) {
+              // Find template cell from the row where interaction happened (or closest neighbor)
+              // We clicked on 'row'.
+              // If invalid/missing, fallback to base (clicked cell) or defaults.
+              const template =
+                cells.find((cell) => cell.r === row && cell.c === c) || findCell(row, col)
+              if (template) {
+                const { r: _r, c: _c, v: _v, rs: _rs, cs: _cs, ...styles } = template
+                nextCells.push({
+                  r: insertIndex,
+                  c,
+                  v: '',
+                  ...styles,
+                  // Reset spans for new cells
+                  rs: 1,
+                  cs: 1,
+                })
+              } else {
+                // Fallback if sparse and no template found (create default)
+                nextCells.push({
+                  r: insertIndex,
+                  c,
+                  v: '',
+                  rs: 1,
+                  cs: 1,
+                  borderW: 2,
+                  borderColor: '#000000',
+                })
+              }
+            }
+
+            return {
+              ...table,
+              h: sum(newRows),
+              table: {
+                ...table.table,
+                rows: newRows,
+                cells: nextCells,
+              },
             }
           }
 
-          return {
-            ...table,
-            h: sum(newRows),
-            table: {
-              ...table.table,
-              rows: newRows,
-              cells: nextCells,
-            },
-          }
-        }
+          if (action === 'insertColLeft' || action === 'insertColRight') {
+            const insertIndex = action === 'insertColLeft' ? col : col + 1
+            const newCols = [...table.table.cols]
+            newCols.splice(insertIndex, 0, 100)
 
-        if (action === 'insertColLeft' || action === 'insertColRight') {
-          const insertIndex = action === 'insertColLeft' ? col : col + 1
-          const newCols = [...table.table.cols]
-          newCols.splice(insertIndex, 0, 100)
-
-          const nextCells = cells
-            .map((c) => {
+            const nextCells = cells.map((c) => {
               if (c.c >= insertIndex) return { ...c, c: c.c + 1 }
               const cs = c.cs || 1
               if (cs > 1 && c.c < insertIndex && insertIndex <= c.c + cs - 1) {
@@ -476,254 +512,268 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
               return c
             })
 
-          // Generate new cells for the inserted column
-          for (let r = 0; r < table.table.rows.length; r++) {
-            // Find template cell from the column where interaction happened
-            const template = cells.find(cell => cell.r === r && cell.c === col) || findCell(row, col)
-            if (template) {
-              const { r: _r, c: _c, v: _v, rs: _rs, cs: _cs, ...styles } = template
-              nextCells.push({
-                r,
-                c: insertIndex,
-                v: '',
-                ...styles,
-                rs: 1,
-                cs: 1
-              })
-            } else {
-              nextCells.push({ r, c: insertIndex, v: '', rs: 1, cs: 1, borderW: 2, borderColor: '#000000' })
+            // Generate new cells for the inserted column
+            for (let r = 0; r < table.table.rows.length; r++) {
+              // Find template cell from the column where interaction happened
+              const template =
+                cells.find((cell) => cell.r === r && cell.c === col) || findCell(row, col)
+              if (template) {
+                const { r: _r, c: _c, v: _v, rs: _rs, cs: _cs, ...styles } = template
+                nextCells.push({
+                  r,
+                  c: insertIndex,
+                  v: '',
+                  ...styles,
+                  rs: 1,
+                  cs: 1,
+                })
+              } else {
+                nextCells.push({
+                  r,
+                  c: insertIndex,
+                  v: '',
+                  rs: 1,
+                  cs: 1,
+                  borderW: 2,
+                  borderColor: '#000000',
+                })
+              }
+            }
+
+            return {
+              ...table,
+              w: sum(newCols),
+              table: {
+                ...table.table,
+                cols: newCols,
+                cells: nextCells,
+              },
             }
           }
 
-          return {
-            ...table,
-            w: sum(newCols),
-            table: {
-              ...table.table,
-              cols: newCols,
-              cells: nextCells,
-            },
-          }
-        }
+          if (action === 'deleteRow') {
+            if (rowCount <= 1) return table
+            const deleteIndex = clamp(row, 0, rowCount - 1)
+            const newRows = table.table.rows.filter((_, i) => i !== deleteIndex)
 
-        if (action === 'deleteRow') {
-          if (rowCount <= 1) return table
-          const deleteIndex = clamp(row, 0, rowCount - 1)
-          const newRows = table.table.rows.filter((_, i) => i !== deleteIndex)
+            const nextCells: typeof cells = []
+            for (const c of cells) {
+              // If cell starts on deleted row
+              if (c.r === deleteIndex) {
+                const rs = c.rs || 1
+                if (rs > 1) {
+                  // Promote the cell to the next row (which shifts up to deleteIndex) and shrink span
+                  nextCells.push({ ...c, rs: rs - 1 })
+                }
+                continue
+              }
 
-          const nextCells: typeof cells = []
-          for (const c of cells) {
-            // If cell starts on deleted row
-            if (c.r === deleteIndex) {
+              // If cell is below deleted row, shift up
+              if (c.r > deleteIndex) {
+                nextCells.push({ ...c, r: c.r - 1 })
+                continue
+              }
+
+              // If cell spans across deleted row, shrink span
               const rs = c.rs || 1
-              if (rs > 1) {
-                // Promote the cell to the next row (which shifts up to deleteIndex) and shrink span
+              if (rs > 1 && c.r < deleteIndex && deleteIndex <= c.r + rs - 1) {
                 nextCells.push({ ...c, rs: rs - 1 })
+                continue
               }
-              continue
+
+              nextCells.push(c)
             }
 
-            // If cell is below deleted row, shift up
-            if (c.r > deleteIndex) {
-              nextCells.push({ ...c, r: c.r - 1 })
-              continue
+            return {
+              ...table,
+              h: sum(newRows),
+              table: {
+                ...table.table,
+                rows: newRows,
+                cells: nextCells,
+              },
             }
-
-            // If cell spans across deleted row, shrink span
-            const rs = c.rs || 1
-            if (rs > 1 && c.r < deleteIndex && deleteIndex <= c.r + rs - 1) {
-              nextCells.push({ ...c, rs: rs - 1 })
-              continue
-            }
-
-            nextCells.push(c)
           }
 
-          return {
-            ...table,
-            h: sum(newRows),
-            table: {
-              ...table.table,
-              rows: newRows,
-              cells: nextCells,
-            },
-          }
-        }
+          if (action === 'deleteCol') {
+            if (colCount <= 1) return table
+            const deleteIndex = clamp(col, 0, colCount - 1)
+            const newCols = table.table.cols.filter((_, i) => i !== deleteIndex)
 
-        if (action === 'deleteCol') {
-          if (colCount <= 1) return table
-          const deleteIndex = clamp(col, 0, colCount - 1)
-          const newCols = table.table.cols.filter((_, i) => i !== deleteIndex)
+            const nextCells: typeof cells = []
+            for (const c of cells) {
+              if (c.c === deleteIndex) {
+                const cs = c.cs || 1
+                if (cs > 1) {
+                  nextCells.push({ ...c, cs: cs - 1 })
+                }
+                continue
+              }
 
-          const nextCells: typeof cells = []
-          for (const c of cells) {
-            if (c.c === deleteIndex) {
+              if (c.c > deleteIndex) {
+                nextCells.push({ ...c, c: c.c - 1 })
+                continue
+              }
+
               const cs = c.cs || 1
-              if (cs > 1) {
+              if (cs > 1 && c.c < deleteIndex && deleteIndex <= c.c + cs - 1) {
                 nextCells.push({ ...c, cs: cs - 1 })
+                continue
               }
-              continue
+
+              nextCells.push(c)
             }
 
-            if (c.c > deleteIndex) {
-              nextCells.push({ ...c, c: c.c - 1 })
-              continue
-            }
-
-            const cs = c.cs || 1
-            if (cs > 1 && c.c < deleteIndex && deleteIndex <= c.c + cs - 1) {
-              nextCells.push({ ...c, cs: cs - 1 })
-              continue
-            }
-
-            nextCells.push(c)
-          }
-
-          return {
-            ...table,
-            w: sum(newCols),
-            table: {
-              ...table.table,
-              cols: newCols,
-              cells: nextCells,
-            },
-          }
-        }
-
-        if (action === 'mergeRight') {
-          ensureBaseExists()
-          const current = findCell(row, col) || base
-          const rs = current.rs || 1
-          const cs = current.cs || 1
-          const targetCol = col + cs
-          if (targetCol >= colCount) return table
-
-          const baseRect = cellRect({ r: row, c: col, rs, cs: cs + 1 })
-
-          // Allow merge only if the added strip is not covered by any other cell (including spanned cells).
-          // The only allowed overlapping cell is the immediate neighbor top-left at (row, targetCol) with matching rowSpan and cs=1.
-          const neighbor = findCell(row, targetCol)
-          if (!neighbor) return table
-          const neighborRs = neighbor.rs || 1
-          const neighborCs = neighbor.cs || 1
-          if (neighborRs !== rs || neighborCs !== 1) return table
-
-          for (const other of cells) {
-            if (other.r === row && other.c === col) continue
-            if (other.r === row && other.c === targetCol) continue
-            const oRect = cellRect(other)
-            if (rectIntersects(oRect, baseRect)) {
-              return table
+            return {
+              ...table,
+              w: sum(newCols),
+              table: {
+                ...table.table,
+                cols: newCols,
+                cells: nextCells,
+              },
             }
           }
 
-          // Remove cells that would become covered by the new merged span (the added strip)
-          const nextCells = cells.filter((c) => {
-            if (c.r === row && c.c === col) return true
-            if (c.r === row && c.c === targetCol) return false
-            // Any cell starting inside the added strip is removed
-            return !(c.c === targetCol && c.r >= row && c.r < row + rs)
-          })
+          if (action === 'mergeRight') {
+            ensureBaseExists()
+            const current = findCell(row, col) || base
+            const rs = current.rs || 1
+            const cs = current.cs || 1
+            const targetCol = col + cs
+            if (targetCol >= colCount) return table
 
-          const idx = nextCells.findIndex((c) => c.r === row && c.c === col)
-          if (idx >= 0) nextCells[idx] = { ...nextCells[idx], cs: cs + 1 }
+            const baseRect = cellRect({ r: row, c: col, rs, cs: cs + 1 })
 
-          return {
-            ...table,
-            table: {
-              ...table.table,
-              cells: nextCells,
-            },
-          }
-        }
+            // Allow merge only if the added strip is not covered by any other cell (including spanned cells).
+            // The only allowed overlapping cell is the immediate neighbor top-left at (row, targetCol) with matching rowSpan and cs=1.
+            const neighbor = findCell(row, targetCol)
+            if (!neighbor) return table
+            const neighborRs = neighbor.rs || 1
+            const neighborCs = neighbor.cs || 1
+            if (neighborRs !== rs || neighborCs !== 1) return table
 
-        if (action === 'mergeDown') {
-          ensureBaseExists()
-          const current = findCell(row, col) || base
-          const rs = current.rs || 1
-          const cs = current.cs || 1
-          const targetRow = row + rs
-          if (targetRow >= rowCount) return table
+            for (const other of cells) {
+              if (other.r === row && other.c === col) continue
+              if (other.r === row && other.c === targetCol) continue
+              const oRect = cellRect(other)
+              if (rectIntersects(oRect, baseRect)) {
+                return table
+              }
+            }
 
-          const baseRect = cellRect({ r: row, c: col, rs: rs + 1, cs })
+            // Remove cells that would become covered by the new merged span (the added strip)
+            const nextCells = cells.filter((c) => {
+              if (c.r === row && c.c === col) return true
+              if (c.r === row && c.c === targetCol) return false
+              // Any cell starting inside the added strip is removed
+              return !(c.c === targetCol && c.r >= row && c.r < row + rs)
+            })
 
-          const neighbor = findCell(targetRow, col)
-          if (!neighbor) return table
-          const neighborRs = neighbor.rs || 1
-          const neighborCs = neighbor.cs || 1
-          if (neighborCs !== cs || neighborRs !== 1) return table
+            const idx = nextCells.findIndex((c) => c.r === row && c.c === col)
+            if (idx >= 0) nextCells[idx] = { ...nextCells[idx], cs: cs + 1 }
 
-          for (const other of cells) {
-            if (other.r === row && other.c === col) continue
-            if (other.r === targetRow && other.c === col) continue
-            const oRect = cellRect(other)
-            if (rectIntersects(oRect, baseRect)) {
-              return table
+            return {
+              ...table,
+              table: {
+                ...table.table,
+                cells: nextCells,
+              },
             }
           }
 
-          const nextCells = cells.filter((c) => {
-            if (c.r === row && c.c === col) return true
-            if (c.r === targetRow && c.c === col) return false
-            // Any cell starting inside the added strip is removed
-            return !(c.r === targetRow && c.c >= col && c.c < col + cs)
-          })
+          if (action === 'mergeDown') {
+            ensureBaseExists()
+            const current = findCell(row, col) || base
+            const rs = current.rs || 1
+            const cs = current.cs || 1
+            const targetRow = row + rs
+            if (targetRow >= rowCount) return table
 
-          const idx = nextCells.findIndex((c) => c.r === row && c.c === col)
-          if (idx >= 0) nextCells[idx] = { ...nextCells[idx], rs: rs + 1 }
+            const baseRect = cellRect({ r: row, c: col, rs: rs + 1, cs })
 
-          return {
-            ...table,
-            table: {
-              ...table.table,
-              cells: nextCells,
-            },
-          }
-        }
+            const neighbor = findCell(targetRow, col)
+            if (!neighbor) return table
+            const neighborRs = neighbor.rs || 1
+            const neighborCs = neighbor.cs || 1
+            if (neighborCs !== cs || neighborRs !== 1) return table
 
-        if (action === 'unmerge') {
-          const current = findCell(row, col)
-          if (!current) return table
-          const rs = current.rs || 1
-          const cs = current.cs || 1
-          if (rs <= 1 && cs <= 1) return table
+            for (const other of cells) {
+              if (other.r === row && other.c === col) continue
+              if (other.r === targetRow && other.c === col) continue
+              const oRect = cellRect(other)
+              if (rectIntersects(oRect, baseRect)) {
+                return table
+              }
+            }
 
-          const nextCells = cells.filter((c) => !(c.r === row && c.c === col))
+            const nextCells = cells.filter((c) => {
+              if (c.r === row && c.c === col) return true
+              if (c.r === targetRow && c.c === col) return false
+              // Any cell starting inside the added strip is removed
+              return !(c.r === targetRow && c.c >= col && c.c < col + cs)
+            })
 
-          // Recreate base cell without spans
-          const { rs: _rs, cs: _cs, ...rest } = current
-          nextCells.push({ ...(rest as any), r: row, c: col, v: current.v })
+            const idx = nextCells.findIndex((c) => c.r === row && c.c === col)
+            if (idx >= 0) nextCells[idx] = { ...nextCells[idx], rs: rs + 1 }
 
-          // Materialize all newly uncovered cells inheriting style
-          for (let rr = 0; rr < rs; rr++) {
-            for (let cc = 0; cc < cs; cc++) {
-              if (rr === 0 && cc === 0) continue
-              const r = row + rr
-              const c = col + cc
-              if (r < 0 || r >= rowCount || c < 0 || c >= colCount) continue
-              materializeCellAt(nextCells, r, c, current)
+            return {
+              ...table,
+              table: {
+                ...table.table,
+                cells: nextCells,
+              },
             }
           }
 
-          return {
-            ...table,
-            table: {
-              ...table.table,
-              cells: nextCells,
-            },
+          if (action === 'unmerge') {
+            const current = findCell(row, col)
+            if (!current) return table
+            const rs = current.rs || 1
+            const cs = current.cs || 1
+            if (rs <= 1 && cs <= 1) return table
+
+            const nextCells = cells.filter((c) => !(c.r === row && c.c === col))
+
+            // Recreate base cell without spans
+            const { rs: _rs, cs: _cs, ...rest } = current
+            nextCells.push({ ...(rest as any), r: row, c: col, v: current.v })
+
+            // Materialize all newly uncovered cells inheriting style
+            for (let rr = 0; rr < rs; rr++) {
+              for (let cc = 0; cc < cs; cc++) {
+                if (rr === 0 && cc === 0) continue
+                const r = row + rr
+                const c = col + cc
+                if (r < 0 || r >= rowCount || c < 0 || c >= colCount) continue
+                materializeCellAt(nextCells, r, c, current)
+              }
+            }
+
+            return {
+              ...table,
+              table: {
+                ...table.table,
+                cells: nextCells,
+              },
+            }
           }
-        }
 
-        return table
-      })
+          return table
+        })
 
-      setContextMenu(null)
-    }, [applyTableUpdate, contextMenu])
+        setContextMenu(null)
+      },
+      [applyTableUpdate, contextMenu]
+    )
 
     // Signature Box Calculation
     const getStrokesBox = useCallback((strokes: number[][]) => {
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
-      strokes.forEach(stroke => {
+      let minX = Infinity,
+        minY = Infinity,
+        maxX = -Infinity,
+        maxY = -Infinity
+      strokes.forEach((stroke) => {
         for (let i = 0; i < stroke.length; i += 2) {
           const x = stroke[i]
           const y = stroke[i + 1]
@@ -740,7 +790,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
     const commitSignature = useCallback((): Doc | null => {
       if (currentStrokes.length === 0) return null
 
-      const simplifiedStrokes = currentStrokes.map(stroke => {
+      const simplifiedStrokes = currentStrokes.map((stroke) => {
         const simplified = simplifyPoints(stroke, drawingSettings.tolerance ?? 2.5)
         if (simplified.length === 2) return [...simplified, ...simplified]
         return simplified
@@ -748,7 +798,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
 
       const box = getStrokesBox(simplifiedStrokes)
 
-      const normalizedStrokes = simplifiedStrokes.map(stroke => {
+      const normalizedStrokes = simplifiedStrokes.map((stroke) => {
         const newStroke: number[] = []
         for (let i = 0; i < stroke.length; i += 2) {
           let x = stroke[i] - box.x
@@ -774,7 +824,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
         strokeW: drawingSettings.strokeWidth,
         r: 0,
         locked: false,
-        hidden: false
+        hidden: false,
       }
 
       const nextDoc = {
@@ -789,7 +839,17 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       onElementSelect(element)
 
       return nextDoc
-    }, [currentStrokes, currentSurface.id, templateDoc, getStrokesBox, onTemplateChange, onElementSelect, drawingSettings.stroke, drawingSettings.strokeWidth, drawingSettings.tolerance])
+    }, [
+      currentStrokes,
+      currentSurface.id,
+      templateDoc,
+      getStrokesBox,
+      onTemplateChange,
+      onElementSelect,
+      drawingSettings.stroke,
+      drawingSettings.strokeWidth,
+      drawingSettings.tolerance,
+    ])
 
     useEffect(() => {
       if (activeTool !== 'signature' && currentStrokes.length > 0) {
@@ -832,7 +892,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
           transform?.invert()
           const pos = transform?.point(point)
           if (pos) {
-            setCurrentPoints(prev => [...prev, pos.x, pos.y])
+            setCurrentPoints((prev) => [...prev, pos.x, pos.y])
           }
         }
       }
@@ -842,7 +902,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       if (activeTool === 'signature' && isDrawing) {
         setIsDrawing(false)
         if (currentPoints.length > 0) {
-          setCurrentStrokes(prev => [...prev, currentPoints])
+          setCurrentStrokes((prev) => [...prev, currentPoints])
           setCurrentPoints([])
         }
       }
@@ -862,7 +922,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
 
     const handleMove = (dx: number, dy: number) => {
       if (selectedElementId) {
-        const el = nodes.find(n => n.id === selectedElementId)
+        const el = nodes.find((n) => n.id === selectedElementId)
         if (el && el.t !== 'line') {
           handleElementChange({ id: selectedElementId, x: (el.x || 0) + dx, y: (el.y || 0) + dy })
         }
@@ -909,7 +969,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       flushSignature: () => {
         const result = commitSignature()
         return result
-      }
+      },
     }))
 
     const handleDrop = (e: React.DragEvent) => {
@@ -962,7 +1022,10 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       <div
         className="relative w-full h-full bg-gray-100 overflow-auto flex justify-start items-start p-2 scrollbar-thin cursor-default"
         ref={containerRef}
-        onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }}
+        onDragOver={(e) => {
+          e.preventDefault()
+          e.dataTransfer.dropEffect = 'copy'
+        }}
         onDrop={handleDrop}
       >
         <div className="relative shadow-lg border-2 border-gray-500 w-fit h-fit">
@@ -976,7 +1039,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
             onMouseMove={handleStageMouseMove}
             onMouseUp={handleStageMouseUp}
             style={{
-              cursor: activeTool === 'signature' ? PEN_CURSOR_URL : 'default'
+              cursor: activeTool === 'signature' ? PEN_CURSOR_URL : 'default',
             }}
           >
             <Layer name="background-layer" listening={false}>
@@ -1002,11 +1065,16 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
                   onSelect={() => handleElementSelect(element)}
                   onChange={handleElementChange}
                   onDblClick={() => {
-                    if (activeTool !== 'signature' && element.t === 'text') setEditingElementId(element.id)
+                    if (activeTool !== 'signature' && element.t === 'text')
+                      setEditingElementId(element.id)
                   }}
                   onContextMenu={(e) => handleContextMenu(e, element)}
                   isEditing={element.id === editingElementId}
-                  selectedCell={selectedCell?.elementId === element.id ? { row: selectedCell.row, col: selectedCell.col } : null}
+                  selectedCell={
+                    selectedCell?.elementId === element.id
+                      ? { row: selectedCell.row, col: selectedCell.col }
+                      : null
+                  }
                   editingCell={editingCell}
                   onCellClick={handleCellClick}
                   onCellDblClick={handleCellDblClick}
@@ -1015,19 +1083,27 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
               {(currentStrokes.length > 0 || currentPoints.length > 0) && (
                 <CanvasElementRenderer
                   key="active-signature"
-                  element={{
-                    id: 'active-signature',
-                    t: 'signature',
-                    s: currentSurface.id,
-                    name: 'Signature',
-                    x: 0, y: 0, w: 0, h: 0,
-                    strokes: [...currentStrokes, ...(currentPoints.length > 0 ? [currentPoints] : [])].map(s => s.length === 2 ? [...s, ...s] : s),
-                    stroke: drawingSettings.stroke,
-                    strokeW: drawingSettings.strokeWidth,
-                  } as SignatureNode}
+                  element={
+                    {
+                      id: 'active-signature',
+                      t: 'signature',
+                      s: currentSurface.id,
+                      name: 'Signature',
+                      x: 0,
+                      y: 0,
+                      w: 0,
+                      h: 0,
+                      strokes: [
+                        ...currentStrokes,
+                        ...(currentPoints.length > 0 ? [currentPoints] : []),
+                      ].map((s) => (s.length === 2 ? [...s, ...s] : s)),
+                      stroke: drawingSettings.stroke,
+                      strokeW: drawingSettings.strokeWidth,
+                    } as SignatureNode
+                  }
                   isSelected={false}
-                  onSelect={() => { }}
-                  onChange={() => { }}
+                  onSelect={() => {}}
+                  onChange={() => {}}
                 />
               )}
             </Layer>
@@ -1066,14 +1142,20 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
               }}
               className="absolute border-2 border-blue-500 bg-white text-black resize-none outline-none p-1"
               style={{
-                left: `${(selectedCellBox.x * displayScale) + 8}px`,
-                top: `${(selectedCellBox.y * displayScale) + 8}px`,
-                width: `${Math.max(20, (selectedCellBox.w * displayScale) - 16)}px`,
-                height: `${Math.max(20, (selectedCellBox.h * displayScale) - 16)}px`,
+                left: `${selectedCellBox.x * displayScale + 8}px`,
+                top: `${selectedCellBox.y * displayScale + 8}px`,
+                width: `${Math.max(20, selectedCellBox.w * displayScale - 16)}px`,
+                height: `${Math.max(20, selectedCellBox.h * displayScale - 16)}px`,
                 zIndex: 1000,
-                fontSize: `${((selectedTable.table.cells.find((c) => c.r === editingCell.row && c.c === editingCell.col)?.fontSize || 12) * displayScale)}px`,
-                fontFamily: selectedTable.table.cells.find((c) => c.r === editingCell.row && c.c === editingCell.col)?.font || 'Meiryo',
-                color: selectedTable.table.cells.find((c) => c.r === editingCell.row && c.c === editingCell.col)?.color || '#000000',
+                fontSize: `${(selectedTable.table.cells.find((c) => c.r === editingCell.row && c.c === editingCell.col)?.fontSize || 12) * displayScale}px`,
+                fontFamily:
+                  selectedTable.table.cells.find(
+                    (c) => c.r === editingCell.row && c.c === editingCell.col
+                  )?.font || 'Meiryo',
+                color:
+                  selectedTable.table.cells.find(
+                    (c) => c.r === editingCell.row && c.c === editingCell.col
+                  )?.color || '#000000',
               }}
             />
           )}

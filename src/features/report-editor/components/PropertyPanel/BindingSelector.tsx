@@ -29,11 +29,12 @@ export const BindingSelector: React.FC<BindingSelectorProps> = ({
   const { t } = useTranslation()
 
   const resolveText = (key: string, defaultValue?: string) => {
-    if (i18nOverrides && i18nOverrides[key]) return i18nOverrides[key]
+    if (i18nOverrides?.[key]) return i18nOverrides[key]
     return t(key, defaultValue ?? key)
   }
 
-  const displayLabel = label === 'Data Binding' ? resolveText('data_binding', 'Data Binding') : label
+  const displayLabel =
+    label === 'Data Binding' ? resolveText('data_binding', 'Data Binding') : label
 
   if (!binding) {
     return (

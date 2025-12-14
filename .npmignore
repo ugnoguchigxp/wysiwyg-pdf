@@ -1,0 +1,3 @@
+# Keep repository assets out of the published npm package.
+asset/
+assets/

@@ -1,3 +1,4 @@
+import type React from 'react'
 import {
   Select,
   SelectContent,
@@ -5,7 +6,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/Select'
-import type React from 'react'
 
 export interface ShapeOption {
   value: string

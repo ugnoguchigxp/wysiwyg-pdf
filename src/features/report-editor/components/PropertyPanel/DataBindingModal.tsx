@@ -1,9 +1,8 @@
+import { createColumnHelper } from '@tanstack/react-table'
 import { Calendar, Hash, Image as ImageIcon, Link, Type } from 'lucide-react'
 import type React from 'react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { createColumnHelper } from '@tanstack/react-table'
-import { SimpleTreeTable } from '@/components/ui/SimpleTreeTable'
 import { Button } from '@/components/ui/Button'
 import {
   Dialog,
@@ -13,6 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/Dialog'
 import { SimpleSearchInput } from '@/components/ui/SimpleSearchInput'
+import { SimpleTreeTable } from '@/components/ui/SimpleTreeTable'
 import type { IDataSchema, ISchemaField } from '@/types/schema'
 import type { BindingInfo } from './BindingSelector'
 

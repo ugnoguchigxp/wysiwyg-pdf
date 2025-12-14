@@ -1,6 +1,6 @@
 /**
  * Wysiwyg Properties Panel - Unified Version Wrapper
- * 
+ *
  * 既存APIとの互換性を保ちながらUnifiedPropertyPanelを使用
  * グリッド・スナップ設定もPropertyPanelに統合
  */
@@ -8,14 +8,13 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { UnifiedPropertyPanel } from '@/features/konva-editor/components/PropertyPanel/UnifiedPropertyPanel'
-import { REPORT_PANEL_CONFIG } from '@/features/konva-editor/constants/propertyPanelConfig'
-import type { UnifiedNode, TableNode } from '@/types/canvas'
-import type { Doc } from '@/types/canvas'
-import type { IDataSchema } from '@/types/schema'
 import type { WidgetProps } from '@/features/konva-editor/components/PropertyPanel/widgets'
-import { TableProperties } from './TableProperties'
+import { REPORT_PANEL_CONFIG } from '@/features/konva-editor/constants/propertyPanelConfig'
+import type { Doc, TableNode, UnifiedNode } from '@/types/canvas'
+import type { IDataSchema } from '@/types/schema'
 import { BindingSelector } from './BindingSelector'
 import { DataBindingModal } from './DataBindingModal'
+import { TableProperties } from './TableProperties'
 
 const FIBONACCI_GRID_SIZES = [2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377]
 
@@ -34,7 +33,12 @@ export interface WysiwygPropertiesPanelProps {
   activeTool?: string
   onToolSelect?: (tool: string) => void
   drawingSettings?: { stroke: string; strokeWidth: number; useOffset?: boolean; tolerance?: number }
-  onDrawingSettingsChange?: (settings: { stroke: string; strokeWidth: number; useOffset?: boolean; tolerance?: number }) => void
+  onDrawingSettingsChange?: (settings: {
+    stroke: string
+    strokeWidth: number
+    useOffset?: boolean
+    tolerance?: number
+  }) => void
   // Canvas Settings (Grid & Snap)
   showGrid?: boolean
   onShowGridChange?: (show: boolean) => void
@@ -79,98 +83,101 @@ const CanvasSettingsPanel: React.FC<{
   onSnapStrengthChange,
   resolveText,
 }) => {
-    const { t } = useTranslation()
-    const currentSurface = templateDoc.surfaces.find(s => s.id === currentPageId) || templateDoc.surfaces[0]
-    const bg = currentSurface?.bg || '#ffffff'
-    const isColor = bg.startsWith('#') || bg.startsWith('rgb')
+  const { t } = useTranslation()
+  const currentSurface =
+    templateDoc.surfaces.find((s) => s.id === currentPageId) || templateDoc.surfaces[0]
+  const bg = currentSurface?.bg || '#ffffff'
+  const isColor = bg.startsWith('#') || bg.startsWith('rgb')
 
-    const updateSurface = (updates: Partial<typeof currentSurface>) => {
-      const nextDoc = {
-        ...templateDoc,
-        surfaces: templateDoc.surfaces.map(s =>
-          s.id === currentSurface.id ? { ...s, ...updates } : s
-        )
-      }
-      onTemplateChange(nextDoc)
+  const updateSurface = (updates: Partial<typeof currentSurface>) => {
+    const nextDoc = {
+      ...templateDoc,
+      surfaces: templateDoc.surfaces.map((s) =>
+        s.id === currentSurface.id ? { ...s, ...updates } : s
+      ),
     }
+    onTemplateChange(nextDoc)
+  }
 
-    return (
-      <div className="w-64 bg-theme-bg-secondary px-2 py-1 overflow-x-hidden overflow-y-auto text-theme-text-primary">
-        {/* Page Background */}
+  return (
+    <div className="w-64 bg-theme-bg-secondary px-2 py-1 overflow-x-hidden overflow-y-auto text-theme-text-primary">
+      {/* Page Background */}
+      <div className="mb-3">
+        <h4 className="text-[13px] font-medium text-theme-text-secondary mb-1">
+          {resolveText('properties_page_background', 'Background')}
+        </h4>
+        <div className="mb-1">
+          <label className={labelClass}>{resolveText('color', 'Color')}</label>
+          <input
+            type="color"
+            value={isColor ? bg : '#ffffff'}
+            onChange={(e) => updateSurface({ bg: e.target.value })}
+            className={`${inputClass} h-8 p-0.5 cursor-pointer`}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Image URL</label>
+          <input
+            value={!isColor ? bg : ''}
+            onChange={(e) => updateSurface({ bg: e.target.value })}
+            placeholder="http://..."
+            className={inputClass}
+          />
+        </div>
+      </div>
+
+      {/* Grid Settings */}
+      {onShowGridChange && (
         <div className="mb-3">
-          <h4 className="text-[13px] font-medium text-theme-text-secondary mb-1">
-            {resolveText('properties_page_background', 'Background')}
-          </h4>
-          <div className="mb-1">
-            <label className={labelClass}>{resolveText('color', 'Color')}</label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-[13px] text-theme-text-secondary">
+              {t('settings_show_grid', 'Grid')}
+            </label>
             <input
-              type="color"
-              value={isColor ? bg : '#ffffff'}
-              onChange={(e) => updateSurface({ bg: e.target.value })}
-              className={`${inputClass} h-8 p-0.5 cursor-pointer`}
+              type="checkbox"
+              checked={showGrid ?? false}
+              onChange={(e) => onShowGridChange(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
           </div>
-          <div>
-            <label className={labelClass}>Image URL</label>
+          {showGrid && onGridSizeChange && (
+            <div>
+              <label className={labelClass}>{t('settings_grid_size', 'Size')}</label>
+              <select
+                value={gridSize ?? 13}
+                onChange={(e) => onGridSizeChange(Number(e.target.value))}
+                className={inputClass}
+              >
+                {FIBONACCI_GRID_SIZES.map((size) => (
+                  <option key={size} value={size}>
+                    {size}pt
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Snap to Grid */}
+      {onSnapStrengthChange && (
+        <div className="mb-3">
+          <div className="flex items-center justify-between">
+            <label className="text-[13px] text-theme-text-secondary">
+              {t('settings_snap_to_grid', 'Snap to Grid')}
+            </label>
             <input
-              value={!isColor ? bg : ''}
-              onChange={(e) => updateSurface({ bg: e.target.value })}
-              placeholder="http://..."
-              className={inputClass}
+              type="checkbox"
+              checked={(snapStrength ?? 0) > 0}
+              onChange={(e) => onSnapStrengthChange(e.target.checked ? (gridSize ?? 15) : 0)}
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
           </div>
         </div>
-
-        {/* Grid Settings */}
-        {onShowGridChange && (
-          <div className="mb-3">
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-[13px] text-theme-text-secondary">
-                {t('settings_show_grid', 'Grid')}
-              </label>
-              <input
-                type="checkbox"
-                checked={showGrid ?? false}
-                onChange={(e) => onShowGridChange(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-            </div>
-            {showGrid && onGridSizeChange && (
-              <div>
-                <label className={labelClass}>{t('settings_grid_size', 'Size')}</label>
-                <select
-                  value={gridSize ?? 13}
-                  onChange={(e) => onGridSizeChange(Number(e.target.value))}
-                  className={inputClass}
-                >
-                  {FIBONACCI_GRID_SIZES.map((size) => (
-                    <option key={size} value={size}>{size}pt</option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Snap to Grid */}
-        {onSnapStrengthChange && (
-          <div className="mb-3">
-            <div className="flex items-center justify-between">
-              <label className="text-[13px] text-theme-text-secondary">
-                {t('settings_snap_to_grid', 'Snap to Grid')}
-              </label>
-              <input
-                type="checkbox"
-                checked={(snapStrength ?? 0) > 0}
-                onChange={(e) => onSnapStrengthChange(e.target.checked ? (gridSize ?? 15) : 0)}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-        )}
-      </div>
-    )
-  }
+      )}
+    </div>
+  )
+}
 
 // ========================================
 // Signature Drawing Panel (署名描画モード時)
@@ -178,7 +185,11 @@ const CanvasSettingsPanel: React.FC<{
 
 const SignatureDrawingPanel: React.FC<{
   drawingSettings: { stroke: string; strokeWidth: number; tolerance?: number }
-  onDrawingSettingsChange: (settings: { stroke: string; strokeWidth: number; tolerance?: number }) => void
+  onDrawingSettingsChange: (settings: {
+    stroke: string
+    strokeWidth: number
+    tolerance?: number
+  }) => void
   onToolSelect: (tool: string) => void
   resolveText: (key: string, fallback?: string) => string
 }> = ({ drawingSettings, onDrawingSettingsChange, onToolSelect, resolveText }) => (
@@ -213,7 +224,8 @@ const SignatureDrawingPanel: React.FC<{
 
     <div>
       <label className={labelClass}>
-        {resolveText('properties_signature_optimization', 'Vertex Count')}: {drawingSettings.tolerance ?? 2.0}
+        {resolveText('properties_signature_optimization', 'Vertex Count')}:{' '}
+        {drawingSettings.tolerance ?? 2.0}
       </label>
       <input
         type="range"
@@ -221,7 +233,9 @@ const SignatureDrawingPanel: React.FC<{
         max="3.0"
         step="0.1"
         value={drawingSettings.tolerance ?? 2.5}
-        onChange={(e) => onDrawingSettingsChange({ ...drawingSettings, tolerance: parseFloat(e.target.value) })}
+        onChange={(e) =>
+          onDrawingSettingsChange({ ...drawingSettings, tolerance: parseFloat(e.target.value) })
+        }
         className="w-full accent-theme-accent"
       />
     </div>
@@ -265,7 +279,9 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
   onSnapStrengthChange,
 }) => {
   const { t } = useTranslation()
-  const [activeBindingMode, setActiveBindingMode] = React.useState<'field' | 'repeater' | null>(null)
+  const [activeBindingMode, setActiveBindingMode] = React.useState<'field' | 'repeater' | null>(
+    null
+  )
 
   const resolveText = (key: string, fallback?: string): string => {
     if (i18nOverrides?.[key]) return i18nOverrides[key]

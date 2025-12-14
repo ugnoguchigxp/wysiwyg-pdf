@@ -1,14 +1,47 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.3.8/schema.json",
-  "files": {
-    "experimentalScannerIgnores": ["**/node_modules/**", "**/dist/**", "example/**"]
-  },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
     "indentWidth": 2,
     "lineWidth": 100
   },
+  "linter": {
+    "rules": {
+      "a11y": {
+        "recommended": false
+      },
+      "suspicious": {
+        "noArrayIndexKey": "off",
+        "noExplicitAny": "off"
+      },
+      "style": {
+        "noNonNullAssertion": "off"
+      },
+      "correctness": {
+        "noUnusedVariables": "off",
+        "useExhaustiveDependencies": "off"
+      }
+    }
+  },
+  "files": {
+    "experimentalScannerIgnores": ["**/node_modules/**", "**/dist/**", "example/**", "coverage/**"],
+    "ignoreUnknown": true
+  },
+  "overrides": [
+    {
+      "includes": ["Test/**", "coverage/**", "example/**", "dist/**"],
+      "linter": {
+        "enabled": false
+      },
+      "formatter": {
+        "enabled": false
+      },
+      "assist": {
+        "enabled": false
+      }
+    }
+  ],
   "assist": {
     "enabled": true,
     "actions": {

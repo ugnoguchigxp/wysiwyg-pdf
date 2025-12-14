@@ -1,26 +1,22 @@
 import React, { useEffect, useState } from 'react'
 import '@/features/konva-editor/styles/print.css'
+import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
 import type {
-  UnifiedNode,
   Doc,
-  Surface,
   ImageNode,
   LineNode,
   ShapeNode,
   SignatureNode,
+  Surface,
   TableNode,
   TextNode,
+  UnifiedNode,
 } from '@/types/canvas'
-import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
 
 export const RenderSignature = ({ element }: { element: SignatureNode }) => {
   const { strokes, stroke, strokeW } = element
   return (
-    <svg
-      width="100%"
-      height="100%"
-      style={{ overflow: 'visible' }}
-    >
+    <svg width="100%" height="100%" style={{ overflow: 'visible' }}>
       {strokes.map((points, i) => (
         <polyline
           key={i}
@@ -97,7 +93,10 @@ export const RenderLine = ({ element }: { element: LineNode }) => {
   const { pts, stroke, strokeW } = element
 
   // Calculate bounding box for SVG viewbox/positioning
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity
   for (let i = 0; i < pts.length; i += 2) {
     if (pts[i] < minX) minX = pts[i]
     if (pts[i] > maxX) maxX = pts[i]
@@ -111,7 +110,7 @@ export const RenderLine = ({ element }: { element: LineNode }) => {
   // Points relative to SVG
   const relativePts = []
   for (let i = 0; i < pts.length; i += 2) {
-    relativePts.push((pts[i] - minX) + ',' + (pts[i + 1] - minY))
+    relativePts.push(`${pts[i] - minX},${pts[i + 1] - minY}`)
   }
 
   return (
@@ -120,12 +119,7 @@ export const RenderLine = ({ element }: { element: LineNode }) => {
       height={height + 20}
       style={{ overflow: 'visible', position: 'absolute', left: minX, top: minY }}
     >
-      <polyline
-        points={relativePts.join(' ')}
-        stroke={stroke}
-        strokeWidth={strokeW}
-        fill="none"
-      />
+      <polyline points={relativePts.join(' ')} stroke={stroke} strokeWidth={strokeW} fill="none" />
     </svg>
   )
 }
@@ -136,7 +130,9 @@ const RenderTable = ({ element }: { element: TableNode }) => {
   const rowCount = rows.length
   const colCount = cols.length
 
-  const occupied = Array(rowCount).fill(null).map(() => Array(colCount).fill(false))
+  const occupied = Array(rowCount)
+    .fill(null)
+    .map(() => Array(colCount).fill(false))
 
   return (
     <table
@@ -192,8 +188,10 @@ const RenderTable = ({ element }: { element: TableNode }) => {
                     backgroundColor: cell.bg || 'transparent',
                     fontFamily: cell.font || 'Helvetica',
                     fontSize: `${fontSize}pt`,
-                    textAlign: cell.align === 'r' ? 'right' : cell.align === 'c' ? 'center' : 'left',
-                    verticalAlign: cell.vAlign === 'b' ? 'bottom' : cell.vAlign === 'm' ? 'middle' : 'top',
+                    textAlign:
+                      cell.align === 'r' ? 'right' : cell.align === 'c' ? 'center' : 'left',
+                    verticalAlign:
+                      cell.vAlign === 'b' ? 'bottom' : cell.vAlign === 'm' ? 'middle' : 'top',
                     color: cell.color || '#000000',
                     padding: '4px',
                     wordBreak: 'break-word',
@@ -253,20 +251,29 @@ const PrintElement = ({ element }: { element: UnifiedNode }) => {
   if (element.t === 'text') {
     const textEl = element as TextNode
     return (
-      <div style={{
-        ...style,
-        fontSize: `${textEl.fontSize}pt`,
-        fontWeight: textEl.fontWeight,
-        fontStyle: textEl.italic ? 'italic' : 'normal',
-        textDecoration: [textEl.underline ? 'underline' : '', textEl.lineThrough ? 'line-through' : ''].filter(Boolean).join(' '),
-        color: textEl.fill,
-        textAlign: textEl.align === 'r' ? 'right' : textEl.align === 'c' ? 'center' : 'left',
-        fontFamily: textEl.font,
-        display: 'flex',
-        alignItems: textEl.vAlign === 'b' ? 'flex-end' : textEl.vAlign === 'm' ? 'center' : 'flex-start',
-        justifyContent: textEl.align === 'c' ? 'center' : textEl.align === 'r' ? 'flex-end' : 'flex-start',
-        whiteSpace: 'pre-wrap',
-      }}>
+      <div
+        style={{
+          ...style,
+          fontSize: `${textEl.fontSize}pt`,
+          fontWeight: textEl.fontWeight,
+          fontStyle: textEl.italic ? 'italic' : 'normal',
+          textDecoration: [
+            textEl.underline ? 'underline' : '',
+            textEl.lineThrough ? 'line-through' : '',
+          ]
+            .filter(Boolean)
+            .join(' '),
+          color: textEl.fill,
+          textAlign: textEl.align === 'r' ? 'right' : textEl.align === 'c' ? 'center' : 'left',
+          fontFamily: textEl.font,
+          display: 'flex',
+          alignItems:
+            textEl.vAlign === 'b' ? 'flex-end' : textEl.vAlign === 'm' ? 'center' : 'flex-start',
+          justifyContent:
+            textEl.align === 'c' ? 'center' : textEl.align === 'r' ? 'flex-end' : 'flex-start',
+          whiteSpace: 'pre-wrap',
+        }}
+      >
         {textEl.text}
       </div>
     )
@@ -285,7 +292,11 @@ const PrintElement = ({ element }: { element: UnifiedNode }) => {
   if (element.t === 'image') {
     return (
       <div style={style}>
-        {imageSrc ? <img src={imageSrc} style={{ width: '100%', height: '100%', objectFit: 'fill' }} alt="" /> : <div></div>}
+        {imageSrc ? (
+          <img src={imageSrc} style={{ width: '100%', height: '100%', objectFit: 'fill' }} alt="" />
+        ) : (
+          <div></div>
+        )}
       </div>
     )
   }
@@ -295,7 +306,11 @@ const PrintElement = ({ element }: { element: UnifiedNode }) => {
   }
 
   if (element.t === 'signature') {
-    return <div style={style}><RenderSignature element={element as SignatureNode} /></div>
+    return (
+      <div style={style}>
+        <RenderSignature element={element as SignatureNode} />
+      </div>
+    )
   }
 
   return null
@@ -305,7 +320,6 @@ export const PrintLayout = React.forwardRef<
   HTMLDivElement,
   { doc: Doc; orientation?: 'portrait' | 'landscape'; i18nOverrides?: Record<string, string> }
 >(({ doc, orientation = 'portrait' }, ref) => {
-
   const isLandscape = orientation === 'landscape'
   const width = isLandscape ? '297mm' : '210mm'
   const height = isLandscape ? '210mm' : '297mm'
@@ -319,7 +333,7 @@ export const PrintLayout = React.forwardRef<
         if (surface.bg.startsWith('http') || surface.bg.startsWith('data:')) {
           setBgImageSrc(surface.bg)
         } else {
-          findImageWithExtension(surface.bg).then(res => {
+          findImageWithExtension(surface.bg).then((res) => {
             if (res) setBgImageSrc(res.url)
           })
         }
@@ -332,7 +346,7 @@ export const PrintLayout = React.forwardRef<
       <div
         className="print-page"
         style={{
-          backgroundColor: (surface.bg && surface.bg.startsWith('#')) ? surface.bg : 'white',
+          backgroundColor: surface.bg?.startsWith('#') ? surface.bg : 'white',
           width,
           height,
         }}
@@ -341,7 +355,15 @@ export const PrintLayout = React.forwardRef<
           <img
             src={bgImageSrc}
             alt=""
-            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'fill', zIndex: 0 }}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'fill',
+              zIndex: 0,
+            }}
           />
         )}
         <div style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%' }}>
@@ -351,7 +373,16 @@ export const PrintLayout = React.forwardRef<
               <PrintElement key={element.id} element={element} />
             ))}
         </div>
-        <div style={{ position: 'absolute', bottom: '10mm', right: '10mm', fontSize: '10pt', color: '#666', zIndex: 2 }}>
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '10mm',
+            right: '10mm',
+            fontSize: '10pt',
+            color: '#666',
+            zIndex: 2,
+          }}
+        >
           {pageIndex + 1} / {doc.surfaces.length}
         </div>
       </div>

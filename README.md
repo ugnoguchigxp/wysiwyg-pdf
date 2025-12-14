@@ -15,6 +15,26 @@ If you are evaluating whether to adopt this package, the key question is:
 
 - Do you want a **ready-to-integrate template editor UI** where the persisted state is a plain JSON document (`ITemplateDoc`), and printing is handled by your app (e.g., via `react-to-print`)?
 
+## Screenshots
+
+<img
+  src="https://raw.githubusercontent.com/ugnoguchigxp/wysiwyg-pdf/main/assets/EditorScreenshot.png"
+  alt="Editor screenshot"
+  width="900"
+/>
+
+<img
+  src="https://raw.githubusercontent.com/ugnoguchigxp/wysiwyg-pdf/main/assets/documentViewer.png"
+  alt="Document viewer screenshot"
+  width="900"
+/>
+
+<img
+  src="https://raw.githubusercontent.com/ugnoguchigxp/wysiwyg-pdf/main/assets/BedLayoutViewer.png"
+  alt="Bed layout viewer screenshot"
+  width="900"
+/>
+
 ## What you get
 
 - **Editable template document model** (`ITemplateDoc` with `pages` + `elements`)

@@ -22,26 +22,23 @@ export function useReportHistory(initialDocument: Doc): UseHistoryReturn {
     future: [],
   })
 
-  const setDocument = useCallback(
-    (docOrUpdater: Doc | ((prev: Doc) => Doc)) => {
-      setHistory((prev) => {
-        const newPresent =
-          typeof docOrUpdater === 'function' ? docOrUpdater(prev.present) : docOrUpdater
+  const setDocument = useCallback((docOrUpdater: Doc | ((prev: Doc) => Doc)) => {
+    setHistory((prev) => {
+      const newPresent =
+        typeof docOrUpdater === 'function' ? docOrUpdater(prev.present) : docOrUpdater
 
-        // Don't add to history if document hasn't changed
-        if (JSON.stringify(newPresent) === JSON.stringify(prev.present)) {
-          return prev
-        }
+      // Don't add to history if document hasn't changed
+      if (JSON.stringify(newPresent) === JSON.stringify(prev.present)) {
+        return prev
+      }
 
-        return {
-          past: [...prev.past, prev.present],
-          present: newPresent,
-          future: [], // Clear future on new change
-        }
-      })
-    },
-    []
-  )
+      return {
+        past: [...prev.past, prev.present],
+        present: newPresent,
+        future: [], // Clear future on new change
+      }
+    })
+  }, [])
 
   const undo = useCallback(() => {
     setHistory((prev) => {

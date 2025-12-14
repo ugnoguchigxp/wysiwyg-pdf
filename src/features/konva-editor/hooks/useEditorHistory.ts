@@ -1,4 +1,3 @@
-
 import { useCallback, useState } from 'react'
 import type {
   BedLayoutDocument,
@@ -245,7 +244,9 @@ function applyOperationDoc(doc: Doc, op: Operation): Doc {
       return {
         ...doc,
         nodes: doc.nodes.map((n) =>
-          n.id === op.id ? ({ ...n, ...(op.next as Partial<UnifiedNode>), id: op.id } as UnifiedNode) : n
+          n.id === op.id
+            ? ({ ...n, ...(op.next as Partial<UnifiedNode>), id: op.id } as UnifiedNode)
+            : n
         ),
       }
     }
@@ -289,7 +290,9 @@ function revertOperationDoc(doc: Doc, op: Operation): Doc {
       return {
         ...doc,
         nodes: doc.nodes.map((n) =>
-          n.id === op.id ? ({ ...n, ...(op.prev as Partial<UnifiedNode>), id: op.id } as UnifiedNode) : n
+          n.id === op.id
+            ? ({ ...n, ...(op.prev as Partial<UnifiedNode>), id: op.id } as UnifiedNode)
+            : n
         ),
       }
     }

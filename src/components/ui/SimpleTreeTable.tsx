@@ -1,10 +1,10 @@
 import {
+  type ColumnDef,
+  type ExpandedState,
   flexRender,
   getCoreRowModel,
   getExpandedRowModel,
   useReactTable,
-  type ColumnDef,
-  type ExpandedState,
 } from '@tanstack/react-table'
 import { ChevronRight } from 'lucide-react'
 import { useState } from 'react'
@@ -102,10 +102,7 @@ export const SimpleTreeTable = <TData, TValue = unknown>({
                       // Simple indentation based on depth
                       <div
                         style={{
-                          paddingLeft:
-                            row.depth > 0
-                              ? `${row.depth * 1.5}rem`
-                              : '1.25rem',
+                          paddingLeft: row.depth > 0 ? `${row.depth * 1.5}rem` : '1.25rem',
                         }}
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}

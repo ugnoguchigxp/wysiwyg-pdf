@@ -36,14 +36,7 @@ export const PaperBackground: React.FC<PaperBackgroundProps> = ({ document, surf
   return (
     <Group>
       {/* Paper */}
-      <Rect
-        name="paper-background"
-        x={0}
-        y={0}
-        width={width}
-        height={height}
-        fill="white"
-      />
+      <Rect name="paper-background" x={0} y={0} width={width} height={height} fill="white" />
     </Group>
   )
 }

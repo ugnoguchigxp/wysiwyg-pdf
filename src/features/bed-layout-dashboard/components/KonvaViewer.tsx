@@ -1,10 +1,10 @@
 import type React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { Layer, Stage } from 'react-konva'
-import { PaperBackground } from '@/features/konva-editor/viewers/components/PaperBackground'
-import type { Doc } from '@/types/canvas'
 import type { BedStatusData } from '@/features/bed-layout-dashboard/types'
 import { getLayoutBoundingBox } from '@/features/bed-layout-dashboard/utils/layoutUtils'
+import { PaperBackground } from '@/features/konva-editor/viewers/components/PaperBackground'
+import type { Doc } from '@/types/canvas'
 import { ElementRenderer } from './ElementRenderer'
 
 interface KonvaViewerProps {
@@ -38,15 +38,25 @@ export const KonvaViewer: React.FC<KonvaViewerProps> = ({
     if (!localDocument || width <= 0) return null
 
     const resolvedSurfaceId =
-      surfaceId || localDocument.surfaces.find((s) => s.type === 'canvas')?.id || localDocument.surfaces[0]?.id || 'layout'
+      surfaceId ||
+      localDocument.surfaces.find((s) => s.type === 'canvas')?.id ||
+      localDocument.surfaces[0]?.id ||
+      'layout'
     const nodes = localDocument.nodes.filter((n) => n.s === resolvedSurfaceId)
-    const bbox = getLayoutBoundingBox({ ...localDocument, nodes } as import('../../konva-editor/types').Doc)
+    const bbox = getLayoutBoundingBox({
+      ...localDocument,
+      nodes,
+    } as import('../../konva-editor/types').Doc)
 
     // Fallback to full layout if no content or error
     if (!bbox) {
       const resolvedSurfaceId =
-        surfaceId || localDocument.surfaces.find((s) => s.type === 'canvas')?.id || localDocument.surfaces[0]?.id || 'layout'
-      const surface = localDocument.surfaces.find((s) => s.id === resolvedSurfaceId) || localDocument.surfaces[0]
+        surfaceId ||
+        localDocument.surfaces.find((s) => s.type === 'canvas')?.id ||
+        localDocument.surfaces[0]?.id ||
+        'layout'
+      const surface =
+        localDocument.surfaces.find((s) => s.id === resolvedSurfaceId) || localDocument.surfaces[0]
       const layoutW = surface?.w ?? 1
       const layoutH = surface?.h ?? 1
       const scale = width / layoutW
@@ -69,7 +79,7 @@ export const KonvaViewer: React.FC<KonvaViewerProps> = ({
       offsetX: bbox.x - PADDING,
       offsetY: bbox.y - PADDING,
     }
-  }, [localDocument, width])
+  }, [localDocument, width, surfaceId])
 
   if (!viewParams) {
     return <div>Invalid Layout Data</div>
@@ -88,13 +98,19 @@ export const KonvaViewer: React.FC<KonvaViewerProps> = ({
       <Layer>
         {(() => {
           const resolvedSurfaceId =
-            surfaceId || localDocument.surfaces.find((s) => s.type === 'canvas')?.id || localDocument.surfaces[0]?.id || 'layout'
+            surfaceId ||
+            localDocument.surfaces.find((s) => s.type === 'canvas')?.id ||
+            localDocument.surfaces[0]?.id ||
+            'layout'
           return <PaperBackground document={localDocument} surfaceId={resolvedSurfaceId} />
         })()}
 
         {(() => {
           const resolvedSurfaceId =
-            surfaceId || localDocument.surfaces.find((s) => s.type === 'canvas')?.id || localDocument.surfaces[0]?.id || 'layout'
+            surfaceId ||
+            localDocument.surfaces.find((s) => s.type === 'canvas')?.id ||
+            localDocument.surfaces[0]?.id ||
+            'layout'
           return localDocument.nodes
             .filter((n) => n.s === resolvedSurfaceId)
             .map((element) => {
@@ -104,8 +120,8 @@ export const KonvaViewer: React.FC<KonvaViewerProps> = ({
                   key={element.id}
                   element={element}
                   isSelected={false}
-                  onSelect={() => { }} // No-op
-                  onChange={() => { }} // No-op
+                  onSelect={() => {}} // No-op
+                  onChange={() => {}} // No-op
                   readOnly={readOnly}
                   onBedClick={onBedClick}
                   bedStatus={bedStatusMap[element.id]}

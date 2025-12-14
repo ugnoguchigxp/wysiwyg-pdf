@@ -1,15 +1,7 @@
 import type { BedDashboardRoom, BedStatus } from '@/features/bed-layout-dashboard/types'
-import type {
-  Doc,
-  UnifiedNode,
-  WidgetNode,
-  LineNode,
-  TextNode,
-} from '@/types/canvas'
+import type { Doc, LineNode, TextNode, UnifiedNode, WidgetNode } from '@/types/canvas'
 
-export const convertDashboardRoomToDocument = (
-  dashboardRoom: BedDashboardRoom
-): Doc => {
+export const convertDashboardRoomToDocument = (dashboardRoom: BedDashboardRoom): Doc => {
   const { room, statuses } = dashboardRoom
 
   // Create a map of bed statuses for quick lookup
@@ -106,9 +98,7 @@ export const convertDashboardRoomToDocument = (
     id: room.id,
     title: room.name,
     unit: 'px',
-    surfaces: [
-      { id: surfaceId, type: 'canvas', w: room.width, h: room.height },
-    ],
+    surfaces: [{ id: surfaceId, type: 'canvas', w: room.width, h: room.height }],
     nodes,
   }
 }

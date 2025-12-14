@@ -1,14 +1,20 @@
 import type Konva from 'konva'
 import React, { useEffect, useRef } from 'react'
 import { Transformer } from 'react-konva'
+import type { BedStatusData } from '@/features/bed-layout-dashboard/types'
 import { BedElement } from '@/features/konva-editor/renderers/bed-elements/BedElement'
 import { ImageElement } from '@/features/konva-editor/renderers/bed-elements/ImageElement'
 import { LineElement } from '@/features/konva-editor/renderers/bed-elements/LineElement'
 import { ShapeElement } from '@/features/konva-editor/renderers/bed-elements/ShapeElement'
 import { TextElement } from '@/features/konva-editor/renderers/bed-elements/TextElement'
-import type { UnifiedNode, TextNode, ShapeNode, ImageNode, WidgetNode, LineNode } from '@/features/konva-editor/types'
-
-import type { BedStatusData } from '@/features/bed-layout-dashboard/types'
+import type {
+  ImageNode,
+  LineNode,
+  ShapeNode,
+  TextNode,
+  UnifiedNode,
+  WidgetNode,
+} from '@/features/konva-editor/types'
 
 interface ElementRendererProps {
   element: UnifiedNode
@@ -46,7 +52,7 @@ const ElementRendererComponent: React.FC<ElementRendererProps> = ({
 
   const commonProps = {
     isSelected,
-    onSelect: readOnly ? () => { } : onSelect,
+    onSelect: readOnly ? () => {} : onSelect,
     onChange: handleChange,
     draggable: !readOnly && !element.locked,
   }
@@ -94,17 +100,17 @@ const ElementRendererComponent: React.FC<ElementRendererProps> = ({
             onMouseEnter={
               readOnly && onBedClick
                 ? (e: Konva.KonvaEventObject<MouseEvent>) => {
-                  const container = e.target.getStage()?.container()
-                  if (container) container.style.cursor = 'pointer'
-                }
+                    const container = e.target.getStage()?.container()
+                    if (container) container.style.cursor = 'pointer'
+                  }
                 : undefined
             }
             onMouseLeave={
               readOnly && onBedClick
                 ? (e: Konva.KonvaEventObject<MouseEvent>) => {
-                  const container = e.target.getStage()?.container()
-                  if (container) container.style.cursor = 'default'
-                }
+                    const container = e.target.getStage()?.container()
+                    if (container) container.style.cursor = 'default'
+                  }
                 : undefined
             }
           />
@@ -158,7 +164,7 @@ const ElementRendererComponent: React.FC<ElementRendererProps> = ({
               y: node.y(),
               w: newWidth,
               h: newHeight,
-              r: node.rotation()
+              r: node.rotation(),
             } as UnifiedNode)
           }}
         />

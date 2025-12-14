@@ -43,7 +43,7 @@ vi.mock('react-konva', async () => {
 
 vi.mock('konva', () => ({ default: {} }))
 
-import { SignatureKonvaEditor } from '@/features/konva-editor/signature-editor/SignatureKonvaEditor'
+import { SignatureKonvaEditor } from '@/features/konva-editor/signature/SignatureKonvaEditor'
 
 describe('SignatureKonvaEditor', () => {
   it('draws, clears, cancels, downloads, and saves', () => {
