@@ -12,6 +12,7 @@ import {
   Home,
   Image as ImageIcon,
   Minus,
+  MousePointer2,
   Pentagon,
   Shapes,
   Square,
@@ -36,15 +37,21 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/DropdownMenu'
+import type { Doc, ImageNode, LineNode, ShapeNode, TextNode, UnifiedNode, WidgetNode } from '@/types/canvas'
+import { measureText } from '@/features/konva-editor/utils/textUtils'
 
 export type ToolType = 'select' | 'text' | 'image' | 'bed' | 'shape' | 'line'
 
 interface ToolbarProps {
   activeTool: ToolType
-  onSelectTool: (tool: ToolType, subType?: string) => void
+  document: Doc
+  onAddElement: (element: UnifiedNode) => void
+  onSelectElement: (id: string) => void
+  onToolSelect?: (tool: ToolType) => void
   zoom: number
   onZoomIn: () => void
   onZoomOut: () => void
+  surfaceId?: string
   // Legacy props (can be ignored or removed if parent doesn't pass them, 
   // but keeping for interface compatibility if parent strictly types it)
   canUndo?: boolean
@@ -79,10 +86,14 @@ const TrapezoidIcon = ({ size = 20, className = '', title = 'Trapezoid' }) => (
 
 export const Toolbar: React.FC<ToolbarProps> = ({
   activeTool,
-  onSelectTool,
+  document,
+  onAddElement,
+  onSelectElement,
+  onToolSelect,
   zoom,
   onZoomIn,
   onZoomOut,
+  surfaceId,
   i18nOverrides,
 }) => {
   const { t } = useTranslation()
@@ -118,14 +129,188 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     return activeTool === tool ? ACTIVE_BUTTON_CLASS : TOOLBAR_BUTTON_CLASS
   }
 
+  const getTargetSurfaceId = () => {
+    if (surfaceId) return surfaceId
+    return document.surfaces.find((s) => s.type === 'canvas')?.id || document.surfaces[0]?.id || 'layout'
+  }
+
+  const calculateInitialPosition = (targetSurfaceId: string) => {
+    const surface = document.surfaces.find((s) => s.id === targetSurfaceId)
+    const surfaceW = surface?.w ?? 800
+    const surfaceH = surface?.h ?? 600
+    const nodesOnSurface = document.nodes.filter((n) => n.s === targetSurfaceId).length
+    const offset = nodesOnSurface * (surfaceW * 0.01)
+    return {
+      x: (surfaceW * 0.15) + offset,
+      y: (surfaceH * 0.15) + offset,
+    }
+  }
+
+  const withNewElement = (element: UnifiedNode) => {
+    onAddElement(element)
+    onSelectElement(element.id)
+    onToolSelect?.('select')
+  }
+
+  const addText = () => {
+    const s = getTargetSurfaceId()
+    const { x, y } = calculateInitialPosition(s)
+    const id = `text-${crypto.randomUUID()}`
+    const textContent = resolveText('toolbar_default_text', 'Text')
+    const font = {
+      family: 'Meiryo',
+      size: 12,
+      weight: 400,
+    }
+    const { width, height } = measureText(textContent, font)
+
+    const text: TextNode = {
+      id,
+      t: 'text',
+      s,
+      locked: false,
+      r: 0,
+      name: 'Text',
+      text: textContent,
+      font: font.family,
+      fontSize: font.size,
+      fontWeight: font.weight,
+      fill: '#000000',
+      align: 'l',
+      x,
+      y,
+      w: width + 10,
+      h: height + 4,
+    }
+    withNewElement(text)
+  }
+
+  const addImage = () => {
+    const s = getTargetSurfaceId()
+    const { x, y } = calculateInitialPosition(s)
+    const id = `image-${crypto.randomUUID()}`
+    const image: ImageNode = {
+      id,
+      t: 'image',
+      s,
+      locked: false,
+      r: 0,
+      name: 'Image',
+      x,
+      y,
+      w: 120,
+      h: 80,
+      src: '',
+    }
+    withNewElement(image)
+  }
+
+  const addWall = () => {
+    const s = getTargetSurfaceId()
+    const { x, y } = calculateInitialPosition(s)
+    const id = `wall-${crypto.randomUUID()}`
+    const line: LineNode = {
+      id,
+      t: 'line',
+      s,
+      locked: false,
+      name: 'Wall',
+      pts: [x, y, x + 160, y],
+      stroke: '#000000',
+      strokeW: 1,
+      arrows: ['none', 'none'],
+    }
+    withNewElement(line)
+  }
+
+  const addShape = (shapeType: string) => {
+    const s = getTargetSurfaceId()
+    const { x, y } = calculateInitialPosition(s)
+    const id = `${shapeType.toLowerCase()}-${crypto.randomUUID()}`
+
+    let width = 80
+    let height = 80
+
+    if (shapeType === 'trapezoid') {
+      width = 100
+      height = 60
+    } else if (shapeType === 'cylinder') {
+      width = 60
+      height = 100
+    } else if (['arrow-u', 'arrow-d'].includes(shapeType)) {
+      width = 40
+      height = 80
+    } else if (['arrow-l', 'arrow-r'].includes(shapeType)) {
+      width = 80
+      height = 40
+    }
+
+    const shape: ShapeNode = {
+      id,
+      t: 'shape',
+      shape: shapeType.toLowerCase() as ShapeNode['shape'],
+      s,
+      locked: false,
+      r: 0,
+      name: shapeType,
+      x,
+      y,
+      w: width,
+      h: height,
+      stroke: '#000000',
+      strokeW: 1,
+      fill: '#ffffff',
+    }
+    withNewElement(shape)
+  }
+
+  const addBed = () => {
+    const s = getTargetSurfaceId()
+    const { x, y } = calculateInitialPosition(s)
+    const id = `bed-${crypto.randomUUID()}`
+    const bed: WidgetNode = {
+      id,
+      t: 'widget',
+      widget: 'bed',
+      s,
+      locked: false,
+      r: 0,
+      name: 'Bed',
+      x,
+      y,
+      w: 50,
+      h: 100,
+      data: { bedType: 'standard' },
+    }
+    withNewElement(bed)
+  }
+
   return (
     <div className="flex flex-col items-center gap-2 p-2 bg-theme-bg-secondary border-r border-theme-border text-theme-text-secondary h-full">
       <TooltipProvider>
+        {/* Select Tool */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={() => onToolSelect?.('select')}
+              className={getButtonClass('select')}
+              aria-label={resolveText('toolbar_select', 'Select')}
+            >
+              <MousePointer2 size={20} />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <p>{resolveText('toolbar_select', 'Select')}</p>
+          </TooltipContent>
+        </Tooltip>
+
         {/* Text Tool */}
         <Tooltip>
           <TooltipTrigger asChild>
             <button
-              onClick={() => onSelectTool('text')}
+              type="button"
+              onClick={addText}
               className={getButtonClass('text')}
               aria-label={resolveText('toolbar_text', 'Text')}
             >
@@ -141,7 +326,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         <Tooltip>
           <TooltipTrigger asChild>
             <button
-              onClick={() => onSelectTool('image')}
+              type="button"
+              onClick={addImage}
               className={getButtonClass('image')}
               aria-label={resolveText('toolbar_image', 'Image')}
             >
@@ -157,7 +343,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         <Tooltip>
           <TooltipTrigger asChild>
             <button
-              onClick={() => onSelectTool('bed')}
+              type="button"
+              onClick={addBed}
               className={getButtonClass('bed')}
               aria-label={resolveText('toolbar_bed', 'Bed')}
             >
@@ -173,7 +360,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         <Tooltip>
           <TooltipTrigger asChild>
             <button
-              onClick={() => onSelectTool('line')}
+              type="button"
+              onClick={addWall}
               className={getButtonClass('line')}
               aria-label={resolveText('toolbar_wall', 'Wall')}
             >
@@ -191,6 +379,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             <TooltipTrigger asChild>
               <DropdownMenuTrigger asChild>
                 <button
+                  type="button"
                   className={getButtonClass('shape')}
                   aria-label={resolveText('toolbar_shape', 'Shape')}
                 >
@@ -205,7 +394,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             {shapes.map((shape) => (
               <DropdownMenuItem
                 key={shape.type}
-                onClick={() => onSelectTool('shape', shape.type)}
+                onClick={() => addShape(shape.type.toLowerCase())}
                 className="flex items-center justify-center p-2 rounded cursor-pointer hover:bg-theme-bg-tertiary text-theme-text-primary outline-none"
               >
                 {shape.icon}
@@ -232,15 +421,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         >
           <ZoomIn size={18} />
         </button>
-        <button
-          type="button"
-          className="text-theme-text-secondary text-xs font-medium hover:text-theme-object-primary transition-colors"
+        <span
+          className="text-theme-text-secondary text-xs font-medium"
           aria-label={resolveText('toolbar_zoom_reset', 'Reset zoom')}
-          // Assuming no reset handler passed yet, just display
-          onClick={() => { }}
         >
           {Math.round(zoom * 100)}%
-        </button>
+        </span>
         <button
           type="button"
           onClick={onZoomOut}

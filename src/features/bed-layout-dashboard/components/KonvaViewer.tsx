@@ -2,17 +2,18 @@ import type React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { Layer, Stage } from 'react-konva'
 import { PaperBackground } from '@/features/konva-editor/viewers/components/PaperBackground'
-import type { BedLayoutDocument } from '@/types/canvas'
+import type { Doc } from '@/types/canvas'
 import type { BedStatusData } from '@/features/bed-layout-dashboard/types'
 import { getLayoutBoundingBox } from '@/features/bed-layout-dashboard/utils/layoutUtils'
 import { ElementRenderer } from './ElementRenderer'
 
 interface KonvaViewerProps {
-  document: BedLayoutDocument
+  document: Doc
   width: number // Container width for responsive scaling
   readOnly?: boolean
   onBedClick?: (bedId: string, currentStatus?: BedStatusData) => void
   bedStatusMap?: Record<string, BedStatusData>
+  surfaceId?: string
 }
 
 const PADDING = 20
@@ -23,8 +24,9 @@ export const KonvaViewer: React.FC<KonvaViewerProps> = ({
   readOnly = false,
   onBedClick,
   bedStatusMap = {},
+  surfaceId,
 }) => {
-  const [localDocument, setLocalDocument] = useState<BedLayoutDocument>(document)
+  const [localDocument, setLocalDocument] = useState<Doc>(document)
 
   // Update local document when the prop changes
   useEffect(() => {
@@ -35,41 +37,25 @@ export const KonvaViewer: React.FC<KonvaViewerProps> = ({
   const viewParams = useMemo(() => {
     if (!localDocument || width <= 0) return null
 
-    // Adapt legacy document to Doc interface for getLayoutBoundingBox
-    const docCompat = {
-      nodes: localDocument.elementsById ? Object.values(localDocument.elementsById) : []
-    } as unknown as import('../../konva-editor/types').Doc
-    const bbox = getLayoutBoundingBox(docCompat)
+    const resolvedSurfaceId =
+      surfaceId || localDocument.surfaces.find((s) => s.type === 'canvas')?.id || localDocument.surfaces[0]?.id || 'layout'
+    const nodes = localDocument.nodes.filter((n) => n.s === resolvedSurfaceId)
+    const bbox = getLayoutBoundingBox({ ...localDocument, nodes } as import('../../konva-editor/types').Doc)
 
     // Fallback to full layout if no content or error
     if (!bbox) {
-      // Check for Unified Doc surface size (if converted)
-      // Check for Unified Doc surface size (if converted)
-      if ('surfaces' in localDocument && Array.isArray((localDocument as unknown as { surfaces: { w: number, h: number }[] }).surfaces) && (localDocument as unknown as { surfaces: unknown[] }).surfaces.length > 0) {
-        const surface = (localDocument as unknown as { surfaces: { w: number, h: number }[] }).surfaces[0]
-        const layoutW = surface.w
-        const layoutH = surface.h
-        const scale = width / layoutW
-        return {
-          scale,
-          stageHeight: layoutH * scale,
-          offsetX: 0,
-          offsetY: 0,
-        }
+      const resolvedSurfaceId =
+        surfaceId || localDocument.surfaces.find((s) => s.type === 'canvas')?.id || localDocument.surfaces[0]?.id || 'layout'
+      const surface = localDocument.surfaces.find((s) => s.id === resolvedSurfaceId) || localDocument.surfaces[0]
+      const layoutW = surface?.w ?? 1
+      const layoutH = surface?.h ?? 1
+      const scale = width / layoutW
+      return {
+        scale,
+        stageHeight: layoutH * scale,
+        offsetX: 0,
+        offsetY: 0,
       }
-      // Legacy fallback
-      if (localDocument.layout) {
-        const layoutW = localDocument.layout.width
-        const layoutH = localDocument.layout.height
-        const scale = width / layoutW
-        return {
-          scale,
-          stageHeight: layoutH * scale,
-          offsetX: 0,
-          offsetY: 0,
-        }
-      }
-      return null
     }
 
     // Calculate scale to fit width
@@ -100,23 +86,33 @@ export const KonvaViewer: React.FC<KonvaViewerProps> = ({
       style={{ touchAction: 'none' }} // Prevent scrolling on touch devices if needed
     >
       <Layer>
-        <PaperBackground document={localDocument} />
-        {(localDocument.elementOrder || []).map((id) => {
-          const element = localDocument.elementsById?.[id]
-          if (!element || element.hidden) return null
-          return (
-            <ElementRenderer
-              key={id}
-              element={element}
-              isSelected={false}
-              onSelect={() => { }} // No-op
-              onChange={() => { }} // No-op
-              readOnly={readOnly}
-              onBedClick={onBedClick}
-              bedStatus={bedStatusMap[id]}
-            />
-          )
-        })}
+        {(() => {
+          const resolvedSurfaceId =
+            surfaceId || localDocument.surfaces.find((s) => s.type === 'canvas')?.id || localDocument.surfaces[0]?.id || 'layout'
+          return <PaperBackground document={localDocument} surfaceId={resolvedSurfaceId} />
+        })()}
+
+        {(() => {
+          const resolvedSurfaceId =
+            surfaceId || localDocument.surfaces.find((s) => s.type === 'canvas')?.id || localDocument.surfaces[0]?.id || 'layout'
+          return localDocument.nodes
+            .filter((n) => n.s === resolvedSurfaceId)
+            .map((element) => {
+              if (!element || element.hidden) return null
+              return (
+                <ElementRenderer
+                  key={element.id}
+                  element={element}
+                  isSelected={false}
+                  onSelect={() => { }} // No-op
+                  onChange={() => { }} // No-op
+                  readOnly={readOnly}
+                  onBedClick={onBedClick}
+                  bedStatus={bedStatusMap[element.id]}
+                />
+              )
+            })
+        })()}
       </Layer>
     </Stage>
   )

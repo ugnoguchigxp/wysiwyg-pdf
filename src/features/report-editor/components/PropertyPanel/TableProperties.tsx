@@ -90,7 +90,15 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
         for (let c = 0; c < colCount; c++) {
           if (covered[r][c]) continue
           if (!newCells.find(cell => cell.r === r && cell.c === c)) {
-            newCells.push({ r, c, v: '' } as CellProps)
+            // Initialize with activeData styles to ensure consistency
+            // properties r, c, v will be overwritten/set below or are distinct
+            const { r: _r, c: _c, v: _v, ...styles } = activeData
+            newCells.push({
+              r,
+              c,
+              v: '',
+              ...styles
+            } as CellProps)
           }
         }
       }

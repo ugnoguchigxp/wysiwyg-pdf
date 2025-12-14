@@ -285,9 +285,9 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
         cols: [100, 100, 100],
         cells: [
           // Minimal cells
-          { r: 0, c: 0, v: '' },
-          { r: 0, c: 1, v: '' },
-          { r: 0, c: 2, v: '' }
+          { r: 0, c: 0, v: '', borderW: 2, borderColor: '#000000' },
+          { r: 0, c: 1, v: '', borderW: 2, borderColor: '#000000' },
+          { r: 0, c: 2, v: '', borderW: 2, borderColor: '#000000' }
         ]
       }
     }
@@ -295,7 +295,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
     for (let r = 0; r < 3; r++) {
       for (let c = 0; c < 3; c++) {
         if (!table.table.cells.find(cell => cell.r === r && cell.c === c)) {
-          table.table.cells.push({ r, c, v: '' })
+          table.table.cells.push({ r, c, v: '', borderW: 2, borderColor: '#000000' })
         }
       }
     }

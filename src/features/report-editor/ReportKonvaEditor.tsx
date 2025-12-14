@@ -411,6 +411,29 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
               return c
             })
 
+          // Generate new cells for the inserted row
+          for (let c = 0; c < table.table.cols.length; c++) {
+            // Find template cell from the row where interaction happened (or closest neighbor)
+            // We clicked on 'row'.
+            // If invalid/missing, fallback to base (clicked cell) or defaults.
+            const template = cells.find(cell => cell.r === row && cell.c === c) || findCell(row, col)
+            if (template) {
+              const { r: _r, c: _c, v: _v, rs: _rs, cs: _cs, ...styles } = template
+              nextCells.push({
+                r: insertIndex,
+                c,
+                v: '',
+                ...styles,
+                // Reset spans for new cells
+                rs: 1,
+                cs: 1
+              })
+            } else {
+              // Fallback if sparse and no template found (create default)
+              nextCells.push({ r: insertIndex, c, v: '', rs: 1, cs: 1, borderW: 2, borderColor: '#000000' })
+            }
+          }
+
           return {
             ...table,
             h: sum(newRows),
@@ -436,6 +459,25 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
               }
               return c
             })
+
+          // Generate new cells for the inserted column
+          for (let r = 0; r < table.table.rows.length; r++) {
+            // Find template cell from the column where interaction happened
+            const template = cells.find(cell => cell.r === r && cell.c === col) || findCell(row, col)
+            if (template) {
+              const { r: _r, c: _c, v: _v, rs: _rs, cs: _cs, ...styles } = template
+              nextCells.push({
+                r,
+                c: insertIndex,
+                v: '',
+                ...styles,
+                rs: 1,
+                cs: 1
+              })
+            } else {
+              nextCells.push({ r, c: insertIndex, v: '', rs: 1, cs: 1, borderW: 2, borderColor: '#000000' })
+            }
+          }
 
           return {
             ...table,
@@ -937,6 +979,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
                   key={element.id}
                   element={element}
                   isSelected={element.id === selectedElementId}
+                  allElements={nodes}
                   snapStrength={isDrawing ? 0 : snapStrength} // Disable snap while drawing signature
                   showGrid={showGrid}
                   gridSize={gridSize}

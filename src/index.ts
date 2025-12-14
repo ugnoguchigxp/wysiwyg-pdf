@@ -34,6 +34,14 @@ export * from './features/bed-layout-dashboard/types'
 // export * from './features/report-editor/types/wysiwyg';
 export type {
   UnifiedNode,
+  TextNode,
+  ShapeNode,
+  LineNode,
+  ImageNode,
+  GroupNode,
+  TableNode,
+  SignatureNode,
+  WidgetNode,
   ICanvasEditorProps,
   Surface,
   Doc,

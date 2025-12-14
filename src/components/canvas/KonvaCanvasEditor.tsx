@@ -219,6 +219,7 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
                     key={element.id}
                     element={element}
                     isSelected={selectedIds.includes(element.id)}
+                    allElements={elements}
                     onSelect={(e) => handleSelect(element.id, e)}
                     onChange={(newAttrs) => onChange(element.id, newAttrs)}
                     onDblClick={() => handleElementDblClick(element)}

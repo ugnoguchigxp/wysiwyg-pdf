@@ -502,6 +502,12 @@ export const TEXT_OBJECT_CONFIG: ObjectPanelConfig = {
     sections: ['sec:text-font', 'sec:text-colors', 'sec:text-alignment', 'sec:text-content', 'sec:text-binding'],
 }
 
+export const BED_LAYOUT_TEXT_OBJECT_CONFIG: ObjectPanelConfig = {
+    objectType: 'text',
+    header: { iconName: 'Type', labelKey: 'properties_element_text' },
+    sections: ['sec:text-font', 'sec:text-colors', 'sec:text-alignment', 'sec:text-content'],
+}
+
 export const SHAPE_OBJECT_CONFIG: ObjectPanelConfig = {
     objectType: 'shape',
     header: { iconName: 'Square', labelKey: 'properties_element_shape' },
@@ -580,7 +586,7 @@ export const BED_LAYOUT_PANEL_CONFIG: PropertyPanelConfig = {
     layout: DEFAULT_PANEL_LAYOUT,
     defaultSections: ['sec:posSize', 'sec:delete'],
     objects: [
-        TEXT_OBJECT_CONFIG,
+        BED_LAYOUT_TEXT_OBJECT_CONFIG,
         SHAPE_OBJECT_CONFIG,
         LINE_OBJECT_CONFIG,
         IMAGE_OBJECT_CONFIG,

@@ -1,4 +1,4 @@
-import type { BedLayoutDocument, UnifiedNode, TextNode, LineNode, WidgetNode, BedStatusData } from 'wysiwyg-pdf'
+import type { Doc, TextNode, LineNode, WidgetNode, BedStatusData } from 'wysiwyg-pdf'
 
 // Helper to create IDs
 const id = (prefix: string) => `${prefix}-${crypto.randomUUID().slice(0, 8)}`
@@ -73,25 +73,16 @@ const labels = [
 ]
 
 // Assemble Document
-export const dummyBedLayout: BedLayoutDocument = {
+export const dummyBedLayout: Doc = {
+    v: 1,
     id: 'demo-icu-ward',
-    type: 'bed_layout',
-    name: 'ICU Ward A',
-    layout: {
-        mode: 'landscape',
-        width: 800,
-        height: 600,
-    },
-    elementsById: {},
-    elementOrder: [],
+    title: 'ICU Ward A',
+    unit: 'px',
+    surfaces: [
+        { id: 'layout', type: 'canvas', w: 800, h: 600 },
+    ],
+    nodes: [...walls, ...beds, ...labels],
 }
-
-// Populate elements
-const allElements = [...walls, ...beds, ...labels]
-allElements.forEach(el => {
-    dummyBedLayout.elementsById[el.id] = el as UnifiedNode
-    dummyBedLayout.elementOrder.push(el.id)
-})
 
 
 // Dashboard Data

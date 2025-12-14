@@ -1,5 +1,146 @@
 
-# JSON 構造サンプル
+# 統一ドキュメントJSON（現行仕様: `Doc` v1）
+
+このリポジトリのエディタ（Report / BedLayout）は、**保存・受け渡しの基本フォーマットとして `Doc`（`src/types/canvas.ts`）を使用**します。
+
+重要:
+
+- **保存（配布）対象**: `Doc`（`v, id, title, unit, surfaces, nodes, links?, binding?, animation?, snap?`）
+- **編集UI専用状態（selection / history 等）**は保存JSONに含めません（アプリ側の状態として保持）
+- `BedLayoutDocument` / `FormDocument` は型定義上 `Legacy / Adapter Types` であり、内部状態や互換用途として残っています。**保存フォーマットは `Doc` に寄せてください**。
+
+---
+
+## 1) ルート（`Doc`）
+
+```json
+{
+  "v": 1,
+  "id": "doc_001",
+  "title": "Sample",
+  "unit": "mm",
+  "surfaces": [
+    { "id": "page-1", "type": "page", "w": 210, "h": 297, "margin": { "t": 10, "r": 10, "b": 10, "l": 10 } },
+    { "id": "layout", "type": "canvas", "w": 600, "h": 800 }
+  ],
+  "nodes": [],
+  "links": [],
+  "binding": { "sampleData": {} },
+  "snap": { "grid": 10, "guides": true }
+}
+```
+
+`surfaces` は描画面です。
+
+- 帳票は `type: "page"` を使い、ページサイズ（mm推奨）を `w/h` に持ちます。
+- BedLayout のようなレイアウトは `type: "canvas"` を使い、レイアウト領域サイズを `w/h` に持ちます。
+
+---
+
+## 2) ノード（`UnifiedNode`）
+
+全ての描画要素は `nodes[]` に入ります。Z順は **配列の並び順**（先=奥、後=手前）です。
+
+共通フィールド:
+
+- `id`: 一意ID
+- `t`: 種別（`text | shape | line | image | group | table | signature | widget`）
+- `s`: 配置先 surface id（例: 帳票なら `"page-1"`、bed layout なら `"layout"`）
+- `x,y,w,h,r,opacity,locked,hidden,name,bind` など（型により必須/任意が異なる）
+
+### 2.1 TextNode 例
+
+```json
+{
+  "id": "text-1",
+  "t": "text",
+  "s": "page-1",
+  "x": 20,
+  "y": 18,
+  "w": 120,
+  "h": 8,
+  "r": 0,
+  "text": "請求書",
+  "font": "Meiryo",
+  "fontSize": 12,
+  "fontWeight": 700,
+  "fill": "#111111",
+  "align": "l"
+}
+```
+
+### 2.2 ShapeNode 例
+
+```json
+{
+  "id": "shape-1",
+  "t": "shape",
+  "s": "layout",
+  "x": 100,
+  "y": 120,
+  "w": 200,
+  "h": 100,
+  "shape": "rect",
+  "fill": "#ffffff",
+  "stroke": "#222222",
+  "strokeW": 1
+}
+```
+
+### 2.3 LineNode 例（`pts` は絶対座標）
+
+```json
+{
+  "id": "line-1",
+  "t": "line",
+  "s": "layout",
+  "pts": [100, 100, 300, 100],
+  "stroke": "#000000",
+  "strokeW": 2,
+  "arrows": ["none", "none"]
+}
+```
+
+### 2.4 WidgetNode 例（Bed要素）
+
+```json
+{
+  "id": "bed-1",
+  "t": "widget",
+  "widget": "bed",
+  "s": "layout",
+  "x": 200,
+  "y": 200,
+  "w": 50,
+  "h": 100,
+  "r": 0,
+  "name": "Bed",
+  "data": { "bedType": "standard" }
+}
+```
+
+---
+
+## 3) links（任意）
+
+`links[]` はノード間接続です（必要な機能を実装している場合のみ使用）。
+
+```json
+{
+  "id": "link-1",
+  "s": "layout",
+  "from": "node-a",
+  "to": "node-b",
+  "routing": "orthogonal",
+  "stroke": "#333333",
+  "strokeW": 2,
+  "arrows": ["none", "arrow"]
+}
+```
+
+---
+
+# (旧) JSON 構造サンプル
 
 ```json
 {

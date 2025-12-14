@@ -9,8 +9,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { UnifiedPropertyPanel } from '@/features/konva-editor/components/PropertyPanel/UnifiedPropertyPanel'
 import { BED_LAYOUT_PANEL_CONFIG } from '@/features/konva-editor/constants/propertyPanelConfig'
-import type { UnifiedNode } from '@/types/canvas'
-import type { BedLayoutDocument } from '@/features/konva-editor/types'
+import type { Doc, UnifiedNode } from '@/types/canvas'
 import type { WidgetProps } from '@/features/konva-editor/components/PropertyPanel/widgets'
 
 const FIBONACCI_GRID_SIZES = [2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377]
@@ -23,8 +22,9 @@ export interface PropertyPanelProps {
   selectedElement: UnifiedNode | null
   onChange: (id: string, newAttrs: Partial<UnifiedNode>) => void
   onDelete: (id: string) => void
-  document?: BedLayoutDocument
-  onDocumentChange?: (newDoc: BedLayoutDocument) => void
+  document?: Doc
+  onDocumentChange?: (newDoc: Doc) => void
+  surfaceId?: string
   i18nOverrides?: Record<string, string>
   // Canvas Settings (Grid & Snap)
   showGrid?: boolean
@@ -48,8 +48,9 @@ const inputClass =
 // ========================================
 
 const CanvasSettingsPanel: React.FC<{
-  document?: BedLayoutDocument
-  onDocumentChange?: (newDoc: BedLayoutDocument) => void
+  document?: Doc
+  onDocumentChange?: (newDoc: Doc) => void
+  surfaceId?: string
   showGrid?: boolean
   onShowGridChange?: (show: boolean) => void
   gridSize?: number
@@ -60,6 +61,7 @@ const CanvasSettingsPanel: React.FC<{
 }> = ({
   document,
   onDocumentChange,
+  surfaceId,
   showGrid,
   onShowGridChange,
   gridSize,
@@ -70,10 +72,24 @@ const CanvasSettingsPanel: React.FC<{
 }) => {
     const { t } = useTranslation()
 
+    const resolvedSurfaceId =
+      surfaceId || document?.surfaces.find((s) => s.type === 'canvas')?.id || document?.surfaces[0]?.id || 'layout'
+    const surface = document?.surfaces.find((s) => s.id === resolvedSurfaceId) || document?.surfaces[0]
+
+    const updateSurface = (patch: Partial<{ w: number; h: number }>) => {
+      if (!document || !onDocumentChange || !surface) return
+      onDocumentChange({
+        ...document,
+        surfaces: document.surfaces.map((s) =>
+          s.id === surface.id ? { ...s, ...patch } : s
+        ),
+      })
+    }
+
     return (
       <div className="w-64 bg-theme-bg-secondary px-2 py-1 overflow-x-hidden overflow-y-auto text-theme-text-primary">
         {/* Canvas Size (if document provided) */}
-        {document && onDocumentChange && (
+        {document && onDocumentChange && surface && (
           <div className="mb-3">
             <h4 className="text-[13px] font-medium text-theme-text-secondary mb-1">
               {resolveText('properties_layout', 'Canvas')}
@@ -83,12 +99,9 @@ const CanvasSettingsPanel: React.FC<{
                 <label className={labelClass}>W</label>
                 <input
                   type="number"
-                  value={document.layout.width}
+                  value={surface.w}
                   onChange={(e) =>
-                    onDocumentChange({
-                      ...document,
-                      layout: { ...document.layout, width: Number(e.target.value) },
-                    })
+                    updateSurface({ w: Number(e.target.value) })
                   }
                   className={inputClass}
                 />
@@ -97,12 +110,9 @@ const CanvasSettingsPanel: React.FC<{
                 <label className={labelClass}>H</label>
                 <input
                   type="number"
-                  value={document.layout.height}
+                  value={surface.h}
                   onChange={(e) =>
-                    onDocumentChange({
-                      ...document,
-                      layout: { ...document.layout, height: Number(e.target.value) },
-                    })
+                    updateSurface({ h: Number(e.target.value) })
                   }
                   className={inputClass}
                 />
@@ -172,6 +182,7 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
   onDelete,
   document,
   onDocumentChange,
+  surfaceId,
   i18nOverrides,
   showGrid,
   onShowGridChange,
@@ -192,6 +203,7 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
       <CanvasSettingsPanel
         document={document}
         onDocumentChange={onDocumentChange}
+        surfaceId={surfaceId}
         showGrid={showGrid}
         onShowGridChange={onShowGridChange}
         gridSize={gridSize}

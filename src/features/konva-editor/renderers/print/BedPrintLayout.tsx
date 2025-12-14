@@ -6,10 +6,10 @@ import type {
   ShapeNode,
   ImageNode,
   TextNode,
-  WidgetNode
+  WidgetNode,
+  Doc
 } from '@/types/canvas'
 import { RenderLine, RenderShape } from '@/features/konva-editor/renderers/print/ReportPrintLayout'
-import type { BedLayoutDocument } from '@/features/konva-editor/types'
 import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
 
 const RenderBed = ({ element }: { element: WidgetNode }) => {
@@ -276,9 +276,18 @@ const BedPrintElement: React.FC<{ element: UnifiedNode, i18nOverrides?: Record<s
   return null
 }
 
-export const BedPrintLayout = React.forwardRef<HTMLDivElement, { document: BedLayoutDocument, i18nOverrides?: Record<string, string> }>(
-  ({ document, i18nOverrides }, ref) => {
-    const { width, height } = document.layout
+export const BedPrintLayout = React.forwardRef<
+  HTMLDivElement,
+  { document: Doc; i18nOverrides?: Record<string, string>; surfaceId?: string }
+>(
+  ({ document, i18nOverrides, surfaceId }, ref) => {
+    const resolvedSurfaceId =
+      surfaceId || document.surfaces.find((s) => s.type === 'canvas')?.id || document.surfaces[0]?.id || 'layout'
+    const surface = document.surfaces.find((s) => s.id === resolvedSurfaceId) || document.surfaces[0]
+    const width = surface?.w ?? 0
+    const height = surface?.h ?? 0
+
+    const nodes = document.nodes.filter((n) => n.s === resolvedSurfaceId)
 
     return (
       <div ref={ref} className="print-container">
@@ -292,11 +301,9 @@ export const BedPrintLayout = React.forwardRef<HTMLDivElement, { document: BedLa
             overflow: 'hidden',
           }}
         >
-          {document.elementOrder.map((id) => {
-            const element = document.elementsById[id]
-            if (!element) return null
-            return <BedPrintElement key={id} element={element} i18nOverrides={i18nOverrides} />
-          })}
+          {nodes.map((element) => (
+            <BedPrintElement key={element.id} element={element} i18nOverrides={i18nOverrides} />
+          ))}
         </div>
       </div>
     )

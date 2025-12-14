@@ -3,12 +3,12 @@ import {
   KonvaCanvasEditor,
   type KonvaCanvasEditorHandle,
 } from '@/components/canvas/KonvaCanvasEditor'
-import type { BedLayoutDocument, FormDocument, UnifiedNode, WidgetNode } from '@/types/canvas'
+import type { Doc, UnifiedNode, WidgetNode } from '@/types/canvas'
 import { PaperBackground } from '@/features/konva-editor/viewers/components/PaperBackground'
 import { BedElement } from '@/features/konva-editor/renderers/bed-elements/BedElement'
 
 interface KonvaEditorProps {
-  document: FormDocument | BedLayoutDocument
+  document: Doc
   name?: string
   zoom: number
   selection: string[]
@@ -20,6 +20,7 @@ interface KonvaEditorProps {
   showGrid?: boolean
   snapStrength?: number
   gridSize?: number
+  surfaceId?: string
 }
 
 export interface BedLayoutEditorHandle {
@@ -41,6 +42,7 @@ export const BedLayoutEditor = React.forwardRef<BedLayoutEditorHandle, KonvaEdit
       showGrid = false,
       snapStrength = 5,
       gridSize = 15,
+      surfaceId,
     },
     ref
   ) => {
@@ -66,7 +68,7 @@ export const BedLayoutEditor = React.forwardRef<BedLayoutEditorHandle, KonvaEdit
           }
 
           const link = window.document.createElement('a')
-          link.download = `${name || (document.type === 'form' ? document.name : 'bed-layout')}.png`
+          link.download = `${name || document.title || 'bed-layout'}.png`
           link.href = dataURL
           window.document.body.appendChild(link)
           link.click()
@@ -74,21 +76,13 @@ export const BedLayoutEditor = React.forwardRef<BedLayoutEditorHandle, KonvaEdit
         }
       },
     }))
-    // Center the paper
-    let paperWidth = 0
-    let paperHeight = 0
+    const resolvedSurfaceId =
+      surfaceId || document.surfaces.find((s) => s.type === 'canvas')?.id || document.surfaces[0]?.id || 'layout'
+    const surface = document.surfaces.find((s) => s.id === resolvedSurfaceId) || document.surfaces[0]
+    const paperWidth = surface?.w ?? 0
+    const paperHeight = surface?.h ?? 0
 
-    if (document.type === 'form') {
-      paperWidth = document.paper.width
-      paperHeight = document.paper.height
-    } else {
-      paperWidth = document.layout.width
-      paperHeight = document.layout.height
-    }
-
-    const elements = document.elementOrder
-      .map((id) => document.elementsById[id])
-      .filter((el): el is UnifiedNode => el !== undefined)
+    const elements = document.nodes.filter((n) => n.s === resolvedSurfaceId)
 
     return (
       <KonvaCanvasEditor
@@ -108,7 +102,7 @@ export const BedLayoutEditor = React.forwardRef<BedLayoutEditorHandle, KonvaEdit
         }}
         onUndo={_onUndo}
         onRedo={_onRedo}
-        background={<PaperBackground document={document} />}
+        background={<PaperBackground document={document} surfaceId={resolvedSurfaceId} />}
         renderCustom={(el, commonProps, handleShapeRef) => {
           if (el.t === 'widget' && el.widget === 'bed') {
             const { ref: _ignoredRef, ...propsWithoutRef } = commonProps

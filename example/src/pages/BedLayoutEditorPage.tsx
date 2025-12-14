@@ -6,27 +6,25 @@ import {
     BedToolbar,
     BedPropertyPanel,
     BedLayoutViewer,
-    type BedLayoutDocument,
+    type Doc,
     type BedLayoutEditorHandle,
     type BedStatusData,
-    useEditorHistory as useBedEditorHistory,
+    useEditorHistoryDoc as useBedEditorHistoryDoc,
 } from 'wysiwyg-pdf'
 import { useReactToPrint, type UseReactToPrintOptions } from 'react-to-print'
 import { useTranslation } from 'react-i18next'
 import { Moon, Sun, LayoutDashboard, Edit } from 'lucide-react'
 
-// Initial State (Moved from App.tsx)
-const INITIAL_BED_DOC: BedLayoutDocument = {
+// Initial State (Unified Doc)
+const INITIAL_BED_DOC: Doc = {
+    v: 1,
     id: 'bed-layout-1',
-    type: 'bed_layout',
-    name: 'New Bed Layout',
-    layout: {
-        mode: 'portrait',
-        width: 600,
-        height: 800,
-    },
-    elementsById: {},
-    elementOrder: [],
+    title: 'New Bed Layout',
+    unit: 'px',
+    surfaces: [
+        { id: 'layout', type: 'canvas', w: 600, h: 800 },
+    ],
+    nodes: [],
 }
 
 interface BedLayoutEditorPageProps {
@@ -49,8 +47,8 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
     const [gridSize, setGridSize] = useState(15)
     const [snapStrength, setSnapStrength] = useState(5)
 
-    // State for Bed Layout Document
-    const [bedDoc, setBedDocument] = useState<BedLayoutDocument>(INITIAL_BED_DOC)
+    // State for Bed Layout Document (Unified)
+    const [bedDoc, setBedDocument] = useState<Doc>(INITIAL_BED_DOC)
 
     // History Management
     const {
@@ -59,36 +57,32 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
         redo: redoBed,
         canUndo: canUndoBed,
         canRedo: canRedoBed,
-    } = useBedEditorHistory(bedDoc, setBedDocument)
+    } = useBedEditorHistoryDoc(bedDoc, setBedDocument)
 
     // Sync layout dimensions when orientation changes
     useEffect(() => {
-        setBedDocument(prev => {
-            let width = 600
-            let height = 800
-            let mode = 'portrait'
+        setBedDocument((prev: Doc) => {
+            const surface = prev.surfaces.find((s: Doc['surfaces'][number]) => s.type === 'canvas') ?? prev.surfaces[0]
+            if (!surface) return prev
+
+            let w = 600
+            let h = 800
 
             if (orientation === 'landscape') {
-                width = 800
-                height = 600
-                mode = 'landscape'
+                w = 800
+                h = 600
             } else if (orientation === 'square') {
-                width = 800
-                height = 800
-                mode = 'custom' // or 'square' if supported by type, usually 'custom' or just width/height matters
+                w = 800
+                h = 800
             }
 
-            // Only update if changed to avoid loop
-            if (prev.layout.width === width && prev.layout.height === height) return prev
+            if (surface.w === w && surface.h === h) return prev
 
             return {
                 ...prev,
-                layout: {
-                    ...prev.layout,
-                    mode: mode as any,
-                    width,
-                    height
-                }
+                surfaces: prev.surfaces.map((s: Doc['surfaces'][number]) =>
+                    s.id === surface.id ? { ...s, w, h } : s
+                ),
             }
         })
     }, [orientation])
@@ -97,14 +91,15 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
     useEffect(() => {
         if (isDashboardMode) {
             const data: Record<string, BedStatusData> = {}
-            const bedIds = bedDoc.elementOrder.filter(id => {
-                const el = bedDoc.elementsById[id]
-                return el?.t === 'widget' && (el as any).widget === 'bed'
-            })
+            const resolvedSurfaceId = bedDoc.surfaces.find((s: Doc['surfaces'][number]) => s.type === 'canvas')?.id || bedDoc.surfaces[0]?.id || 'layout'
+            const bedIds = bedDoc.nodes
+                .filter((n: Doc['nodes'][number]) => n.s === resolvedSurfaceId)
+                .filter((n: Doc['nodes'][number]) => n.t === 'widget' && (n as any).widget === 'bed')
+                .map((n: Doc['nodes'][number]) => n.id)
 
             const patientNames = ['T. Yamada', 'H. Suzuki', 'K. Sato', 'M. Tanaka', 'Y. Kobayashi', 'J. Doe', 'A. Smith']
 
-            bedIds.forEach((id, index) => {
+            bedIds.forEach((id: string, index: number) => {
                 // Random status
                 const rand = Math.random()
                 let status: BedStatusData['status'] = 'free'
@@ -149,100 +144,6 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
         document.documentElement.setAttribute('data-theme', theme)
         document.documentElement.classList.toggle('dark', darkMode)
     }, [darkMode])
-
-    // Handle Tool Select (Add Elements)
-    const handleToolSelect = (tool: string, subType?: string) => {
-        setActiveTool(tool)
-
-        // Simple "Add to center" logic for now
-        if (tool === 'select') return
-
-        const newId = crypto.randomUUID()
-        const center = { x: bedDoc.layout.width / 2, y: bedDoc.layout.height / 2 }
-
-        let newElement: any = null
-
-        if (tool === 'text') {
-            newElement = {
-                id: newId,
-                t: 'text',
-                s: 'layout',
-                r: 0,
-                text: 'Text',
-                font: 'Meiryo',
-                fontSize: 12,
-                fontWeight: 400,
-                fill: '#000000',
-                align: 'l',
-                x: center.x,
-                y: center.y,
-                w: 100,
-                h: 20
-            }
-        } else if (tool === 'image') {
-            newElement = {
-                id: newId,
-                t: 'image',
-                s: 'layout',
-                r: 0,
-                name: 'Image',
-                x: center.x,
-                y: center.y,
-                w: 120,
-                h: 80,
-                src: '', // ImageNode requires src
-                opacity: 1,
-            }
-        } else if (tool === 'bed') {
-            newElement = {
-                id: newId,
-                t: 'widget',
-                widget: 'bed',
-                s: 'layout',
-                x: center.x,
-                y: center.y,
-                w: 50,
-                h: 100,
-                r: 0,
-                name: 'Bed',
-                data: { bedType: 'standard' },
-                opacity: 1,
-            }
-        } else if (tool === 'shape' && subType) {
-            newElement = {
-                id: newId,
-                t: 'shape',
-                s: 'layout',
-                shape: subType.toLowerCase() as any, // Rect -> rect
-                x: center.x,
-                y: center.y,
-                w: 100,
-                h: 100,
-                r: 0,
-                fill: '#cccccc',
-                stroke: '#000000',
-                strokeW: 1
-            }
-        } else if (tool === 'line') {
-            newElement = {
-                id: newId,
-                t: 'line',
-                s: 'layout',
-                pts: [60, 340, 220, 340],
-                stroke: '#000000',
-                strokeW: 1,
-                arrows: ['none', 'none']
-            }
-        }
-
-        if (newElement) {
-            executeBedOp({
-                kind: 'create-element',
-                element: newElement,
-            })
-            setActiveTool('select')
-        }
-    }
 
     const handleDownloadImage = () => {
         bedEditorRef.current?.downloadImage()
@@ -410,7 +311,15 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                     <div className="w-16 border-r border-theme-border bg-theme-bg-secondary shrink-0 flex flex-col z-10 shadow-[1px_0_3px_rgb(0,0,0,0.05)]">
                         <BedToolbar
                             activeTool={activeTool as any}
-                            onSelectTool={handleToolSelect}
+                            document={bedDoc}
+                            onAddElement={(element) => {
+                                executeBedOp({
+                                    kind: 'create-element',
+                                    element,
+                                })
+                            }}
+                            onSelectElement={(id) => setSelectedElementId(id)}
+                            onToolSelect={(tool) => setActiveTool(tool)}
                             canUndo={canUndoBed}
                             canRedo={canRedoBed}
                             onUndo={undoBed}
@@ -418,6 +327,7 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                             zoom={zoom / 100}
                             onZoomIn={() => setZoom(Math.min(zoom + 10, 200))}
                             onZoomOut={() => setZoom(Math.max(zoom - 10, 10))}
+                            surfaceId={bedDoc.surfaces.find((s: Doc['surfaces'][number]) => s.type === 'canvas')?.id || bedDoc.surfaces[0]?.id || 'layout'}
                             i18nOverrides={{
                                 toolbar_text: 'テキスト',
                                 toolbar_bed: 'ベッド',
@@ -442,7 +352,7 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                             selection={selectedElementId ? [selectedElementId] : []}
                             onSelect={(ids) => setSelectedElementId(ids[0] || null)}
                             onChangeElement={(id, newAttrs) => {
-                                const element = bedDoc.elementsById[id]
+                                const element = bedDoc.nodes.find((n: Doc['nodes'][number]) => n.id === id)
                                 if (!element) return
                                 executeBedOp({
                                     kind: 'update-element',
@@ -452,7 +362,7 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                                 })
                             }}
                             onDelete={(id) => {
-                                const element = bedDoc.elementsById[id]
+                                const element = bedDoc.nodes.find((n: Doc['nodes'][number]) => n.id === id)
                                 if (!element) return
                                 executeBedOp({
                                     kind: 'delete-element',
@@ -474,9 +384,13 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                 {!isDashboardMode && (
                     <div className="w-72 border-l border-theme-border bg-theme-bg-secondary shrink-0 overflow-hidden flex flex-col z-10 shadow-[-1px_0_3px_rgb(0,0,0,0.05)]">
                         <BedPropertyPanel
-                            selectedElement={selectedElementId ? bedDoc.elementsById[selectedElementId] : null}
+                            selectedElement={
+                                selectedElementId
+                                    ? (bedDoc.nodes.find((n: Doc['nodes'][number]) => n.id === selectedElementId) ?? null)
+                                    : null
+                            }
                             onChange={(id, attrs) => {
-                                const element = bedDoc.elementsById[id]
+                                const element = bedDoc.nodes.find((n: Doc['nodes'][number]) => n.id === id)
                                 if (!element) return
                                 executeBedOp({
                                     kind: 'update-element',
@@ -486,7 +400,7 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                                 })
                             }}
                             onDelete={(id) => {
-                                const element = bedDoc.elementsById[id]
+                                const element = bedDoc.nodes.find((n: Doc['nodes'][number]) => n.id === id)
                                 if (!element) return
                                 executeBedOp({
                                     kind: 'delete-element',
@@ -499,6 +413,7 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                             onDocumentChange={(newDoc) => {
                                 setBedDocument(newDoc)
                             }}
+                            surfaceId={bedDoc.surfaces.find((s: Doc['surfaces'][number]) => s.type === 'canvas')?.id || bedDoc.surfaces[0]?.id || 'layout'}
                             showGrid={showGrid}
                             onShowGridChange={setShowGrid}
                             gridSize={gridSize}

@@ -1,6 +1,6 @@
 import type { BedDashboardRoom, BedStatus } from '@/features/bed-layout-dashboard/types'
 import type {
-  BedLayoutDocument,
+  Doc,
   UnifiedNode,
   WidgetNode,
   LineNode,
@@ -9,7 +9,7 @@ import type {
 
 export const convertDashboardRoomToDocument = (
   dashboardRoom: BedDashboardRoom
-): BedLayoutDocument => {
+): Doc => {
   const { room, statuses } = dashboardRoom
 
   // Create a map of bed statuses for quick lookup
@@ -18,8 +18,8 @@ export const convertDashboardRoomToDocument = (
     statusMap.set(status.bedId, status)
   })
 
-  const elementsById: Record<string, UnifiedNode> = {}
-  const elementOrder: string[] = []
+  const surfaceId = 'layout'
+  const nodes: UnifiedNode[] = []
 
   // Convert Beds
   room.beds.forEach((bed: any) => {
@@ -30,7 +30,7 @@ export const convertDashboardRoomToDocument = (
       id: bed.id,
       t: 'widget',
       widget: 'bed',
-      s: '', // surface ID not set, might need context or assume 'page-1' if used in a Doc
+      s: surfaceId,
       x: bed.x,
       y: bed.y,
       w: bed.width,
@@ -49,8 +49,7 @@ export const convertDashboardRoomToDocument = (
       locked: false,
     }
 
-    elementsById[bed.id] = bedElement
-    elementOrder.push(bed.id)
+    nodes.push(bedElement)
   })
 
   // Convert Walls (to Lines)
@@ -59,7 +58,7 @@ export const convertDashboardRoomToDocument = (
       const wallElement: LineNode = {
         id: wall.id,
         t: 'line',
-        s: '',
+        s: surfaceId,
         pts: [wall.start.x, wall.start.y, wall.end.x, wall.end.y],
         stroke: wall.stroke || '#000000',
         strokeW: wall.strokeWidth || 6,
@@ -67,8 +66,7 @@ export const convertDashboardRoomToDocument = (
         locked: false,
         name: 'Wall',
       }
-      elementsById[wall.id] = wallElement
-      elementOrder.push(wall.id)
+      nodes.push(wallElement)
     })
   }
 
@@ -78,7 +76,7 @@ export const convertDashboardRoomToDocument = (
       const textElement: TextNode = {
         id: text.id,
         t: 'text',
-        s: '',
+        s: surfaceId,
         x: text.x,
         y: text.y,
         w: 200,
@@ -99,21 +97,18 @@ export const convertDashboardRoomToDocument = (
         locked: false,
         name: 'Text',
       }
-      elementsById[text.id] = textElement
-      elementOrder.push(text.id)
+      nodes.push(textElement)
     })
   }
 
   return {
+    v: 1,
     id: room.id,
-    type: 'bed_layout',
-    name: room.name,
-    layout: {
-      mode: 'landscape', // Default
-      width: room.width,
-      height: room.height,
-    },
-    elementsById,
-    elementOrder,
+    title: room.name,
+    unit: 'px',
+    surfaces: [
+      { id: surfaceId, type: 'canvas', w: room.width, h: room.height },
+    ],
+    nodes,
   }
 }
