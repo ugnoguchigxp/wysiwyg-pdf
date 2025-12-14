@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
-import { WysiwygEditorToolbar } from '../../../@/features/report-editor/components/Toolbar/WysiwygEditorToolbar'
-import type { ITemplateDoc } from '../../../@/features/konva-editor/types'
+import { WysiwygEditorToolbar } from '@/features/report-editor/components/Toolbar/WysiwygEditorToolbar'
+import type { Doc } from '@/types/canvas'
 
 // Mock useTranslation
 vi.mock('react-i18next', () => ({
@@ -11,7 +11,7 @@ vi.mock('react-i18next', () => ({
 }))
 
 // Mock Radix UI Tooltip to simply render children
-vi.mock('../../../../../../components/ui/Tooltip', () => ({
+vi.mock('@/components/ui/Tooltip', () => ({
     Tooltip: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
     TooltipTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
     TooltipContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -19,18 +19,20 @@ vi.mock('../../../../../../components/ui/Tooltip', () => ({
 }))
 
 // Mock DropdownMenu
-vi.mock('../../../../../../components/ui/DropdownMenu', () => ({
+vi.mock('@/components/ui/DropdownMenu', () => ({
     DropdownMenu: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
     DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
     DropdownMenuContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
     DropdownMenuItem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }))
 
-
-const mockDoc: ITemplateDoc = {
-    meta: { id: 'test', name: 'Test', version: 1 },
-    pages: [{ id: 'page-1', size: 'A4', margin: { top: 0, right: 0, bottom: 0, left: 0, unit: 'mm' }, background: { color: "#fff" } }],
-    elements: [],
+const mockDoc: Doc = {
+    v: 1,
+    id: 'test',
+    title: 'Test',
+    unit: 'pt',
+    surfaces: [{ id: 'page-1', type: 'page', w: 100, h: 100 }],
+    nodes: [],
 }
 
 describe('WysiwygEditorToolbar', () => {

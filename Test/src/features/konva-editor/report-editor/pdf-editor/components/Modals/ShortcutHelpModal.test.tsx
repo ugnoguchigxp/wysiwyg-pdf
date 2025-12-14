@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { ShortcutHelpModal } from '../../../@/features/report-editor/components/Modals/ShortcutHelpModal'
+import { ShortcutHelpModal } from '@/features/report-editor/components/Modals/ShortcutHelpModal'
 
 describe('ShortcutHelpModal', () => {
   it('renders shortcuts and closes', () => {

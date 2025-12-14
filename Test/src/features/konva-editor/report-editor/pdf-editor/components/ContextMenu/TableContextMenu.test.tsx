@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { TableContextMenu } from '../../../@/features/report-editor/components/ContextMenu/TableContextMenu'
+import { TableContextMenu } from '@/features/report-editor/components/ContextMenu/TableContextMenu'
 
 describe('TableContextMenu', () => {
   it('renders when visible and fires actions / closes on outside click', () => {

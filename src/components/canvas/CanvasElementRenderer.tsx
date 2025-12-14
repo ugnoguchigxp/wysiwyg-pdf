@@ -516,7 +516,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
         return (
           <Text
             {...commonProps}
-            height={undefined} // Auto-height
+            height={element.h}
             text={text}
             fontSize={fontSize}
             fontFamily={font}

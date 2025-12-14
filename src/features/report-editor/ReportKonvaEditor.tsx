@@ -4,7 +4,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRe
 import { Image as KonvaImage, Rect as KonvaRect, Layer, Stage } from 'react-konva'
 import { CanvasElementRenderer } from '@/components/canvas/CanvasElementRenderer'
 import { useKeyboardShortcuts } from '@/components/canvas/hooks/useKeyboardShortcuts'
-// import { TextEditOverlay } from '@/components/canvas/TextEditOverlay' // Comment out if not immediately available or needs update
+import { TextEditOverlay } from '@/components/canvas/TextEditOverlay'
 import type { TextNode, UnifiedNode, Doc, Surface, SignatureNode, TableNode } from '@/types/canvas' // Direct import
 import { createContextLogger } from '@/utils/logger'
 import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
@@ -207,6 +207,13 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
 
     const selectedTable = selectedNode?.t === 'table' ? (selectedNode as TableNode) : null
 
+    const editingElement = useMemo(() => {
+      if (!editingElementId) return null
+      const node = templateDoc.nodes.find((n) => n.id === editingElementId)
+      if (!node || node.t !== 'text') return null
+      return node as TextNode
+    }, [editingElementId, templateDoc.nodes])
+
     const selectedCellBox = useMemo(() => {
       if (!selectedTable || !selectedCell || selectedCell.elementId !== selectedTable.id) return null
 
@@ -297,6 +304,15 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       })
       onTemplateChange({ ...templateDoc, nodes: nextNodes })
     }
+
+    const handleTextUpdate = useCallback((text: string) => {
+      if (!editingElementId) return
+      handleElementChange({ id: editingElementId, text } as Partial<UnifiedNode> & { id?: string })
+    }, [editingElementId, handleElementChange])
+
+    const handleTextEditFinish = useCallback(() => {
+      setEditingElementId(null)
+    }, [])
 
     const handleContextMenu = (e: Konva.KonvaEventObject<PointerEvent>, element: UnifiedNode) => {
       e.evt.preventDefault()
@@ -1016,6 +1032,16 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
               )}
             </Layer>
           </Stage>
+
+          {editingElement && (
+            <TextEditOverlay
+              element={editingElement}
+              scale={displayScale}
+              stageNode={stageRef.current}
+              onUpdate={handleTextUpdate}
+              onFinish={handleTextEditFinish}
+            />
+          )}
 
           <TableContextMenu
             visible={!!contextMenu?.visible}

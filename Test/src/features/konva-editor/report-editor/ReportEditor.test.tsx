@@ -46,7 +46,7 @@ vi.mock('@/features/report-editor/ReportKonvaEditor', async () => {
 })
 
 vi.mock(
-  '@/features/report-editor/components/PropertiesPanel/WysiwygPropertiesPanel',
+  '@/features/report-editor/components/PropertyPanel/WysiwygPropertiesPanel',
   () => ({
     WysiwygPropertiesPanel: (props: any) => {
       konvaMockState.selectedCell = props.selectedCell ? 'set' : 'none'

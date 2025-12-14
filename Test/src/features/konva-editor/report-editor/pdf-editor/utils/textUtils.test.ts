@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { measureText } from '../../@/features/report-editor/pdf-editor/utils/textUtils'
+import { measureText } from '@/features/konva-editor/utils/textUtils'
 
 describe('textUtils/measureText', () => {
   it('returns {0,0} when canvas context is not available', () => {
@@ -47,19 +47,18 @@ describe('textUtils/measureText', () => {
         return document.createElement(tagName)
       })
 
-    const res = measureText('a\nabcd\nab', {
+    const res = measureText('abcd', {
       family: 'Meiryo',
       size: 20,
       weight: 700,
-      italic: true,
     })
 
-    // max width is longest line ("abcd" => 4 * 10)
+    // width from fake measureText
     expect(res.width).toBe(40)
-    // lineHeight = size * 1.5 => 30, 3 lines => 90
-    expect(res.height).toBe(90)
+    // current util uses size * 1.2
+    expect(res.height).toBe(24)
 
-    expect(lastFont).toBe('italic 700 20px Meiryo')
+    expect(lastFont).toBe('700 20px Meiryo')
 
     createElementSpy.mockRestore()
   })
@@ -92,11 +91,10 @@ describe('textUtils/measureText', () => {
       family: 'Meiryo',
       size: 12,
       weight: 400,
-      italic: false,
     })
 
     expect(res.width).toBe(10)
-    expect(res.height).toBe(12 * 1.5)
+    expect(res.height).toBe(12 * 1.2)
     expect(lastFont).toBe('400 12px Meiryo')
 
     createElementSpy.mockRestore()

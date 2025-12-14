@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('../../../@/utils/logger', () => ({
+vi.mock('@/utils/logger', () => ({
   createContextLogger: () => ({
     debug: vi.fn(),
     info: vi.fn(),
@@ -15,8 +15,8 @@ import {
   drawTableElement,
   findImageWithExtension,
   preloadBackgroundImage,
-} from '../../../@/features/report-editor/components/WysiwygCanvas/canvasImageUtils'
-import type { ImageNode, TableNode } from '../../../@/types/canvas'
+} from '@/features/konva-editor/utils/canvasImageUtils'
+import type { ImageNode, TableNode } from '@/types/canvas'
 
 function createCtx() {
   const base: Record<string, any> = { canvas: { width: 100, height: 100 } }
@@ -133,14 +133,14 @@ describe('canvasImageUtils', () => {
     const ctx = createCtx()
     const cache = new Map<string, any>()
 
-    drawBackgroundImage(ctx, 'data:bg', 100, 100, cache, { loading: 'L', imageLoading: (n) => n })
+    drawBackgroundImage(ctx, 'data:bg', 100, 100, cache, { loading: 'L', imageLoading: (n: string) => n })
     expect(ctx.fillText).toHaveBeenCalled()
 
     cache.set('data:bg', { complete: true })
     drawBackgroundImage(ctx, 'data:bg', 100, 100, cache)
     expect(ctx.drawImage).toHaveBeenCalled()
 
-    drawBackgroundImage(ctx, 'id1', 100, 100, cache, { loading: 'L', imageLoading: (n) => `loading:${n}` })
+    drawBackgroundImage(ctx, 'id1', 100, 100, cache, { loading: 'L', imageLoading: (n: string) => `loading:${n}` })
     expect(ctx.fillText).toHaveBeenCalledWith('loading:id1', 50, 50)
   })
 

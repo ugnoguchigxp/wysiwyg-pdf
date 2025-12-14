@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { ArrowSelector } from '../../../@/features/report-editor/components/PropertiesPanel/ArrowSelector'
+import { ArrowSelector } from '@/features/report-editor/components/PropertyPanel/ArrowSelector'
 
 describe('ArrowSelector', () => {
   it('renders and calls onChange', () => {

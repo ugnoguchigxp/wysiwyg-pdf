@@ -46,7 +46,7 @@ describe('components/canvas/KonvaViewer', () => {
     expect(props.scaleX).toBe(2)
     expect(props.scaleY).toBe(2)
     expect(canvasRendererSpy).toHaveBeenCalledTimes(1)
-    expect(screen.getByTestId('Layer')).toBeInTheDocument()
+    expect(screen.getAllByTestId('Layer')).toHaveLength(2)
 
     // cover imperative handle
     expect(ref.current.getStage()).toBeNull()

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { BindingSelector } from '../../../@/features/report-editor/components/PropertiesPanel/BindingSelector'
+import { BindingSelector } from '@/features/report-editor/components/PropertyPanel/BindingSelector'
 
 describe('BindingSelector', () => {
   it('shows button when no binding and opens modal', () => {

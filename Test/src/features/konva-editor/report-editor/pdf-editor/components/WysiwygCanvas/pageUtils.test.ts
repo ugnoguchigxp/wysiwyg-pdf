@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest'
 import {
   getPageDimensions,
   getPresentationPageDimensions,
-} from '../../../@/features/report-editor/components/WysiwygCanvas/pageUtils'
-import type { Unit } from '../../../@/types/canvas'
+} from '@/features/konva-editor/utils/pageUtils'
+import type { Unit } from '@/types/canvas'
 
 describe('pageUtils', () => {
   it('getPageDimensions supports presets and custom objects', () => {

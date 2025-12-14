@@ -2,14 +2,14 @@ import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('../../@/features/report-editor/components/WysiwygCanvas/canvasImageUtils', () => ({
+vi.mock('@/features/konva-editor/utils/canvasImageUtils', () => ({
   findImageWithExtension: vi.fn(async (assetId: string) => ({
     url: `resolved://${assetId}`,
     img: {} as any,
   })),
 }))
 
-import { PrintLayout, RenderLine, RenderShape, RenderSignature } from '../../@/features/konva-editor/renderers/print/ReportPrintLayout'
+import { PrintLayout, RenderLine, RenderShape, RenderSignature } from '@/features/konva-editor/renderers/print/ReportPrintLayout'
 
 describe('PrintLayout', () => {
   it('renders pages and elements (including bg image resolution)', async () => {

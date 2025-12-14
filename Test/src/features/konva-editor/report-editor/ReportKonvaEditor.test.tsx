@@ -26,12 +26,23 @@ vi.mock('@/components/canvas/CanvasElementRenderer', () => ({
 const stageState = vi.hoisted(() => ({
   pointer: { x: 20, y: 40 },
   toDataURL: vi.fn(() => 'data:image/png;base64,xxx'),
+  gridVisible: true,
 }))
 
 vi.mock('react-konva', async () => {
   const React = (await import('react')).default
 
   const Stage = React.forwardRef((props: any, ref: any) => {
+    const gridNode = {
+      visible: () => stageState.gridVisible,
+      hide: () => {
+        stageState.gridVisible = false
+      },
+      show: () => {
+        stageState.gridVisible = true
+      },
+    }
+
     const stageObj = {
       toDataURL: stageState.toDataURL,
       setPointersPositions: () => {},
@@ -43,6 +54,10 @@ vi.mock('react-konva', async () => {
         }),
       }),
       getStage: () => stageObj,
+      findOne: (selector: string) => {
+        if (selector === '.grid-layer') return gridNode
+        return null
+      },
       name: () => '',
     }
 

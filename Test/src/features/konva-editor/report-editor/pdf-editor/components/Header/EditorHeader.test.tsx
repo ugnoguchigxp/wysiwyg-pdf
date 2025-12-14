@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { EditorHeader } from '../../../@/features/report-editor/components/Header/EditorHeader'
+import { EditorHeader } from '@/features/report-editor/components/Header/EditorHeader'
 
 describe('EditorHeader', () => {
   it('renders and wires actions', () => {

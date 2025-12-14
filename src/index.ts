@@ -1,4 +1,3 @@
-import type { } from './global'
 // Components
 
 // Bed Layout Components

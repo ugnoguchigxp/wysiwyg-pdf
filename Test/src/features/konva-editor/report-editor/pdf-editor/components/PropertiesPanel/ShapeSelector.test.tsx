@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { ShapeSelector } from '../../../@/features/report-editor/components/PropertiesPanel/ShapeSelector'
+import { ShapeSelector } from '@/features/report-editor/components/PropertyPanel/ShapeSelector'
 
 describe('ShapeSelector', () => {
   it('renders options when open', () => {

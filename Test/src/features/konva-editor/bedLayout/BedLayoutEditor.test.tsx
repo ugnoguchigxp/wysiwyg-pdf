@@ -2,7 +2,14 @@ import React from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-const stage = { toDataURL: vi.fn(() => 'data:image/png;base64,bed') }
+const stage = {
+  toDataURL: vi.fn(() => 'data:image/png;base64,bed'),
+  findOne: vi.fn((_sel: string) => ({
+    visible: () => true,
+    hide: () => {},
+    show: () => {},
+  })),
+}
 
 vi.mock('@/components/canvas/KonvaCanvasEditor', async () => {
   const React = (await import('react')).default
@@ -33,11 +40,11 @@ vi.mock('@/components/canvas/KonvaCanvasEditor', async () => {
   }
 })
 
-vi.mock('@/features/bed-layout-editor/components/PaperBackground', () => ({
+vi.mock('@/features/konva-editor/viewers/components/PaperBackground', () => ({
   PaperBackground: () => <div data-testid="paper-bg" />,
 }))
 
-vi.mock('@/features/bed-layout-editor/elements/BedElement', () => ({
+vi.mock('@/features/konva-editor/renderers/bed-elements/BedElement', () => ({
   BedElement: () => <div data-testid="bed-element" />,
 }))
 
@@ -50,12 +57,12 @@ describe('BedLayoutEditor', () => {
     const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
 
     const doc = {
-      type: 'bed-layout',
-      layout: { width: 300, height: 200 },
-      elementOrder: ['bed1'],
-      elementsById: {
-        bed1: { id: 'bed1', t: 'widget', widget: 'bed' },
-      },
+      v: 1,
+      id: 'doc',
+      title: 'bed-layout',
+      unit: 'px',
+      surfaces: [{ id: 'layout', type: 'canvas', w: 300, h: 200 }],
+      nodes: [{ id: 'bed1', t: 'widget', widget: 'bed', s: 'layout' }],
     } as any
 
     render(

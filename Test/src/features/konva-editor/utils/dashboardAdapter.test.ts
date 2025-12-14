@@ -39,10 +39,13 @@ describe('convertDashboardRoomToDocument', () => {
       ],
     } as unknown as Parameters<typeof convertDashboardRoomToDocument>[0])
 
-    expect(doc.type).toBe('bed_layout')
-    expect(doc.layout.width).toBe(1000)
+    expect(doc.surfaces[0]).toEqual(
+      expect.objectContaining({ id: 'layout', type: 'canvas', w: 1000, h: 800 })
+    )
 
-    const bed = doc.elementsById.b1 as WidgetNode
+    const byId = (id: string) => doc.nodes.find((n: { id: string }) => n.id === id)
+
+    const bed = byId('b1') as WidgetNode
     expect(bed.t).toBe('widget')
     expect(bed.data?.label).toBe('B1')
     expect(bed.data?.orientation).toBe('vertical')
@@ -50,16 +53,16 @@ describe('convertDashboardRoomToDocument', () => {
     expect(bed.data?.patientName).toBe('Alice')
     expect(bed.data?.bloodPressure).toBe('120/80')
 
-    const wall = doc.elementsById.w1 as LineNode
+    const wall = byId('w1') as LineNode
     expect(wall.t).toBe('line')
     expect(wall.strokeW).toBe(8)
 
-    const text = doc.elementsById.t1 as TextNode
+    const text = byId('t1') as TextNode
     expect(text.t).toBe('text')
     expect(text.align).toBe('l')
 
-    expect((doc.elementsById.t2 as TextNode).align).toBe('c')
-    expect((doc.elementsById.t3 as TextNode).align).toBe('r')
+    expect((byId('t2') as TextNode).align).toBe('c')
+    expect((byId('t3') as TextNode).align).toBe('r')
   })
 
   it('handles missing walls/texts and defaults', () => {
@@ -76,7 +79,7 @@ describe('convertDashboardRoomToDocument', () => {
       statuses: [],
     } as any)
 
-    const bed = doc.elementsById.b2 as WidgetNode
+    const bed = doc.nodes.find((n: { id: string }) => n.id === 'b2') as WidgetNode
     expect(bed.data?.orientation).toBe('horizontal')
     expect(bed.data?.status).toBe('idle')
   })
@@ -103,9 +106,12 @@ describe('convertDashboardRoomToDocument', () => {
       statuses: [],
     } as unknown as Parameters<typeof convertDashboardRoomToDocument>[0])
 
-    expect((doc.elementsById.w as LineNode).stroke).toBe('#000000')
-    expect((doc.elementsById.w as LineNode).strokeW).toBe(6)
-    expect((doc.elementsById.t as TextNode).fontSize).toBe(16)
-    expect((doc.elementsById.t as TextNode).fill).toBe('#000000')
+    const wall = doc.nodes.find((n: { id: string }) => n.id === 'w') as LineNode
+    expect(wall.stroke).toBe('#000000')
+    expect(wall.strokeW).toBe(6)
+
+    const text = doc.nodes.find((n: { id: string }) => n.id === 't') as TextNode
+    expect(text.fontSize).toBe(16)
+    expect(text.fill).toBe('#000000')
   })
 })

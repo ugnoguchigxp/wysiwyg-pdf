@@ -23,7 +23,6 @@ export default defineConfig({
     'react-dom',
     '@radix-ui/react-dialog',
     '@radix-ui/react-dropdown-menu',
-    '@radix-ui/react-popover',
     '@radix-ui/react-select',
     '@radix-ui/react-slot',
     'class-variance-authority',

@@ -15,11 +15,11 @@ vi.mock('@/components/canvas/KonvaViewer', () => ({
   ),
 }))
 
-vi.mock('@/features/bed-layout-editor/components/PaperBackground', () => ({
+vi.mock('@/features/konva-editor/viewers/components/PaperBackground', () => ({
   PaperBackground: () => <div data-testid="paper-bg" />,
 }))
 
-vi.mock('@/features/bed-layout-editor/elements/BedElement', () => ({
+vi.mock('@/features/konva-editor/renderers/bed-elements/BedElement', () => ({
   BedElement: (props: any) => <div data-testid={`bed-${props.bedStatus?.status ?? 'none'}`} />,
 }))
 
@@ -28,12 +28,12 @@ import { BedLayoutViewer } from '@/features/konva-editor/viewers/BedLayoutViewer
 describe('BedLayoutViewer', () => {
   it('renders background and custom bed with dashboard status', () => {
     const doc = {
-      type: 'bed-layout',
-      layout: { width: 300, height: 200 },
-      elementOrder: ['bed1'],
-      elementsById: {
-        bed1: { id: 'bed1', t: 'widget', widget: 'bed' },
-      },
+      v: 1,
+      id: 'doc',
+      title: 'bed-layout',
+      unit: 'px',
+      surfaces: [{ id: 'layout', type: 'canvas', w: 300, h: 200 }],
+      nodes: [{ id: 'bed1', t: 'widget', widget: 'bed', s: 'layout' }],
     } as any
 
     render(<BedLayoutViewer document={doc} zoom={1} dashboardData={{ bed1: { status: 'active' } as any }} />)

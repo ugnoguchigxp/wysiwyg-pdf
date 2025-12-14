@@ -1,21 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 
-import type { ITemplateDoc } from '../@/features/konva-editor/types'
-import { useReportHistory } from '../@/features/report-editor/hooks/useReportHistory'
+import type { Doc } from '@/types/canvas'
+import { useReportHistory } from '@/features/report-editor/hooks/useReportHistory'
 
 describe('useReportHistory (react)', () => {
-  const makeDoc = (): ITemplateDoc => ({
-    meta: { id: 'doc-1', name: 'Test', version: 1 },
-    pages: [
-      {
-        id: 'page-1',
-        size: 'A4',
-        margin: { top: 0, right: 0, bottom: 0, left: 0, unit: 'pt' },
-        background: { color: '#fff' },
-      },
-    ],
-    elements: [],
+  const makeDoc = (): Doc => ({
+    v: 1,
+    id: 'doc-1',
+    title: 'Test',
+    unit: 'pt',
+    surfaces: [{ id: 'page-1', type: 'page', w: 100, h: 100 }],
+    nodes: [],
   })
 
   it('tracks history and supports undo/redo', () => {
@@ -33,18 +29,18 @@ describe('useReportHistory (react)', () => {
     act(() => {
       result.current.setDocument((prev) => ({
         ...prev,
-        meta: { ...prev.meta, version: prev.meta.version + 1 },
+        title: `${prev.title}2`,
       }))
     })
 
-    expect(result.current.document.meta.version).toBe(2)
+    expect(result.current.document.title).toBe('Test2')
     expect(result.current.canUndo).toBe(true)
 
     act(() => result.current.undo())
-    expect(result.current.document.meta.version).toBe(1)
+    expect(result.current.document.title).toBe('Test')
 
     act(() => result.current.redo())
-    expect(result.current.document.meta.version).toBe(2)
+    expect(result.current.document.title).toBe('Test2')
   })
 
   it('does not push history when document is unchanged (no-op)', () => {
@@ -65,7 +61,7 @@ describe('useReportHistory (react)', () => {
     act(() => {
       result.current.setDocument((prev) => ({
         ...prev,
-        meta: { ...prev.meta, version: 2 },
+        title: `${prev.title}-changed`,
       }))
     })
 
@@ -74,12 +70,13 @@ describe('useReportHistory (react)', () => {
     act(() => {
       result.current.reset({
         ...makeDoc(),
-        meta: { id: 'doc-2', name: 'Reset', version: 10 },
+        id: 'doc-2',
+        title: 'Reset',
       })
     })
 
-    expect(result.current.document.meta.id).toBe('doc-2')
-    expect(result.current.document.meta.version).toBe(10)
+    expect(result.current.document.id).toBe('doc-2')
+    expect(result.current.document.title).toBe('Reset')
     expect(result.current.canUndo).toBe(false)
     expect(result.current.canRedo).toBe(false)
   })

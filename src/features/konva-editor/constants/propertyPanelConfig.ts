@@ -584,7 +584,7 @@ export const REPORT_PANEL_CONFIG: PropertyPanelConfig = {
 export const BED_LAYOUT_PANEL_CONFIG: PropertyPanelConfig = {
     editorType: 'bedLayout',
     layout: DEFAULT_PANEL_LAYOUT,
-    defaultSections: ['sec:posSize', 'sec:delete'],
+    defaultSections: ['sec:posSize'],
     objects: [
         BED_LAYOUT_TEXT_OBJECT_CONFIG,
         SHAPE_OBJECT_CONFIG,

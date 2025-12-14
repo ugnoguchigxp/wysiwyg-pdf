@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { DataBindingModal } from '../../../@/features/report-editor/components/PropertiesPanel/DataBindingModal'
+import { DataBindingModal } from '@/features/report-editor/components/PropertyPanel/DataBindingModal'
 
 describe('DataBindingModal', () => {
   it('filters and selects field in field mode', () => {

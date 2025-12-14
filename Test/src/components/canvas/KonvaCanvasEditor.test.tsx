@@ -86,7 +86,7 @@ describe('components/canvas/KonvaCanvasEditor', () => {
 
     expect(ref.current.getStage()).toBeNull()
     expect(screen.getByTestId('Stage')).toBeInTheDocument()
-    expect(screen.getByTestId('Layer')).toBeInTheDocument()
+    expect(screen.getAllByTestId('Layer')).toHaveLength(2)
 
     // Select single element
     rendererTestEventById.set('t1', { evt: {} })

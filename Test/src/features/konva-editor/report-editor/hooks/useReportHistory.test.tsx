@@ -1,8 +1,8 @@
 import { renderHook, act } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { useReportHistory } from '../@/features/report-editor/hooks/useReportHistory'
-import type { Doc } from '../@/types/canvas'
+import { useReportHistory } from '@/features/report-editor/hooks/useReportHistory'
+import type { Doc } from '@/types/canvas'
 
 const baseDoc = (id: string): Doc => ({
   v: 1,
