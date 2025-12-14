@@ -142,24 +142,20 @@ const CanvasSettingsPanel: React.FC<{
           </div>
         )}
 
-        {/* Snap Strength */}
+        {/* Snap to Grid */}
         {onSnapStrengthChange && (
           <div className="mb-3">
-            <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center justify-between">
               <label className="text-[13px] text-theme-text-secondary">
-                {t('settings_snap_strength', 'Snap')}
+                {t('settings_snap_to_grid', 'Snap to Grid')}
               </label>
-              <span className="text-[11px] text-theme-text-secondary">{snapStrength ?? 0}pt</span>
+              <input
+                type="checkbox"
+                checked={(snapStrength ?? 0) > 0}
+                onChange={(e) => onSnapStrengthChange(e.target.checked ? (gridSize ?? 15) : 0)}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
             </div>
-            <input
-              type="range"
-              min="0"
-              max="50"
-              step="1"
-              value={snapStrength ?? 0}
-              onChange={(e) => onSnapStrengthChange(Number(e.target.value))}
-              className="w-full h-2 bg-theme-bg-tertiary rounded-lg appearance-none cursor-pointer accent-theme-accent"
-            />
           </div>
         )}
       </div>

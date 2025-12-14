@@ -2,6 +2,9 @@ import {
   AlignCenter,
   AlignLeft,
   AlignRight,
+  AlignVerticalJustifyCenter,
+  ArrowDownToLine,
+  ArrowUpToLine,
 } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
@@ -14,6 +17,7 @@ import {
 } from '../../../../../../components/ui/Tooltip'
 import type { TableNode } from '../../types/wysiwyg'
 import { BindingSelector } from './BindingSelector'
+import { DEFAULT_FONT_FAMILIES } from '../../../../constants/propertyPanelConfig'
 
 // Helper type for cell properties
 type CellProps = TableNode['table']['cells'][number]
@@ -57,9 +61,46 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
       }
     } else {
       // Update all cells (global style)
-      // For existing cells
+      const rowCount = element.table.rows.length
+      const colCount = element.table.cols.length
+
+      // Respect merged cell spans: do not create/update cells that are covered by another cell's span.
+      const covered = Array(rowCount)
+        .fill(null)
+        .map(() => Array(colCount).fill(false))
+
+      for (const cell of newCells) {
+        const rs = cell.rs || 1
+        const cs = cell.cs || 1
+        if (rs <= 1 && cs <= 1) continue
+        for (let rr = 0; rr < rs; rr++) {
+          for (let cc = 0; cc < cs; cc++) {
+            if (rr === 0 && cc === 0) continue
+            const r = cell.r + rr
+            const c = cell.c + cc
+            if (r >= 0 && r < rowCount && c >= 0 && c < colCount) {
+              covered[r][c] = true
+            }
+          }
+        }
+      }
+
+      // Materialize missing cells so the global style actually affects the full table.
+      for (let r = 0; r < rowCount; r++) {
+        for (let c = 0; c < colCount; c++) {
+          if (covered[r][c]) continue
+          if (!newCells.find(cell => cell.r === r && cell.c === c)) {
+            newCells.push({ r, c, v: '' } as CellProps)
+          }
+        }
+      }
+
+      // Apply updates to all non-covered cells (including newly materialized ones)
       for (let i = 0; i < newCells.length; i++) {
-        newCells[i] = { ...newCells[i], ...updates }
+        const cell = newCells[i]
+        if (!covered[cell.r]?.[cell.c]) {
+          newCells[i] = { ...cell, ...updates }
+        }
       }
     }
 
@@ -68,7 +109,17 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
 
   // Get active cell data for UI state
   const isGlobal = !selectedCell
-  const defaultCell: Partial<CellProps> = { fontSize: 12, font: 'Meiryo', bg: '#ffffff', align: 'l' }
+  const defaultCell: Partial<CellProps> = {
+    fontSize: 12,
+    font: 'Meiryo',
+    bg: '#ffffff',
+    align: 'l',
+    vAlign: 'm',
+    color: '#000000',
+    borderW: 1,
+    borderColor: '#000000',
+    border: '#000000',
+  }
 
   let activeData: Partial<CellProps> = defaultCell
   if (selectedCell) {
@@ -84,6 +135,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
 
 
   const fontSizes = [8, 9, 10, 10.5, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72]
+  const borderWidthOptions = [0, 0.5, 1, 1.5, 2, 3, 4]
 
   return (
     <div className="space-y-4">
@@ -113,7 +165,16 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
         <div className="space-y-3">
           {/* Font Settings */}
           <div>
-            <div className="grid grid-cols-2 gap-1.5 mb-1.5">
+            <div className="grid grid-cols-3 gap-1.5 mb-1.5">
+              <div>
+                <label className={labelClass}>{resolveText('properties_font', 'Font')}</label>
+                <EditableSelect
+                  value={activeData.font || 'Meiryo'}
+                  onChange={(val) => updateCells({ font: String(val) })}
+                  options={DEFAULT_FONT_FAMILIES}
+                  className="w-full"
+                />
+              </div>
               <div>
                 <label className={labelClass}>{resolveText('properties_size', 'Size')}</label>
                 <EditableSelect
@@ -123,20 +184,15 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                   className="w-full"
                 />
               </div>
-              {/* Note: Color property isn't explicitly in TableNode cell, maybe `fill`? unified node uses fill for text color usually. But for table cell text? `v` is value. 
-                  Schema says `v: string`. It doesn't strictly specify text color. 
-                  If we look at `TextNode`, it uses `fill`. 
-                  Let's assume we can add `fill` to cell or it's not supported in schema yet.
-                  Wait, `TableNode` schema in `canvas.ts` -> `cells` props.
-                  Actually `UnifiedNode` > `TableNode`. `TableData` > `CellData`.
-                  `CellData` has `fontSize?: number`, `font?: string`, `align?: 'l'|'c'|'r'`, `bg?: string`. 
-                  It DOES NOT have text color. 
-                  I might need to add it to schema or ignore it.
-                  I'll use `vColor` or just ignore for now if schema is strict.
-                  Checking `canvas.ts`... `CellData` is `any` in some places? No, defined.
-                  Let's assume we can extend it or use `fill` if `CellData` allows.
-                  For now I won't implement text color if it's not in schema to avoid type errors.
-               */}
+              <div>
+                <label className={labelClass}>{resolveText('properties_color', 'Color')}</label>
+                <input
+                  type="color"
+                  className="w-full h-8 rounded border border-theme-border bg-theme-bg-primary"
+                  value={activeData.color || '#000000'}
+                  onChange={(e) => updateCells({ color: e.target.value })}
+                />
+              </div>
             </div>
 
             {/* Style Buttons (Bold/Italic etc - Not in schema for CellData explicitly? 
@@ -198,12 +254,61 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
             </div>
           </div>
 
-          {/* Background Color */}
+          {/* Vertical Alignment */}
           <div>
-            <label className={labelClass}>
-              {resolveText('properties_background_color', 'Background Color')}
+            <label className={`${labelClass} font-medium`}>
+              {resolveText('properties_vertical_align', 'Vertical Alignment')}
             </label>
-            <div className="flex items-center gap-2">
+            <div className="flex bg-theme-bg-primary rounded border border-theme-border p-0.5">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => updateCells({ vAlign: 't' })}
+                      className={`flex-1 flex items-center justify-center py-1 rounded ${activeData.vAlign === 't' ? 'bg-theme-bg-tertiary text-theme-accent' : 'text-theme-text-secondary hover:bg-theme-bg-secondary'}`}
+                    >
+                      <ArrowUpToLine size={14} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent><p>{resolveText('top', 'Top')}</p></TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => updateCells({ vAlign: 'm' })}
+                      className={`flex-1 flex items-center justify-center py-1 rounded ${activeData.vAlign === 'm' ? 'bg-theme-bg-tertiary text-theme-accent' : 'text-theme-text-secondary hover:bg-theme-bg-secondary'}`}
+                    >
+                      <AlignVerticalJustifyCenter size={14} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent><p>{resolveText('middle', 'Middle')}</p></TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => updateCells({ vAlign: 'b' })}
+                      className={`flex-1 flex items-center justify-center py-1 rounded ${activeData.vAlign === 'b' ? 'bg-theme-bg-tertiary text-theme-accent' : 'text-theme-text-secondary hover:bg-theme-bg-secondary'}`}
+                    >
+                      <ArrowDownToLine size={14} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent><p>{resolveText('bottom', 'Bottom')}</p></TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </div>
+
+          {/* Background / Border (one row) */}
+          <div className="grid grid-cols-3 gap-1.5">
+            <div>
+              <label className={labelClass}>
+                {resolveText('properties_background_color', 'Background Color')}
+              </label>
               <input
                 type="color"
                 className="w-full h-8 rounded border border-theme-border bg-theme-bg-primary"
@@ -211,20 +316,24 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                 onChange={(e) => updateCells({ bg: e.target.value })}
               />
             </div>
-          </div>
-
-          {/* Border (Boolean only in schema?) `border?: boolean`.
-              I'll add a checkbox or simple toggle.
-          */}
-          <div>
-            <label className="flex items-center gap-2 text-xs">
+            <div>
+              <label className={labelClass}>{resolveText('properties_border_color', 'Border Color')}</label>
               <input
-                type="checkbox"
-                checked={!!activeData.border}
-                onChange={e => updateCells({ border: e.target.checked ? '#000000' : undefined })}
+                type="color"
+                className="w-full h-8 rounded border border-theme-border bg-theme-bg-primary"
+                value={activeData.borderColor || activeData.border || '#000000'}
+                onChange={(e) => updateCells({ borderColor: e.target.value, border: e.target.value })}
               />
-              {resolveText('properties_border', 'Border')}
-            </label>
+            </div>
+            <div>
+              <label className={labelClass}>{resolveText('properties_border_width', 'Border Width')}</label>
+              <EditableSelect
+                value={activeData.borderW ?? (activeData.border ? 1 : 0)}
+                onChange={(val) => updateCells({ borderW: Number(val) })}
+                options={borderWidthOptions}
+                className="w-full"
+              />
+            </div>
           </div>
 
         </div>

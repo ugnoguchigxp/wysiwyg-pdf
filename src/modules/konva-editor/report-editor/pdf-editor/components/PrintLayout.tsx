@@ -179,6 +179,8 @@ const RenderTable = ({ element }: { element: TableNode }) => {
               if (!cell) return <td key={`${rowIndex}-${colIndex}`} />
 
               const fontSize = cell.fontSize || 12
+              const borderW = cell.borderW ?? (cell.border ? 1 : 1)
+              const borderColor = cell.borderColor || cell.border || '#ccc'
 
               return (
                 <td
@@ -186,11 +188,13 @@ const RenderTable = ({ element }: { element: TableNode }) => {
                   colSpan={colSpan}
                   rowSpan={rowSpan}
                   style={{
-                    border: cell.border ? `1px solid black` : '1px solid #ccc', // simplified
+                    border: borderW > 0 ? `${borderW}px solid ${borderColor}` : 'none',
                     backgroundColor: cell.bg || 'transparent',
                     fontFamily: cell.font || 'Helvetica',
                     fontSize: `${fontSize}pt`,
                     textAlign: cell.align === 'r' ? 'right' : cell.align === 'c' ? 'center' : 'left',
+                    verticalAlign: cell.vAlign === 'b' ? 'bottom' : cell.vAlign === 'm' ? 'middle' : 'top',
+                    color: cell.color || '#000000',
                     padding: '4px',
                     wordBreak: 'break-word',
                     whiteSpace: 'pre-wrap',

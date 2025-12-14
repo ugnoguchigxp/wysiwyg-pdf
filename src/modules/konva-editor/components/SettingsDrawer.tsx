@@ -79,26 +79,19 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     )}
                 </div>
 
-                {/* Snap Strength Slider */}
+                {/* Snap to Grid */}
                 <div className="space-y-2">
                     <div className="flex items-center justify-between">
                         <label className="text-sm font-medium text-theme-text-primary">
-                            {t('settings_snap_strength', 'Snap Strength')}
+                            {t('settings_snap_to_grid', 'Snap to Grid')}
                         </label>
-                        <span className="text-sm text-theme-text-secondary">{snapStrength}pt</span>
+                        <input
+                            type="checkbox"
+                            checked={snapStrength > 0}
+                            onChange={(e) => onSnapStrengthChange(e.target.checked ? gridSize : 0)}
+                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
                     </div>
-                    <input
-                        type="range"
-                        min="0"
-                        max="50"
-                        step="1"
-                        value={snapStrength}
-                        onChange={(e) => onSnapStrengthChange(Number(e.target.value))}
-                        className="w-full h-2 bg-theme-bg-tertiary rounded-lg appearance-none cursor-pointer"
-                    />
-                    <p className="text-xs text-theme-text-secondary">
-                        {t('settings_snap_desc', 'Snap distance in pixels (0 to disable)')}
-                    </p>
                 </div>
             </div>
         </div>

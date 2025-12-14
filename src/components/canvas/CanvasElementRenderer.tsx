@@ -1,6 +1,6 @@
 import type Konva from 'konva'
 import type React from 'react'
-import { forwardRef, useCallback, useEffect, useRef, useState } from 'react'
+import { forwardRef, useCallback, useEffect, useRef, useState, useMemo } from 'react'
 import {
   Circle,
   Ellipse,
@@ -14,6 +14,7 @@ import {
   Transformer,
 } from 'react-konva'
 import { findImageWithExtension } from '../../modules/konva-editor/report-editor/pdf-editor/components/WysiwygCanvas/canvasImageUtils'
+import { LineMarker } from './LineMarker'
 import type {
   UnifiedNode,
   TextNode,
@@ -171,8 +172,8 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
   onSelect,
   onChange,
   onDblClick,
-  onCellDblClick: _onCellDblClick,
-  onCellClick: _onCellClick,
+  onCellDblClick,
+  onCellClick,
   onContextMenu,
   isEditing: _isEditing,
   editingCell: _editingCell,
@@ -185,12 +186,21 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
 }) => {
   const shapeRef = useRef<Konva.Node | null>(null)
   const trRef = useRef<Konva.Transformer | null>(null)
+  const isLineHandleDraggingRef = useRef(false)
+  const lineVisualRef = useRef<Konva.Line | null>(null)
+  const lineStartHandleRef = useRef<Konva.Circle | null>(null)
+  const lineEndHandleRef = useRef<Konva.Circle | null>(null)
+  const lineDraftPtsRef = useRef<number[] | null>(null)
 
   const handleShapeRef = useCallback(
     (node: Konva.Node | null) => {
       shapeRef.current = node
-      if (isSelected && trRef.current && node) {
-        trRef.current.nodes([node])
+      if (isSelected && trRef.current) {
+        if (node) {
+          trRef.current.nodes([node])
+        } else {
+          trRef.current.nodes([])
+        }
         trRef.current.getLayer()?.batchDraw()
       }
     },
@@ -199,12 +209,10 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
 
   useEffect(() => {
     if (isSelected && trRef.current && shapeRef.current) {
-      if (isSelected && trRef.current && shapeRef.current) {
-        trRef.current.nodes([shapeRef.current])
-        trRef.current.getLayer()?.batchDraw()
-      }
+      trRef.current.nodes([shapeRef.current])
+      trRef.current.getLayer()?.batchDraw()
     }
-  }, [isSelected, element.t])
+  }, [isSelected, element.t, element.w, element.h])
 
   // Text Auto-resize
   useEffect(() => {
@@ -388,17 +396,17 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
     },
   }
 
-  // Try custom renderer first (e.g. for widgets or platform specific nodes)
-  if (renderCustom) {
-    const custom = renderCustom(element, commonProps, handleShapeRef)
-    if (custom) return <>{custom}</>
-  }
+  const content = useMemo(() => {
+    // Try custom renderer first
+    if (renderCustom) {
+      const custom = renderCustom(element, commonProps, handleShapeRef)
+      if (custom) return custom
+    }
 
-  switch (element.t) {
-    case 'text': {
-      const { text, font, fontSize, fontWeight, italic, underline, lineThrough, fill, align, vAlign, stroke, strokeW } = element as TextNode
-      return (
-        <>
+    switch (element.t) {
+      case 'text': {
+        const { text, font, fontSize, fontWeight, italic, underline, lineThrough, fill, align, vAlign, stroke, strokeW } = element as TextNode
+        return (
           <Text
             {...commonProps}
             height={undefined} // Auto-height
@@ -414,152 +422,586 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
             verticalAlign={vAlign === 't' ? 'top' : vAlign === 'b' ? 'bottom' : 'middle'}
             width={element.w}
           />
-          {isSelected && !readOnly && (
-            <Transformer
-              ref={trRef as React.RefObject<Konva.Transformer>}
-              rotateEnabled={true}
-              enabledAnchors={['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right']}
-              boundBoxFunc={(oldBox, newBox) => {
-                if (newBox.width < 10 || newBox.height < 10) return oldBox
-                return newBox
+        )
+      }
+      case 'shape': {
+        const shape = element as ShapeNode
+        switch (shape.shape) {
+          case 'rect':
+            return <Rect {...commonProps} fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} cornerRadius={shape.radius} />
+          case 'circle':
+            // Ellipse centered
+            return <Ellipse {...commonProps}
+              x={(shape.x || 0) + (shape.w || 0) / 2}
+              y={(shape.y || 0) + (shape.h || 0) / 2}
+              radiusX={(shape.w || 0) / 2}
+              radiusY={(shape.h || 0) / 2}
+              fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} />
+          case 'triangle':
+            return <Line {...commonProps} points={[shape.w / 2, 0, shape.w, shape.h, 0, shape.h]} closed fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} />
+          case 'diamond':
+            return <Line {...commonProps} points={[shape.w / 2, 0, shape.w, shape.h / 2, shape.w / 2, shape.h, 0, shape.h / 2]} closed fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} />
+          case 'star':
+            return <Star {...commonProps} x={(shape.x || 0) + shape.w / 2} y={(shape.y || 0) + shape.h / 2} numPoints={5} innerRadius={Math.min(shape.w, shape.h) / 4} outerRadius={Math.min(shape.w, shape.h) / 2} fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} />
+          case 'trapezoid':
+            const w = shape.w
+            const h = shape.h
+            return <Line {...commonProps} points={[w * 0.2, 0, w * 0.8, 0, w, h, 0, h]} closed fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} />
+          case 'cylinder':
+            // Simplified cylinder: rect + ellipses (handling strictly via Path or multiple shapes is complex in single component return. Using Path for visual approximation)
+            // Using simple Rect for now as fallback or Path if defined.
+            return <Rect {...commonProps} fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} />
+          case 'arrow-u':
+            return <Path {...commonProps} data="M12 4l-8 8h6v8h4v-8h6z" fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} scaleX={shape.w / 24} scaleY={shape.h / 24} />
+          case 'arrow-d':
+            return <Path {...commonProps} data="M12 20l-8-8h6v-8h4v8h6z" fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} scaleX={shape.w / 24} scaleY={shape.h / 24} />
+          case 'arrow-l':
+            return <Path {...commonProps} data="M4 12l8-8v6h8v4h-8v6z" fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} scaleX={shape.w / 24} scaleY={shape.h / 24} />
+          case 'arrow-r':
+            return <Path {...commonProps} data="M20 12l-8-8v6h-8v4h8v6z" fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} scaleX={shape.w / 24} scaleY={shape.h / 24} />
+          case 'tree':
+            return <Path {...commonProps} data="M12,2L2,12h4v8h12v-8h4L12,2z" fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} scaleX={shape.w / 24} scaleY={shape.h / 24} />
+          case 'house':
+            return <Path {...commonProps} data="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z" fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} scaleX={shape.w / 24} scaleY={shape.h / 24} />
+          default:
+            return <Rect {...commonProps} fill={shape.fill} stroke={shape.stroke} />
+        }
+      }
+      case 'line': {
+        const line = element as LineNode
+        const pts = line.pts || [0, 0, 100, 0]
+
+        const snapStep = (showGrid && gridSize > 0) ? gridSize : (snapStrength > 0 ? snapStrength : 0)
+
+        const snapToGrid = (pos: { x: number; y: number }) => {
+          if (!snapStep) return pos
+          return {
+            x: Math.round(pos.x / snapStep) * snapStep,
+            y: Math.round(pos.y / snapStep) * snapStep,
+          }
+        }
+
+        const snap45 = (moving: { x: number; y: number }, fixed: { x: number; y: number }) => {
+          const dx = moving.x - fixed.x
+          const dy = moving.y - fixed.y
+          const angle = Math.atan2(dy, dx)
+          const dist = Math.sqrt(dx * dx + dy * dy)
+          const snapAngle = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4)
+          return {
+            x: fixed.x + Math.cos(snapAngle) * dist,
+            y: fixed.y + Math.sin(snapAngle) * dist,
+          }
+        }
+
+        const applyDraftToVisuals = (draftPts: number[]) => {
+          lineVisualRef.current?.points(draftPts)
+          lineStartHandleRef.current?.position({ x: draftPts[0], y: draftPts[1] })
+          lineEndHandleRef.current?.position({ x: draftPts[2], y: draftPts[3] })
+          lineVisualRef.current?.getLayer()?.batchDraw()
+        }
+
+        const startHandleDrag = (e: Konva.KonvaEventObject<DragEvent>) => {
+          isLineHandleDraggingRef.current = true
+          lineDraftPtsRef.current = [...pts]
+          const group = e.target.getParent()
+          if (group) (group as Konva.Group).draggable(false)
+          e.cancelBubble = true
+        }
+
+        const moveHandleDrag = (pointIndex: number, e: Konva.KonvaEventObject<DragEvent>) => {
+          const base = lineDraftPtsRef.current || [...pts]
+
+          let nextPos = { x: e.target.x(), y: e.target.y() }
+
+          const other = pointIndex === 0
+            ? { x: base[2], y: base[3] }
+            : { x: base[0], y: base[1] }
+
+          if (e.evt.shiftKey) {
+            nextPos = snap45(nextPos, other)
+          } else {
+            nextPos = snapToGrid(nextPos)
+          }
+
+          e.target.position(nextPos)
+
+          const next = [...base]
+          next[pointIndex] = nextPos.x
+          next[pointIndex + 1] = nextPos.y
+          lineDraftPtsRef.current = next
+          applyDraftToVisuals(next)
+          e.cancelBubble = true
+        }
+
+        const endHandleDrag = (e: Konva.KonvaEventObject<DragEvent>) => {
+          e.cancelBubble = true
+          const next = lineDraftPtsRef.current
+          const group = e.target.getParent()
+          if (group) (group as Konva.Group).draggable((readOnly ? false : !element.locked) && isSelected)
+          // Commit once
+          if (next) onChange({ id: element.id, pts: next })
+          // Release after this tick so any stray group dragend won't apply
+          setTimeout(() => {
+            isLineHandleDraggingRef.current = false
+            lineDraftPtsRef.current = null
+          }, 0)
+        }
+
+        return (
+          <Group
+            id={element.id}
+            x={0}
+            y={0}
+            draggable={(readOnly ? false : !element.locked) && isSelected}
+            onDragStart={commonProps.onDragStart}
+            onDragEnd={(e) => {
+              if (isLineHandleDraggingRef.current) {
+                // If an endpoint handle drag accidentally triggered group drag events,
+                // ignore them to avoid shifting the whole line.
+                e.target.position({ x: 0, y: 0 })
+                return
+              }
+              const node = e.target
+              const dx = node.x()
+              const dy = node.y()
+
+              if (dx !== 0 || dy !== 0) {
+                const newPts = pts.map((p, i) => (i % 2 === 0 ? p + dx : p + dy))
+                onChange({ id: element.id, pts: newPts })
+              }
+
+              // Reset group position to avoid mixing x/y offsets with absolute pts.
+              node.position({ x: 0, y: 0 })
+            }}
+            onMouseDown={commonProps.onMouseDown}
+            onTap={commonProps.onTap}
+            onMouseEnter={commonProps.onMouseEnter}
+            onMouseLeave={commonProps.onMouseLeave}
+            dragBoundFunc={commonProps.dragBoundFunc}
+            ref={handleShapeRef as any}
+          >
+            <Line
+              ref={(node) => {
+                lineVisualRef.current = node
               }}
+              points={pts}
+              stroke={line.stroke || '#000000'}
+              strokeWidth={line.strokeW || 1}
+              dash={line.dash}
+              lineCap="round"
+              lineJoin="round"
+              hitStrokeWidth={20}
+              draggable={false}
             />
-          )}
-        </>
-      )
-    }
-    case 'shape': {
-      const shape = element as ShapeNode
-      switch (shape.shape) {
-        case 'rect':
-          return <Rect {...commonProps} fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} cornerRadius={shape.radius} />
-        case 'circle':
-          // Ellipse centered
-          return <Ellipse {...commonProps}
-            x={(shape.x || 0) + (shape.w || 0) / 2}
-            y={(shape.y || 0) + (shape.h || 0) / 2}
-            radiusX={(shape.w || 0) / 2}
-            radiusY={(shape.h || 0) / 2}
-            fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} />
-        case 'triangle':
-          return <Line {...commonProps} points={[shape.w / 2, 0, shape.w, shape.h, 0, shape.h]} closed fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} />
-        case 'diamond':
-          return <Line {...commonProps} points={[shape.w / 2, 0, shape.w, shape.h / 2, shape.w / 2, shape.h, 0, shape.h / 2]} closed fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} />
-        case 'star':
-          return <Star {...commonProps} x={(shape.x || 0) + shape.w / 2} y={(shape.y || 0) + shape.h / 2} numPoints={5} innerRadius={Math.min(shape.w, shape.h) / 4} outerRadius={Math.min(shape.w, shape.h) / 2} fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} />
-        // ... (Add other shapes if needed, keeping it simple for now as requested by user plan emphasis on structure)
-        case 'arrow-u':
-          return <Path {...commonProps} data="M12 4l-8 8h6v8h4v-8h6z" fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeW} scaleX={shape.w / 24} scaleY={shape.h / 24} />
-        // ...
-        default:
-          return <Rect {...commonProps} fill={shape.fill} stroke={shape.stroke} />
+            {/* Arrow markers with calculated angles */}
+            {(() => {
+              // Calculate angle from start to end
+              const dx = pts[2] - pts[0]
+              const dy = pts[3] - pts[1]
+              const angleToEnd = Math.atan2(dy, dx)
+              const angleToStart = angleToEnd + Math.PI // Reverse direction
+
+              return (
+                <>
+                  {/* Start Arrow - points away from line (reverse direction) */}
+                  {line.arrows?.[0] && line.arrows[0] !== 'none' && (
+                    <LineMarker
+                      x={pts[0]}
+                      y={pts[1]}
+                      angle={angleToStart}
+                      type={line.arrows[0]}
+                      color={line.stroke || '#000000'}
+                      size={Math.max(8, (line.strokeW || 1) * 4)}
+                    />
+                  )}
+                  {/* End Arrow - points in line direction */}
+                  {line.arrows?.[1] && line.arrows[1] !== 'none' && (
+                    <LineMarker
+                      x={pts[pts.length - 2]}
+                      y={pts[pts.length - 1]}
+                      angle={angleToEnd}
+                      type={line.arrows[1]}
+                      color={line.stroke || '#000000'}
+                      size={Math.max(8, (line.strokeW || 1) * 4)}
+                    />
+                  )}
+                </>
+              )
+            })()}
+            {/* Endpoint drag handles (only when selected) */}
+            {isSelected && !readOnly && (() => {
+              return (
+                <>
+                  {/* Start point handle */}
+                  <Circle
+                    ref={(node) => {
+                      lineStartHandleRef.current = node
+                    }}
+                    x={pts[0]}
+                    y={pts[1]}
+                    radius={6}
+                    fill="#ffffff"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    draggable
+                    onDragStart={startHandleDrag}
+                    onDragMove={(e) => moveHandleDrag(0, e)}
+                    onDragEnd={endHandleDrag}
+                    onMouseDown={(e) => { e.cancelBubble = true }}
+                  />
+                  {/* End point handle */}
+                  <Circle
+                    ref={(node) => {
+                      lineEndHandleRef.current = node
+                    }}
+                    x={pts[pts.length - 2]}
+                    y={pts[pts.length - 1]}
+                    radius={6}
+                    fill="#ffffff"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    draggable
+                    onDragStart={startHandleDrag}
+                    onDragMove={(e) => moveHandleDrag(pts.length - 2, e)}
+                    onDragEnd={endHandleDrag}
+                    onMouseDown={(e) => { e.cancelBubble = true }}
+                  />
+                </>
+              )
+            })()}
+          </Group>
+        )
       }
-    }
-    case 'line': {
-      const line = element as LineNode
+      case 'image': {
+        return <CanvasImage element={element as ImageNode} commonProps={commonProps} ref={handleShapeRef} />
+      }
+      case 'table': {
+        const tableElement = element as TableNode
+        const { rows, cols, cells } = tableElement.table
 
-      const handlePointDrag = (pointIndex: 0 | 2, newX: number, newY: number) => {
-        const currentPts = [...(line.pts || [0, 0, 100, 0])]
-        currentPts[pointIndex] = newX
-        currentPts[pointIndex + 1] = newY
+        const rowCount = rows.length
+        const colCount = cols.length
 
-        onChange({ id: element.id, pts: currentPts })
+        const totalW = cols.reduce((acc, v) => acc + (v ?? 0), 0)
+        const totalH = rows.reduce((acc, v) => acc + (v ?? 0), 0)
+
+        // Track occupied cells due to row/col spans to avoid rendering duplicates.
+        const occupied = Array(rowCount)
+          .fill(null)
+          .map(() => Array(colCount).fill(false))
+
+        // Helpers to get cumulative positions
+        const getRowY = (rowIndex: number) => {
+          let y = 0
+          for (let i = 0; i < rowIndex; i++) {
+            if (rows[i] !== undefined) y += rows[i]
+          }
+          return y
+        }
+
+        const getColX = (colIndex: number) => {
+          let x = 0
+          for (let i = 0; i < colIndex; i++) {
+            if (cols[i] !== undefined) x += cols[i]
+          }
+          return x
+        }
+
+        const getRowHeight = (rowIndex: number, span: number = 1) => {
+          let h = 0
+          for (let i = 0; i < span; i++) {
+            const rh = rows[rowIndex + i]
+            if (rh !== undefined) h += rh
+          }
+          return h
+        }
+
+        const getColWidth = (colIndex: number, span: number = 1) => {
+          let w = 0
+          for (let i = 0; i < span; i++) {
+            const cw = cols[colIndex + i]
+            if (cw !== undefined) w += cw
+          }
+          return w
+        }
+
+        // Build a fast lookup for cells.
+        const cellMap = new Map<string, TableNode['table']['cells'][number]>()
+        for (const c of cells) cellMap.set(`${c.r}:${c.c}`, c)
+
+        const rendered: React.ReactNode[] = []
+
+        for (let r = 0; r < rowCount; r++) {
+          for (let c = 0; c < colCount; c++) {
+            if (occupied[r][c]) continue
+
+            const cell = cellMap.get(`${r}:${c}`)
+            const rs = cell?.rs || 1
+            const cs = cell?.cs || 1
+
+            // Mark occupied for spans (including the top-left cell position)
+            if (rs > 1 || cs > 1) {
+              for (let rr = 0; rr < rs; rr++) {
+                for (let cc = 0; cc < cs; cc++) {
+                  if (r + rr < rowCount && c + cc < colCount) {
+                    occupied[r + rr][c + cc] = true
+                  }
+                }
+              }
+            }
+
+            const x = getColX(c)
+            const y = getRowY(r)
+            const w = getColWidth(c, cs)
+            const h = getRowHeight(r, rs)
+
+            const borderColor = cell?.borderColor || cell?.border || '#cccccc'
+            const borderW = cell?.borderW ?? (cell?.border ? 1 : 1)
+            const borderEnabled = borderW > 0
+            const bg = cell?.bg
+            const fontSize = cell?.fontSize || 12
+            const fontFamily = cell?.font || 'Meiryo'
+            const color = cell?.color || '#000000'
+            const align = cell?.align || 'l'
+            const vAlign = cell?.vAlign || 'm'
+
+            const isSelectedCell =
+              isSelected &&
+              _selectedCell &&
+              _selectedCell.row === r &&
+              _selectedCell.col === c
+
+            const cellId = `${tableElement.id}_cell_${r}_${c}`
+
+            rendered.push(
+              <Group
+                key={cellId}
+                x={x}
+                y={y}
+                onClick={(e) => {
+                  e.cancelBubble = true
+                  onCellClick?.(tableElement.id, r, c)
+                }}
+                onDblClick={(e) => {
+                  e.cancelBubble = true
+                  onCellDblClick?.(tableElement.id, r, c)
+                }}
+              >
+                <Rect
+                  id={cellId}
+                  x={0}
+                  y={0}
+                  width={w}
+                  height={h}
+                  fill={bg || 'transparent'}
+                  stroke={borderEnabled ? borderColor : undefined}
+                  strokeWidth={borderEnabled ? borderW : 0}
+                />
+
+                {!!cell?.v && (
+                  <Text
+                    id={`${cellId}_text`}
+                    x={4}
+                    y={0}
+                    width={Math.max(0, w - 8)}
+                    height={h}
+                    text={cell.v}
+                    fontSize={fontSize}
+                    fontFamily={fontFamily}
+                    fill={color}
+                    align={align === 'r' ? 'right' : align === 'c' ? 'center' : 'left'}
+                    verticalAlign={vAlign === 't' ? 'top' : vAlign === 'b' ? 'bottom' : 'middle'}
+                    listening={false}
+                  />
+                )}
+
+                {isSelectedCell && (
+                  <Rect
+                    x={0}
+                    y={0}
+                    width={w}
+                    height={h}
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    dash={[4, 4]}
+                    fillEnabled={false}
+                    listening={false}
+                  />
+                )}
+              </Group>
+            )
+          }
+        }
+
+        const handles: React.ReactNode[] = []
+        const HANDLE_SIZE = 8
+        const MIN_ROW = 10
+        const MIN_COL = 10
+
+        if (isSelected && !readOnly) {
+          // Row resize handles
+          for (let i = 0; i < rowCount - 1; i++) {
+            const boundaryY = getRowY(i + 1)
+            const maxUp = (rows[i] ?? 0) - MIN_ROW
+            const maxDown = (rows[i + 1] ?? 0) - MIN_ROW
+
+            handles.push(
+              <Rect
+                key={`${tableElement.id}_row_handle_${i}`}
+                x={0}
+                y={boundaryY - HANDLE_SIZE / 2}
+                width={totalW}
+                height={HANDLE_SIZE}
+                fill="#000000"
+                opacity={0.01}
+                draggable
+                dragBoundFunc={(pos) => {
+                  const desiredCenter = pos.y + HANDLE_SIZE / 2
+                  const delta = Math.max(-maxUp, Math.min(maxDown, desiredCenter - boundaryY))
+                  return { x: 0, y: boundaryY - HANDLE_SIZE / 2 + delta }
+                }}
+                onMouseEnter={(e) => {
+                  const container = e.target.getStage()?.container()
+                  if (container) container.style.cursor = 'row-resize'
+                }}
+                onMouseLeave={(e) => {
+                  const container = e.target.getStage()?.container()
+                  if (container) container.style.cursor = 'default'
+                }}
+                onDragEnd={(e) => {
+                  e.cancelBubble = true
+                  const delta = e.target.y() - (boundaryY - HANDLE_SIZE / 2)
+                  if (Math.abs(delta) < 0.01) return
+
+                  const newRows = [...rows]
+                  const topH = (newRows[i] ?? 0) + delta
+                  const bottomH = (newRows[i + 1] ?? 0) - delta
+                  if (topH >= MIN_ROW && bottomH >= MIN_ROW) {
+                    newRows[i] = topH
+                    newRows[i + 1] = bottomH
+                    onChange({
+                      id: tableElement.id,
+                      h: newRows.reduce((acc, v) => acc + (v ?? 0), 0),
+                      table: {
+                        ...tableElement.table,
+                        rows: newRows,
+                      },
+                    } as unknown as Partial<UnifiedNode>)
+                  }
+                }}
+              />
+            )
+          }
+
+          // Column resize handles
+          for (let i = 0; i < colCount - 1; i++) {
+            const boundaryX = getColX(i + 1)
+            const maxLeft = (cols[i] ?? 0) - MIN_COL
+            const maxRight = (cols[i + 1] ?? 0) - MIN_COL
+
+            handles.push(
+              <Rect
+                key={`${tableElement.id}_col_handle_${i}`}
+                x={boundaryX - HANDLE_SIZE / 2}
+                y={0}
+                width={HANDLE_SIZE}
+                height={totalH}
+                fill="#000000"
+                opacity={0.01}
+                draggable
+                dragBoundFunc={(pos) => {
+                  const desiredCenter = pos.x + HANDLE_SIZE / 2
+                  const delta = Math.max(-maxLeft, Math.min(maxRight, desiredCenter - boundaryX))
+                  return { x: boundaryX - HANDLE_SIZE / 2 + delta, y: 0 }
+                }}
+                onMouseEnter={(e) => {
+                  const container = e.target.getStage()?.container()
+                  if (container) container.style.cursor = 'col-resize'
+                }}
+                onMouseLeave={(e) => {
+                  const container = e.target.getStage()?.container()
+                  if (container) container.style.cursor = 'default'
+                }}
+                onDragEnd={(e) => {
+                  e.cancelBubble = true
+                  const delta = e.target.x() - (boundaryX - HANDLE_SIZE / 2)
+                  if (Math.abs(delta) < 0.01) return
+
+                  const newCols = [...cols]
+                  const leftW = (newCols[i] ?? 0) + delta
+                  const rightW = (newCols[i + 1] ?? 0) - delta
+                  if (leftW >= MIN_COL && rightW >= MIN_COL) {
+                    newCols[i] = leftW
+                    newCols[i + 1] = rightW
+                    onChange({
+                      id: tableElement.id,
+                      w: newCols.reduce((acc, v) => acc + (v ?? 0), 0),
+                      table: {
+                        ...tableElement.table,
+                        cols: newCols,
+                      },
+                    } as unknown as Partial<UnifiedNode>)
+                  }
+                }}
+              />
+            )
+          }
+        }
+
+        return (
+          <Group {...commonProps}>
+            {rendered}
+            {handles}
+            {isSelected && !_selectedCell && (
+              <Rect
+                x={0}
+                y={0}
+                width={tableElement.w}
+                height={tableElement.h}
+                stroke="#cccccc"
+                strokeWidth={1}
+                dash={[4, 4]}
+                fillEnabled={false}
+                listening={false}
+              />
+            )}
+          </Group>
+        )
       }
 
-      return (
-        <Group
-          id={element.id}
-          x={element.x ?? 0}
-          y={element.y ?? 0}
-          draggable={(readOnly ? false : !element.locked) && isSelected}
-          onDragStart={commonProps.onDragStart}
-          onDragEnd={(e) => {
-            const node = e.target
-            onChange({
-              id: element.id,
-              x: node.x(),
-              y: node.y(),
-            })
+      case 'signature': {
+        const sig = element as SignatureNode
+        return (
+          <Group {...commonProps}>
+            {/* Transparent hit box */}
+            <Rect width={sig.w} height={sig.h} fill="transparent" />
+            {sig.strokes.map((stroke, i) => (
+              <Line key={i} points={stroke} stroke={sig.stroke} strokeWidth={sig.strokeW} lineCap="round" lineJoin="round" />
+            ))}
+          </Group>
+        )
+      }
+
+      default:
+        return null
+    }
+  }, [element, commonProps, renderCustom, handleShapeRef, readOnly, isSelected, onChange])
+
+  return (
+    <>
+      {content}
+      {isSelected && !readOnly && element.t !== 'line' && (
+        <Transformer
+          key={`${element.id}-${element.w}-${element.h}`}
+          ref={trRef as React.RefObject<Konva.Transformer>}
+          rotateEnabled={true}
+          enabledAnchors={['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right', 'top-center', 'bottom-center']}
+          boundBoxFunc={(oldBox, newBox) => {
+            if (newBox.width < 5 || newBox.height < 5) return oldBox
+            return newBox
           }}
-          onMouseDown={commonProps.onMouseDown}
-          onTap={commonProps.onTap}
-          onMouseEnter={commonProps.onMouseEnter}
-          onMouseLeave={commonProps.onMouseLeave}
-          dragBoundFunc={commonProps.dragBoundFunc}
-        >
-          <Line
-            points={element.pts || [0, 0, 100, 0]}
-            stroke={element.stroke || '#000000'}
-            strokeWidth={element.strokeW || 1}
-            dash={element.dash}
-            lineCap="round"
-            lineJoin="round"
-            hitStrokeWidth={20}
-            draggable={false}
-          />
-          {isSelected && !readOnly && (
-            <>
-              {/* Start Handle */}
-              <Circle
-                x={(element.pts || [0, 0, 100, 0])[0]}
-                y={(element.pts || [0, 0, 100, 0])[1]}
-                radius={6}
-                fill="#ffffff"
-                stroke="#3b82f6"
-                strokeWidth={2}
-                draggable
-                onDragMove={(e) => handlePointDrag(0, e.target.x(), e.target.y())}
-                onMouseDown={(e) => {
-                  e.cancelBubble = true
-                }}
-              />
-              {/* End Handle */}
-              <Circle
-                x={(element.pts || [0, 0, 100, 0])[2]}
-                y={(element.pts || [0, 0, 100, 0])[3]}
-                radius={6}
-                fill="#ffffff"
-                stroke="#3b82f6"
-                strokeWidth={2}
-                draggable
-                onDragMove={(e) => handlePointDrag(2, e.target.x(), e.target.y())}
-                onMouseDown={(e) => {
-                  e.cancelBubble = true
-                }}
-              />
-            </>
-          )}
-        </Group>
-      )
-    }
-    case 'image':
-      return <CanvasImage element={element as ImageNode} commonProps={commonProps} ref={shapeRef as React.RefObject<Konva.Image>} />
-
-    case 'table': {
-      const tbl = element as TableNode
-      // Simplified table support
-      return (
-        <Group {...commonProps}>
-          <Rect width={tbl.w} height={tbl.h} stroke="black" />
-          <Text text="Table (Preview)" x={5} y={5} />
-        </Group>
-      )
-    }
-
-    case 'signature': {
-      const sig = element as SignatureNode
-      return (
-        <Group {...commonProps}>
-          {/* Transparent hit box */}
-          <Rect width={sig.w} height={sig.h} fill="transparent" />
-          {sig.strokes.map((stroke, i) => (
-            <Line key={i} points={stroke} stroke={sig.stroke} strokeWidth={sig.strokeW} lineCap="round" lineJoin="round" />
-          ))}
-        </Group>
-      )
-    }
-
-    default:
-      return null
-  }
+        />
+      )}
+    </>
+  )
 }

@@ -16,10 +16,15 @@ import {
     Italic,
     Underline,
     Strikethrough,
+    Minus,
+    ArrowRight,
+    ArrowLeft,
+    Circle,
+    Diamond,
 } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { cn } from '../../../../../utils/utils'
-import type { UnifiedNode, TextNode, ShapeNode, LineNode, ImageNode } from '../../../../../types/canvas'
+import type { UnifiedNode, TextNode, ShapeNode, LineNode, ImageNode, ArrowType } from '../../../../../types/canvas'
 import type {
     WidgetConfig,
     PosSizeWidgetConfig,
@@ -37,6 +42,9 @@ import type {
     ImageWidgetConfig,
     SelectWidgetConfig,
     GridLayout,
+    ArrowheadWidgetConfig,
+    PolygonWidgetConfig,
+    DataBindingWidgetConfig,
 } from '../../../constants/propertyPanelConfig'
 import { DEFAULT_FONT_FAMILIES, DEFAULT_FONT_SIZES } from '../../../constants/propertyPanelConfig'
 
@@ -839,14 +847,121 @@ export const SelectWidget: React.FC<WidgetProps<SelectWidgetConfig>> = ({
 // Widget Renderer (Factory)
 // ========================================
 
+// ========================================
+// Polygon Widget
+// ========================================
+
+export const PolygonWidget: React.FC<WidgetProps<PolygonWidgetConfig>> = ({
+    config,
+    node,
+    onChange,
+    resolveText,
+}) => {
+    if (node.t !== 'shape') return null
+    const shapeNode = node as ShapeNode
+    const points = shapeNode.sides ?? 5
+    const { min = 3, max = 12, step = 1 } = config.props || {}
+
+    return (
+        <div>
+            <WidgetLabel>
+                {resolveText(config.labelKey ?? 'properties_sides', 'Sides')}: {points}
+            </WidgetLabel>
+            <input
+                type="range"
+                min={min}
+                max={max}
+                step={step}
+                value={points}
+                onChange={(e) => onChange({ sides: parseInt(e.target.value) } as Partial<ShapeNode>)}
+                className="w-full accent-theme-accent"
+            />
+        </div>
+    )
+}
+
+// ========================================
+// Data Binding Widget (Placeholder)
+// ========================================
+
+export const DataBindingWidget: React.FC<WidgetProps<DataBindingWidgetConfig>> = ({
+    config,
+}) => {
+    // Placeholder implementation
+    return (
+        <div className="text-xs text-theme-text-secondary italic">
+            {config.props?.mode === 'repeater' ? 'Repeater Binding' : 'Field Binding'} (WIP)
+        </div>
+    )
+}
+
+// ========================================
+// Arrowhead Widget
+// ========================================
+
+export const ArrowheadWidget: React.FC<WidgetProps<ArrowheadWidgetConfig>> = ({
+    config,
+    node,
+    onChange,
+    resolveText,
+}) => {
+    if (node.t !== 'line') return null
+    const lineNode = node as LineNode
+
+    // arrows = [start, end]
+    const position = config.props?.position ?? 'end'
+    const index = position === 'start' ? 0 : 1
+    const currentArrow = lineNode.arrows?.[index] ?? 'none'
+
+    const options: ArrowType[] = ['none', 'arrow', 'circle', 'diamond']
+
+    const handleSelect = (arrowType: ArrowType) => {
+        // Ensure arrows array exists and clone it
+        const currentArrows = lineNode.arrows ?? ['none', 'none']
+        const newArrows: [ArrowType, ArrowType] = [...currentArrows] as [ArrowType, ArrowType]
+        newArrows[index] = arrowType
+        onChange({ arrows: newArrows } as Partial<LineNode>)
+    }
+
+    return (
+        <div>
+            <WidgetLabel>{resolveText(config.labelKey ?? `arrow_${position}`, position === 'start' ? 'Start Arrow' : 'End Arrow')}</WidgetLabel>
+            <div className="flex bg-theme-bg-tertiary rounded p-0.5 border border-theme-border">
+                {options.map((opt) => (
+                    <button
+                        key={opt}
+                        onClick={() => handleSelect(opt)}
+                        className={cn(
+                            'flex-1 py-1.5 flex items-center justify-center rounded transition-colors',
+                            currentArrow === opt
+                                ? 'bg-blue-500 text-white shadow-sm'
+                                : 'hover:bg-theme-bg-secondary text-theme-text-secondary'
+                        )}
+                        title={opt}
+                    >
+                        {opt === 'none' && <Minus size={14} />}
+                        {opt === 'arrow' && (position === 'start' ? <ArrowLeft size={14} /> : <ArrowRight size={14} />)}
+                        {opt === 'circle' && <Circle size={12} />}
+                        {opt === 'diamond' && <Diamond size={12} />}
+                    </button>
+                ))}
+            </div>
+        </div>
+    )
+}
+
+// ========================================
+// Widget Renderer (Factory)
+// ========================================
+
 export const renderWidget = (
     config: WidgetConfig,
     node: UnifiedNode,
     onChange: (updates: Partial<UnifiedNode>) => void,
     resolveText: (key: string, fallback?: string) => string,
-    customRenderers?: Record<string, React.FC<WidgetProps>>
-): React.ReactNode => {
-    const commonProps = { config, node, onChange, resolveText }
+    customRenderers?: Record<string, React.FC<any>>
+) => {
+    const commonProps = { node, onChange, resolveText }
 
     switch (config.type) {
         case 'posSize':
@@ -863,6 +978,12 @@ export const renderWidget = (
             return <FillWidget {...commonProps} config={config} />
         case 'border':
             return <BorderWidget {...commonProps} config={config} />
+        case 'polygon':
+            return <PolygonWidget {...commonProps} config={config} />
+        case 'image':
+            return <ImageWidget {...commonProps} config={config} />
+        case 'select':
+            return <SelectWidget {...commonProps} config={config} />
         case 'colorPicker':
             return <ColorPickerWidget {...commonProps} config={config} />
         case 'slider':
@@ -871,19 +992,20 @@ export const renderWidget = (
             return <TextContentWidget {...commonProps} config={config} />
         case 'lineStyle':
             return <LineStyleWidget {...commonProps} config={config} />
+        case 'arrowhead':
+            return <ArrowheadWidget {...commonProps} config={config} />
+        case 'hiddenField':
         case 'labelField':
-            return <LabelFieldWidget {...commonProps} config={config} />
-        case 'image':
-            return <ImageWidget {...commonProps} config={config} />
-        case 'select':
-            return <SelectWidget {...commonProps} config={config} />
+            return null // or implement readonly display
+        case 'dataBinding':
+            return <DataBindingWidget {...commonProps} config={config} />
         case 'custom':
-            const CustomRenderer = customRenderers?.[config.props.renderKey]
-            if (CustomRenderer) {
-                return <CustomRenderer {...commonProps} />
+            if (customRenderers?.[config.props.renderKey]) {
+                const CustomComponent = customRenderers[config.props.renderKey]
+                return <CustomComponent {...commonProps} config={config} />
             }
             return null
         default:
-            return null
+            return <div className="text-xs text-red-500">Unknown widget type: {(config as any).type}</div>
     }
 }

@@ -22,6 +22,9 @@ interface TableContextMenuProps {
       | 'insertColRight'
       | 'deleteRow'
       | 'deleteCol'
+      | 'mergeRight'
+      | 'mergeDown'
+      | 'unmerge'
   ) => void
 }
 
@@ -64,6 +67,18 @@ export const TableContextMenu: React.FC<TableContextMenuProps> = ({
       role="menu"
       tabIndex={-1}
     >
+      <button type="button" onClick={() => onAction('mergeRight')} className={itemClass}>
+        {t('table_ctx_merge_right', 'Merge Right')}
+      </button>
+      <button type="button" onClick={() => onAction('mergeDown')} className={itemClass}>
+        {t('table_ctx_merge_down', 'Merge Down')}
+      </button>
+      <button type="button" onClick={() => onAction('unmerge')} className={itemClass}>
+        {t('table_ctx_unmerge', 'Unmerge')}
+      </button>
+
+      <div className="my-1 border-t border-theme-border" />
+
       <button type="button" onClick={() => onAction('insertRowAbove')} className={itemClass}>
         <ArrowUpToLine className="w-4 h-4" />
         {t('table_ctx_insert_row_above', 'Insert Row Above')}

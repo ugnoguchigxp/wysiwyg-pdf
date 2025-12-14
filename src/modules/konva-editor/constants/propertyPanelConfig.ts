@@ -31,11 +31,9 @@ export interface PanelLayout {
 // ========================================
 
 export type WidgetType =
-    | 'posSize' | 'font' | 'alignment' | 'vAlignment'
-    | 'dataBinding' | 'stroke' | 'fill' | 'border'
-    | 'polygon' | 'image' | 'labelField' | 'hiddenField'
-    | 'select' | 'colorPicker' | 'slider' | 'textContent'
-    | 'lineStyle' | 'custom'
+    | 'posSize' | 'font' | 'alignment' | 'vAlignment' | 'stroke' | 'fill' | 'border'
+    | 'polygon' | 'image' | 'labelField' | 'hiddenField' | 'select' | 'colorPicker' | 'slider'
+    | 'textContent' | 'lineStyle' | 'dataBinding' | 'custom' | 'arrowhead'
 
 // ========================================
 // Preset System (プリセットシステム)
@@ -120,12 +118,49 @@ export interface LineStyleWidgetConfig extends BaseWidgetConfig { type: 'lineSty
 export interface DataBindingWidgetConfig extends BaseWidgetConfig { type: 'dataBinding'; props?: { mode?: 'field' | 'repeater' } }
 export interface CustomWidgetConfig extends BaseWidgetConfig { type: 'custom'; props: { renderKey: string;[key: string]: unknown } }
 
+export interface ArrowheadWidgetConfig extends BaseWidgetConfig {
+    type: 'arrowhead'
+    props?: {
+        position: 'start' | 'end'
+    }
+}
+
 export type WidgetConfig =
-    | PosSizeWidgetConfig | FontWidgetConfig | AlignmentWidgetConfig | VAlignmentWidgetConfig
-    | StrokeWidgetConfig | FillWidgetConfig | BorderWidgetConfig | PolygonWidgetConfig
-    | ImageWidgetConfig | LabelFieldWidgetConfig | HiddenFieldWidgetConfig | SelectWidgetConfig
-    | ColorPickerWidgetConfig | SliderWidgetConfig | TextContentWidgetConfig | LineStyleWidgetConfig
-    | DataBindingWidgetConfig | CustomWidgetConfig
+    | PosSizeWidgetConfig
+    | FontWidgetConfig
+    | AlignmentWidgetConfig
+    | VAlignmentWidgetConfig
+    | StrokeWidgetConfig
+    | FillWidgetConfig
+    | BorderWidgetConfig
+    | ColorPickerWidgetConfig
+    | SliderWidgetConfig
+    | TextContentWidgetConfig
+    | LineStyleWidgetConfig
+    | ArrowheadWidgetConfig
+    | LabelFieldWidgetConfig
+    | ImageWidgetConfig
+    | SelectWidgetConfig
+    | CustomWidgetConfig
+    | PosSizeWidgetConfig
+    | FontWidgetConfig
+    | AlignmentWidgetConfig
+    | VAlignmentWidgetConfig
+    | StrokeWidgetConfig
+    | FillWidgetConfig
+    | BorderWidgetConfig
+    | PolygonWidgetConfig
+    | ImageWidgetConfig
+    | LabelFieldWidgetConfig
+    | HiddenFieldWidgetConfig
+    | SelectWidgetConfig
+    | ColorPickerWidgetConfig
+    | SliderWidgetConfig
+    | TextContentWidgetConfig
+    | LineStyleWidgetConfig
+    | ArrowheadWidgetConfig
+    | DataBindingWidgetConfig
+    | CustomWidgetConfig
 
 // ========================================
 // Section Configuration
@@ -263,6 +298,16 @@ export const WIDGET_PRESETS: Record<string, WidgetConfig> = {
         labelKey: 'properties_line_style',
         props: { options: ['solid', 'dashed', 'dotted'] },
     },
+    'arrow:start': {
+        type: 'arrowhead',
+        labelKey: 'properties_arrow_start',
+        props: { position: 'start' },
+    },
+    'arrow:end': {
+        type: 'arrowhead',
+        labelKey: 'properties_arrow_end',
+        props: { position: 'end' },
+    },
 
     // === Data Binding ===
     'binding:field': {
@@ -390,6 +435,11 @@ export const SECTION_PRESETS: Record<string, SectionConfig> = {
         id: 'line-style',
         widgets: ['stroke:color', 'stroke:width', 'lineStyle:default'],
     },
+    'sec:line-arrow': {
+        id: 'line-arrow',
+        grid: { cols: 2, gap: 4 },
+        widgets: ['arrow:start', 'arrow:end'],
+    },
 
     // === Image Sections ===
     'sec:image-preview': {
@@ -473,7 +523,7 @@ export const SHAPE_OBJECT_CONFIG: ObjectPanelConfig = {
 export const LINE_OBJECT_CONFIG: ObjectPanelConfig = {
     objectType: 'line',
     header: { iconName: 'Minus', labelKey: 'properties_element_line' },
-    sections: ['sec:line-style'],
+    sections: ['sec:line-style', 'sec:line-arrow'],
 }
 
 export const IMAGE_OBJECT_CONFIG: ObjectPanelConfig = {

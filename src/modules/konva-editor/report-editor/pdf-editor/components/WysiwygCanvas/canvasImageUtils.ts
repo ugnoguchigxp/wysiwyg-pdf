@@ -208,17 +208,12 @@ export function drawTableElement(ctx: CanvasRenderingContext2D, element: TableNo
       ctx.fillRect(cx, cy, width, height)
     }
 
-    // Border (Simple implementation: stroke rect)
-    const borderColor = '#000000' // cell.border ?
-    const borderWidth = 1
-    if (cell.border) {
+    // Border
+    const borderColor = cell.borderColor || cell.border || '#cccccc'
+    const borderWidth = cell.borderW ?? (cell.border ? 1 : 1)
+    if (borderWidth > 0) {
       ctx.strokeStyle = borderColor
       ctx.lineWidth = borderWidth
-      ctx.strokeRect(cx, cy, width, height)
-    } else {
-      // Maybe light gray for outline?
-      ctx.strokeStyle = '#cccccc'
-      ctx.lineWidth = 1
       ctx.strokeRect(cx, cy, width, height)
     }
 
@@ -227,16 +222,16 @@ export function drawTableElement(ctx: CanvasRenderingContext2D, element: TableNo
       const fontSize = cell.fontSize || 12
       const fontFamily = cell.font || 'Meiryo'
       const fontWeight = 400
-      const fontColor = '#000000'
+      const fontColor = cell.color || '#000000'
       const align = cell.align || 'l' // 'l' | 'c' | 'r'
-      // const verticalAlign = 'm'
+      const verticalAlign = cell.vAlign || 'm' // 't' | 'm' | 'b'
 
       ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`
       ctx.fillStyle = fontColor
-      ctx.textBaseline = 'middle'
+      ctx.textBaseline = verticalAlign === 't' ? 'top' : verticalAlign === 'b' ? 'bottom' : 'middle'
 
       let textX = cx
-      const textY = cy + height / 2
+      const textY = verticalAlign === 't' ? cy + 4 : verticalAlign === 'b' ? cy + height - 4 : cy + height / 2
 
       // Horizontal Align
       if (align === 'c') {

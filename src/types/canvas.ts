@@ -130,6 +130,7 @@ export interface ShapeNode extends BaseNode {
   stroke?: Color
   strokeW?: number
   dash?: number[]
+  sides?: number                 // For polygon/star (vertex count)
 }
 
 export interface LineNode extends BaseNode {
@@ -205,9 +206,13 @@ export interface Cell {
   // Cell-specific styles
   bg?: string
   border?: string
+  borderColor?: string
+  borderW?: number
   font?: string
   fontSize?: number
   align?: 'l' | 'c' | 'r'
+  vAlign?: 't' | 'm' | 'b'
+  color?: string
 }
 
 // ========================================

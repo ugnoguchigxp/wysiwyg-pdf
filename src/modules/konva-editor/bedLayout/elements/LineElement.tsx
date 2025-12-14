@@ -1,6 +1,7 @@
 import type Konva from 'konva'
 import type React from 'react'
 import { Circle, Group, Line } from 'react-konva'
+import { useEffect, useRef } from 'react'
 import type { LineNode } from '../../types'
 
 interface LineElementProps {
@@ -18,57 +19,86 @@ export const LineElement: React.FC<LineElementProps> = ({
   onChange,
   shapeRef,
 }) => {
-  const handlePointDrag = (point: 'start' | 'end', e: Konva.KonvaEventObject<DragEvent>) => {
-    const group = e.target.getParent()
-    if (!group) return
+  const lineRef = useRef<Konva.Line | null>(null)
+  const startHandleRef = useRef<Konva.Circle | null>(null)
+  const endHandleRef = useRef<Konva.Circle | null>(null)
 
-    // Get position relative to the group
-    // For LineElement, group is at (0,0) so relative is absolute if we assume that.
-    // Use stage pointer for accurate positioning?
-    // e.target.x()/y() are relative to parent (group).
+  const draftPtsRef = useRef<number[]>([...element.pts])
+  const draggingHandleRef = useRef<'start' | 'end' | null>(null)
 
+  useEffect(() => {
+    if (draggingHandleRef.current) return
+    draftPtsRef.current = [...element.pts]
+  }, [element.pts])
+
+  const applyDraftToVisuals = (pts: number[]) => {
+    lineRef.current?.points(pts)
+    startHandleRef.current?.position({ x: pts[0], y: pts[1] })
+    endHandleRef.current?.position({ x: pts[2], y: pts[3] })
+    lineRef.current?.getLayer()?.batchDraw()
+  }
+
+  const snap45 = (moving: { x: number; y: number }, fixed: { x: number; y: number }) => {
+    const dx = moving.x - fixed.x
+    const dy = moving.y - fixed.y
+    const angle = Math.atan2(dy, dx)
+    const dist = Math.sqrt(dx * dx + dy * dy)
+    const snapAngle = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4)
+    return {
+      x: fixed.x + Math.cos(snapAngle) * dist,
+      y: fixed.y + Math.sin(snapAngle) * dist,
+    }
+  }
+
+  const handlePointDragMove = (point: 'start' | 'end', e: Konva.KonvaEventObject<DragEvent>) => {
     const newX = e.target.x()
     const newY = e.target.y()
     let newPos = { x: newX, y: newY }
 
-    // Snap to 45 degrees if Shift is pressed
+    const basePts = draftPtsRef.current
+    const otherPoint = point === 'start'
+      ? { x: basePts[2], y: basePts[3] }
+      : { x: basePts[0], y: basePts[1] }
+
     if (e.evt.shiftKey) {
-      const startX = element.pts[0]
-      const startY = element.pts[1]
-      const endX = element.pts[2]
-      const endY = element.pts[3]
-
-      const otherPoint = point === 'start' ? { x: endX, y: endY } : { x: startX, y: startY }
-      const dx = newPos.x - otherPoint.x
-      const dy = newPos.y - otherPoint.y
-      const angle = Math.atan2(dy, dx)
-      const dist = Math.sqrt(dx * dx + dy * dy)
-
-      // Snap angle to nearest 45 degrees (PI/4)
-      const snapAngle = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4)
-
-      newPos = {
-        x: otherPoint.x + Math.cos(snapAngle) * dist,
-        y: otherPoint.y + Math.sin(snapAngle) * dist,
-      }
-
-      // Update handle position visually to match snapped point
+      newPos = snap45(newPos, otherPoint)
       e.target.position(newPos)
     }
 
-    const currentPts = [...element.pts]
+    const nextPts = [...basePts]
     if (point === 'start') {
-      currentPts[0] = newPos.x
-      currentPts[1] = newPos.y
+      nextPts[0] = newPos.x
+      nextPts[1] = newPos.y
     } else {
-      currentPts[2] = newPos.x
-      currentPts[3] = newPos.y
+      nextPts[2] = newPos.x
+      nextPts[3] = newPos.y
     }
 
-    onChange({ pts: currentPts })
+    draftPtsRef.current = nextPts
+    applyDraftToVisuals(nextPts)
 
-    // Prevent event bubbling to avoid dragging the group
     e.cancelBubble = true
+  }
+
+  const handlePointDragStart = (point: 'start' | 'end') => {
+    draggingHandleRef.current = point
+    draftPtsRef.current = [...element.pts]
+
+    // Prevent the line body from also being dragged while resizing endpoints.
+    if (lineRef.current) {
+      lineRef.current.draggable(false)
+    }
+  }
+
+  const handlePointDragEnd = () => {
+    const nextPts = draftPtsRef.current
+    draggingHandleRef.current = null
+
+    if (lineRef.current) {
+      lineRef.current.draggable(true)
+    }
+
+    onChange({ pts: nextPts })
   }
 
   return (
@@ -82,6 +112,7 @@ export const LineElement: React.FC<LineElementProps> = ({
       onTap={onSelect}
     >
       <Line
+        ref={lineRef}
         points={element.pts}
         stroke={element.stroke || '#000'}
         strokeWidth={element.strokeW || 2}
@@ -110,6 +141,7 @@ export const LineElement: React.FC<LineElementProps> = ({
         <>
           {/* Start Point Handle */}
           <Circle
+            ref={startHandleRef as any}
             x={element.pts[0]}
             y={element.pts[1]}
             radius={6}
@@ -117,11 +149,20 @@ export const LineElement: React.FC<LineElementProps> = ({
             stroke="#3b82f6"
             strokeWidth={2}
             draggable
-            onDragMove={(e) => handlePointDrag('start', e)}
-            onDragEnd={(e) => handlePointDrag('start', e)}
+            onMouseDown={(e) => { e.cancelBubble = true }}
+            onDragStart={(e) => {
+              e.cancelBubble = true
+              handlePointDragStart('start')
+            }}
+            onDragMove={(e) => handlePointDragMove('start', e)}
+            onDragEnd={(e) => {
+              e.cancelBubble = true
+              handlePointDragEnd()
+            }}
           />
           {/* End Point Handle */}
           <Circle
+            ref={endHandleRef as any}
             x={element.pts[2]}
             y={element.pts[3]}
             radius={6}
@@ -129,8 +170,16 @@ export const LineElement: React.FC<LineElementProps> = ({
             stroke="#3b82f6"
             strokeWidth={2}
             draggable
-            onDragMove={(e) => handlePointDrag('end', e)}
-            onDragEnd={(e) => handlePointDrag('end', e)}
+            onMouseDown={(e) => { e.cancelBubble = true }}
+            onDragStart={(e) => {
+              e.cancelBubble = true
+              handlePointDragStart('end')
+            }}
+            onDragMove={(e) => handlePointDragMove('end', e)}
+            onDragEnd={(e) => {
+              e.cancelBubble = true
+              handlePointDragEnd()
+            }}
           />
         </>
       )}
