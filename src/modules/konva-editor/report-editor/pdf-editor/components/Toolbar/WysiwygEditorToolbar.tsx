@@ -133,8 +133,25 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
     log.debug('Element added from toolbar', { id: element.id, type: element.t })
   }
 
+  const calculateInitialPosition = (surfaceId: string) => {
+    const surface = templateDoc.surfaces.find(s => s.id === surfaceId)
+    // Default to A4 size if surface not found (210mm * 297mm approx 595px * 842px at 72dpi, but let's assume px)
+    const surfaceW = surface?.w ?? 800
+    const surfaceH = surface?.h ?? 600
+
+    const nodesOnSurface = templateDoc.nodes.filter(n => n.s === surfaceId).length
+    const offset = nodesOnSurface * (surfaceW * 0.01)
+
+    return {
+      x: (surfaceW * 0.15) + offset,
+      y: (surfaceH * 0.15) + offset,
+      offset
+    }
+  }
+
   const addText = () => {
     const s = getTargetSurfaceId()
+    const { x, y } = calculateInitialPosition(s)
     const id = `text-${crypto.randomUUID()}`
     const textContent = resolveText('toolbar_default_text', 'Text')
     const font = {
@@ -157,8 +174,8 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
       fontWeight: font.weight,
       fill: '#000000',
       align: 'l',
-      x: 50,
-      y: 50,
+      x,
+      y,
       w: width + 10,
       h: height + 4,
     }
@@ -167,6 +184,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
 
   const addShape = (shapeType: string) => {
     const s = getTargetSurfaceId()
+    const { x, y } = calculateInitialPosition(s)
     const id = `${shapeType.toLowerCase()}-${crypto.randomUUID()}`
 
     let width = 80
@@ -194,31 +212,33 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
       locked: false,
       r: 0,
       name: shapeType,
-      x: 100,
-      y: 100,
+      x,
+      y,
       w: width,
       h: height,
       stroke: '#000000',
       strokeW: 1,
       fill: '#ffffff',
     }
-    // Rename shapes that have specific handling or lowercase conventions
-    // Already lowercase from input
-
-
     withNewElement(shape)
   }
 
   const addLine = () => {
     const s = getTargetSurfaceId()
+    const { x, y } = calculateInitialPosition(s)
     const id = `line-${crypto.randomUUID()}`
+
+    // Default line length and position adjustment relative to calc pos
+    // Original pts: [60, 340, 220, 340] -> length 160, y: 340
+    // We want start point to be at calculated x, y
+
     const line: LineNode = {
       id,
       t: 'line',
       s,
       locked: false,
       name: 'Line',
-      pts: [60, 340, 220, 340],
+      pts: [x, y, x + 160, y], // Simple horizontal line starting at x,y
       stroke: '#000000',
       strokeW: 1,
     }
@@ -227,6 +247,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
 
   const addImage = () => {
     const s = getTargetSurfaceId()
+    const { x, y } = calculateInitialPosition(s)
     const id = `image-${crypto.randomUUID()}`
     const image: ImageNode = {
       id,
@@ -235,8 +256,8 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
       locked: false,
       r: 0,
       name: 'Image',
-      x: 150,
-      y: 420,
+      x,
+      y,
       w: 120,
       h: 80,
       src: '', // Empty
@@ -246,6 +267,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
 
   const addTable = () => {
     const s = getTargetSurfaceId()
+    const { x, y } = calculateInitialPosition(s)
     const id = `table-${crypto.randomUUID()}`
     const table: TableNode = {
       id,
@@ -254,8 +276,8 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
       locked: false,
       r: 0,
       name: 'Table',
-      x: 50,
-      y: 50,
+      x,
+      y,
       w: 300,
       h: 150,
       table: {
@@ -266,7 +288,6 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
           { r: 0, c: 0, v: '' },
           { r: 0, c: 1, v: '' },
           { r: 0, c: 2, v: '' }
-          // ... populate lazily in renderer if needed or fill all here
         ]
       }
     }

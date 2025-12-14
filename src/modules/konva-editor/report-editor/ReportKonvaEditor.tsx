@@ -9,6 +9,7 @@ import type { TextNode, UnifiedNode, Doc, Surface, SignatureNode } from '../../.
 import { createContextLogger } from '../../../utils/logger'
 import { findImageWithExtension } from './pdf-editor/components/WysiwygCanvas/canvasImageUtils'
 import { simplifyPoints } from '../../../utils/geometry'
+import { GridLayer } from '../../../components/canvas/GridLayer'
 
 const log = createContextLogger('ReportKonvaEditor')
 
@@ -30,6 +31,9 @@ interface ReportKonvaEditorProps {
   onSelectedCellChange?: (cell: { elementId: string; row: number; col: number } | null) => void
   activeTool?: string
   drawingSettings?: { stroke: string; strokeWidth: number; tolerance?: number }
+  showGrid?: boolean
+  snapStrength?: number
+  gridSize?: number
 }
 
 const PageBackground = ({
@@ -106,6 +110,9 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       // onSelectedCellChange, // Unused
       activeTool,
       drawingSettings = { stroke: '#000000', strokeWidth: 2, tolerance: 2.0 },
+      showGrid = false,
+      snapStrength = 0,
+      gridSize = 50,
     },
     ref
   ) => {
@@ -326,7 +333,22 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
     useImperativeHandle(ref, () => ({
       downloadImage: () => {
         if (!stageRef.current) return
-        const dataURL = stageRef.current.toDataURL({ pixelRatio: 2 })
+        const stage = stageRef.current
+
+        // Hide grid layer
+        const gridLayer = stage.findOne('.grid-layer')
+        const wasVisible = gridLayer?.visible()
+        if (gridLayer) {
+          gridLayer.hide()
+        }
+
+        const dataURL = stage.toDataURL({ pixelRatio: 2 })
+
+        // Restore grid layer
+        if (gridLayer && wasVisible) {
+          gridLayer.show()
+        }
+
         const link = document.createElement('a')
         link.download = `report-${Date.now()}.png`
         link.href = dataURL
@@ -410,12 +432,22 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
             <Layer name="background-layer" listening={false}>
               <PageBackground width={width} height={height} surface={currentSurface} />
             </Layer>
+            <GridLayer
+              width={width}
+              height={height}
+              scale={displayScale}
+              visible={showGrid}
+              gridSize={gridSize}
+            />
             <Layer name="content-layer" listening={activeTool !== 'signature'}>
               {nodes.map((element) => (
                 <CanvasElementRenderer
                   key={element.id}
                   element={element}
                   isSelected={element.id === selectedElementId}
+                  snapStrength={isDrawing ? 0 : snapStrength} // Disable snap while drawing signature
+                  showGrid={showGrid}
+                  gridSize={gridSize}
                   onSelect={() => handleElementSelect(element)}
                   onChange={handleElementChange}
                   onDblClick={() => {

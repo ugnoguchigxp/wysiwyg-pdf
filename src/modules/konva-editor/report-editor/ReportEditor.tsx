@@ -10,6 +10,9 @@ export interface ReportEditorProps {
   onTemplateChange: (doc: Doc) => void
   schema?: IDataSchema
   initialZoom?: number
+  showGrid?: boolean
+  snapStrength?: number
+  gridSize?: number
 }
 
 export const ReportEditor: React.FC<ReportEditorProps> = ({
@@ -17,6 +20,9 @@ export const ReportEditor: React.FC<ReportEditorProps> = ({
   onTemplateChange,
   schema,
   initialZoom = 1.0,
+  showGrid = false,
+  snapStrength = 5,
+  gridSize = 15,
 }) => {
   const [zoom, setZoom] = useState<number>(initialZoom * 100)
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null)
@@ -79,6 +85,9 @@ export const ReportEditor: React.FC<ReportEditorProps> = ({
           currentPageId={currentPageId}
           onSelectedCellChange={setSelectedCell}
           activeTool={activeTool}
+          showGrid={showGrid}
+          snapStrength={snapStrength}
+          gridSize={gridSize}
         />
       </div>
 

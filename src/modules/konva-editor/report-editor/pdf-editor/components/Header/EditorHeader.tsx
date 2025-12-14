@@ -7,6 +7,7 @@ import {
   Download,
   Image as ImageIcon,
   Save,
+  Settings2,
 } from 'lucide-react'
 import { Button } from '../../../../../../components/ui/Button'
 
@@ -25,6 +26,7 @@ export interface EditorHeaderProps {
   onSave: () => void
   onBack?: () => void
   onShowShortcuts?: () => void
+  onSettingsClick?: () => void
   children?: React.ReactNode
   i18nOverrides?: Record<string, string>
 }
@@ -44,6 +46,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   onSave,
   onBack,
   onShowShortcuts,
+  onSettingsClick,
   children,
   i18nOverrides,
 }) => {
@@ -159,6 +162,18 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
           <Save className="w-4 h-4" />
           {resolveText('save', 'Save')}
         </button>
+
+        {onSettingsClick && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onSettingsClick}
+            className="text-theme-text-secondary hover:text-theme-text-primary"
+            title={resolveText('header_settings', 'Settings')}
+          >
+            <Settings2 className="w-5 h-5" />
+          </Button>
+        )}
 
         {/* Custom Actions (e.g. Theme Toggle) */}
         {children}

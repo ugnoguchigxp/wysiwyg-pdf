@@ -113,6 +113,10 @@ export interface TextNode extends BaseNode {
   align?: 'l' | 'c' | 'r' | 'j'  // left/center/right/justify (short)
   vAlign?: 't' | 'm' | 'b'       // top/middle/bottom (short)
   fill?: Color                   // Text color
+
+  // Border (for connector/label use cases)
+  stroke?: Color
+  strokeW?: number
 }
 
 export interface ShapeNode extends BaseNode {

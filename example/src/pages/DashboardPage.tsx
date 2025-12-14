@@ -27,8 +27,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                 </button>
             </header>
 
-            <main className="flex-1 flex items-center justify-center p-8 overflow-auto">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl w-full">
+            <main className="flex-1 flex p-8 overflow-auto">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl w-full m-auto">
                     <button
                         onClick={() => onNavigate('report')}
                         className="flex flex-col items-center justify-center p-12 rounded-xl border-2 border-theme-border bg-theme-bg-secondary hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200 group h-80"

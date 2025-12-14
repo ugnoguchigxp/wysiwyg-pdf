@@ -18,6 +18,9 @@ interface KonvaEditorProps {
   onDelete?: (id: string) => void
   onUndo?: () => void
   onRedo?: () => void
+  showGrid?: boolean
+  snapStrength?: number
+  gridSize?: number
 }
 
 export interface BedLayoutEditorHandle {
@@ -36,6 +39,9 @@ export const BedLayoutEditor = React.forwardRef<BedLayoutEditorHandle, KonvaEdit
       onDelete,
       onUndo: _onUndo,
       onRedo: _onRedo,
+      showGrid = false,
+      snapStrength = 5,
+      gridSize = 15,
     },
     ref
   ) => {
@@ -46,7 +52,20 @@ export const BedLayoutEditor = React.forwardRef<BedLayoutEditorHandle, KonvaEdit
       downloadImage: () => {
         const stage = editorRef.current?.getStage()
         if (stage) {
+          // Hide grid layer
+          const gridLayer = stage.findOne('.grid-layer')
+          const wasVisible = gridLayer?.visible()
+          if (gridLayer) {
+            gridLayer.hide()
+          }
+
           const dataURL = stage.toDataURL({ pixelRatio: 2 })
+
+          // Restore grid layer
+          if (gridLayer && wasVisible) {
+            gridLayer.show()
+          }
+
           const link = window.document.createElement('a')
           link.download = `${name || (document.type === 'form' ? document.name : 'bed-layout')}.png`
           link.href = dataURL
@@ -105,6 +124,9 @@ export const BedLayoutEditor = React.forwardRef<BedLayoutEditorHandle, KonvaEdit
           }
           return null
         }}
+        showGrid={showGrid}
+        snapStrength={snapStrength}
+        gridSize={gridSize}
       />
     )
   }

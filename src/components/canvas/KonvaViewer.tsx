@@ -48,8 +48,10 @@ export const KonvaViewer = forwardRef<KonvaViewerHandle, KonvaViewerProps>(
                         scaleY={zoom}
                         ref={stageRef}
                     >
-                        <Layer>
+                        <Layer name="paper-layer" listening={false}>
                             {background}
+                        </Layer>
+                        <Layer>
                             {elements?.map((element) => (
                                 <CanvasElementRenderer
                                     key={element.id}

@@ -2,6 +2,7 @@ import type Konva from 'konva'
 import type React from 'react'
 import { forwardRef, useCallback, useEffect, useRef, useState } from 'react'
 import {
+  Circle,
   Ellipse,
   Group,
   Image as KonvaImage,
@@ -10,6 +11,7 @@ import {
   Rect,
   Star,
   Text,
+  Transformer,
 } from 'react-konva'
 import { findImageWithExtension } from '../../modules/konva-editor/report-editor/pdf-editor/components/WysiwygCanvas/canvasImageUtils'
 import type {
@@ -55,6 +57,9 @@ interface CanvasElementRendererProps {
   editingCell?: { elementId: string; row: number; col: number } | null
   selectedCell?: { row: number; col: number } | null
   isEditing?: boolean
+  snapStrength?: number
+  gridSize?: number
+  showGrid?: boolean
   readOnly?: boolean
   renderCustom?: (
     element: UnifiedNode,
@@ -174,6 +179,9 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
   selectedCell: _selectedCell,
   renderCustom,
   readOnly,
+  snapStrength = 5,
+  gridSize = 15,
+  showGrid = false,
 }) => {
   const shapeRef = useRef<Konva.Node | null>(null)
   const trRef = useRef<Konva.Transformer | null>(null)
@@ -191,13 +199,9 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
 
   useEffect(() => {
     if (isSelected && trRef.current && shapeRef.current) {
-      if (element.t !== 'line') {
+      if (isSelected && trRef.current && shapeRef.current) {
         trRef.current.nodes([shapeRef.current])
         trRef.current.getLayer()?.batchDraw()
-      } else {
-        trRef.current.nodes([]) // Line handled separately usually, or via standard transformer? 
-        // V2 Line has pts. Transformer works on w/h. 
-        // We usually don't transform lines with standard box transformer.
       }
     }
   }, [isSelected, element.t])
@@ -324,12 +328,13 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
   }
 
   const handleMouseEnter = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (element.locked) return
+    if (element.locked || isSelected) return // Skip cursor change for selected elements (Transformer handles it)
     const container = e.target.getStage()?.container()
     if (container) container.style.cursor = 'move'
   }
 
   const handleMouseLeave = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (isSelected) return // Skip for selected elements
     const container = e.target.getStage()?.container()
     if (container) container.style.cursor = 'default'
   }
@@ -352,6 +357,35 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
     onMouseEnter: handleMouseEnter,
     onMouseLeave: handleMouseLeave,
     onContextMenu: (e: Konva.KonvaEventObject<PointerEvent>) => onContextMenu?.(e),
+    dragBoundFunc: function (pos) {
+      // Determine the effective snap interval
+      // If grid is shown, strict snap to grid lines (gridSize).
+      // Otherwise, use snapStrength (manual setting).
+      let snap = 0
+      if (showGrid && gridSize > 0) {
+        snap = gridSize
+      } else if (snapStrength > 0) {
+        snap = snapStrength
+      }
+
+      if (snap <= 0) return pos
+
+      const stage = this.getStage()
+      if (!stage) return pos
+
+      const transform = stage.getAbsoluteTransform().copy()
+      transform.invert()
+      const logicalPos = transform.point(pos)
+
+      const snappedLogicalX = Math.round(logicalPos.x / snap) * snap
+      const snappedLogicalY = Math.round(logicalPos.y / snap) * snap
+
+      // Convert back to absolute
+      const absoluteTransform = stage.getAbsoluteTransform()
+      const snappedPos = absoluteTransform.point({ x: snappedLogicalX, y: snappedLogicalY })
+
+      return snappedPos
+    },
   }
 
   // Try custom renderer first (e.g. for widgets or platform specific nodes)
@@ -362,21 +396,36 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
 
   switch (element.t) {
     case 'text': {
-      const { text, font, fontSize, fontWeight, italic, underline, lineThrough, fill, align, vAlign } = element as TextNode
+      const { text, font, fontSize, fontWeight, italic, underline, lineThrough, fill, align, vAlign, stroke, strokeW } = element as TextNode
       return (
-        <Text
-          {...commonProps}
-          height={undefined} // Auto-height
-          text={text}
-          fontSize={fontSize}
-          fontFamily={font}
-          fontStyle={`${italic ? 'italic ' : ''}${fontWeight && fontWeight >= 700 ? 'bold' : ''}`.trim() || 'normal'}
-          textDecoration={[underline ? 'underline' : '', lineThrough ? 'line-through' : ''].filter(Boolean).join(' ')}
-          fill={fill}
-          align={align === 'l' ? 'left' : align === 'r' ? 'right' : align === 'c' ? 'center' : 'justify'}
-          verticalAlign={vAlign === 't' ? 'top' : vAlign === 'b' ? 'bottom' : 'middle'}
-          width={element.w}
-        />
+        <>
+          <Text
+            {...commonProps}
+            height={undefined} // Auto-height
+            text={text}
+            fontSize={fontSize}
+            fontFamily={font}
+            fontStyle={`${italic ? 'italic ' : ''}${fontWeight && fontWeight >= 700 ? 'bold' : ''}`.trim() || 'normal'}
+            textDecoration={[underline ? 'underline' : '', lineThrough ? 'line-through' : ''].filter(Boolean).join(' ')}
+            fill={fill}
+            stroke={stroke}
+            strokeWidth={strokeW}
+            align={align === 'l' ? 'left' : align === 'r' ? 'right' : align === 'c' ? 'center' : 'justify'}
+            verticalAlign={vAlign === 't' ? 'top' : vAlign === 'b' ? 'bottom' : 'middle'}
+            width={element.w}
+          />
+          {isSelected && !readOnly && (
+            <Transformer
+              ref={trRef as React.RefObject<Konva.Transformer>}
+              rotateEnabled={true}
+              enabledAnchors={['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right']}
+              boundBoxFunc={(oldBox, newBox) => {
+                if (newBox.width < 10 || newBox.height < 10) return oldBox
+                return newBox
+              }}
+            />
+          )}
+        </>
       )
     }
     case 'shape': {
@@ -408,11 +457,78 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
     }
     case 'line': {
       const line = element as LineNode
-      // Render line
+
+      const handlePointDrag = (pointIndex: 0 | 2, newX: number, newY: number) => {
+        const currentPts = [...(line.pts || [0, 0, 100, 0])]
+        currentPts[pointIndex] = newX
+        currentPts[pointIndex + 1] = newY
+
+        onChange({ id: element.id, pts: currentPts })
+      }
+
       return (
-        <Group>
-          <Line {...commonProps} points={line.pts} stroke={line.stroke} strokeWidth={line.strokeW} dash={line.dash} />
-          {/* Markers - need calculation of angle */}
+        <Group
+          id={element.id}
+          x={element.x ?? 0}
+          y={element.y ?? 0}
+          draggable={(readOnly ? false : !element.locked) && isSelected}
+          onDragStart={commonProps.onDragStart}
+          onDragEnd={(e) => {
+            const node = e.target
+            onChange({
+              id: element.id,
+              x: node.x(),
+              y: node.y(),
+            })
+          }}
+          onMouseDown={commonProps.onMouseDown}
+          onTap={commonProps.onTap}
+          onMouseEnter={commonProps.onMouseEnter}
+          onMouseLeave={commonProps.onMouseLeave}
+          dragBoundFunc={commonProps.dragBoundFunc}
+        >
+          <Line
+            points={element.pts || [0, 0, 100, 0]}
+            stroke={element.stroke || '#000000'}
+            strokeWidth={element.strokeW || 1}
+            dash={element.dash}
+            lineCap="round"
+            lineJoin="round"
+            hitStrokeWidth={20}
+            draggable={false}
+          />
+          {isSelected && !readOnly && (
+            <>
+              {/* Start Handle */}
+              <Circle
+                x={(element.pts || [0, 0, 100, 0])[0]}
+                y={(element.pts || [0, 0, 100, 0])[1]}
+                radius={6}
+                fill="#ffffff"
+                stroke="#3b82f6"
+                strokeWidth={2}
+                draggable
+                onDragMove={(e) => handlePointDrag(0, e.target.x(), e.target.y())}
+                onMouseDown={(e) => {
+                  e.cancelBubble = true
+                }}
+              />
+              {/* End Handle */}
+              <Circle
+                x={(element.pts || [0, 0, 100, 0])[2]}
+                y={(element.pts || [0, 0, 100, 0])[3]}
+                radius={6}
+                fill="#ffffff"
+                stroke="#3b82f6"
+                strokeWidth={2}
+                draggable
+                onDragMove={(e) => handlePointDrag(2, e.target.x(), e.target.y())}
+                onMouseDown={(e) => {
+                  e.cancelBubble = true
+                }}
+              />
+            </>
+          )}
         </Group>
       )
     }

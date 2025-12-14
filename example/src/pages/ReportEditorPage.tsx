@@ -81,6 +81,10 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
     const [activeTool, setActiveTool] = useState<string>('select')
     const [drawingSettings, setDrawingSettings] = useState<{ stroke: string; strokeWidth: number; tolerance?: number }>({ stroke: '#000000', strokeWidth: 2, tolerance: 2.0 })
 
+    const [showGrid, setShowGrid] = useState(false)
+    const [gridSize, setGridSize] = useState(15)
+    const [snapStrength, setSnapStrength] = useState(5)
+
     // History Management
     const { document: doc, setDocument, undo, redo, canUndo, canRedo } = useReportHistory(INITIAL_DOC)
 
@@ -283,6 +287,9 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
                         orientation={orientation}
                         activeTool={activeTool}
                         drawingSettings={drawingSettings}
+                        showGrid={showGrid}
+                        gridSize={gridSize}
+                        snapStrength={snapStrength}
                     />
                 </div>
 
@@ -299,6 +306,12 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
                         onToolSelect={setActiveTool}
                         drawingSettings={drawingSettings}
                         onDrawingSettingsChange={setDrawingSettings}
+                        showGrid={showGrid}
+                        onShowGridChange={setShowGrid}
+                        gridSize={gridSize}
+                        onGridSizeChange={setGridSize}
+                        snapStrength={snapStrength}
+                        onSnapStrengthChange={setSnapStrength}
                         i18nOverrides={{
                             properties_layout: 'Page Layout',
                             properties_text_align: 'Text Align',

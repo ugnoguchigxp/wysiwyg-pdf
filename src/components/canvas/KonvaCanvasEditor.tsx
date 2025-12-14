@@ -15,6 +15,7 @@ import {
 } from './CanvasElementRenderer'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { TextEditOverlay } from './TextEditOverlay'
+import { GridLayer } from './GridLayer'
 
 export interface KonvaCanvasEditorHandle {
   getStage: () => Konva.Stage | null
@@ -43,6 +44,9 @@ interface KonvaCanvasEditorProps {
   onStageMouseDown?: (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void
   onStageMouseMove?: (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void
   onStageMouseUp?: (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void
+  showGrid?: boolean
+  snapStrength?: number
+  gridSize?: number
 }
 
 export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvasEditorProps>(
@@ -64,6 +68,9 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       onStageMouseDown,
       onStageMouseMove,
       onStageMouseUp,
+      showGrid = false,
+      snapStrength = 5,
+      gridSize = 5,
     },
     ref
   ) => {
@@ -195,8 +202,17 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
             onTouchMove={(e) => onStageMouseMove?.(e)}
             onTouchEnd={(e) => onStageMouseUp?.(e)}
           >
-            <Layer>
+            <Layer name="paper-layer" listening={false}>
               {background}
+            </Layer>
+            <GridLayer
+              width={paperWidth}
+              height={paperHeight}
+              scale={zoom}
+              visible={showGrid}
+              gridSize={gridSize > 0 ? gridSize : 50}
+            />
+            <Layer>
               {elements
                 .map((element) => (
                   <CanvasElementRenderer
@@ -208,6 +224,9 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
                     onDblClick={() => handleElementDblClick(element)}
                     isEditing={element.id === editingElementId}
                     renderCustom={renderCustom}
+                    snapStrength={snapStrength}
+                    showGrid={showGrid}
+                    gridSize={gridSize}
                   />
                 ))}
             </Layer>

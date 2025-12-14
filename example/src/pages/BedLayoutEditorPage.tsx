@@ -45,6 +45,10 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
     const [isDashboardMode, setIsDashboardMode] = useState(false)
     const [dashboardData, setDashboardData] = useState<Record<string, BedStatusData>>({})
 
+    const [showGrid, setShowGrid] = useState(false)
+    const [gridSize, setGridSize] = useState(15)
+    const [snapStrength, setSnapStrength] = useState(5)
+
     // State for Bed Layout Document
     const [bedDoc, setBedDocument] = useState<BedLayoutDocument>(INITIAL_BED_DOC)
 
@@ -390,8 +394,14 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
             <ShortcutHelpModal open={showShortcuts} onOpenChange={setShowShortcuts} />
 
             {/* Print Ref (Placeholder) */}
-            <div style={{ display: 'none' }} ref={printRef}>
-                {/* Implement BedPrintLayout if needed */}
+            <div style={{ display: 'none' }}>
+                <div ref={printRef}>
+                    <BedLayoutViewer
+                        document={bedDoc}
+                        dashboardData={dashboardData}
+                        zoom={1.0} // Print usually 1.0 or fit
+                    />
+                </div>
             </div>
 
             {/* Main Content Area */}
@@ -453,6 +463,9 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                             }}
                             onUndo={undoBed}
                             onRedo={redoBed}
+                            showGrid={showGrid}
+                            gridSize={gridSize}
+                            snapStrength={snapStrength}
                         />
                     )}
                 </div>
@@ -486,6 +499,12 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                             onDocumentChange={(newDoc) => {
                                 setBedDocument(newDoc)
                             }}
+                            showGrid={showGrid}
+                            onShowGridChange={setShowGrid}
+                            gridSize={gridSize}
+                            onGridSizeChange={setGridSize}
+                            snapStrength={snapStrength}
+                            onSnapStrengthChange={setSnapStrength}
                             i18nOverrides={{
                                 properties_bed_info: 'ベッド情報',
                                 properties_label: 'ラベル',

@@ -43,3 +43,4 @@ export type {
 // export * from './types/canvas'; // Re-exported by konva-editor/types
 export * from './components/ui/Modal'
 export * from './modules/konva-editor/types'
+export { SettingsDrawer } from './modules/konva-editor/components/SettingsDrawer'
