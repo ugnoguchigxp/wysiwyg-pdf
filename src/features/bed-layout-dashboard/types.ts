@@ -47,6 +47,7 @@ export interface RoomText {
   y: number
   fontSize: number
   color: string
+  align?: string
 }
 
 export interface RoomLayout {

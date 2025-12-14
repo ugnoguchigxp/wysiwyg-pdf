@@ -13,7 +13,7 @@ It is designed as a set of **composable editor building blocks**:
 
 If you are evaluating whether to adopt this package, the key question is:
 
-- Do you want a **ready-to-integrate template editor UI** where the persisted state is a plain JSON document (`ITemplateDoc`), and printing is handled by your app (e.g., via `react-to-print`)?
+- Do you want a **ready-to-integrate template editor UI** where the persisted state is a plain JSON document (`Doc`), and printing is handled by your app (e.g., via `react-to-print`)?
 
 ## Screenshots
 
@@ -37,7 +37,7 @@ If you are evaluating whether to adopt this package, the key question is:
 
 ## What you get
 
-- **Editable template document model** (`ITemplateDoc` with `pages` + `elements`)
+- **Editable template document model** (`Doc` with `surfaces` + `nodes`)
 - **Element types**: Text, Shapes, Line, Image, Table (see types exported from `pdf-editor/types/wysiwyg`)
 - **Keyboard shortcuts**: undo/redo, delete, select all, arrow-key move, copy/paste
 - **A4-aware coordinate system** (internal PT units with display scaling)
@@ -95,10 +95,22 @@ You should either:
 - Use Tailwind in your host app and define the required `--theme-*` variables
 - Or port the CSS from `wysiwyg-pdf/example/src/index.css` (and the root `src/index.css` in this repository) to your project
 
+This package also ships a base stylesheet you can import:
+
+```ts
+import 'wysiwyg-pdf/styles.css'
+```
+
 ### 3) Print CSS import
 
 `PrintLayout` imports a `print.css` internally.
 Your bundler must support resolving CSS imports from dependencies.
+
+If your bundler requires an explicit import, you can also import it directly:
+
+```ts
+import 'wysiwyg-pdf/print.css'
+```
 
 ## Quick start (minimal editor shell)
 
@@ -110,22 +122,27 @@ import {
   ReportKonvaEditor,
   WysiwygEditorToolbar,
   WysiwygPropertiesPanel,
-  type ITemplateDoc,
+  type Doc,
   type ReportKonvaEditorHandle,
   useReportHistory,
 } from 'wysiwyg-pdf';
 
-const INITIAL_DOC: ITemplateDoc = {
-  meta: { id: 'doc-1', name: 'New Template', version: 1 },
-  pages: [
+const INITIAL_DOC: Doc = {
+  v: 1,
+  id: 'doc-1',
+  title: 'New Template',
+  unit: 'pt',
+  surfaces: [
     {
       id: 'page-1',
-      size: 'A4',
-      margin: { top: 0, right: 0, bottom: 0, left: 0, unit: 'pt' },
-      background: { color: '#ffffff' },
+      type: 'page',
+      w: 595.28,
+      h: 841.89,
+      margin: { t: 0, r: 0, b: 0, l: 0 },
+      bg: '#ffffff',
     },
   ],
-  elements: [],
+  nodes: [],
 };
 
 export function EditorPage() {
@@ -140,7 +157,7 @@ export function EditorPage() {
   const { document: doc, setDocument, undo, redo } = useReportHistory(INITIAL_DOC);
   const editorRef = useRef<ReportKonvaEditorHandle>(null);
 
-  const currentPageId = doc.pages[0]?.id;
+  const currentPageId = doc.surfaces[0]?.id;
 
   return (
     <div className="flex h-screen w-screen overflow-hidden">
@@ -190,14 +207,14 @@ export function EditorPage() {
 
 ```tsx
 import { useRef } from 'react';
-import { PrintLayout, type ITemplateDoc } from 'wysiwyg-pdf';
+import { PrintLayout, type Doc } from 'wysiwyg-pdf';
 import { useReactToPrint } from 'react-to-print';
 
 export function PrintButton({
   doc,
   orientation,
 }: {
-  doc: ITemplateDoc;
+  doc: Doc;
   orientation: 'portrait' | 'landscape';
 }) {
   const printRef = useRef<HTMLDivElement>(null);
@@ -245,7 +262,7 @@ From `src/index.ts`, typical consumers use:
 - `EditorHeader`
 - `ShortcutHelpModal`
 - `useReportHistory`
-- Types: `ITemplateDoc`, `IPage`, `ITemplateMeta`, `PageSize`, `Element`, `IDataSchema`
+- Types: `Doc`, `Surface`, `UnifiedNode`, `PageSize`, `IDataSchema`
 
 This package also exports bed-layout related components (e.g., `BedLayoutEditor`, `BedPrintLayout`).
 

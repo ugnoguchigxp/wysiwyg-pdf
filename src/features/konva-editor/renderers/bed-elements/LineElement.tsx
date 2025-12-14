@@ -140,7 +140,7 @@ export const LineElement: React.FC<LineElementProps> = ({
         <>
           {/* Start Point Handle */}
           <Circle
-            ref={startHandleRef as any}
+            ref={startHandleRef}
             x={element.pts[0]}
             y={element.pts[1]}
             radius={6}
@@ -163,7 +163,7 @@ export const LineElement: React.FC<LineElementProps> = ({
           />
           {/* End Point Handle */}
           <Circle
-            ref={endHandleRef as any}
+            ref={endHandleRef}
             x={element.pts[2]}
             y={element.pts[3]}
             radius={6}

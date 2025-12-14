@@ -14,7 +14,7 @@ export const convertDashboardRoomToDocument = (dashboardRoom: BedDashboardRoom):
   const nodes: UnifiedNode[] = []
 
   // Convert Beds
-  room.beds.forEach((bed: any) => {
+  room.beds.forEach((bed) => {
     const status = statusMap.get(bed.id)
     const isVertical = bed.height > bed.width
 
@@ -46,7 +46,7 @@ export const convertDashboardRoomToDocument = (dashboardRoom: BedDashboardRoom):
 
   // Convert Walls (to Lines)
   if (room.walls) {
-    room.walls.forEach((wall: any) => {
+    room.walls.forEach((wall) => {
       const wallElement: LineNode = {
         id: wall.id,
         t: 'line',
@@ -64,7 +64,7 @@ export const convertDashboardRoomToDocument = (dashboardRoom: BedDashboardRoom):
 
   // Convert Texts
   if (room.texts) {
-    room.texts.forEach((text: any) => {
+    room.texts.forEach((text) => {
       const textElement: TextNode = {
         id: text.id,
         t: 'text',
@@ -79,7 +79,7 @@ export const convertDashboardRoomToDocument = (dashboardRoom: BedDashboardRoom):
         fontWeight: 400,
         fill: text.color || '#000000',
         align: (() => {
-          const textAlign = 'align' in text ? text.align : undefined
+          const textAlign = text.align
           if (textAlign === 'middle') return 'c'
           if (textAlign === 'end') return 'r'
           return 'l'

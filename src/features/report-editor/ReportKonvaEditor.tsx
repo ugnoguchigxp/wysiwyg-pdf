@@ -304,18 +304,21 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       setEditingCell(null)
     }, [editingCell, editingCellValue, onTemplateChange, templateDoc])
 
-    const handleElementChange = (updates: Partial<UnifiedNode> & { id?: string }) => {
-      const targetId = updates.id || selectedElementId
-      if (!targetId) return
+    const handleElementChange = useCallback(
+      (updates: Partial<UnifiedNode> & { id?: string }) => {
+        const targetId = updates.id || selectedElementId
+        if (!targetId) return
 
-      const nextNodes = templateDoc.nodes.map((el) => {
-        if (el.id === targetId) {
-          return { ...el, ...updates, id: targetId } as UnifiedNode
-        }
-        return el
-      })
-      onTemplateChange({ ...templateDoc, nodes: nextNodes })
-    }
+        const nextNodes = templateDoc.nodes.map((el) => {
+          if (el.id === targetId) {
+            return { ...el, ...updates, id: targetId } as UnifiedNode
+          }
+          return el
+        })
+        onTemplateChange({ ...templateDoc, nodes: nextNodes })
+      },
+      [onTemplateChange, selectedElementId, templateDoc]
+    )
 
     const handleTextUpdate = useCallback(
       (text: string) => {
@@ -418,8 +421,8 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
             inheritFrom?: typeof base
           ) => {
             if (targetCells.find((cc) => cc.r === r && cc.c === c)) return
-            const { rs, cs, v, ...style } = (inheritFrom || base) as any
-            targetCells.push({ r, c, v: '', ...(style as object) })
+            const { rs: _rs, cs: _cs, v: _v, ...style } = inheritFrom || base
+            targetCells.push({ ...style, r, c, v: '' })
           }
 
           const ensureBaseExists = () => {
@@ -737,7 +740,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
 
             // Recreate base cell without spans
             const { rs: _rs, cs: _cs, ...rest } = current
-            nextCells.push({ ...(rest as any), r: row, c: col, v: current.v })
+            nextCells.push({ ...rest, r: row, c: col, v: current.v })
 
             // Materialize all newly uncovered cells inheriting style
             for (let rr = 0; rr < rs; rr++) {

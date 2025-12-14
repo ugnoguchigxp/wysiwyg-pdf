@@ -171,7 +171,7 @@ const Modal = React.memo(
             <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
             <DialogPrimitive.Content
               ref={ref}
-              aria-describedby={description ? undefined : 'modal-content'}
+              {...(!description ? ({ 'aria-describedby': undefined } as const) : {})}
               className={cn(
                 'fixed z-50 flex flex-col gap-0 bg-theme-bg-primary',
                 !draggable && 'duration-200',

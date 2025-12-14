@@ -2,6 +2,14 @@
   "name": "wysiwyg-pdf",
   "version": "0.0.2",
   "description": "React + Konva WYSIWYG editor toolkit for print-ready (A4 portrait/landscape) templates in the browser.",
+  "homepage": "https://github.com/ugnoguchigxp/wysiwyg-pdf#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ugnoguchigxp/wysiwyg-pdf.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ugnoguchigxp/wysiwyg-pdf/issues"
+  },
   "keywords": [
     "react",
     "konva",
@@ -22,7 +30,9 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
-    }
+    },
+    "./styles.css": "./dist/index.css",
+    "./print.css": "./dist/konva-editor/styles/print.css"
   },
   "files": [
     "dist"
@@ -34,19 +44,24 @@
   "publishConfig": {
     "access": "public"
   },
+  "engines": {
+    "node": ">=18.18"
+  },
+  "packageManager": "pnpm@10.24.0",
   "scripts": {
     "clean": "rimraf dist",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "build": "pnpm run clean && tsup && cpy \"features/**/*.css\" dist --cwd=src --parents && cpy \"global.d.ts\" dist --cwd=src",
+    "build": "pnpm run clean && tsup && cd src && cpy \"features/**/*.css\" ../dist --parents && cpy \"global.d.ts\" ../dist",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "lint:biome": "biome lint src --max-diagnostics=50",
     "format": "biome format --write src eslint.config.js tsup.config.ts package.json biome.json .gitignore README.md",
     "format:check": "biome format src eslint.config.js tsup.config.ts package.json biome.json .gitignore README.md",
     "test": "pnpm exec vitest run",
     "test:watch": "pnpm exec vitest",
     "coverage": "pnpm exec vitest run --coverage",
-    "pack:dry": "npm pack --dry-run --cache .npm-cache",
-    "verify": "pnpm run build && pnpm run test && pnpm run coverage && pnpm run pack:dry",
+    "pack:dry": "npm pack --dry-run --ignore-scripts --cache .npm-cache",
+    "verify": "pnpm run format:check && pnpm run lint:biome && pnpm run lint && pnpm run typecheck && pnpm run build && pnpm run test && pnpm run coverage && pnpm run pack:dry",
     "prepublishOnly": "pnpm run verify",
     "prepare": "pnpm run build",
     "prepack": "pnpm run build"

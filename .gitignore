@@ -15,6 +15,7 @@ yarn-error.log*
 # test/coverage
 coverage/
 .nyc_output/
+coverage_*.log
 
 # env
 .env
@@ -32,3 +33,6 @@ coverage/
 # example app artifacts
 example/node_modules/
 example/dist/
+
+# pack
+*.tgz

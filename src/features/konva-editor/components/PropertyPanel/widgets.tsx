@@ -95,7 +95,8 @@ export const WidgetInput: React.FC<
       'w-full px-1.5 py-1 border border-theme-border rounded text-[13px]',
       'bg-theme-bg-primary text-theme-text-primary',
       'focus:outline-none focus:ring-1 focus:ring-theme-accent',
-      inputClassName
+      inputClassName,
+      className
     )}
     {...props}
   />
@@ -998,7 +999,7 @@ export const renderWidget = (
   node: UnifiedNode,
   onChange: (updates: Partial<UnifiedNode>) => void,
   resolveText: (key: string, fallback?: string) => string,
-  customRenderers?: Record<string, React.FC<any>>
+  customRenderers?: Record<string, React.FC<WidgetProps>>
 ) => {
   const commonProps = { node, onChange, resolveText }
 
@@ -1045,6 +1046,10 @@ export const renderWidget = (
       }
       return null
     default:
-      return <div className="text-xs text-red-500">Unknown widget type: {(config as any).type}</div>
+      return (
+        <div className="text-xs text-red-500">
+          Unknown widget type: {(config as { type?: string }).type}
+        </div>
+      )
   }
 }
