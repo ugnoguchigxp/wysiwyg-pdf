@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { TextEditOverlay } from '../../../../src/components/canvas/TextEditOverlay'
+import { TextEditOverlay } from '@/components/canvas/TextEditOverlay'
 
 describe('components/canvas/TextEditOverlay', () => {
   it('computes textarea style using stage absolute position and element style', () => {

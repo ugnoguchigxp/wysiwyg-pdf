@@ -140,6 +140,11 @@ export interface LineNode extends BaseNode {
   pts: number[]                  // Flat array: [x1,y1,x2,y2,...] ABSOLUTE coordinates
   arrows?: [ArrowType, ArrowType] // [start, end]
 
+  // Optional connector behavior (draw.io-like)
+  // If set, the endpoint position is derived from the target node's bounding box anchor.
+  startConn?: { nodeId: NodeId; anchor: Anchor }
+  endConn?: { nodeId: NodeId; anchor: Anchor }
+
   // Line Style
   stroke: Color
   strokeW: number
@@ -189,7 +194,7 @@ export type ShapeType =
   | 'arrow-u' | 'arrow-d' | 'arrow-l' | 'arrow-r'
   | 'trapezoid' | 'cylinder' | 'heart' | 'tree' | 'house'
 
-export type ArrowType = 'none' | 'arrow' | 'circle' | 'diamond'
+export type ArrowType = 'none' | 'arrow' | 'circle' | 'diamond' | 'standard' | 'filled' | 'triangle' | 'open' | 'square'
 
 export interface TableData {
   rows: number[]                 // Row heights in Doc.unit (all rows must be specified)
@@ -276,4 +281,41 @@ export interface Keyframe {
 export interface SnapConfig {
   grid?: number                  // Grid size
   guides?: boolean               // Show alignment guides
+}
+
+// ========================================
+// Legacy / Adapter Types
+// ========================================
+
+export interface BedLayoutDocument {
+  id: string
+  type: 'bed_layout'
+  name: string
+  layout: {
+    mode: 'landscape' | 'portrait'
+    width: number
+    height: number
+  }
+  elementsById: Record<string, UnifiedNode>
+  elementOrder: string[]
+}
+
+export interface FormDocument {
+  id: string
+  type: 'form'
+  name: string
+  paper: {
+    size: 'A4' | 'B5' | 'Custom'
+    orientation: 'portrait' | 'landscape'
+    width: number
+    height: number
+    margins?: { top: number; right: number; bottom: number; left: number }
+  }
+  background?: {
+    src: string
+    opacity: number
+    fit: 'fill' | 'contain' | 'cover' | 'none'
+  }
+  elementsById: Record<string, UnifiedNode>
+  elementOrder: string[]
 }

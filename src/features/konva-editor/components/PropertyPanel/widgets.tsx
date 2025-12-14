@@ -1,0 +1,1011 @@
+/**
+ * Unified Property Panel - Widget Components
+ * 
+ * 設定駆動型のプロパティパネル用ウィジェットコンポーネント群
+ */
+
+import {
+    AlignCenter,
+    AlignLeft,
+    AlignRight,
+    AlignJustify,
+    ArrowUpToLine,
+    AlignVerticalJustifyCenter,
+    ArrowDownToLine,
+    Bold,
+    Italic,
+    Underline,
+    Strikethrough,
+    Minus,
+    ArrowRight,
+    ArrowLeft,
+    Circle,
+    Diamond,
+} from 'lucide-react'
+import React, { useEffect, useState } from 'react'
+import { cn } from '@/utils/utils'
+import type { UnifiedNode, TextNode, ShapeNode, LineNode, ImageNode, ArrowType } from '@/types/canvas'
+import type {
+    WidgetConfig,
+    PosSizeWidgetConfig,
+    FontWidgetConfig,
+    AlignmentWidgetConfig,
+    VAlignmentWidgetConfig,
+    StrokeWidgetConfig,
+    FillWidgetConfig,
+    BorderWidgetConfig,
+    ColorPickerWidgetConfig,
+    SliderWidgetConfig,
+    TextContentWidgetConfig,
+    LineStyleWidgetConfig,
+    LabelFieldWidgetConfig,
+    ImageWidgetConfig,
+    SelectWidgetConfig,
+    GridLayout,
+    ArrowheadWidgetConfig,
+    PolygonWidgetConfig,
+    DataBindingWidgetConfig,
+} from '@/features/konva-editor/constants/propertyPanelConfig'
+import { DEFAULT_FONT_FAMILIES, DEFAULT_FONT_SIZES } from '@/features/konva-editor/constants/propertyPanelConfig'
+
+// ========================================
+// Shared Types & Context
+// ========================================
+
+export interface WidgetProps<T extends WidgetConfig = WidgetConfig> {
+    config: T
+    node: UnifiedNode
+    onChange: (updates: Partial<UnifiedNode>) => void
+    resolveText: (key: string, fallback?: string) => string
+}
+
+// ========================================
+// Shared UI Components
+// ========================================
+
+export const WidgetLabel: React.FC<{
+    htmlFor?: string
+    children: React.ReactNode
+    className?: string
+}> = ({ htmlFor, children, className }) => (
+    <label
+        htmlFor={htmlFor}
+        className={cn('block text-[13px] text-theme-text-secondary mb-0.5', className)}
+    >
+        {children}
+    </label>
+)
+
+export const WidgetInput: React.FC<
+    React.InputHTMLAttributes<HTMLInputElement> & { inputClassName?: string }
+> = ({ className, inputClassName, ...props }) => (
+    <input
+        className={cn(
+            'w-full px-1.5 py-1 border border-theme-border rounded text-[13px]',
+            'bg-theme-bg-primary text-theme-text-primary',
+            'focus:outline-none focus:ring-1 focus:ring-theme-accent',
+            inputClassName
+        )}
+        {...props}
+    />
+)
+
+export const WidgetSelect: React.FC<
+    React.SelectHTMLAttributes<HTMLSelectElement> & { children: React.ReactNode }
+> = ({ className, children, ...props }) => (
+    <select
+        className={cn(
+            'w-full px-1.5 py-1 border border-theme-border rounded text-[13px]',
+            'bg-theme-bg-primary text-theme-text-primary',
+            'focus:outline-none focus:ring-1 focus:ring-theme-accent',
+            className
+        )}
+        {...props}
+    >
+        {children}
+    </select>
+)
+
+export const GridContainer: React.FC<{
+    grid?: GridLayout
+    children: React.ReactNode
+}> = ({ grid, children }) => {
+    if (!grid) return <>{children}</>
+    return (
+        <div
+            className="grid w-full"
+            style={{
+                gridTemplateColumns: `repeat(${grid.cols}, 1fr)`,
+                gap: `${grid.gap ?? 8}px`,
+            }}
+        >
+            {children}
+        </div>
+    )
+}
+
+// ========================================
+// Position & Size Widget
+// ========================================
+
+export const PosSizeWidget: React.FC<WidgetProps<PosSizeWidgetConfig>> = ({
+    config,
+    node,
+    onChange,
+}) => {
+    const props = config.props ?? { showX: true, showY: true, showW: true, showH: true }
+
+    return (
+        <div className="w-full grid grid-cols-2 gap-1">
+            {props.showX && (
+                <div className="w-full">
+                    <WidgetLabel>X</WidgetLabel>
+                    <WidgetInput
+                        type="number"
+                        value={Math.round(node.x ?? 0)}
+                        onChange={(e) => onChange({ x: Number(e.target.value) })}
+                    />
+                </div>
+            )}
+            {props.showY && (
+                <div className="w-full">
+                    <WidgetLabel>Y</WidgetLabel>
+                    <WidgetInput
+                        type="number"
+                        value={Math.round(node.y ?? 0)}
+                        onChange={(e) => onChange({ y: Number(e.target.value) })}
+                    />
+                </div>
+            )}
+            {props.showW && (
+                <div className="w-full">
+                    <WidgetLabel>W</WidgetLabel>
+                    <WidgetInput
+                        type="number"
+                        value={Math.round(node.w ?? 0)}
+                        onChange={(e) => onChange({ w: Number(e.target.value) })}
+                    />
+                </div>
+            )}
+            {props.showH && (
+                <div className="w-full">
+                    <WidgetLabel>H</WidgetLabel>
+                    <WidgetInput
+                        type="number"
+                        value={Math.round(node.h ?? 0)}
+                        onChange={(e) => onChange({ h: Number(e.target.value) })}
+                    />
+                </div>
+            )}
+        </div>
+    )
+}
+
+// ========================================
+// Font Widget
+// ========================================
+
+export const FontWidget: React.FC<WidgetProps<FontWidgetConfig>> = ({
+    config,
+    node,
+    onChange,
+    resolveText,
+}) => {
+    if (node.t !== 'text') return null
+    const textNode = node as TextNode
+    const props = config.props ?? {}
+    const families = props.fontFamilies ?? DEFAULT_FONT_FAMILIES
+    const sizes = props.fontSizes ?? DEFAULT_FONT_SIZES
+
+    const toggleStyle = (key: string, currentValue: boolean | number | undefined, onValue: boolean | number, offValue: boolean | number) => {
+        onChange({ [key]: currentValue === onValue ? offValue : onValue } as Partial<TextNode>)
+    }
+
+    return (
+        <div className="space-y-2">
+            {/* Font Family & Size */}
+            <GridContainer grid={config.grid}>
+                {props.showFamily !== false && (
+                    <div>
+                        <WidgetLabel>{resolveText('properties_font', 'Font')}</WidgetLabel>
+                        <WidgetSelect
+                            value={textNode.font ?? 'Meiryo'}
+                            onChange={(e) => onChange({ font: e.target.value } as Partial<TextNode>)}
+                        >
+                            {families.map((f: string) => (
+                                <option key={f} value={f}>{f}</option>
+                            ))}
+                        </WidgetSelect>
+                    </div>
+                )}
+                {props.showSize !== false && (
+                    <div>
+                        <WidgetLabel>{resolveText('properties_font_size', 'Size')}</WidgetLabel>
+                        <WidgetSelect
+                            value={String(textNode.fontSize ?? 12)}
+                            onChange={(e) => onChange({ fontSize: Number(e.target.value) } as Partial<TextNode>)}
+                        >
+                            {sizes.map((s: number) => (
+                                <option key={s} value={s}>{s}</option>
+                            ))}
+                        </WidgetSelect>
+                    </div>
+                )}
+            </GridContainer>
+
+            {/* Color */}
+            {props.showColor !== false && (
+                <div>
+                    <WidgetLabel>{resolveText('color', 'Color')}</WidgetLabel>
+                    <WidgetInput
+                        type="color"
+                        value={textNode.fill ?? '#000000'}
+                        onChange={(e) => onChange({ fill: e.target.value } as Partial<TextNode>)}
+                        className="h-8 p-0.5 cursor-pointer"
+                    />
+                </div>
+            )}
+
+            {/* Font Styles (B/I/U/S) */}
+            <div className="flex gap-1">
+                {props.showBold !== false && (
+                    <button
+                        type="button"
+                        onClick={() => toggleStyle('fontWeight', textNode.fontWeight, 700, 400)}
+                        className={cn(
+                            'p-1.5 rounded border',
+                            textNode.fontWeight === 700
+                                ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
+                                : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
+                        )}
+                    >
+                        <Bold size={14} />
+                    </button>
+                )}
+                {props.showItalic !== false && (
+                    <button
+                        type="button"
+                        onClick={() => toggleStyle('italic', textNode.italic, true, false)}
+                        className={cn(
+                            'p-1.5 rounded border',
+                            textNode.italic
+                                ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
+                                : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
+                        )}
+                    >
+                        <Italic size={14} />
+                    </button>
+                )}
+                {props.showUnderline !== false && (
+                    <button
+                        type="button"
+                        onClick={() => toggleStyle('underline', textNode.underline, true, false)}
+                        className={cn(
+                            'p-1.5 rounded border',
+                            textNode.underline
+                                ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
+                                : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
+                        )}
+                    >
+                        <Underline size={14} />
+                    </button>
+                )}
+                {props.showStrikethrough && (
+                    <button
+                        type="button"
+                        onClick={() => toggleStyle('lineThrough', textNode.lineThrough, true, false)}
+                        className={cn(
+                            'p-1.5 rounded border',
+                            textNode.lineThrough
+                                ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
+                                : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
+                        )}
+                    >
+                        <Strikethrough size={14} />
+                    </button>
+                )}
+            </div>
+        </div>
+    )
+}
+
+// ========================================
+// Alignment Widget
+// ========================================
+
+type AlignOption = 'l' | 'c' | 'r' | 'j'
+
+const alignIcons: Record<AlignOption, React.FC<{ size?: number }>> = {
+    l: AlignLeft,
+    c: AlignCenter,
+    r: AlignRight,
+    j: AlignJustify,
+}
+
+export const AlignmentWidget: React.FC<WidgetProps<AlignmentWidgetConfig>> = ({
+    config,
+    node,
+    onChange,
+    resolveText,
+}) => {
+    if (node.t !== 'text') return null
+    const textNode = node as TextNode
+    const options = config.props?.options ?? (['l', 'c', 'r'] as AlignOption[])
+
+    return (
+        <div>
+            {config.labelKey && (
+                <WidgetLabel>{resolveText(config.labelKey, 'Align')}</WidgetLabel>
+            )}
+            <div className="flex bg-theme-bg-primary rounded border border-theme-border p-0.5">
+                {options.map((opt: AlignOption) => {
+                    const Icon = alignIcons[opt]
+                    const isActive = textNode.align === opt
+                    return (
+                        <button
+                            key={opt}
+                            type="button"
+                            onClick={() => onChange({ align: opt } as Partial<TextNode>)}
+                            className={cn(
+                                'flex-1 py-1 flex justify-center rounded transition-colors',
+                                isActive
+                                    ? 'bg-blue-500 text-white'
+                                    : 'hover:bg-theme-bg-tertiary text-theme-text-secondary'
+                            )}
+                        >
+                            <Icon size={14} />
+                        </button>
+                    )
+                })}
+            </div>
+        </div>
+    )
+}
+
+// ========================================
+// Vertical Alignment Widget
+// ========================================
+
+type VAlignOption = 't' | 'm' | 'b'
+
+const vAlignIcons: Record<VAlignOption, React.FC<{ size?: number }>> = {
+    t: ArrowUpToLine,
+    m: AlignVerticalJustifyCenter,
+    b: ArrowDownToLine,
+}
+
+export const VAlignmentWidget: React.FC<WidgetProps<VAlignmentWidgetConfig>> = ({
+    config,
+    node,
+    onChange,
+    resolveText,
+}) => {
+    if (node.t !== 'text') return null
+    const textNode = node as TextNode
+    const options = config.props?.options ?? (['t', 'm', 'b'] as VAlignOption[])
+
+    return (
+        <div>
+            {config.labelKey && (
+                <WidgetLabel>{resolveText(config.labelKey, 'V-Align')}</WidgetLabel>
+            )}
+            <div className="flex bg-theme-bg-primary rounded border border-theme-border p-0.5">
+                {options.map((opt: VAlignOption) => {
+                    const Icon = vAlignIcons[opt]
+                    const isActive = textNode.vAlign === opt
+                    return (
+                        <button
+                            key={opt}
+                            type="button"
+                            onClick={() => onChange({ vAlign: opt } as Partial<TextNode>)}
+                            className={cn(
+                                'flex-1 py-1 flex justify-center rounded transition-colors',
+                                isActive
+                                    ? 'bg-blue-500 text-white'
+                                    : 'hover:bg-theme-bg-tertiary text-theme-text-secondary'
+                            )}
+                        >
+                            <Icon size={14} />
+                        </button>
+                    )
+                })}
+            </div>
+        </div>
+    )
+}
+
+// ========================================
+// Stroke Widget
+// ========================================
+
+export const StrokeWidget: React.FC<WidgetProps<StrokeWidgetConfig>> = ({
+    config,
+    node,
+    onChange,
+    resolveText,
+}) => {
+    const props = config.props ?? { showColor: true, showWidth: true }
+    const strokeNode = node as ShapeNode | LineNode
+
+    return (
+        <div className="space-y-2">
+            {props.showColor && (
+                <div>
+                    <WidgetLabel>{resolveText('properties_stroke_color', 'Stroke Color')}</WidgetLabel>
+                    <WidgetInput
+                        type="color"
+                        value={strokeNode.stroke ?? '#000000'}
+                        onChange={(e) => onChange({ stroke: e.target.value })}
+                        className="h-8 p-0.5 cursor-pointer"
+                    />
+                </div>
+            )}
+            {props.showWidth && (
+                <div>
+                    <WidgetLabel>{resolveText(config.labelKey ?? 'properties_line_width', 'Line Width')}</WidgetLabel>
+                    <WidgetInput
+                        type="number"
+                        min={props.minWidth ?? 1}
+                        max={props.maxWidth ?? 20}
+                        value={strokeNode.strokeW ?? 1}
+                        onChange={(e) => onChange({ strokeW: Number(e.target.value) })}
+                    />
+                </div>
+            )}
+        </div>
+    )
+}
+
+// ========================================
+// Fill Widget
+// ========================================
+
+export const FillWidget: React.FC<WidgetProps<FillWidgetConfig>> = ({
+    config,
+    node,
+    onChange,
+    resolveText,
+}) => {
+    const fillNode = node as ShapeNode
+
+    return (
+        <div>
+            <WidgetLabel>{resolveText(config.labelKey ?? 'properties_fill_color', 'Fill')}</WidgetLabel>
+            <WidgetInput
+                type="color"
+                value={fillNode.fill ?? '#ffffff'}
+                onChange={(e) => onChange({ fill: e.target.value })}
+                className="h-8 p-0.5 cursor-pointer"
+            />
+        </div>
+    )
+}
+
+// ========================================
+// Border Widget
+// ========================================
+
+export const BorderWidget: React.FC<WidgetProps<BorderWidgetConfig>> = ({
+    config,
+    node,
+    onChange,
+    resolveText,
+}) => {
+    const props = config.props ?? { showColor: true, showWidth: false }
+    const shapeNode = node as ShapeNode
+
+    return (
+        <div className="space-y-2">
+            {props.showColor && (
+                <div>
+                    <WidgetLabel>{resolveText(config.labelKey ?? 'properties_border', 'Border')}</WidgetLabel>
+                    <WidgetInput
+                        type="color"
+                        value={shapeNode.stroke ?? '#000000'}
+                        onChange={(e) => onChange({ stroke: e.target.value })}
+                        className="h-8 p-0.5 cursor-pointer"
+                    />
+                </div>
+            )}
+            {props.showWidth && (
+                <div>
+                    <WidgetLabel>{resolveText('properties_border_width', 'Border Width')}</WidgetLabel>
+                    <WidgetInput
+                        type="number"
+                        min={0}
+                        value={shapeNode.strokeW ?? 1}
+                        onChange={(e) => onChange({ strokeW: Number(e.target.value) })}
+                    />
+                </div>
+            )}
+        </div>
+    )
+}
+
+// ========================================
+// Color Picker Widget
+// ========================================
+
+export const ColorPickerWidget: React.FC<WidgetProps<ColorPickerWidgetConfig>> = ({
+    config,
+    node,
+    onChange,
+    resolveText,
+}) => {
+    const fieldKey = config.props.fieldKey
+    const value = (node as unknown as Record<string, string>)[fieldKey] ?? '#000000'
+
+    return (
+        <div>
+            <WidgetLabel>{resolveText(config.labelKey ?? 'color', 'Color')}</WidgetLabel>
+            <WidgetInput
+                type="color"
+                value={value}
+                onChange={(e) => onChange({ [fieldKey]: e.target.value } as unknown as Partial<UnifiedNode>)}
+                className="h-8 p-0.5 cursor-pointer"
+            />
+        </div>
+    )
+}
+
+// ========================================
+// Slider Widget
+// ========================================
+
+export const SliderWidget: React.FC<WidgetProps<SliderWidgetConfig>> = ({
+    config,
+    node,
+    onChange,
+    resolveText,
+}) => {
+    const { fieldKey, min, max, step = 1, showValue } = config.props
+    const value = (node as unknown as Record<string, number>)[fieldKey] ?? min
+
+    return (
+        <div>
+            <WidgetLabel>
+                {resolveText(config.labelKey ?? fieldKey, fieldKey)}
+                {showValue && `: ${value}`}
+            </WidgetLabel>
+            <input
+                type="range"
+                min={min}
+                max={max}
+                step={step}
+                value={value}
+                onChange={(e) => onChange({ [fieldKey]: parseFloat(e.target.value) } as unknown as Partial<UnifiedNode>)}
+                className="w-full accent-theme-accent"
+            />
+        </div>
+    )
+}
+
+// ========================================
+// Text Content Widget
+// ========================================
+
+export const TextContentWidget: React.FC<WidgetProps<TextContentWidgetConfig>> = ({
+    config,
+    node,
+    onChange,
+    resolveText,
+}) => {
+    if (node.t !== 'text') return null
+    const textNode = node as TextNode
+    const rows = config.props?.rows ?? 3
+
+    return (
+        <div>
+            <WidgetLabel>{resolveText(config.labelKey ?? 'properties_text_content', 'Content')}</WidgetLabel>
+            <textarea
+                value={textNode.text ?? ''}
+                onChange={(e) => onChange({ text: e.target.value } as Partial<TextNode>)}
+                rows={rows}
+                className={cn(
+                    'w-full px-1.5 py-1 border border-theme-border rounded text-[11px]',
+                    'bg-theme-bg-primary text-theme-text-primary resize-y',
+                    'focus:outline-none focus:ring-1 focus:ring-theme-accent'
+                )}
+            />
+        </div>
+    )
+}
+
+// ========================================
+// Line Style Widget
+// ========================================
+
+type LineStyleOption = 'solid' | 'dashed' | 'dotted'
+
+export const LineStyleWidget: React.FC<WidgetProps<LineStyleWidgetConfig>> = ({
+    config,
+    node,
+    onChange,
+    resolveText,
+}) => {
+    const lineNode = node as LineNode
+    const options = config.props?.options ?? (['solid', 'dashed', 'dotted'] as LineStyleOption[])
+
+    const getStyleFromDash = (dash?: number[]): string => {
+        if (!dash || dash.length === 0) return 'solid'
+        if (dash[0] !== undefined && dash[0] < 1) return 'dotted'
+        return 'dashed'
+    }
+
+    const getDashFromStyle = (style: string): number[] | undefined => {
+        if (style === 'dashed') return [3, 3]
+        if (style === 'dotted') return [0.001, 2]
+        return undefined
+    }
+
+    const currentStyle = getStyleFromDash(lineNode.dash)
+
+    return (
+        <div>
+            <WidgetLabel>{resolveText(config.labelKey ?? 'properties_line_style', 'Style')}</WidgetLabel>
+            <div className="flex gap-1">
+                {options.map((style: LineStyleOption) => (
+                    <button
+                        key={style}
+                        type="button"
+                        onClick={() => onChange({ dash: getDashFromStyle(style) })}
+                        className={cn(
+                            'flex-1 py-1.5 px-2 rounded border text-[10px]',
+                            currentStyle === style
+                                ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
+                                : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
+                        )}
+                    >
+                        {style === 'solid' && <div className="w-full h-0.5 bg-current" />}
+                        {style === 'dashed' && <div className="w-full h-0.5 border-b-2 border-dashed border-current" />}
+                        {style === 'dotted' && <div className="w-full h-0.5 border-b-2 border-dotted border-current" />}
+                    </button>
+                ))}
+            </div>
+        </div>
+    )
+}
+
+// ========================================
+// Label Field Widget
+// ========================================
+
+export const LabelFieldWidget: React.FC<WidgetProps<LabelFieldWidgetConfig>> = ({
+    config,
+    node,
+    onChange,
+    resolveText,
+}) => {
+    const fieldKey = config.props?.fieldKey ?? 'name'
+
+    return (
+        <div>
+            <WidgetLabel>{resolveText(config.labelKey ?? 'label', 'Label')}</WidgetLabel>
+            <WidgetInput
+                type="text"
+                value={(node as unknown as Record<string, string>)[fieldKey] ?? ''}
+                onChange={(e) => onChange({ [fieldKey]: e.target.value } as unknown as Partial<UnifiedNode>)}
+                placeholder={config.props?.placeholder}
+            />
+        </div>
+    )
+}
+
+// ========================================
+// Image Widget
+// ========================================
+
+export const ImageWidget: React.FC<WidgetProps<ImageWidgetConfig>> = ({
+    config,
+    node,
+    onChange,
+    resolveText,
+}) => {
+    if (node.t !== 'image') return null
+    const imageNode = node as ImageNode
+    const [imageSrc, setImageSrc] = useState<string | null>(null)
+    const [status, setStatus] = useState<'loading' | 'loaded' | 'error'>('loading')
+
+    useEffect(() => {
+        const src = imageNode.src
+        if (!src) {
+            setStatus('error')
+            return
+        }
+        if (src.startsWith('data:') || src.startsWith('http')) {
+            setImageSrc(src)
+            setStatus('loaded')
+        } else {
+            // Asset lookup would go here
+            setImageSrc(src)
+            setStatus('loaded')
+        }
+    }, [imageNode.src])
+
+    const maxHeight = config.props?.maxPreviewHeight ?? 120
+
+    return (
+        <div>
+            {config.props?.showPreview !== false && (
+                <div className="mb-2">
+                    {status === 'loading' && (
+                        <div className="w-full h-20 bg-theme-bg-tertiary border border-theme-border rounded flex items-center justify-center text-xs text-theme-text-secondary">
+                            {resolveText('loading', 'Loading...')}
+                        </div>
+                    )}
+                    {status === 'error' && (
+                        <div className="w-full h-20 bg-theme-bg-tertiary border border-theme-border rounded flex items-center justify-center text-xs text-red-500">
+                            {resolveText('no_image', 'No Image')}
+                        </div>
+                    )}
+                    {status === 'loaded' && imageSrc && (
+                        <div
+                            className="w-full bg-theme-bg-tertiary border border-theme-border rounded flex items-center justify-center p-2 mb-2"
+                            style={{ maxHeight }}
+                        >
+                            <img
+                                src={imageSrc}
+                                alt="Preview"
+                                className="max-w-full max-h-full object-contain"
+                                style={{ maxHeight: maxHeight - 16 }}
+                            />
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {config.props?.showUploader && (
+                <div>
+                    <WidgetLabel>{resolveText('properties_image_source', 'Source')}</WidgetLabel>
+                    <label className="flex flex-col items-center justify-center w-full h-8 border border-theme-border border-dashed rounded cursor-pointer hover:bg-theme-bg-tertiary transition-colors">
+                        <span className="text-xs text-theme-text-secondary">{resolveText('browse', 'Browse...')}</span>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                                const file = e.target.files?.[0]
+                                if (file) {
+                                    const reader = new FileReader()
+                                    reader.onload = (ev) => {
+                                        const result = ev.target?.result as string
+                                        if (result) {
+                                            const img = new Image()
+                                            img.onload = () => {
+                                                onChange({
+                                                    src: result,
+                                                    w: img.width,
+                                                    h: img.height
+                                                } as Partial<ImageNode>)
+                                            }
+                                            img.src = result
+                                        }
+                                    }
+                                    reader.readAsDataURL(file)
+                                }
+                            }}
+                        />
+                    </label>
+                </div>
+            )}
+        </div>
+    )
+}
+
+// ========================================
+// Select Widget
+// ========================================
+
+export const SelectWidget: React.FC<WidgetProps<SelectWidgetConfig>> = ({
+    config,
+    node,
+    onChange,
+    resolveText,
+}) => {
+    const { fieldKey, options } = config.props
+
+    // Handle nested field keys like 'data.orientation'
+    const getValue = (): string => {
+        const keys = fieldKey.split('.')
+        let value: unknown = node
+        for (const key of keys) {
+            value = (value as Record<string, unknown>)?.[key]
+        }
+        return (value as string) ?? options[0]?.value ?? ''
+    }
+
+    const setValue = (newValue: string) => {
+        const keys = fieldKey.split('.')
+        if (keys.length === 1) {
+            onChange({ [fieldKey]: newValue } as unknown as Partial<UnifiedNode>)
+        } else {
+            // Handle nested updates
+            const rootKey = keys[0]
+            const existingData = (node as unknown as Record<string, unknown>)[rootKey] ?? {}
+            const nestedKey = keys.slice(1).join('.')
+            onChange({
+                [rootKey]: { ...existingData as object, [nestedKey]: newValue },
+            } as unknown as Partial<UnifiedNode>)
+        }
+    }
+
+    return (
+        <div>
+            <WidgetLabel>{resolveText(config.labelKey ?? fieldKey, fieldKey)}</WidgetLabel>
+            <WidgetSelect value={getValue()} onChange={(e) => setValue(e.target.value)}>
+                {options.map((opt: { value: string; labelKey: string }) => (
+                    <option key={opt.value} value={opt.value}>
+                        {resolveText(opt.labelKey, opt.value)}
+                    </option>
+                ))}
+            </WidgetSelect>
+        </div>
+    )
+}
+
+// ========================================
+// Widget Renderer (Factory)
+// ========================================
+
+// ========================================
+// Polygon Widget
+// ========================================
+
+export const PolygonWidget: React.FC<WidgetProps<PolygonWidgetConfig>> = ({
+    config,
+    node,
+    onChange,
+    resolveText,
+}) => {
+    if (node.t !== 'shape') return null
+    const shapeNode = node as ShapeNode
+    const points = shapeNode.sides ?? 5
+    const { min = 3, max = 12, step = 1 } = config.props || {}
+
+    return (
+        <div>
+            <WidgetLabel>
+                {resolveText(config.labelKey ?? 'properties_sides', 'Sides')}: {points}
+            </WidgetLabel>
+            <input
+                type="range"
+                min={min}
+                max={max}
+                step={step}
+                value={points}
+                onChange={(e) => onChange({ sides: parseInt(e.target.value) } as Partial<ShapeNode>)}
+                className="w-full accent-theme-accent"
+            />
+        </div>
+    )
+}
+
+// ========================================
+// Data Binding Widget (Placeholder)
+// ========================================
+
+export const DataBindingWidget: React.FC<WidgetProps<DataBindingWidgetConfig>> = ({
+    config,
+}) => {
+    // Placeholder implementation
+    return (
+        <div className="text-xs text-theme-text-secondary italic">
+            {config.props?.mode === 'repeater' ? 'Repeater Binding' : 'Field Binding'} (WIP)
+        </div>
+    )
+}
+
+// ========================================
+// Arrowhead Widget
+// ========================================
+
+export const ArrowheadWidget: React.FC<WidgetProps<ArrowheadWidgetConfig>> = ({
+    config,
+    node,
+    onChange,
+    resolveText,
+}) => {
+    if (node.t !== 'line') return null
+    const lineNode = node as LineNode
+
+    // arrows = [start, end]
+    const position = config.props?.position ?? 'end'
+    const index = position === 'start' ? 0 : 1
+    const currentArrow = lineNode.arrows?.[index] ?? 'none'
+
+    const options: ArrowType[] = ['none', 'arrow', 'circle', 'diamond']
+
+    const handleSelect = (arrowType: ArrowType) => {
+        // Ensure arrows array exists and clone it
+        const currentArrows = lineNode.arrows ?? ['none', 'none']
+        const newArrows: [ArrowType, ArrowType] = [...currentArrows] as [ArrowType, ArrowType]
+        newArrows[index] = arrowType
+        onChange({ arrows: newArrows } as Partial<LineNode>)
+    }
+
+    return (
+        <div>
+            <WidgetLabel>{resolveText(config.labelKey ?? `arrow_${position}`, position === 'start' ? 'Start Arrow' : 'End Arrow')}</WidgetLabel>
+            <div className="flex bg-theme-bg-tertiary rounded p-0.5 border border-theme-border">
+                {options.map((opt) => (
+                    <button
+                        key={opt}
+                        onClick={() => handleSelect(opt)}
+                        className={cn(
+                            'flex-1 py-1.5 flex items-center justify-center rounded transition-colors',
+                            currentArrow === opt
+                                ? 'bg-blue-500 text-white shadow-sm'
+                                : 'hover:bg-theme-bg-secondary text-theme-text-secondary'
+                        )}
+                        title={opt}
+                    >
+                        {opt === 'none' && <Minus size={14} />}
+                        {opt === 'arrow' && (position === 'start' ? <ArrowLeft size={14} /> : <ArrowRight size={14} />)}
+                        {opt === 'circle' && <Circle size={12} />}
+                        {opt === 'diamond' && <Diamond size={12} />}
+                    </button>
+                ))}
+            </div>
+        </div>
+    )
+}
+
+// ========================================
+// Widget Renderer (Factory)
+// ========================================
+
+export const renderWidget = (
+    config: WidgetConfig,
+    node: UnifiedNode,
+    onChange: (updates: Partial<UnifiedNode>) => void,
+    resolveText: (key: string, fallback?: string) => string,
+    customRenderers?: Record<string, React.FC<any>>
+) => {
+    const commonProps = { node, onChange, resolveText }
+
+    switch (config.type) {
+        case 'posSize':
+            return <PosSizeWidget {...commonProps} config={config} />
+        case 'font':
+            return <FontWidget {...commonProps} config={config} />
+        case 'alignment':
+            return <AlignmentWidget {...commonProps} config={config} />
+        case 'vAlignment':
+            return <VAlignmentWidget {...commonProps} config={config} />
+        case 'stroke':
+            return <StrokeWidget {...commonProps} config={config} />
+        case 'fill':
+            return <FillWidget {...commonProps} config={config} />
+        case 'border':
+            return <BorderWidget {...commonProps} config={config} />
+        case 'polygon':
+            return <PolygonWidget {...commonProps} config={config} />
+        case 'image':
+            return <ImageWidget {...commonProps} config={config} />
+        case 'select':
+            return <SelectWidget {...commonProps} config={config} />
+        case 'colorPicker':
+            return <ColorPickerWidget {...commonProps} config={config} />
+        case 'slider':
+            return <SliderWidget {...commonProps} config={config} />
+        case 'textContent':
+            return <TextContentWidget {...commonProps} config={config} />
+        case 'lineStyle':
+            return <LineStyleWidget {...commonProps} config={config} />
+        case 'arrowhead':
+            return <ArrowheadWidget {...commonProps} config={config} />
+        case 'hiddenField':
+        case 'labelField':
+            return null // or implement readonly display
+        case 'dataBinding':
+            return <DataBindingWidget {...commonProps} config={config} />
+        case 'custom':
+            if (customRenderers?.[config.props.renderKey]) {
+                const CustomComponent = customRenderers[config.props.renderKey]
+                return <CustomComponent {...commonProps} config={config} />
+            }
+            return null
+        default:
+            return <div className="text-xs text-red-500">Unknown widget type: {(config as any).type}</div>
+    }
+}

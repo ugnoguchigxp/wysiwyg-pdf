@@ -19,11 +19,11 @@ vi.mock('react-konva', () => ({
   Text: (props: any) => <div data-testid="Text" data-props={JSON.stringify(props)} />,
 }))
 
-vi.mock('../../../../src/modules/konva-editor/report-editor/pdf-editor/components/WysiwygCanvas/canvasImageUtils', () => ({
+vi.mock('@/features/report-editor/components/WysiwygCanvas/canvasImageUtils', () => ({
   findImageWithExtension: (...args: any[]) => findImageWithExtensionSpy(...args),
 }))
 
-import { CanvasElementRenderer } from '../../../../src/components/canvas/CanvasElementRenderer'
+import { CanvasElementRenderer } from '@/components/canvas/CanvasElementRenderer'
 
 describe('components/canvas/CanvasElementRenderer', () => {
   it('returns custom renderer result when provided', () => {

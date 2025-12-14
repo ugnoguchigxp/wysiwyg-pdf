@@ -10,7 +10,7 @@ import {
   SelectSeparator,
   SelectTrigger,
   SelectValue,
-} from '../../../../src/components/ui/Select'
+} from '@/components/ui/Select'
 
 describe('components/ui/Select', () => {
   it('renders trigger and content items when open', () => {

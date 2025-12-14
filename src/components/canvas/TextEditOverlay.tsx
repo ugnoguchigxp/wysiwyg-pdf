@@ -1,7 +1,7 @@
 import type Konva from 'konva'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
-import type { TextNode } from '../../modules/konva-editor/types'
+import type { TextNode } from '../../features/konva-editor/types'
 
 interface TextEditOverlayProps {
   element: TextNode

@@ -5,7 +5,7 @@ const { debugSpy } = vi.hoisted(() => ({
   debugSpy: vi.fn(),
 }))
 
-vi.mock('../../../../../src/utils/logger', () => ({
+vi.mock('@/utils/logger', () => ({
   createContextLogger: () => ({
     debug: debugSpy,
     info: vi.fn(),
@@ -14,7 +14,7 @@ vi.mock('../../../../../src/utils/logger', () => ({
   }),
 }))
 
-import { useKeyboardShortcuts } from '../../../../../src/components/canvas/hooks/useKeyboardShortcuts'
+import { useKeyboardShortcuts } from '@/components/canvas/hooks/useKeyboardShortcuts'
 
 describe('useKeyboardShortcuts', () => {
   it('handles editor shortcuts and ignores input targets', () => {

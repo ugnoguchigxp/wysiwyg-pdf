@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { Modal, ModalFooter } from '../../../../src/components/ui/Modal'
+import { Modal, ModalFooter } from '@/components/ui/Modal'
 
 describe('components/ui/Modal', () => {
   it('renders content when open and calls onClose on close', () => {

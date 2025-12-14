@@ -34,16 +34,16 @@ const rendererSpy = vi.fn((props: any) => {
   )
 })
 
-vi.mock('../../../../src/components/canvas/CanvasElementRenderer', () => ({
+vi.mock('@/components/canvas/CanvasElementRenderer', () => ({
   CanvasElementRenderer: (props: any) => rendererSpy(props),
 }))
 
 const shortcutsSpy = vi.fn()
-vi.mock('../../../../src/components/canvas/hooks/useKeyboardShortcuts', () => ({
+vi.mock('@/components/canvas/hooks/useKeyboardShortcuts', () => ({
   useKeyboardShortcuts: (handlers: any) => shortcutsSpy(handlers),
 }))
 
-vi.mock('../../../../src/components/canvas/TextEditOverlay', () => ({
+vi.mock('@/components/canvas/TextEditOverlay', () => ({
   TextEditOverlay: ({ element, onUpdate, onFinish }: any) => (
     <div data-testid="TextEditOverlay">
       <span>{element.id}</span>
@@ -57,7 +57,7 @@ vi.mock('../../../../src/components/canvas/TextEditOverlay', () => ({
   ),
 }))
 
-import { KonvaCanvasEditor } from '../../../../src/components/canvas/KonvaCanvasEditor'
+import { KonvaCanvasEditor } from '@/components/canvas/KonvaCanvasEditor'
 
 describe('components/canvas/KonvaCanvasEditor', () => {
   it('selects, multi-selects and edits text on double click', () => {

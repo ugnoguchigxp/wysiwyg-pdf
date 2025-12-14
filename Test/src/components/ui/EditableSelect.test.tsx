@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { EditableSelect } from '../../../../src/components/ui/EditableSelect'
+import { EditableSelect } from '@/components/ui/EditableSelect'
 
 describe('components/ui/EditableSelect', () => {
   it('opens on focus and selecting an option calls onChange with a string', () => {

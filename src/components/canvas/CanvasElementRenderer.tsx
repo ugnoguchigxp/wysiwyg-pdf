@@ -13,9 +13,10 @@ import {
   Text,
   Transformer,
 } from 'react-konva'
-import { findImageWithExtension } from '../../modules/konva-editor/report-editor/pdf-editor/components/WysiwygCanvas/canvasImageUtils'
+import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
 import { LineMarker } from './LineMarker'
 import type {
+  Anchor,
   UnifiedNode,
   TextNode,
   ShapeNode,
@@ -62,6 +63,7 @@ interface CanvasElementRendererProps {
   gridSize?: number
   showGrid?: boolean
   readOnly?: boolean
+  allElements?: UnifiedNode[]
   renderCustom?: (
     element: UnifiedNode,
     commonProps: CanvasElementCommonProps,
@@ -180,6 +182,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
   selectedCell: _selectedCell,
   renderCustom,
   readOnly,
+  allElements,
   snapStrength = 5,
   gridSize = 15,
   showGrid = false,
@@ -190,6 +193,8 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
   const lineVisualRef = useRef<Konva.Line | null>(null)
   const lineStartHandleRef = useRef<Konva.Circle | null>(null)
   const lineEndHandleRef = useRef<Konva.Circle | null>(null)
+  const lineStartMarkerGroupRef = useRef<Konva.Group | null>(null)
+  const lineEndMarkerGroupRef = useRef<Konva.Group | null>(null)
   const lineDraftPtsRef = useRef<number[] | null>(null)
 
   const handleShapeRef = useCallback(
@@ -469,7 +474,51 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
       }
       case 'line': {
         const line = element as LineNode
-        const pts = line.pts || [0, 0, 100, 0]
+
+        const nodesForSnap = (allElements || []).filter((n) => n.id !== line.id)
+
+        const getAnchorPoint = (n: UnifiedNode, anchor: Anchor): { x: number; y: number } | null => {
+          if (n.t === 'line') return null
+          if (n.x === undefined || n.y === undefined || n.w === undefined || n.h === undefined) return null
+          const x = n.x
+          const y = n.y
+          const w = n.w
+          const h = n.h
+          switch (anchor) {
+            case 'tl': return { x, y }
+            case 't': return { x: x + w / 2, y }
+            case 'tr': return { x: x + w, y }
+            case 'l': return { x, y: y + h / 2 }
+            case 'r': return { x: x + w, y: y + h / 2 }
+            case 'bl': return { x, y: y + h }
+            case 'b': return { x: x + w / 2, y: y + h }
+            case 'br': return { x: x + w, y: y + h }
+            default:
+              return { x: x + w / 2, y: y + h / 2 }
+          }
+        }
+
+        const resolveEndpoint = (conn: LineNode['startConn'] | LineNode['endConn'] | undefined): { x: number; y: number } | null => {
+          if (!conn) return null
+          const target = nodesForSnap.find((n) => n.id === conn.nodeId)
+          if (!target) return null
+          return getAnchorPoint(target, conn.anchor)
+        }
+
+        const basePts = line.pts || [0, 0, 100, 0]
+        const resolvedStart = resolveEndpoint(line.startConn)
+        const resolvedEnd = resolveEndpoint(line.endConn)
+
+        // Use resolved endpoints for rendering (connector follow)
+        const pts = [...basePts]
+        if (resolvedStart) {
+          pts[0] = resolvedStart.x
+          pts[1] = resolvedStart.y
+        }
+        if (resolvedEnd) {
+          pts[pts.length - 2] = resolvedEnd.x
+          pts[pts.length - 1] = resolvedEnd.y
+        }
 
         const snapStep = (showGrid && gridSize > 0) ? gridSize : (snapStrength > 0 ? snapStrength : 0)
 
@@ -494,9 +543,26 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
         }
 
         const applyDraftToVisuals = (draftPts: number[]) => {
+          // Update line + endpoint handles
           lineVisualRef.current?.points(draftPts)
           lineStartHandleRef.current?.position({ x: draftPts[0], y: draftPts[1] })
           lineEndHandleRef.current?.position({ x: draftPts[2], y: draftPts[3] })
+
+          // Update arrow markers (position + rotation)
+          const dx = draftPts[2] - draftPts[0]
+          const dy = draftPts[3] - draftPts[1]
+          const angleToEnd = Math.atan2(dy, dx)
+          const angleToStart = angleToEnd + Math.PI
+
+          if (lineStartMarkerGroupRef.current) {
+            lineStartMarkerGroupRef.current.position({ x: draftPts[0], y: draftPts[1] })
+            lineStartMarkerGroupRef.current.rotation((angleToStart * 180) / Math.PI)
+          }
+          if (lineEndMarkerGroupRef.current) {
+            lineEndMarkerGroupRef.current.position({ x: draftPts[2], y: draftPts[3] })
+            lineEndMarkerGroupRef.current.rotation((angleToEnd * 180) / Math.PI)
+          }
+
           lineVisualRef.current?.getLayer()?.batchDraw()
         }
 
@@ -507,6 +573,11 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           if (group) (group as Konva.Group).draggable(false)
           e.cancelBubble = true
         }
+
+        // Draft connector state for the current handle drag.
+        type Conn = { nodeId: string; anchor: Anchor } | undefined
+        const startConnDraftRef = useRef<Conn>(line.startConn)
+        const endConnDraftRef = useRef<Conn>(line.endConn)
 
         const moveHandleDrag = (pointIndex: number, e: Konva.KonvaEventObject<DragEvent>) => {
           const base = lineDraftPtsRef.current || [...pts]
@@ -521,6 +592,33 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
             nextPos = snap45(nextPos, other)
           } else {
             nextPos = snapToGrid(nextPos)
+          }
+
+          // Connector snap (8-point anchors). Applied after grid/shift.
+          const threshold = 12
+          let best: { nodeId: string; anchor: Anchor; x: number; y: number; dist2: number } | null = null
+          for (const n of nodesForSnap) {
+            if (n.t === 'line') continue
+            const anchors: Anchor[] = ['tl', 't', 'tr', 'l', 'r', 'bl', 'b', 'br']
+            for (const a of anchors) {
+              const p = getAnchorPoint(n, a)
+              if (!p) continue
+              const dx = p.x - nextPos.x
+              const dy = p.y - nextPos.y
+              const d2 = dx * dx + dy * dy
+              if (d2 <= threshold * threshold && (!best || d2 < best.dist2)) {
+                best = { nodeId: n.id, anchor: a, x: p.x, y: p.y, dist2: d2 }
+              }
+            }
+          }
+          if (best) {
+            nextPos = { x: best.x, y: best.y }
+            e.target.position(nextPos)
+            if (pointIndex === 0) startConnDraftRef.current = { nodeId: best.nodeId, anchor: best.anchor }
+            else endConnDraftRef.current = { nodeId: best.nodeId, anchor: best.anchor }
+          } else {
+            if (pointIndex === 0) startConnDraftRef.current = undefined
+            else endConnDraftRef.current = undefined
           }
 
           e.target.position(nextPos)
@@ -539,7 +637,15 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           const group = e.target.getParent()
           if (group) (group as Konva.Group).draggable((readOnly ? false : !element.locked) && isSelected)
           // Commit once
-          if (next) onChange({ id: element.id, pts: next })
+          if (next) {
+            const updated: Partial<LineNode> = {
+              id: element.id,
+              pts: next,
+              startConn: startConnDraftRef.current,
+              endConn: endConnDraftRef.current,
+            }
+            onChange(updated as unknown as Partial<UnifiedNode>)
+          }
           // Release after this tick so any stray group dragend won't apply
           setTimeout(() => {
             isLineHandleDraggingRef.current = false
@@ -566,8 +672,9 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
               const dy = node.y()
 
               if (dx !== 0 || dy !== 0) {
+                // If this line was connected, moving the whole line detaches it.
                 const newPts = pts.map((p, i) => (i % 2 === 0 ? p + dx : p + dy))
-                onChange({ id: element.id, pts: newPts })
+                onChange({ id: element.id, pts: newPts, startConn: undefined, endConn: undefined } as unknown as Partial<UnifiedNode>)
               }
 
               // Reset group position to avoid mixing x/y offsets with absolute pts.
@@ -593,38 +700,43 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
               hitStrokeWidth={20}
               draggable={false}
             />
-            {/* Arrow markers with calculated angles */}
+
+            {/* Arrow markers (wrapped in Groups for direct manipulation during drag) */}
             {(() => {
-              // Calculate angle from start to end
               const dx = pts[2] - pts[0]
               const dy = pts[3] - pts[1]
               const angleToEnd = Math.atan2(dy, dx)
-              const angleToStart = angleToEnd + Math.PI // Reverse direction
+              const angleToStart = angleToEnd + Math.PI
+
+              const startType = line.arrows?.[0] || 'none'
+              const endType = line.arrows?.[1] || 'none'
+              const color = line.stroke || '#000000'
+              const size = Math.max(8, (line.strokeW || 1) * 4)
 
               return (
                 <>
-                  {/* Start Arrow - points away from line (reverse direction) */}
-                  {line.arrows?.[0] && line.arrows[0] !== 'none' && (
-                    <LineMarker
-                      x={pts[0]}
-                      y={pts[1]}
-                      angle={angleToStart}
-                      type={line.arrows[0]}
-                      color={line.stroke || '#000000'}
-                      size={Math.max(8, (line.strokeW || 1) * 4)}
-                    />
-                  )}
-                  {/* End Arrow - points in line direction */}
-                  {line.arrows?.[1] && line.arrows[1] !== 'none' && (
-                    <LineMarker
-                      x={pts[pts.length - 2]}
-                      y={pts[pts.length - 1]}
-                      angle={angleToEnd}
-                      type={line.arrows[1]}
-                      color={line.stroke || '#000000'}
-                      size={Math.max(8, (line.strokeW || 1) * 4)}
-                    />
-                  )}
+                  <Group
+                    ref={(node) => {
+                      lineStartMarkerGroupRef.current = node
+                    }}
+                    x={pts[0]}
+                    y={pts[1]}
+                    rotation={(angleToStart * 180) / Math.PI}
+                    listening={false}
+                  >
+                    <LineMarker x={0} y={0} angle={0} type={startType} color={color} size={size} />
+                  </Group>
+                  <Group
+                    ref={(node) => {
+                      lineEndMarkerGroupRef.current = node
+                    }}
+                    x={pts[2]}
+                    y={pts[3]}
+                    rotation={(angleToEnd * 180) / Math.PI}
+                    listening={false}
+                  >
+                    <LineMarker x={0} y={0} angle={0} type={endType} color={color} size={size} />
+                  </Group>
                 </>
               )
             })()}

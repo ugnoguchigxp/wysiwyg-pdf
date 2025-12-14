@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { createContextLogger } from '../../../src/utils/logger'
+import { createContextLogger } from '@/utils/logger'
 
 describe('utils/logger', () => {
   it('createContextLogger returns a logger with standard methods', () => {

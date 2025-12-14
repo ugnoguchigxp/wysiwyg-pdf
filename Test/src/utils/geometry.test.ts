@@ -1,4 +1,4 @@
-import { simplifyPoints } from '../../../src/utils/geometry';
+import { simplifyPoints } from '@/utils/geometry';
 
 test('simplifyPoints reduces points on a straight line', () => {
     // A straight line with intermediate points: (0,0) -> (10,0) -> (20,0) ... -> (100,0)

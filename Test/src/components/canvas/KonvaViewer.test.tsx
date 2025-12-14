@@ -17,11 +17,11 @@ vi.mock('react-konva', () => ({
   Layer: ({ children }: any) => <div data-testid="Layer">{children}</div>,
 }))
 
-vi.mock('../../../../src/components/canvas/CanvasElementRenderer', () => ({
+vi.mock('@/components/canvas/CanvasElementRenderer', () => ({
   CanvasElementRenderer: (props: any) => canvasRendererSpy(props),
 }))
 
-import { KonvaViewer } from '../../../../src/components/canvas/KonvaViewer'
+import { KonvaViewer } from '@/components/canvas/KonvaViewer'
 
 describe('components/canvas/KonvaViewer', () => {
   it('computes stage size from paper size and zoom and renders elements', () => {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SignatureKonvaEditor } from 'wysiwyg-pdf/modules/konva-editor/signature-editor/SignatureKonvaEditor';
+import { SignatureKonvaEditor } from 'wysiwyg-pdf';
 
 interface SignatureDemoPageProps {
     onBack: () => void;

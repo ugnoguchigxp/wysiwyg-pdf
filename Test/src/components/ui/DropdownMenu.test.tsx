@@ -17,7 +17,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from '../../../../src/components/ui/DropdownMenu'
+} from '@/components/ui/DropdownMenu'
 
 describe('components/ui/DropdownMenu', () => {
   it('renders items when open', () => {

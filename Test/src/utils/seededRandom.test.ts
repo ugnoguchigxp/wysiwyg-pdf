@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { SeededRandom } from '../../../src/utils/seededRandom'
+import { SeededRandom } from '@/utils/seededRandom'
 
 describe('SeededRandom', () => {
   it('is deterministic for the same seed (string)', () => {

@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { describe, expect, it, vi } from 'vitest'
 
-import { SimpleTreeTable } from '../../../../src/components/ui/SimpleTreeTable'
+import { SimpleTreeTable } from '@/components/ui/SimpleTreeTable'
 
 type Row = { id: string; label: string; value: string; children?: Row[] }
 

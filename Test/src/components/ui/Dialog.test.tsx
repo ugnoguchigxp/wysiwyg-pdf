@@ -8,7 +8,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../../../src/components/ui/Dialog'
+} from '@/components/ui/Dialog'
 
 describe('components/ui/Dialog', () => {
   it('renders content/title/description when open', () => {

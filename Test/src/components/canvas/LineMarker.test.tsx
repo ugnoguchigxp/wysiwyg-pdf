@@ -10,7 +10,7 @@ vi.mock('react-konva', () => ({
   ),
 }))
 
-import { LineMarker } from '../../../../src/components/canvas/LineMarker'
+import { LineMarker } from '@/components/canvas/LineMarker'
 
 describe('components/canvas/LineMarker', () => {
   it('returns null for type=none', () => {

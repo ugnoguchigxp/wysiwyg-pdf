@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import type { Doc, TextNode, LineNode, WidgetNode } from '../../../src/types/canvas'
+import type { Doc, TextNode, LineNode, WidgetNode } from '@/types/canvas'
 
 describe('Unified JSON Schema v2', () => {
 

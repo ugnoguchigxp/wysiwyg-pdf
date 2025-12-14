@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { Button } from '../../../../src/components/ui/Button'
+import { Button } from '@/components/ui/Button'
 
 const TestIcon = (props: any) => <svg data-testid="icon" {...props} />
 

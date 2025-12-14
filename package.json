@@ -37,7 +37,7 @@
   "scripts": {
     "clean": "rimraf dist",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "build": "pnpm run clean && tsup && cpy \"modules/**/*.css\" dist --cwd=src --parents && cpy \"global.d.ts\" dist --cwd=src",
+    "build": "pnpm run clean && tsup && cpy \"features/**/*.css\" dist --cwd=src --parents && cpy \"global.d.ts\" dist --cwd=src",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "biome format --write src eslint.config.js tsup.config.ts package.json biome.json .gitignore README.md",

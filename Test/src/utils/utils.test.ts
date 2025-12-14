@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { cn } from '../../../src/utils/utils'
+import { cn } from '@/utils/utils'
 
 describe('utils/cn', () => {
   it('returns a string', () => {

@@ -19,6 +19,7 @@ export default defineConfig({
       '@radix-ui/react-popover': path.resolve(__dirname, './node_modules/@radix-ui/react-popover'),
       '@radix-ui/react-select': path.resolve(__dirname, './node_modules/@radix-ui/react-select'),
       'wysiwyg-pdf': path.resolve(__dirname, '../src'),
+      '@': path.resolve(__dirname, '../src'),
     },
   },
 })

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { SimpleSearchInput } from '../../../../src/components/ui/SimpleSearchInput'
+import { SimpleSearchInput } from '@/components/ui/SimpleSearchInput'
 
 describe('components/ui/SimpleSearchInput', () => {
   it('calls onSearch on input change', () => {

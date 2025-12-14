@@ -1,0 +1,38 @@
+@media print {
+  @page {
+    margin: 0;
+  }
+  body {
+    margin: 0;
+    padding: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-container {
+    margin: 0;
+    padding: 0;
+  }
+  .print-page {
+    page-break-after: always;
+    overflow: hidden;
+  }
+}
+
+.print-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.print-page {
+  position: relative;
+  background: white;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+}
+
+@media print {
+  .print-page {
+    box-shadow: none;
+    margin-bottom: 0;
+  }
+}
