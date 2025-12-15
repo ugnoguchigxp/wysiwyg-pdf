@@ -103,7 +103,7 @@ describe('WysiwygPropertiesPanel', () => {
       />
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Finish Drawing' }))
+    fireEvent.click(screen.getByRole('button', { name: 'properties_finish_drawing' }))
     expect(onToolSelect).toHaveBeenCalledWith('select')
   })
 })

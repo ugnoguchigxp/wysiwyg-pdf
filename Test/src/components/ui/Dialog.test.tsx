@@ -29,6 +29,6 @@ describe('components/ui/Dialog', () => {
     expect(screen.getByText('Desc')).toBeInTheDocument()
     expect(screen.getByText('Body')).toBeInTheDocument()
     expect(screen.getByText('Footer')).toBeInTheDocument()
-    expect(screen.getByText('Close')).toBeInTheDocument()
+    expect(screen.getByText('close')).toBeInTheDocument()
   })
 })

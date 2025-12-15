@@ -2,7 +2,7 @@ import { createColumnHelper } from '@tanstack/react-table'
 import { Calendar, Hash, Image as ImageIcon, Link, Type } from 'lucide-react'
 import type React from 'react'
 import { useMemo, useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { useI18n } from '@/i18n/I18nContext'
 import { Button } from '@/components/ui/Button'
 import {
   Dialog,
@@ -61,7 +61,7 @@ export const DataBindingModal: React.FC<DataBindingModalProps> = ({
   onSelect,
   mode,
 }) => {
-  const { t } = useTranslation()
+  const { t } = useI18n()
   const [searchQuery, setSearchQuery] = useState('')
 
   // Filter logic (Hierarchical)
@@ -148,7 +148,7 @@ export const DataBindingModal: React.FC<DataBindingModalProps> = ({
     () => [
       columnHelper.accessor('label', {
         id: 'label',
-        header: t('data_binding_name'),
+        header: t('data_binding_name', 'Name'),
         cell: (info) => {
           const item = info.row.original
           return (
@@ -166,13 +166,13 @@ export const DataBindingModal: React.FC<DataBindingModalProps> = ({
       }),
       columnHelper.accessor('type', {
         id: 'type',
-        header: t('data_binding_type'),
+        header: t('data_binding_type', 'Type'),
         cell: (info) => {
           const typeValue = info.getValue()
           if (typeValue === 'category')
             return (
               <span className="text-xs font-semibold text-theme-text-tertiary uppercase tracking-wider">
-                {t('data_binding_category')}
+                {t('data_binding_category', 'Category')}
               </span>
             )
           return (
@@ -185,7 +185,7 @@ export const DataBindingModal: React.FC<DataBindingModalProps> = ({
       }),
       columnHelper.accessor('id', {
         id: 'id',
-        header: t('data_binding_id'),
+        header: t('data_binding_id', 'ID'),
         cell: (info) => <span className="font-mono text-xs">{info.getValue()}</span>,
       }),
     ],
@@ -197,14 +197,16 @@ export const DataBindingModal: React.FC<DataBindingModalProps> = ({
       <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0 gap-0">
         <DialogHeader className="px-6 py-4 border-b border-theme-border">
           <DialogTitle>
-            {mode === 'field' ? t('data_binding_select_field') : t('data_binding_select_repeater')}
+            {mode === 'field'
+              ? t('data_binding_select_field', 'Select Field')
+              : t('data_binding_select_repeater', 'Select Repeater')}
           </DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 flex flex-col p-4 min-h-0 overflow-hidden bg-theme-bg-secondary">
           <div className="w-full max-w-sm mb-4 shrink-0">
             <SimpleSearchInput
-              placeholder={t('data_binding_search_placeholder')}
+              placeholder={t('search_placeholder', 'Search...')}
               value={searchQuery}
               onSearch={setSearchQuery}
               autoFocus
@@ -224,7 +226,7 @@ export const DataBindingModal: React.FC<DataBindingModalProps> = ({
 
         <DialogFooter className="p-4 border-t border-theme-border bg-theme-bg-primary">
           <Button variant="outline" size="sm" onClick={onClose}>
-            {t('cancel')}
+            {t('cancel', 'Cancel')}
           </Button>
         </DialogFooter>
       </DialogContent>

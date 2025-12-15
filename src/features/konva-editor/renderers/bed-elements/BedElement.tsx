@@ -8,7 +8,7 @@ import type { WidgetNode } from '@/types/canvas'
 type BedElementProps = Omit<CanvasElementCommonProps, 'ref'> & {
   element: WidgetNode
   isSelected: boolean
-  shapeRef?: React.Ref<Konva.Rect>
+  shapeRef?: React.Ref<Konva.Group>
   onClick?: (e: Konva.KonvaEventObject<MouseEvent>) => void
   onTap?: (e: Konva.KonvaEventObject<TouchEvent>) => void
   onMouseEnter?: (e: Konva.KonvaEventObject<MouseEvent>) => void
@@ -50,7 +50,7 @@ export const BedElement: React.FC<BedElementProps> = ({
   // Data extraction from WidgetNode data
   const data = element.data || {}
   const localStatus = (data.status as string) || 'idle'
-  const localLabel = (data.label as string) || 'Bed'
+  const localLabel = (element.name as string) || (data.label as string) || 'Bed'
   const localPatientName = (data.patientName as string) || '-'
   const localBP = (data.bloodPressure as string) || '-'
 
@@ -98,11 +98,14 @@ export const BedElement: React.FC<BedElementProps> = ({
   const width = element.w || 100
   const height = element.h || 60
 
+  const rotation = element.r || 0
+
   return (
     <Group
       id={element.id}
       {...otherProps}
-      ref={shapeRef as React.Ref<Konva.Group>}
+      rotation={rotation}
+      ref={shapeRef}
       onClick={onClick}
       onTap={onTap}
       onMouseEnter={onMouseEnter}
@@ -122,15 +125,14 @@ export const BedElement: React.FC<BedElementProps> = ({
       />
 
       {/* Text Content Group - Centered Vertically */}
-      <Group>
+      <Group rotation={-rotation}>
         {(() => {
           const fontSize = 16
           const lineHeight = 1.2
           const isEditorMode = !bedStatus
 
-          // Expanded width to allow overflow
-          const expandedWidth = Math.max(width, 2000)
-          const expandedX = (width - expandedWidth) / 2
+          const textAreaWidth = Math.min(width, 200)
+          const textAreaX = (width - textAreaWidth) / 2
 
           let renderLines: string[] = []
 
@@ -152,9 +154,9 @@ export const BedElement: React.FC<BedElementProps> = ({
           return renderLines.map((text, index) => (
             <OutlinedText
               key={index}
-              x={expandedX}
+              x={textAreaX}
               y={startY + index * fontSize * lineHeight}
-              width={expandedWidth}
+              width={textAreaWidth}
               text={text}
               fontSize={fontSize}
               fontFamily="Meiryo"

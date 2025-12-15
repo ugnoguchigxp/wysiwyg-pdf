@@ -144,6 +144,7 @@ export const PosSizeWidget: React.FC<WidgetProps<PosSizeWidgetConfig>> = ({
   config,
   node,
   onChange,
+  resolveText,
 }) => {
   const props = config.props ?? { showX: true, showY: true, showW: true, showH: true }
 
@@ -151,7 +152,7 @@ export const PosSizeWidget: React.FC<WidgetProps<PosSizeWidgetConfig>> = ({
     <div className="w-full grid grid-cols-2 gap-1">
       {props.showX && (
         <div className="w-full">
-          <WidgetLabel>X</WidgetLabel>
+          <WidgetLabel>{resolveText('properties_x', 'X')}</WidgetLabel>
           <WidgetInput
             type="number"
             value={Math.round(node.x ?? 0)}
@@ -161,7 +162,7 @@ export const PosSizeWidget: React.FC<WidgetProps<PosSizeWidgetConfig>> = ({
       )}
       {props.showY && (
         <div className="w-full">
-          <WidgetLabel>Y</WidgetLabel>
+          <WidgetLabel>{resolveText('properties_y', 'Y')}</WidgetLabel>
           <WidgetInput
             type="number"
             value={Math.round(node.y ?? 0)}
@@ -171,7 +172,7 @@ export const PosSizeWidget: React.FC<WidgetProps<PosSizeWidgetConfig>> = ({
       )}
       {props.showW && (
         <div className="w-full">
-          <WidgetLabel>W</WidgetLabel>
+          <WidgetLabel>{resolveText('properties_width', 'W')}</WidgetLabel>
           <WidgetInput
             type="number"
             value={Math.round(node.w ?? 0)}
@@ -181,7 +182,7 @@ export const PosSizeWidget: React.FC<WidgetProps<PosSizeWidgetConfig>> = ({
       )}
       {props.showH && (
         <div className="w-full">
-          <WidgetLabel>H</WidgetLabel>
+          <WidgetLabel>{resolveText('properties_height', 'H')}</WidgetLabel>
           <WidgetInput
             type="number"
             value={Math.round(node.h ?? 0)}
@@ -409,7 +410,7 @@ export const VAlignmentWidget: React.FC<WidgetProps<VAlignmentWidgetConfig>> = (
       <div className="flex bg-theme-bg-primary rounded border border-theme-border p-0.5">
         {options.map((opt: VAlignOption) => {
           const Icon = vAlignIcons[opt]
-          const isActive = textNode.vAlign === opt
+          const isActive = (textNode.vAlign || 't') === opt // Default to 't' (top)
           return (
             <button
               key={opt}
@@ -779,7 +780,7 @@ export const ImageWidget: React.FC<WidgetProps<ImageWidgetConfig>> = ({
             >
               <img
                 src={imageSrc}
-                alt="Preview"
+                alt={resolveText('properties_preview', 'Preview')}
                 className="max-w-full max-h-full object-contain"
                 style={{ maxHeight: maxHeight - 16 }}
               />
@@ -790,7 +791,7 @@ export const ImageWidget: React.FC<WidgetProps<ImageWidgetConfig>> = ({
 
       {config.props?.showUploader && (
         <div>
-          <WidgetLabel>{resolveText('properties_image_source', 'Source')}</WidgetLabel>
+          <WidgetLabel>{resolveText('source', 'Source')}</WidgetLabel>
           <label className="flex flex-col items-center justify-center w-full h-8 border border-theme-border border-dashed rounded cursor-pointer hover:bg-theme-bg-tertiary transition-colors">
             <span className="text-xs text-theme-text-secondary">
               {resolveText('browse', 'Browse...')}
@@ -920,11 +921,17 @@ export const PolygonWidget: React.FC<WidgetProps<PolygonWidgetConfig>> = ({
 // Data Binding Widget (Placeholder)
 // ========================================
 
-export const DataBindingWidget: React.FC<WidgetProps<DataBindingWidgetConfig>> = ({ config }) => {
+export const DataBindingWidget: React.FC<WidgetProps<DataBindingWidgetConfig>> = ({
+  config,
+  resolveText,
+}) => {
   // Placeholder implementation
   return (
     <div className="text-xs text-theme-text-secondary italic">
-      {config.props?.mode === 'repeater' ? 'Repeater Binding' : 'Field Binding'} (WIP)
+      {config.props?.mode === 'repeater'
+        ? resolveText('data_binding_repeater', 'Repeater Binding')
+        : resolveText('data_binding_field', 'Field Binding')}{' '}
+      {resolveText('wip', '(WIP)')}
     </div>
   )
 }
@@ -976,7 +983,15 @@ export const ArrowheadWidget: React.FC<WidgetProps<ArrowheadWidgetConfig>> = ({
                 ? 'bg-blue-500 text-white shadow-sm'
                 : 'hover:bg-theme-bg-secondary text-theme-text-secondary'
             )}
-            title={opt}
+            title={
+              opt === 'none'
+                ? resolveText('properties_arrow_none', 'None')
+                : opt === 'arrow'
+                  ? resolveText('properties_arrow_standard', 'Standard')
+                  : opt === 'circle'
+                    ? resolveText('properties_arrow_circle', 'Circle')
+                    : resolveText('properties_arrow_diamond', 'Diamond')
+            }
           >
             {opt === 'none' && <Minus size={14} />}
             {opt === 'arrow' &&
@@ -1034,9 +1049,10 @@ export const renderWidget = (
       return <LineStyleWidget {...commonProps} config={config} />
     case 'arrowhead':
       return <ArrowheadWidget {...commonProps} config={config} />
-    case 'hiddenField':
     case 'labelField':
-      return null // or implement readonly display
+      return <LabelFieldWidget {...commonProps} config={config} />
+    case 'hiddenField':
+      return null
     case 'dataBinding':
       return <DataBindingWidget {...commonProps} config={config} />
     case 'custom':

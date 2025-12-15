@@ -3,7 +3,10 @@ import type { Doc } from '@/features/konva-editor/types'
 
 interface UseHistoryReturn {
   document: Doc
-  setDocument: (doc: Doc | ((prev: Doc) => Doc)) => void
+  setDocument: (
+    doc: Doc | ((prev: Doc) => Doc),
+    options?: { saveToHistory?: boolean; force?: boolean }
+  ) => void
   canUndo: boolean
   canRedo: boolean
   undo: () => void
@@ -22,23 +25,40 @@ export function useReportHistory(initialDocument: Doc): UseHistoryReturn {
     future: [],
   })
 
-  const setDocument = useCallback((docOrUpdater: Doc | ((prev: Doc) => Doc)) => {
-    setHistory((prev) => {
-      const newPresent =
-        typeof docOrUpdater === 'function' ? docOrUpdater(prev.present) : docOrUpdater
+  // Update to support optional history saving
+  const setDocument = useCallback(
+    (
+      docOrUpdater: Doc | ((prev: Doc) => Doc),
+      options: { saveToHistory?: boolean; force?: boolean } = {}
+    ) => {
+      const { saveToHistory = true, force = false } = options
 
-      // Don't add to history if document hasn't changed
-      if (JSON.stringify(newPresent) === JSON.stringify(prev.present)) {
-        return prev
-      }
+      setHistory((prev) => {
+        const newPresent =
+          typeof docOrUpdater === 'function' ? docOrUpdater(prev.present) : docOrUpdater
 
-      return {
-        past: [...prev.past, prev.present],
-        present: newPresent,
-        future: [], // Clear future on new change
-      }
-    })
-  }, [])
+        // Don't add to history if document hasn't changed (deep comparison), unless forced
+        if (!force && JSON.stringify(newPresent) === JSON.stringify(prev.present)) {
+          return prev
+        }
+
+        if (!saveToHistory) {
+          return {
+            ...prev,
+            present: newPresent,
+            future: [],
+          }
+        }
+
+        return {
+          past: [...prev.past, prev.present],
+          present: newPresent,
+          future: [],
+        }
+      })
+    },
+    []
+  )
 
   const undo = useCallback(() => {
     setHistory((prev) => {

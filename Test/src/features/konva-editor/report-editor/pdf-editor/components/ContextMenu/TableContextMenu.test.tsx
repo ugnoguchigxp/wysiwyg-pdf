@@ -9,7 +9,7 @@ describe('TableContextMenu', () => {
     const onClose = vi.fn()
 
     render(<TableContextMenu visible x={10} y={20} onClose={onClose} onAction={onAction} />)
-    fireEvent.click(screen.getByRole('button', { name: /Insert Row Above/i }))
+    fireEvent.click(screen.getByRole('button', { name: /table_ctx_insert_row_above/i }))
     expect(onAction).toHaveBeenCalledWith('insertRowAbove')
 
     fireEvent.mouseDown(document.body)

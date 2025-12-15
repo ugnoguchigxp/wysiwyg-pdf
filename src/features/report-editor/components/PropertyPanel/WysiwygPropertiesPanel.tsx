@@ -6,7 +6,7 @@
  */
 
 import React from 'react'
-import { useTranslation } from 'react-i18next'
+import { useI18n } from '@/i18n/I18nContext'
 import { UnifiedPropertyPanel } from '@/features/konva-editor/components/PropertyPanel/UnifiedPropertyPanel'
 import type { WidgetProps } from '@/features/konva-editor/components/PropertyPanel/widgets'
 import { REPORT_PANEL_CONFIG } from '@/features/konva-editor/constants/propertyPanelConfig'
@@ -83,7 +83,7 @@ const CanvasSettingsPanel: React.FC<{
   onSnapStrengthChange,
   resolveText,
 }) => {
-  const { t } = useTranslation()
+  const { t } = useI18n()
   const currentSurface =
     templateDoc.surfaces.find((s) => s.id === currentPageId) || templateDoc.surfaces[0]
   const bg = currentSurface?.bg || '#ffffff'
@@ -116,11 +116,11 @@ const CanvasSettingsPanel: React.FC<{
           />
         </div>
         <div>
-          <label className={labelClass}>Image URL</label>
+          <label className={labelClass}>{resolveText('properties_image_url', 'Image URL')}</label>
           <input
             value={!isColor ? bg : ''}
             onChange={(e) => updateSurface({ bg: e.target.value })}
-            placeholder="http://..."
+            placeholder={resolveText('properties_image_url_placeholder', 'http://...')}
             className={inputClass}
           />
         </div>
@@ -278,7 +278,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
   snapStrength,
   onSnapStrengthChange,
 }) => {
-  const { t } = useTranslation()
+  const { t } = useI18n()
   const [activeBindingMode, setActiveBindingMode] = React.useState<'field' | 'repeater' | null>(
     null
   )
@@ -352,7 +352,6 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
     dataBindingField: ({ node }) => (
       <div>
         <BindingSelector
-          label={resolveText('data_binding', 'Data Binding')}
           binding={node.bind ? { field: node.bind } : undefined}
           onUpdate={(binding) => handleChange(node.id, { bind: binding?.field })}
           onOpenModal={() => setActiveBindingMode('field')}
@@ -363,7 +362,6 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
     dataBindingRepeater: ({ node }) => (
       <div>
         <BindingSelector
-          label={resolveText('data_binding', 'Data Binding')}
           binding={node.bind ? { field: node.bind } : undefined}
           onUpdate={(binding) => handleChange(node.id, { bind: binding?.field })}
           onOpenModal={() => setActiveBindingMode('repeater')}

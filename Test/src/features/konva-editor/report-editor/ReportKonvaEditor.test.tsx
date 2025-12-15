@@ -165,10 +165,11 @@ describe('ReportKonvaEditor', () => {
     expect(onElementSelect).toHaveBeenCalledWith(expect.objectContaining({ id: 't1' }))
 
     keyboard.last?.onMoveRight?.(1)
-    expect(onTemplateChange).toHaveBeenCalledWith(
+    expect(onTemplateChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        nodes: [expect.objectContaining({ id: 't1', x: 2, y: 2 })],
-      })
+        nodes: expect.arrayContaining([expect.objectContaining({ id: 't1', x: 2, y: 2 })]),
+      }),
+      undefined
     )
   })
 

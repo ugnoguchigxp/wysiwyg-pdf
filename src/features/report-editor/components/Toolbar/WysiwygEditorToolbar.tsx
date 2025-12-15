@@ -25,7 +25,7 @@ import {
   ZoomOut,
 } from 'lucide-react'
 import type React from 'react'
-import { useTranslation } from 'react-i18next'
+import { useI18n } from '@/i18n/I18nContext'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -92,7 +92,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
   activeTool = 'select',
   onToolSelect,
 }) => {
-  const { t } = useTranslation()
+  const { t } = useI18n()
 
   const resolveText = (key: string, defaultValue?: string) => {
     if (i18nOverrides?.[key]) return i18nOverrides[key]
@@ -168,6 +168,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
       fontWeight: font.weight,
       fill: '#000000',
       align: 'l',
+      vAlign: 't',
       x,
       y,
       w: width + 10,
@@ -469,7 +470,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
           type="button"
           onClick={handleZoomIn}
           className={`${TOOLBAR_BUTTON_CLASS} disabled:opacity-50`}
-          aria-label="Zoom in"
+          aria-label={resolveText('toolbar_zoom_in', 'Zoom in')}
           disabled={zoom >= 200}
         >
           <ZoomIn size={18} />
@@ -478,7 +479,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
           type="button"
           onClick={handleZoomReset}
           className="text-theme-text-secondary text-xs font-medium hover:text-theme-object-primary transition-colors"
-          aria-label="Reset zoom"
+          aria-label={resolveText('toolbar_zoom_reset', 'Reset zoom')}
         >
           {zoom}%
         </button>
@@ -486,7 +487,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
           type="button"
           onClick={handleZoomOut}
           className={`${TOOLBAR_BUTTON_CLASS} disabled:opacity-50`}
-          aria-label="Zoom out"
+          aria-label={resolveText('toolbar_zoom_out', 'Zoom out')}
           disabled={zoom <= 25}
         >
           <ZoomOut size={18} />

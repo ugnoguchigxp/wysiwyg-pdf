@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef } from 'react'
-import { useTranslation } from 'react-i18next'
+import { useI18n } from '@/i18n/I18nContext'
 
 interface TableContextMenuProps {
   visible: boolean
@@ -35,7 +35,7 @@ export const TableContextMenu: React.FC<TableContextMenuProps> = ({
   onClose,
   onAction,
 }) => {
-  const { t } = useTranslation()
+  const { t } = useI18n()
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {

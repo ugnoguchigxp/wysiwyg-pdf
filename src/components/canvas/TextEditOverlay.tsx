@@ -35,6 +35,19 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
     }
 
     // Calculate style
+    const vAlign = element.vAlign || 't' // Match Renderer new default (top)
+    let paddingTop = 0
+
+    const textNode = node as Konva.Text
+    // textHeight is the calculated height of the text block
+    const textHeight = textNode.textHeight || 0
+
+    if (vAlign === 'm') {
+      paddingTop = (element.h - textHeight) / 2
+    } else if (vAlign === 'b') {
+      paddingTop = element.h - textHeight
+    }
+
     const newStyle: React.CSSProperties = {
       position: 'absolute',
       top: `${areaPosition.y}px`,
@@ -66,6 +79,8 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
       outline: 'none',
       resize: 'none',
       padding: 0,
+      paddingTop: `${Math.max(0, paddingTop * scale)}px`,
+      boxSizing: 'border-box',
       margin: 0,
       overflow: 'hidden',
       zIndex: 1000, // Ensure it's on top

@@ -1,7 +1,7 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
 import * as React from 'react'
-import { useTranslation } from 'react-i18next'
+import { useI18n } from '@/i18n/I18nContext'
 import { cn } from '../../utils/utils'
 
 interface IModalProps extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Root> {
@@ -35,11 +35,13 @@ const Modal = React.memo(
         onClose,
         defaultOpen,
         draggable = true,
+        noHeader,
+        noPadding,
         ...props
       },
       ref
     ) => {
-      const { t } = useTranslation()
+      const { t } = useI18n()
       const [position, setPosition] = React.useState({ x: 0, y: 0 })
       const [isDragging, setIsDragging] = React.useState(false)
       const dragStartPos = React.useRef({ x: 0, y: 0 })
@@ -101,12 +103,12 @@ const Modal = React.memo(
 
       const modalContent = (
         <>
-          {!props.noHeader && (
+          {!noHeader && (
             <div
               className={cn(
                 'flex flex-col space-y-1.5 border-b border-theme-border bg-theme-bg-secondary/50 flex-shrink-0',
                 draggable && 'cursor-move',
-                props.noPadding ? 'p-1' : 'p-1.5'
+                noPadding ? 'p-1' : 'p-1.5'
               )}
               role="button"
               tabIndex={0}
@@ -125,11 +127,11 @@ const Modal = React.memo(
                     !title && 'sr-only'
                   )}
                 >
-                  {title || 'Dialog'}
+                  {title || t('dialog', 'Dialog')}
                 </DialogPrimitive.Title>
                 <DialogPrimitive.Close className="rounded-full p-1 opacity-70 ring-offset-background transition-all hover:opacity-100 hover:bg-theme-hover focus:outline-none disabled:pointer-events-none cursor-pointer">
                   <X className="h-5 w-5 text-theme-text-primary" />
-                  <span className="sr-only">{t('close')}</span>
+                  <span className="sr-only">{t('close', 'Close')}</span>
                 </DialogPrimitive.Close>
               </div>
               {description && (
@@ -143,7 +145,7 @@ const Modal = React.memo(
           <div
             className={cn(
               'flex-1 overflow-y-auto',
-              props.noPadding ? 'p-0' : 'p-6 pt-4',
+              noPadding ? 'p-0' : 'p-6 pt-4',
               contentClassName
             )}
           >

@@ -6,6 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/Select'
+import { useI18n } from '@/i18n/I18nContext'
 
 export interface ShapeOption {
   value: string
@@ -18,6 +19,7 @@ interface ShapeSelectorProps {
   onChange: (value: string) => void
   options: ShapeOption[]
   className?: string
+  placeholder?: string
 }
 
 export const ShapeSelector: React.FC<ShapeSelectorProps> = ({
@@ -25,7 +27,11 @@ export const ShapeSelector: React.FC<ShapeSelectorProps> = ({
   onChange,
   options,
   className = '',
+  placeholder,
 }) => {
+  const { t } = useI18n()
+  const effectivePlaceholder = placeholder ?? t('select_placeholder', 'Select...')
+
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger
@@ -37,7 +43,7 @@ export const ShapeSelector: React.FC<ShapeSelectorProps> = ({
           fontSize: '11px',
         }}
       >
-        <SelectValue placeholder="Select..." />
+        <SelectValue placeholder={effectivePlaceholder} />
       </SelectTrigger>
       <SelectContent>
         {options.map((option) => (

@@ -1,6 +1,6 @@
 import { Database } from 'lucide-react'
 import type React from 'react'
-import { useTranslation } from 'react-i18next'
+import { useI18n } from '@/i18n/I18nContext'
 import { Button } from '@/components/ui/Button'
 
 export interface BindingInfo {
@@ -22,19 +22,18 @@ interface BindingSelectorProps {
 export const BindingSelector: React.FC<BindingSelectorProps> = ({
   binding,
   onUpdate,
-  label = 'Data Binding',
+  label,
   onOpenModal,
   i18nOverrides,
 }) => {
-  const { t } = useTranslation()
+  const { t } = useI18n()
 
   const resolveText = (key: string, defaultValue?: string) => {
     if (i18nOverrides?.[key]) return i18nOverrides[key]
     return t(key, defaultValue ?? key)
   }
 
-  const displayLabel =
-    label === 'Data Binding' ? resolveText('data_binding', 'Data Binding') : label
+  const displayLabel = label ?? resolveText('data_binding', 'Data Binding')
 
   if (!binding) {
     return (
@@ -70,7 +69,7 @@ export const BindingSelector: React.FC<BindingSelectorProps> = ({
         </div>
         {binding.sourceId && (
           <div className="text-[10px] text-gray-500 mt-0.5">
-            {resolveText('data_binding_source', 'Source')}: {binding.sourceId}
+            {resolveText('source', 'Source')}: {binding.sourceId}
           </div>
         )}
       </div>
@@ -81,7 +80,7 @@ export const BindingSelector: React.FC<BindingSelectorProps> = ({
           onClick={() => onUpdate(undefined)}
           type="button"
         >
-          {resolveText('data_binding_remove', 'Remove')}
+          {resolveText('remove', 'Remove')}
         </button>
         {onOpenModal && (
           <button
@@ -89,7 +88,7 @@ export const BindingSelector: React.FC<BindingSelectorProps> = ({
             onClick={onOpenModal}
             type="button"
           >
-            {resolveText('data_binding_change', 'Change')}
+            {resolveText('change', 'Change')}
           </button>
         )}
       </div>

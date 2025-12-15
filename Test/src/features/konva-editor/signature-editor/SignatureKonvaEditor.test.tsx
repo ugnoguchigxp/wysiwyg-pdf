@@ -59,17 +59,17 @@ describe('SignatureKonvaEditor', () => {
 
     expect(screen.getAllByTestId('line').length).toBe(1)
 
-    fireEvent.click(screen.getByText('Download'))
+    fireEvent.click(screen.getByText('download'))
     expect(stageState.toDataURL).toHaveBeenCalled()
     expect(clickSpy).toHaveBeenCalled()
 
-    fireEvent.click(screen.getByText('Save'))
+    fireEvent.click(screen.getByText('save'))
     expect(onSave).toHaveBeenCalledWith('data:image/png;base64,sig')
 
-    fireEvent.click(screen.getByText('Cancel'))
+    fireEvent.click(screen.getByText('cancel'))
     expect(onCancel).toHaveBeenCalled()
 
-    fireEvent.click(screen.getByText('Clear'))
+    fireEvent.click(screen.getByText('clear'))
     expect(screen.queryAllByTestId('line').length).toBe(0)
   })
 })

@@ -29,7 +29,6 @@ export default defineConfig({
     'clsx',
     'konva',
     'lucide-react',
-    'react-i18next',
     'react-konva',
     'tailwind-merge',
     'use-image',

@@ -64,23 +64,32 @@ Use versions compatible with this package’s `peerDependencies`.
 
 ## Requirements & integration notes
 
-### 1) i18n (react-i18next)
+### 1) i18n (host-provided translator)
 
-UI strings are retrieved via `react-i18next` (`useTranslation()`).
+This package does not ship an i18n library. Instead, you inject a translator function via `I18nProvider`.
 
-You must initialize i18next in the host app.
+```tsx
+import { I18nProvider } from 'wysiwyg-pdf'
 
-```ts
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
+export function App() {
+  return (
+    <I18nProvider t={(key, fallback) => fallback ?? key}>
+      {/* your editor UI */}
+    </I18nProvider>
+  )
+}
+```
 
-void i18n.use(initReactI18next).init({
-  lng: 'en',
-  fallbackLng: 'en',
-  resources: {
-    en: { translation: {} },
-  },
-});
+If your app already uses `react-i18next`, you can bridge it:
+
+```tsx
+import { I18nProvider } from 'wysiwyg-pdf'
+import { useTranslation } from 'react-i18next'
+
+export function App() {
+  const { t } = useTranslation()
+  return <I18nProvider t={(key, fallback) => t(key, fallback ?? key)}>{/* ... */}</I18nProvider>
+}
 ```
 
 ### 2) Styling (Tailwind classes + theme CSS variables)

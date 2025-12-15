@@ -102,7 +102,7 @@ describe('bedLayout PropertyPanel', () => {
     expect(onChange).toHaveBeenCalledWith('t1', expect.objectContaining({ fontWeight: 700 }))
 
     // Check for Size select in the parent div of 'Size' label
-    const sizeLabel = screen.getByText('Size')
+    const sizeLabel = screen.getByText('properties_font_size')
     const sizeSelect = sizeLabel.parentElement?.querySelector('select')
     fireEvent.change(sizeSelect!, { target: { value: '18' } })
     expect(onChange).toHaveBeenCalledWith('t1', expect.objectContaining({ fontSize: 18 }))
@@ -111,8 +111,8 @@ describe('bedLayout PropertyPanel', () => {
   it('renders image preview via asset resolver', async () => {
     const selected = { id: 'img1', t: 'image', x: 0, y: 0, w: 10, h: 10, src: 'asset-id' } as any
     render(<PropertyPanel selectedElement={selected} onChange={() => { }} onDelete={() => { }} />)
-    expect(await screen.findByAltText('Preview')).toBeInTheDocument()
-    expect(screen.getByAltText('Preview')).toHaveAttribute('src', 'asset-id')
+    expect(await screen.findByAltText('properties_preview')).toBeInTheDocument()
+    expect(screen.getByAltText('properties_preview')).toHaveAttribute('src', 'asset-id')
   })
 
   it('updates line/shape/bed properties via controls', () => {
@@ -126,7 +126,7 @@ describe('bedLayout PropertyPanel', () => {
       />
     )
     // Find the style buttons group (following 'Style' label) and click the dotted one (3rd)
-    const styleLabel = screen.getByText('Style')
+    const styleLabel = screen.getByText('properties_line_style')
     const styleGroup = styleLabel.nextElementSibling
     const buttons = styleGroup?.querySelectorAll('button')
     if (buttons && buttons[2]) {

@@ -15,6 +15,7 @@ import { useKeyboardShortcuts } from '@/components/canvas/hooks/useKeyboardShort
 import { TextEditOverlay } from '@/components/canvas/TextEditOverlay'
 import { PEN_CURSOR_URL } from '@/features/konva-editor/cursors'
 import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
+import { measureText } from '@/features/konva-editor/utils/textUtils'
 import type { Doc, SignatureNode, Surface, TableNode, TextNode, UnifiedNode } from '@/types/canvas' // Direct import
 import { simplifyPoints } from '@/utils/geometry'
 import { createContextLogger } from '@/utils/logger'
@@ -32,7 +33,7 @@ interface ReportKonvaEditorProps {
   zoom: number
   selectedElementId?: string
   onElementSelect: (element: UnifiedNode | null) => void
-  onTemplateChange: (doc: Doc) => void
+  onTemplateChange: (doc: Doc, options?: { saveToHistory?: boolean; force?: boolean }) => void
   currentPageId?: string
   onUndo?: () => void
   onRedo?: () => void
@@ -305,7 +306,10 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
     }, [editingCell, editingCellValue, onTemplateChange, templateDoc])
 
     const handleElementChange = useCallback(
-      (updates: Partial<UnifiedNode> & { id?: string }) => {
+      (
+        updates: Partial<UnifiedNode> & { id?: string },
+        options?: { saveToHistory?: boolean; force?: boolean }
+      ) => {
         const targetId = updates.id || selectedElementId
         if (!targetId) return
 
@@ -315,7 +319,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
           }
           return el
         })
-        onTemplateChange({ ...templateDoc, nodes: nextNodes })
+        onTemplateChange({ ...templateDoc, nodes: nextNodes }, options)
       },
       [onTemplateChange, selectedElementId, templateDoc]
     )
@@ -323,16 +327,70 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
     const handleTextUpdate = useCallback(
       (text: string) => {
         if (!editingElementId) return
-        handleElementChange({ id: editingElementId, text } as Partial<UnifiedNode> & {
-          id?: string
-        })
+
+        // Get current element to access font settings
+        const element = templateDoc.nodes.find((n) => n.id === editingElementId)
+        if (!element || element.t !== 'text') {
+          handleElementChange(
+            { id: editingElementId, text } as Partial<UnifiedNode> & { id?: string },
+            { saveToHistory: false }
+          )
+          return
+        }
+
+        const textNode = element as TextNode
+        const font = {
+          family: textNode.font || 'Meiryo',
+          size: textNode.fontSize || 12,
+          weight: textNode.fontWeight || 400,
+        }
+
+        // Measure each line and find the maximum width
+        const lines = text.split('\n')
+        let maxWidth = 0
+        for (const line of lines) {
+          const { width } = measureText(line || ' ', font)
+          if (width > maxWidth) maxWidth = width
+        }
+
+        // Calculate height based on number of lines
+        const lineHeight = font.size * 1.2
+        const calculatedHeight = lines.length * lineHeight
+
+        // Add padding
+        const newWidth = maxWidth + 10
+        const newHeight = calculatedHeight + 4
+
+        console.log('[ReportKonvaEditor] handleTextUpdate:', { text, newWidth, newHeight })
+
+        // Update text and dimensions together (Transient)
+        handleElementChange(
+          {
+            id: editingElementId,
+            text,
+            w: newWidth,
+            h: newHeight,
+          } as Partial<UnifiedNode> & { id?: string },
+          { saveToHistory: false }
+        )
       },
-      [editingElementId, handleElementChange]
+      [editingElementId, templateDoc.nodes, handleElementChange]
     )
 
     const handleTextEditFinish = useCallback(() => {
+      // Final commit to history (Force save even if state is identical to last transient state)
+      if (editingElementId) {
+        const element = templateDoc.nodes.find((n) => n.id === editingElementId)
+        if (element && element.t === 'text') {
+          // Re-trigger update with force=true to ensure it hits history
+          // Note: We don't need to recalculate if we assume handleTextUpdate did it.
+          // However, for safety, let's just trigger a "no-op" update or same-value update with force.
+          // Actually, passing the current values is enough.
+          handleElementChange({ id: editingElementId }, { saveToHistory: true, force: true })
+        }
+      }
       setEditingElementId(null)
-    }, [])
+    }, [editingElementId, templateDoc.nodes, handleElementChange])
 
     const handleContextMenu = (e: Konva.KonvaEventObject<PointerEvent>, element: UnifiedNode) => {
       e.evt.preventDefault()
@@ -1003,6 +1061,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
           fontSize: 12,
           fill: '#0000ff',
           align: 'l',
+          vAlign: 't',
           x: logicX,
           y: logicY,
           w: 150,

@@ -34,7 +34,7 @@ describe('components/ui/Modal', () => {
       </Modal>
     )
 
-    const handle = screen.getByLabelText('Drag modal')
+    const handle = screen.getByLabelText('modal_drag_handle')
     expect(handle).toBeInTheDocument()
     expect(handle).not.toHaveClass('cursor-move')
 
@@ -81,7 +81,7 @@ describe('components/ui/Modal', () => {
       </Modal>
     )
 
-    const handle = screen.getByLabelText('Drag modal')
+    const handle = screen.getByLabelText('modal_drag_handle')
     fireEvent.mouseDown(handle, { clientX: 50, clientY: 60 })
 
     fireEvent.mouseMove(document, { clientX: 70, clientY: 90 })
@@ -111,6 +111,6 @@ describe('components/ui/Modal', () => {
       </Modal>
     )
     expect(screen.getByText('Body')).toBeInTheDocument()
-    expect(screen.getByText('Dialog')).toBeInTheDocument()
+    expect(screen.getByText('dialog')).toBeInTheDocument()
   })
 })

@@ -3,13 +3,6 @@ import { describe, it, expect, vi } from 'vitest'
 import { WysiwygEditorToolbar } from '@/features/report-editor/components/Toolbar/WysiwygEditorToolbar'
 import type { Doc } from '@/types/canvas'
 
-// Mock useTranslation
-vi.mock('react-i18next', () => ({
-    useTranslation: () => ({
-        t: (key: string, defaultVal: string) => defaultVal || key,
-    }),
-}))
-
 // Mock Radix UI Tooltip to simply render children
 vi.mock('@/components/ui/Tooltip', () => ({
     Tooltip: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -49,13 +42,13 @@ describe('WysiwygEditorToolbar', () => {
     it('renders Signature tool button', () => {
         render(<WysiwygEditorToolbar {...defaultProps} />)
         // Look for the aria-label used in the component
-        const signatureBtn = screen.getByLabelText('Signature')
+        const signatureBtn = screen.getByLabelText('toolbar_signature')
         expect(signatureBtn).toBeInTheDocument()
     })
 
     it('calls onToolSelect("signature") when Signature tool is clicked', () => {
         render(<WysiwygEditorToolbar {...defaultProps} />)
-        const signatureBtn = screen.getByLabelText('Signature')
+        const signatureBtn = screen.getByLabelText('toolbar_signature')
         fireEvent.click(signatureBtn)
         // Depending on implementation detail (span wrapper), click might need to bubble.
         // fireEvent.click usually works fine.
@@ -64,7 +57,7 @@ describe('WysiwygEditorToolbar', () => {
 
     it('highlights Signature tool when activeTool is "signature"', () => {
         render(<WysiwygEditorToolbar {...defaultProps} activeTool="signature" />)
-        const signatureBtn = screen.getByLabelText('Signature')
+        const signatureBtn = screen.getByLabelText('toolbar_signature')
         // Check for active class or style - based on TOOLBAR_BUTTON_ACTIVE_CLASS in source
         // border-theme-object-primary is a good indicator, or text-theme-object-primary
         expect(signatureBtn.className).toContain('border-theme-object-primary')
@@ -72,7 +65,7 @@ describe('WysiwygEditorToolbar', () => {
 
     it('does not highlight Signature tool when activeTool is "select"', () => {
         render(<WysiwygEditorToolbar {...defaultProps} activeTool="select" />)
-        const signatureBtn = screen.getByLabelText('Signature')
+        const signatureBtn = screen.getByLabelText('toolbar_signature')
         // Should have standard border
         expect(signatureBtn.className).toContain('border-theme-border')
         expect(signatureBtn.className).not.toContain('border-theme-object-primary')

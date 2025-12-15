@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { useI18n } from '@/i18n/I18nContext'
 import { RenderLine, RenderShape } from '@/features/konva-editor/renderers/print/ReportPrintLayout'
 import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
 import type {
@@ -13,12 +13,13 @@ import type {
 } from '@/types/canvas'
 
 const RenderBed = ({ element }: { element: WidgetNode }) => {
+  const { t } = useI18n()
   const data = element.data || {}
   const status = (data.status as string) || 'idle'
   const patientName = (data.patientName as string) || ''
   const bloodPressure = (data.bloodPressure as string) || ''
   const orientation = (data.orientation as string) || 'horizontal'
-  const label = (data.label as string) || 'Bed'
+  const label = (data.label as string) || t('toolbar_bed', 'Bed')
 
   // Status colors (Matching BedElement.tsx)
   let strokeColor = '#3b82f6' // Default Blue (Idle)
@@ -106,7 +107,7 @@ const RenderBed = ({ element }: { element: WidgetNode }) => {
             marginBottom: patientName ? '0' : '0',
           }}
         >
-          {label || 'Bed'}
+          {label}
         </div>
         {patientName && (
           <div
@@ -146,7 +147,7 @@ const BedPrintElement: React.FC<{
   element: UnifiedNode
   i18nOverrides?: Record<string, string>
 }> = ({ element, i18nOverrides }) => {
-  const { t } = useTranslation()
+  const { t } = useI18n()
 
   const resolveText = (key: string, defaultValue?: string) => {
     if (i18nOverrides?.[key]) return i18nOverrides[key]
@@ -230,7 +231,7 @@ const BedPrintElement: React.FC<{
     return (
       <div style={style}>
         <svg width="100%" height="100%" style={{ overflow: 'visible' }}>
-          <title>{resolveText('bed_layout_shape_preview', 'Bed layout shape')}</title>
+          <title>{resolveText('properties_preview', 'Preview')}</title>
           <RenderShape element={element as ShapeNode} />
         </svg>
       </div>
@@ -243,7 +244,7 @@ const BedPrintElement: React.FC<{
         {imageSrc ? (
           <img
             src={imageSrc}
-            alt={resolveText('bed_layout_image_preview', 'Asset preview')}
+            alt={resolveText('properties_preview', 'Preview')}
             style={{
               width: '100%',
               height: '100%',
@@ -265,7 +266,7 @@ const BedPrintElement: React.FC<{
               color: 'gray',
             }}
           >
-            {resolveText('no_image', 'No image')}
+            {resolveText('no_image', 'No Image')}
           </div>
         )}
       </div>

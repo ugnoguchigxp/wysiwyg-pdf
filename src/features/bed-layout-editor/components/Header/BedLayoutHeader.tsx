@@ -1,12 +1,12 @@
 import type React from 'react'
-import { useTranslation } from 'react-i18next'
+import { useI18n } from '@/i18n/I18nContext'
 import {
   EditorHeader,
   type EditorHeaderProps,
 } from '@/features/report-editor/components/Header/EditorHeader'
 
 export const BedLayoutHeader: React.FC<EditorHeaderProps> = (props) => {
-  const { t } = useTranslation()
+  const { t } = useI18n()
   const { i18nOverrides } = props
 
   const resolveText = (key: string, defaultValue?: string) => {

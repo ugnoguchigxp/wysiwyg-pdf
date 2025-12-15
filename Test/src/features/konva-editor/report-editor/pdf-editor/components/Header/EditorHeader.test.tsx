@@ -47,17 +47,17 @@ describe('EditorHeader', () => {
     expect(onOrientationChange).toHaveBeenCalledWith('landscape')
 
     // undo/redo buttons are regular buttons without names; use title
-    fireEvent.click(screen.getByTitle('Undo'))
+    fireEvent.click(screen.getByTitle('toolbar_undo'))
     expect(onUndo).toHaveBeenCalledTimes(1)
 
     // redo is disabled (canRedo=false)
-    expect(screen.getByTitle('Redo')).toBeDisabled()
+    expect(screen.getByTitle('toolbar_redo')).toBeDisabled()
 
-    fireEvent.click(screen.getByText('Image'))
+    fireEvent.click(screen.getByText('header_image'))
     expect(onDownloadImage).toHaveBeenCalledTimes(1)
-    fireEvent.click(screen.getByText('PDF'))
+    fireEvent.click(screen.getByText('header_pdf'))
     expect(onDownloadPdf).toHaveBeenCalledTimes(1)
-    fireEvent.click(screen.getByText('Save'))
+    fireEvent.click(screen.getByText('save'))
     expect(onSave).toHaveBeenCalledTimes(1)
 
     fireEvent.click(screen.getByText('?'))

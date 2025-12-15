@@ -7,7 +7,7 @@ import {
   ArrowUpToLine,
 } from 'lucide-react'
 import type React from 'react'
-import { useTranslation } from 'react-i18next'
+import { useI18n } from '@/i18n/I18nContext'
 import { EditableSelect } from '@/components/ui/EditableSelect'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/Tooltip'
 import { DEFAULT_FONT_FAMILIES } from '@/features/konva-editor/constants/propertyPanelConfig'
@@ -30,7 +30,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
   selectedCell,
   i18nOverrides,
 }) => {
-  const { t } = useTranslation()
+  const { t } = useI18n()
 
   const resolveText = (key: string, defaultValue?: string) => {
     if (i18nOverrides?.[key]) return i18nOverrides[key]
@@ -152,7 +152,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
 
         {isGlobal && (
           <BindingSelector
-            label="Repeater Source (Array)"
+            label={resolveText('properties_repeater_source', 'Repeater Source (Array)')}
             binding={element.bind ? { field: element.bind } : undefined}
             onUpdate={(binding) => onUpdate({ bind: binding?.field })}
             i18nOverrides={i18nOverrides}

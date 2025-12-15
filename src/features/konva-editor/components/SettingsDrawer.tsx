@@ -1,6 +1,6 @@
 import { X } from 'lucide-react'
 import type React from 'react'
-import { useTranslation } from 'react-i18next'
+import { useI18n } from '@/i18n/I18nContext'
 import { EditableSelect } from '@/components/ui/EditableSelect'
 
 const FIBONACCI_grid_SIZES = [2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377]
@@ -26,7 +26,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
   snapStrength,
   onSnapStrengthChange,
 }) => {
-  const { t } = useTranslation()
+  const { t } = useI18n()
 
   return (
     <div

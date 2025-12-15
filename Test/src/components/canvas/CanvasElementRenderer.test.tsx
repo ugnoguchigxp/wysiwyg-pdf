@@ -88,7 +88,7 @@ describe('components/canvas/CanvasElementRenderer', () => {
     )
 
     const textProps = JSON.parse(screen.getByTestId('Text').getAttribute('data-props') || '{}')
-    expect(textProps.text).toBe('Image')
+    expect(textProps.text).toBe('properties_element_image')
   })
 
   it('renders KonvaImage after loading a data url', async () => {

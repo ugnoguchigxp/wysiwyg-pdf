@@ -8,7 +8,7 @@ import {
   Undo,
 } from 'lucide-react'
 import type React from 'react'
-import { useTranslation } from 'react-i18next'
+import { useI18n } from '@/i18n/I18nContext'
 import { Button } from '@/components/ui/Button'
 
 export interface EditorHeaderProps {
@@ -50,7 +50,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   children,
   i18nOverrides,
 }) => {
-  const { t } = useTranslation()
+  const { t } = useI18n()
 
   // Helper to resolve translation: Override -> i18next -> Default
   const resolveText = (key: string, defaultValue?: string) => {

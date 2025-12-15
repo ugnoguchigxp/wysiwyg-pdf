@@ -1,6 +1,6 @@
 {
   "name": "wysiwyg-pdf",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "React + Konva WYSIWYG editor toolkit for print-ready (A4 portrait/landscape) templates in the browser.",
   "homepage": "https://github.com/ugnoguchigxp/wysiwyg-pdf#readme",
   "repository": {
@@ -77,7 +77,6 @@
     "clsx": "^2.1.1",
     "konva": "^10.0.12",
     "lucide-react": "^0.470.0",
-    "react-i18next": "^15.2.0",
     "react-konva": "^19.2.1",
     "tailwind-merge": "^2.6.0",
     "use-image": "^1.1.4"

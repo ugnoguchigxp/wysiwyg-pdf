@@ -24,7 +24,7 @@ import {
   ZoomOut,
 } from 'lucide-react'
 import type React from 'react'
-import { useTranslation } from 'react-i18next'
+import { useI18n } from '@/i18n/I18nContext'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -99,7 +99,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   surfaceId,
   i18nOverrides,
 }) => {
-  const { t } = useTranslation()
+  const { t } = useI18n()
 
   const resolveText = (key: string, defaultValue?: string) => {
     if (i18nOverrides?.[key]) return i18nOverrides[key]

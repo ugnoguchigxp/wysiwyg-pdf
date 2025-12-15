@@ -14,6 +14,7 @@ import {
   Transformer,
 } from 'react-konva'
 import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
+import { useI18n } from '@/i18n/I18nContext'
 import type {
   Anchor,
   ImageNode,
@@ -78,6 +79,7 @@ const CanvasImage = forwardRef<
   Konva.Image | Konva.Group,
   { element: ImageNode; commonProps: CanvasElementCommonProps }
 >(({ element, commonProps }, ref) => {
+  const { t } = useI18n()
   const [image, setImage] = useState<HTMLImageElement | null>(null)
   const [status, setStatus] = useState<'loading' | 'loaded' | 'error' | 'empty'>('empty')
 
@@ -142,7 +144,11 @@ const CanvasImage = forwardRef<
   const bgColor = isError ? '#fee2e2' : isLoading ? '#eff6ff' : '#e5e7eb'
   const borderColor = isError ? '#ef4444' : isLoading ? '#3b82f6' : '#6b7280'
   const textColor = isError ? '#b91c1c' : isLoading ? '#1d4ed8' : '#374151'
-  const labelText = isError ? 'Error' : isLoading ? 'Loading...' : 'Image'
+  const labelText = isError
+    ? t('error', 'Error')
+    : isLoading
+      ? t('loading', 'Loading...')
+      : t('properties_element_image', 'Image')
 
   return (
     <Group {...propsWithoutRef} ref={ref as React.Ref<Konva.Group>}>
@@ -228,6 +234,14 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
       trRef.current.getLayer()?.batchDraw()
     }
   }, [isSelected])
+
+  // Force update transformer when dimensions change
+  useEffect(() => {
+    if (isSelected && trRef.current) {
+      trRef.current.forceUpdate()
+      trRef.current.getLayer()?.batchDraw()
+    }
+  }, [element.w, element.h, isSelected])
 
   // Text Auto-resize
   useEffect(() => {
@@ -571,7 +585,8 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
                     ? 'center'
                     : 'justify'
             }
-            verticalAlign={vAlign === 't' ? 'top' : vAlign === 'b' ? 'bottom' : 'middle'}
+            verticalAlign={vAlign === 'm' ? 'middle' : vAlign === 'b' ? 'bottom' : 'top'}
+            lineHeight={1.2}
             width={element.w}
           />
         )
@@ -1610,7 +1625,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
       {content}
       {isSelected && !readOnly && element.t !== 'line' && (
         <Transformer
-          key={`${element.id} -${element.w} -${element.h} `}
+          key={element.id} // Fixed key to prevent unmounting on resize
           ref={trRef as React.RefObject<Konva.Transformer>}
           rotateEnabled={true}
           enabledAnchors={[

@@ -2,6 +2,7 @@ import type Konva from 'konva'
 import type React from 'react'
 import { useRef, useState } from 'react'
 import { Layer, Line, Stage } from 'react-konva'
+import { useI18n } from '@/i18n/I18nContext'
 import { simplifyPoints } from '@/utils/geometry'
 import { PEN_CURSOR_URL } from '../cursors'
 
@@ -24,6 +25,7 @@ export const SignatureKonvaEditor: React.FC<SignatureKonvaEditorProps> = ({
   onSave,
   onCancel,
 }) => {
+  const { t } = useI18n()
   const [lines, setLines] = useState<SignatureLine[]>([])
   const isDrawing = useRef(false)
   const stageRef = useRef<Konva.Stage>(null)
@@ -144,7 +146,7 @@ export const SignatureKonvaEditor: React.FC<SignatureKonvaEditorProps> = ({
             onClick={handleClear}
             className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
           >
-            Clear
+            {t('clear', 'Clear')}
           </button>
         </div>
         <div className="flex gap-2">
@@ -152,19 +154,19 @@ export const SignatureKonvaEditor: React.FC<SignatureKonvaEditorProps> = ({
             onClick={onCancel}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
           >
-            Cancel
+            {t('cancel', 'Cancel')}
           </button>
           <button
             onClick={handleDownload}
             className="px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
           >
-            Download
+            {t('download', 'Download')}
           </button>
           <button
             onClick={handleSave}
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
           >
-            Save
+            {t('save', 'Save')}
           </button>
         </div>
       </div>

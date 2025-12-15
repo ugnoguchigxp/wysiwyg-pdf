@@ -93,7 +93,7 @@ const ElementRendererComponent: React.FC<ElementRendererProps> = ({
           <BedElement
             {...commonProps}
             element={element as WidgetNode}
-            shapeRef={shapeRef as React.RefObject<Konva.Rect>}
+            shapeRef={shapeRef as React.RefObject<Konva.Group>}
             bedStatus={bedStatus}
             onClick={readOnly && onBedClick ? () => onBedClick(element.id, bedStatus) : undefined}
             onTap={readOnly && onBedClick ? () => onBedClick(element.id, bedStatus) : undefined}
@@ -143,7 +143,17 @@ const ElementRendererComponent: React.FC<ElementRendererProps> = ({
             }
             return newBox
           }}
-          rotateEnabled={element.t !== 'widget'} // Assuming widgets/bed allow rotation? Old code disabled for Bed.
+          rotateEnabled={!(element.t === 'widget' && element.widget !== 'bed')}
+          enabledAnchors={[
+            'top-left',
+            'top-right',
+            'bottom-left',
+            'bottom-right',
+            'middle-left',
+            'middle-right',
+            'top-center',
+            'bottom-center',
+          ]}
           onTransformEnd={() => {
             const node = shapeRef.current
             if (!node) return

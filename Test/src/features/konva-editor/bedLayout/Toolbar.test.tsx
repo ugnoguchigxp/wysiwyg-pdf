@@ -47,12 +47,12 @@ describe('bedLayout Toolbar', () => {
       />
     )
 
-    fireEvent.click(screen.getByLabelText('Image'))
+    fireEvent.click(screen.getByLabelText('toolbar_image'))
     expect(onSelectTool).toHaveBeenCalledWith('select')
 
-    fireEvent.click(screen.getByLabelText('Zoom in'))
+    fireEvent.click(screen.getByLabelText('toolbar_zoom_in'))
     expect(onZoomIn).toHaveBeenCalled()
-    fireEvent.click(screen.getByLabelText('Zoom out'))
+    fireEvent.click(screen.getByLabelText('toolbar_zoom_out'))
     expect(onZoomOut).toHaveBeenCalled()
 
     rerender(
@@ -74,7 +74,7 @@ describe('bedLayout Toolbar', () => {
         } as any}
       />
     )
-    expect(screen.getByLabelText('Zoom in')).toBeDisabled()
+    expect(screen.getByLabelText('toolbar_zoom_in')).toBeDisabled()
 
     rerender(
       <Toolbar
@@ -95,6 +95,6 @@ describe('bedLayout Toolbar', () => {
         } as any}
       />
     )
-    expect(screen.getByLabelText('Zoom out')).toBeDisabled()
+    expect(screen.getByLabelText('toolbar_zoom_out')).toBeDisabled()
   })
 })

@@ -6,7 +6,7 @@
  */
 
 import type React from 'react'
-import { useTranslation } from 'react-i18next'
+import { useI18n } from '@/i18n/I18nContext'
 import { UnifiedPropertyPanel } from '@/features/konva-editor/components/PropertyPanel/UnifiedPropertyPanel'
 import type { WidgetProps } from '@/features/konva-editor/components/PropertyPanel/widgets'
 import { BED_LAYOUT_PANEL_CONFIG } from '@/features/konva-editor/constants/propertyPanelConfig'
@@ -70,7 +70,7 @@ const CanvasSettingsPanel: React.FC<{
   onSnapStrengthChange,
   resolveText,
 }) => {
-  const { t } = useTranslation()
+  const { t } = useI18n()
 
   const resolvedSurfaceId =
     surfaceId ||
@@ -98,7 +98,7 @@ const CanvasSettingsPanel: React.FC<{
           </h4>
           <div className="grid grid-cols-2 gap-1">
             <div>
-              <label className={labelClass}>W</label>
+              <label className={labelClass}>{resolveText('properties_width', 'W')}</label>
               <input
                 type="number"
                 value={surface.w}
@@ -107,7 +107,7 @@ const CanvasSettingsPanel: React.FC<{
               />
             </div>
             <div>
-              <label className={labelClass}>H</label>
+              <label className={labelClass}>{resolveText('properties_height', 'H')}</label>
               <input
                 type="number"
                 value={surface.h}

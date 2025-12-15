@@ -8,7 +8,7 @@ import { ReportKonvaEditor } from './ReportKonvaEditor'
 
 export interface ReportEditorProps {
   templateDoc: Doc
-  onTemplateChange: (doc: Doc) => void
+  onTemplateChange: (doc: Doc, options?: { saveToHistory?: boolean; force?: boolean }) => void
   schema?: IDataSchema
   initialZoom?: number
   showGrid?: boolean

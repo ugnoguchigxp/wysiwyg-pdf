@@ -57,8 +57,8 @@ describe('BedPrintLayout', () => {
     expect(screen.getByTestId('print-shape-s1')).toBeInTheDocument()
     expect(screen.getByTestId('print-line-l1')).toBeInTheDocument()
 
-    expect(await screen.findByAltText('Asset preview')).toBeInTheDocument()
-    expect(screen.getAllByAltText('Asset preview').length).toBe(2)
+    expect(await screen.findByAltText('properties_preview')).toBeInTheDocument()
+    expect(screen.getAllByAltText('properties_preview').length).toBe(2)
     expect(screen.queryByText('Hidden')).toBeNull()
   })
 })
