@@ -1660,6 +1660,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
     _selectedCell,
     allElements,
     gridSize,
+    invScale,
     onCellClick,
     onCellDblClick,
     showGrid,
