@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { convertDashboardRoomToDocument } from '@/features/konva-editor/utils/dashboardAdapter'
 import type { WidgetNode, LineNode, TextNode } from '@/types/canvas'
+import { pxToMm } from '@/utils/units'
 
 describe('convertDashboardRoomToDocument', () => {
   it('converts beds/walls/texts with status mapping', () => {
@@ -40,7 +41,12 @@ describe('convertDashboardRoomToDocument', () => {
     } as unknown as Parameters<typeof convertDashboardRoomToDocument>[0])
 
     expect(doc.surfaces[0]).toEqual(
-      expect.objectContaining({ id: 'layout', type: 'canvas', w: 1000, h: 800 })
+      expect.objectContaining({
+        id: 'layout',
+        type: 'canvas',
+        w: pxToMm(1000, { dpi: 96 }),
+        h: pxToMm(800, { dpi: 96 }),
+      })
     )
 
     const byId = (id: string) => doc.nodes.find((n: { id: string }) => n.id === id)
@@ -55,7 +61,7 @@ describe('convertDashboardRoomToDocument', () => {
 
     const wall = byId('w1') as LineNode
     expect(wall.t).toBe('line')
-    expect(wall.strokeW).toBe(8)
+    expect(wall.strokeW).toBeCloseTo(pxToMm(8, { dpi: 96 }), 10)
 
     const text = byId('t1') as TextNode
     expect(text.t).toBe('text')
@@ -108,10 +114,10 @@ describe('convertDashboardRoomToDocument', () => {
 
     const wall = doc.nodes.find((n: { id: string }) => n.id === 'w') as LineNode
     expect(wall.stroke).toBe('#000000')
-    expect(wall.strokeW).toBe(6)
+    expect(wall.strokeW).toBe(0.4)
 
     const text = doc.nodes.find((n: { id: string }) => n.id === 't') as TextNode
-    expect(text.fontSize).toBe(16)
+    expect(text.fontSize).toBeCloseTo(pxToMm(16, { dpi: 96 }), 10)
     expect(text.fill).toBe('#000000')
   })
 })

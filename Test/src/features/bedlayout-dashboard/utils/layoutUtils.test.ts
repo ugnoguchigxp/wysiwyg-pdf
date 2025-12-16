@@ -58,7 +58,11 @@ describe('bedlayout-dashboard/utils/layoutUtils', () => {
     } satisfies Doc
 
     const box = getLayoutBoundingBox(doc)
-    expect(box).toEqual({ x: -0.5, y: -0.5, width: 11, height: 11 })
+    expect(box).not.toBeNull()
+    expect(box!.x).toBe(-0.2)
+    expect(box!.y).toBe(-0.2)
+    expect(box!.width).toBeCloseTo(10.4, 10)
+    expect(box!.height).toBeCloseTo(10.4, 10)
   })
 
   it('getLayoutBoundingBox includes x/y/w/h based nodes', () => {

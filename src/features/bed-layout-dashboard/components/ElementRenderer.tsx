@@ -97,6 +97,7 @@ const ElementRendererComponent: React.FC<ElementRendererProps> = ({
             element={element as WidgetNode}
             shapeRef={shapeRef as React.RefObject<Konva.Group>}
             bedStatus={bedStatus}
+            enableStatusStyling={Boolean(bedStatus)}
             onClick={readOnly && onBedClick ? () => onBedClick(element.id, bedStatus) : undefined}
             onTap={readOnly && onBedClick ? () => onBedClick(element.id, bedStatus) : undefined}
             onMouseEnter={
@@ -188,4 +189,6 @@ const ElementRendererComponent: React.FC<ElementRendererProps> = ({
   )
 }
 
-export const ElementRenderer = React.memo(ElementRendererComponent) as React.FC<ElementRendererProps>
+export const ElementRenderer = React.memo(
+  ElementRendererComponent
+) as React.FC<ElementRendererProps>

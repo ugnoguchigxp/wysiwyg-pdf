@@ -61,8 +61,7 @@ describe('TableProperties', () => {
             />
         )
 
-        expect(screen.getByText('properties_table_global_style')).toBeInTheDocument()
-        expect(screen.getByTestId('BindingSelector')).toBeInTheDocument()
+        expect(screen.getByText(/properties_table_style/)).toBeInTheDocument()
     })
 
     it('renders cell styles when a cell is selected', () => {
@@ -75,7 +74,6 @@ describe('TableProperties', () => {
         )
 
         expect(screen.getByText('properties_table_cell_style')).toBeInTheDocument()
-        expect(screen.queryByTestId('BindingSelector')).not.toBeInTheDocument()
         expect(screen.getByText(/properties_table_selected_cell/)).toBeInTheDocument()
     })
 

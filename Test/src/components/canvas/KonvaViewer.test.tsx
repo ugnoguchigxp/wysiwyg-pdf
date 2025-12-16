@@ -1,6 +1,7 @@
 import React from 'react'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import { mmToPx } from '@/utils/units'
 
 const canvasRendererSpy = vi.fn((props: any) => {
   props.onSelect?.({} as any)
@@ -41,10 +42,13 @@ describe('components/canvas/KonvaViewer', () => {
     const stage = screen.getByTestId('Stage')
     const props = JSON.parse(stage.getAttribute('data-props') || '{}')
 
-    expect(props.width).toBe(200)
-    expect(props.height).toBe(100)
-    expect(props.scaleX).toBe(2)
-    expect(props.scaleY).toBe(2)
+    const dpi = 96
+    const displayScale = mmToPx(1, { dpi }) * 2
+
+    expect(props.width).toBeCloseTo(100 * displayScale, 10)
+    expect(props.height).toBeCloseTo(50 * displayScale, 10)
+    expect(props.scaleX).toBeCloseTo(displayScale, 10)
+    expect(props.scaleY).toBeCloseTo(displayScale, 10)
     expect(canvasRendererSpy).toHaveBeenCalledTimes(1)
     expect(screen.getAllByTestId('Layer')).toHaveLength(2)
 

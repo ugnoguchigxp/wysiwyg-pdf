@@ -522,20 +522,22 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
 
   const handleMouseEnter = useCallback(
     (e: Konva.KonvaEventObject<MouseEvent>) => {
+      if (readOnly) return
       if (element.locked || isSelected) return // Skip cursor change for selected elements (Transformer handles it)
       const container = e.target.getStage()?.container()
       if (container) container.style.cursor = 'move'
     },
-    [element.locked, isSelected]
+    [readOnly, element.locked, isSelected]
   )
 
   const handleMouseLeave = useCallback(
     (e: Konva.KonvaEventObject<MouseEvent>) => {
+      if (readOnly) return
       if (isSelected) return // Skip for selected elements
       const container = e.target.getStage()?.container()
       if (container) container.style.cursor = 'default'
     },
-    [isSelected]
+    [readOnly, isSelected]
   )
 
   const content = useMemo(() => {

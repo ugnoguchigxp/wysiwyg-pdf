@@ -68,6 +68,6 @@ export function fromMm(mm: number, unit: LengthUnit, options: UnitOptions = {}):
 }
 
 export function roundTo(value: number, digits: number): number {
-  const p = Math.pow(10, digits)
+  const p = 10 ** digits
   return Math.round(value * p) / p
 }

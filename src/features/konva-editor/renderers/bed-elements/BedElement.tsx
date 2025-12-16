@@ -15,6 +15,89 @@ type BedElementProps = Omit<CanvasElementCommonProps, 'ref'> & {
   onMouseEnter?: (e: Konva.KonvaEventObject<MouseEvent>) => void
   onMouseLeave?: (e: Konva.KonvaEventObject<MouseEvent>) => void
   bedStatus?: BedStatusData
+  enableStatusStyling?: boolean
+  renderText?: boolean
+}
+
+export const BedOverlayText: React.FC<{
+  element: WidgetNode
+  bedStatus?: BedStatusData
+  absolute?: boolean
+}> = ({ element, bedStatus, absolute = true }) => {
+  const data = element.data || {}
+  const localLabel = (element.name as string) || (data.label as string) || 'Bed'
+  const localPatientName = (data.patientName as string) || '-'
+  const localBP = (data.bloodPressure as string) || '-'
+
+  const label = bedStatus ? bedStatus.bedId : localLabel
+  const patientName = bedStatus?.patientName || localPatientName
+  const bloodPressure = bedStatus?.vitals?.bp
+    ? `${bedStatus.vitals.bp.systolic}/${bedStatus.vitals.bp.diastolic}`
+    : localBP
+
+  // Keep these vars (and their existing comments) without branching behavior.
+  const width = element.w || 100
+  const height = element.h || 60
+  const rotation = element.r || 0
+
+  return (
+    <Group
+      id={`${element.id}__overlay_text`}
+      x={absolute ? (element.x ?? 0) : 0}
+      y={absolute ? (element.y ?? 0) : 0}
+      rotation={absolute ? rotation : 0}
+      listening={false}
+    >
+      <Group x={width / 2} y={height / 2} rotation={-rotation} listening={false}>
+        {(() => {
+          const fontSize = Math.min(ptToMm(10), height * 0.3)
+          const lineHeight = 1.2
+          const isEditorMode = !bedStatus
+
+          let renderLines: string[] = []
+
+          if (isEditorMode) {
+            renderLines = [element.name ?? 'Bed']
+          } else {
+            renderLines = [
+              label || '',
+              patientName !== '-' ? patientName : '',
+              bloodPressure !== '-' ? bloodPressure : '',
+            ]
+          }
+
+          // Do not clamp the label area to the bed size.
+          // We estimate required width from the rendered text length so that labels can overflow
+          // beyond the bed bounds without being clipped.
+          const maxLen = renderLines.reduce((m, s) => Math.max(m, s.length), 0)
+          const textPadding = ptToMm(6)
+          const estimatedCharWidth = fontSize * 0.75
+          const textAreaWidth = Math.max(ptToMm(20), maxLen * estimatedCharWidth + textPadding)
+
+          const totalHeight = renderLines.length * fontSize * lineHeight
+          const startY = (height - totalHeight) / 2
+
+          return renderLines.map((text, index) => (
+            <OutlinedText
+              key={index}
+              x={-textAreaWidth / 2}
+              y={startY + index * fontSize * lineHeight - height / 2}
+              width={textAreaWidth}
+              text={text}
+              fontSize={fontSize}
+              fontFamily="Meiryo"
+              fontStyle="bold"
+              align="center"
+              fill="#000000"
+              wrap="none"
+              lineHeight={lineHeight}
+              listening={false}
+            />
+          ))
+        })()}
+      </Group>
+    </Group>
+  )
 }
 
 // Helper component for text with white outline (halo)
@@ -39,69 +122,52 @@ const OutlinedText: React.FC<React.ComponentProps<typeof Text>> = (props) => {
 
 export const BedElement: React.FC<BedElementProps> = ({
   element,
-  isSelected,
+  isSelected: _isSelected,
   shapeRef,
   onClick,
   onTap,
   onMouseEnter,
   onMouseLeave,
   bedStatus,
+  enableStatusStyling = false,
+  renderText = true,
   ...otherProps
 }) => {
   // Data extraction from WidgetNode data
   const data = element.data || {}
-  const localStatus = (data.status as string) || 'idle'
-  const localLabel = (element.name as string) || (data.label as string) || 'Bed'
-  const localPatientName = (data.patientName as string) || '-'
-  const localBP = (data.bloodPressure as string) || '-'
-
-  // Prop (bedStatus) takes precedence for dashboard mode
-  const rawStatus = bedStatus?.status || localStatus
-  const label = bedStatus ? bedStatus.bedId : localLabel // Preferred label source? Or stick to local text. Keep localLabel for now if name is separate.
-  // Actually bedId is ID, label might be name.
-  // Let's keep label as localLabel.
-
-  const patientName = bedStatus?.patientName || localPatientName
-  const bloodPressure = bedStatus?.vitals?.bp
-    ? `${bedStatus.vitals.bp.systolic}/${bedStatus.vitals.bp.diastolic}`
-    : localBP
-  const alertCount = bedStatus?.alerts?.length || 0
 
   // Status colors
   let strokeColor = '#3b82f6' // Default Blue (Free)
-  let strokeWidth = 2
-  let bgColor = '#ffffff'
+  const bgColor = '#ffffff'
 
-  // Map new statuses to visual styles
-  if (rawStatus === 'occupied') {
-    if (alertCount > 0) {
-      // Assume alarm if alerts exist
-      strokeColor = '#ef4444' // Red (Alarm)
-      strokeWidth = 4
-      bgColor = '#fef2f2'
-    } else {
-      strokeColor = '#22c55e' // Green (Active/Occupied)
-      strokeWidth = 3
-    }
-  } else if (rawStatus === 'cleaning') {
-    strokeColor = '#06b6d4' // Cyan
-    bgColor = '#ecfeff'
-  } else if (rawStatus === 'maintenance') {
-    strokeColor = '#64748b' // Slate
-    bgColor = '#f1f5f9'
-  } else {
-    // free / idle
-    strokeColor = '#3b82f6'
-    strokeWidth = 2
+  // Always use mm-based border width from element data (same style in editor/viewer).
+  let strokeWidth = 0.4
+  const bw = (data as { borderW?: unknown }).borderW
+  if (typeof bw === 'number' && Number.isFinite(bw)) {
+    strokeWidth = Math.max(0, bw)
   }
 
-  // In editor mode, use mm-based default border width from element data.
-  if (!bedStatus) {
-    const bw = (data as { borderW?: unknown }).borderW
-    if (typeof bw === 'number' && Number.isFinite(bw)) {
-      strokeWidth = Math.max(0, bw)
-    } else {
-      strokeWidth = 0.4
+  if (enableStatusStyling && bedStatus) {
+    const hasAlerts = (bedStatus.alerts?.length ?? 0) > 0
+
+    switch (bedStatus.status) {
+      case 'occupied': {
+        strokeColor = hasAlerts ? '#ef4444' : '#22c55e'
+        break
+      }
+      case 'cleaning': {
+        strokeColor = '#06b6d4'
+        break
+      }
+      case 'maintenance': {
+        strokeColor = '#64748b'
+        break
+      }
+      case 'free':
+      default: {
+        strokeColor = '#3b82f6'
+        break
+      }
     }
   }
 
@@ -155,51 +221,7 @@ export const BedElement: React.FC<BedElementProps> = ({
       />
 
       {/* Text Content Group - Centered Vertically */}
-      <Group x={width / 2} y={height / 2} rotation={-rotation}>
-        {(() => {
-          const fontSize = Math.min(ptToMm(10), height * 0.3)
-          const lineHeight = 1.2
-          const isEditorMode = !bedStatus
-
-          const textAreaWidth = Math.min(width, 200)
-          const textAreaX = (width - textAreaWidth) / 2
-
-          let renderLines: string[] = []
-
-          if (isEditorMode) {
-            renderLines = [element.name ?? 'Bed']
-          } else {
-            // Dashboard Mode: Always show 3 lines (Bed Name, Patient Name, BP)
-            // Even if data is missing, keep the slot to maintain position/layout standard
-            renderLines = [
-              label || '',
-              patientName !== '-' ? patientName : '',
-              bloodPressure !== '-' ? bloodPressure : '',
-            ]
-          }
-
-          const totalHeight = renderLines.length * fontSize * lineHeight
-          const startY = (height - totalHeight) / 2
-
-          return renderLines.map((text, index) => (
-            <OutlinedText
-              key={index}
-              x={textAreaX - width / 2}
-              y={startY + index * fontSize * lineHeight - height / 2}
-              width={textAreaWidth}
-              text={text}
-              fontSize={fontSize}
-              fontFamily="Meiryo"
-              fontStyle="bold"
-              align="center"
-              fill="#000000"
-              wrap="none"
-              lineHeight={lineHeight}
-              listening={false} // Click-through to bed
-            />
-          ))
-        })()}
-      </Group>
+      {renderText && <BedOverlayText element={element} bedStatus={bedStatus} absolute={false} />}
     </Group>
   )
 }

@@ -4,7 +4,7 @@ import { ptToPx, pxToPt } from '@/utils/coordinates'
 
 describe('utils/coordinates', () => {
   it('converts between pt and px', () => {
-    expect(ptToPx(72)).toBe(96)
-    expect(pxToPt(96)).toBe(72)
+    expect(ptToPx(72)).toBeCloseTo(96, 10)
+    expect(pxToPt(96)).toBeCloseTo(72, 10)
   })
 })

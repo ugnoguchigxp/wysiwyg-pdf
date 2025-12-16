@@ -21,6 +21,7 @@ vi.mock('@/features/konva-editor/viewers/components/PaperBackground', () => ({
 
 vi.mock('@/features/konva-editor/renderers/bed-elements/BedElement', () => ({
   BedElement: (props: any) => <div data-testid={`bed-${props.bedStatus?.status ?? 'none'}`} />,
+  BedOverlayText: () => <div data-testid="bed-overlay" />,
 }))
 
 import { BedLayoutViewer } from '@/features/konva-editor/viewers/BedLayoutViewer'

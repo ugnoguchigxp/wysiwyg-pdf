@@ -179,7 +179,9 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                 />
               </div>
               <div>
-                <label className={labelClass}>{resolveText('properties_font_color', 'FontColor')}</label>
+                <label className={labelClass}>
+                  {resolveText('properties_font_color', 'FontColor')}
+                </label>
                 <input
                   type="color"
                   className="w-full h-8 rounded border border-theme-border bg-theme-bg-primary"

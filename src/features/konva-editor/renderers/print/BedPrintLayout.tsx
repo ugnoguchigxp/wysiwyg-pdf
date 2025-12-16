@@ -20,30 +20,16 @@ const mmPt = (mm: number | undefined) => `${mmToPtValue(mm)}pt`
 const RenderBed = ({ element }: { element: WidgetNode }) => {
   const { t } = useI18n()
   const data = element.data || {}
-  const status = (data.status as string) || 'idle'
   const patientName = (data.patientName as string) || ''
   const bloodPressure = (data.bloodPressure as string) || ''
   const label = (data.label as string) || t('toolbar_bed', 'Bed')
 
   // Status colors (Matching BedElement.tsx)
-  let strokeColor = '#3b82f6' // Default Blue (Idle)
-  let strokeWidth = typeof (data as { borderW?: unknown }).borderW === 'number'
-    ? Math.max(0, (data as { borderW?: number }).borderW ?? 0.4)
-    : 0.4
-  let bgColor = '#ffffff'
-
-  if (status === 'active') {
-    strokeColor = '#22c55e' // Green (Active)
-    strokeWidth = strokeWidth * 1.5
-  } else if (status === 'warning') {
-    strokeColor = '#eab308' // Yellow (Warning)
-    strokeWidth = strokeWidth * 2
-    bgColor = '#fefce8' // Light yellow background
-  } else if (status === 'alarm') {
-    strokeColor = '#ef4444' // Red (Alarm)
-    strokeWidth = strokeWidth * 2
-    bgColor = '#fef2f2' // Light red background
-  }
+  const strokeColor = '#3b82f6' // Default Blue (Idle)
+  const bgColor = '#ffffff'
+  const rawBorderW = (data as { borderW?: unknown }).borderW
+  const strokeWidth =
+    typeof rawBorderW === 'number' && Number.isFinite(rawBorderW) ? Math.max(0, rawBorderW) : 0.4
 
   // Pillow style (fixed; bed rotation handles orientation)
   const pillowStyle: React.CSSProperties = {

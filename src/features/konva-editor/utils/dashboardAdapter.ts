@@ -83,7 +83,8 @@ export const convertDashboardRoomToDocument = (dashboardRoom: BedDashboardRoom):
         h: pxToMm(30, { dpi }), // defaults
         text: text.text,
         font: 'Meiryo',
-        fontSize: typeof text.fontSize === 'number' ? pxToMm(text.fontSize, { dpi }) : pxToMm(16, { dpi }),
+        fontSize:
+          typeof text.fontSize === 'number' ? pxToMm(text.fontSize, { dpi }) : pxToMm(16, { dpi }),
         fontWeight: 400,
         fill: text.color || '#000000',
         align: (() => {

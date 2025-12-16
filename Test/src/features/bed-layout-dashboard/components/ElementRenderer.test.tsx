@@ -68,7 +68,7 @@ describe('features/bed-layout-dashboard/ElementRenderer', () => {
             />
         )
         // BedElement -> Group + Rect + Text
-        expect(screen.getByTestId('Rect')).toBeInTheDocument()
+        expect(screen.getAllByTestId('Rect').length).toBeGreaterThan(0)
         expect(screen.getAllByTestId('Text').length).toBeGreaterThan(0)
     })
 

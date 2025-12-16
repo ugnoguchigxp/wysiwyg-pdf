@@ -18,7 +18,9 @@ export function useReportHistory(initialDocument: Doc): UseHistoryReturn {
   if (initialDocument?.unit && initialDocument.unit !== 'mm') {
     // Doc is expected to be mm-based everywhere. Convert legacy docs at the import boundary.
     // (We intentionally do not normalize here.)
-    console.warn('[useReportHistory] Doc.unit is not mm. Please convert the document before passing it in.')
+    console.warn(
+      '[useReportHistory] Doc.unit is not mm. Please convert the document before passing it in.'
+    )
   }
 
   const [history, setHistory] = useState<{
@@ -98,7 +100,9 @@ export function useReportHistory(initialDocument: Doc): UseHistoryReturn {
 
   const reset = useCallback((doc: Doc) => {
     if (doc?.unit && doc.unit !== 'mm') {
-      console.warn('[useReportHistory.reset] Doc.unit is not mm. Please convert the document before passing it in.')
+      console.warn(
+        '[useReportHistory.reset] Doc.unit is not mm. Please convert the document before passing it in.'
+      )
     }
     setHistory({
       past: [],

@@ -32,15 +32,15 @@ export const RenderSignature = ({ element }: { element: SignatureNode }) => {
           ptPoints.push(`${mmToPt(points[j])},${mmToPt(points[j + 1])}`)
         }
         return (
-        <polyline
-          key={i}
-          points={ptPoints.join(' ')}
-          fill="none"
-          stroke={stroke || '#000'}
-          strokeWidth={mmToPtValue(strokeW || 2)}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+          <polyline
+            key={i}
+            points={ptPoints.join(' ')}
+            fill="none"
+            stroke={stroke || '#000'}
+            strokeWidth={mmToPtValue(strokeW || 2)}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         )
       })}
     </svg>

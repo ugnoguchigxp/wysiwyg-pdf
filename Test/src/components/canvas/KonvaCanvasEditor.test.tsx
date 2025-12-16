@@ -116,7 +116,7 @@ describe('components/canvas/KonvaCanvasEditor', () => {
 
     // Update text and finish
     fireEvent.click(screen.getByRole('button', { name: 'update' }))
-    expect(onChange).toHaveBeenLastCalledWith('t1', { text: 'updated' })
+    expect(onChange).toHaveBeenLastCalledWith('t1', expect.objectContaining({ text: 'updated' }))
     fireEvent.click(screen.getByRole('button', { name: 'finish' }))
   })
 

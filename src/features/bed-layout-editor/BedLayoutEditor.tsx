@@ -66,7 +66,9 @@ export const BedLayoutEditor = React.forwardRef<BedLayoutEditorHandle, KonvaEdit
 
           try {
             gridLayer?.hide()
-            transformers.forEach((tr) => tr.hide())
+            transformers.forEach((tr) => {
+              tr.hide()
+            })
 
             const dataURL = stage.toDataURL({ pixelRatio: 2 })
 

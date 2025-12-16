@@ -13,7 +13,11 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null
 }
 
-function convertMarginLikeToMm(m: unknown, unit: LengthUnit, options: UnitOptions): Margin | undefined {
+function convertMarginLikeToMm(
+  m: unknown,
+  unit: LengthUnit,
+  options: UnitOptions
+): Margin | undefined {
   if (!isRecord(m)) return undefined
 
   const t = typeof m.t === 'number' ? m.t : typeof m.top === 'number' ? m.top : undefined
@@ -89,7 +93,8 @@ function convertNodeToMm(node: UnifiedNode, unit: LengthUnit, options: UnitOptio
       w: toMm(node.w, unit, options),
       h: toMm(node.h, unit, options),
       strokeW: typeof node.strokeW === 'number' ? toMm(node.strokeW, unit, options) : node.strokeW,
-      fontSize: typeof node.fontSize === 'number' ? toMm(node.fontSize, unit, options) : node.fontSize,
+      fontSize:
+        typeof node.fontSize === 'number' ? toMm(node.fontSize, unit, options) : node.fontSize,
     }
   }
 
@@ -236,7 +241,11 @@ export function convertDocToMm(input: unknown, options: DocUnitConversionOptions
   return roundDoc(normalized, digits)
 }
 
-function denormalizeMargin(m: Margin | undefined, unit: LengthUnit, options: UnitOptions): Margin | undefined {
+function denormalizeMargin(
+  m: Margin | undefined,
+  unit: LengthUnit,
+  options: UnitOptions
+): Margin | undefined {
   if (!m) return m
   return {
     t: fromMm(m.t, unit, options),
@@ -303,8 +312,10 @@ function denormalizeNode(node: UnifiedNode, unit: LengthUnit, options: UnitOptio
       y: fromMm(node.y, unit, options),
       w: fromMm(node.w, unit, options),
       h: fromMm(node.h, unit, options),
-      strokeW: typeof node.strokeW === 'number' ? fromMm(node.strokeW, unit, options) : node.strokeW,
-      fontSize: typeof node.fontSize === 'number' ? fromMm(node.fontSize, unit, options) : node.fontSize,
+      strokeW:
+        typeof node.strokeW === 'number' ? fromMm(node.strokeW, unit, options) : node.strokeW,
+      fontSize:
+        typeof node.fontSize === 'number' ? fromMm(node.fontSize, unit, options) : node.fontSize,
     }
   }
 
@@ -315,7 +326,8 @@ function denormalizeNode(node: UnifiedNode, unit: LengthUnit, options: UnitOptio
       y: fromMm(node.y, unit, options),
       w: fromMm(node.w, unit, options),
       h: fromMm(node.h, unit, options),
-      strokeW: typeof node.strokeW === 'number' ? fromMm(node.strokeW, unit, options) : node.strokeW,
+      strokeW:
+        typeof node.strokeW === 'number' ? fromMm(node.strokeW, unit, options) : node.strokeW,
       radius: typeof node.radius === 'number' ? fromMm(node.radius, unit, options) : node.radius,
     }
   }

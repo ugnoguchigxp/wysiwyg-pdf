@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import { ptToMm } from '@/utils/units'
 
 vi.mock('@/components/ui/Tooltip', () => ({
   TooltipProvider: ({ children }: any) => children,
@@ -102,10 +103,10 @@ describe('bedLayout PropertyPanel', () => {
     expect(onChange).toHaveBeenCalledWith('t1', expect.objectContaining({ fontWeight: 700 }))
 
     // Check for Size select in the parent div of 'Size' label
-    const sizeLabel = screen.getByText('properties_font_size')
+    const sizeLabel = screen.getByText(/properties_font_size/)
     const sizeSelect = sizeLabel.parentElement?.querySelector('select')
     fireEvent.change(sizeSelect!, { target: { value: '18' } })
-    expect(onChange).toHaveBeenCalledWith('t1', expect.objectContaining({ fontSize: 18 }))
+    expect(onChange).toHaveBeenCalledWith('t1', expect.objectContaining({ fontSize: ptToMm(18) }))
   })
 
   it('renders image preview via asset resolver', async () => {

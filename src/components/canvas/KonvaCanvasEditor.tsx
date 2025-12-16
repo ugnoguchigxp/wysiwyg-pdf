@@ -28,6 +28,7 @@ interface KonvaCanvasEditorProps {
   paperWidth: number
   paperHeight: number
   background?: React.ReactNode
+  overlay?: React.ReactNode
   renderCustom?: (
     element: UnifiedNode,
     commonProps: CanvasElementCommonProps,
@@ -58,6 +59,7 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       paperWidth,
       paperHeight,
       background,
+      overlay,
       renderCustom,
       readOnly = false,
       onUndo,
@@ -263,6 +265,11 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
                 />
               ))}
             </Layer>
+            {overlay && (
+              <Layer name="overlay-layer" listening={false}>
+                {overlay}
+              </Layer>
+            )}
           </Stage>
           {editingElement && (
             <TextEditOverlay

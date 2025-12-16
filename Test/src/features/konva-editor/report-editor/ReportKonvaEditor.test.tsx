@@ -54,6 +54,7 @@ vi.mock('react-konva', async () => {
         }),
       }),
       getStage: () => stageObj,
+      find: (_selector: string) => [],
       findOne: (selector: string) => {
         if (selector === '.grid-layer') return gridNode
         return null
@@ -84,6 +85,8 @@ vi.mock('react-konva', async () => {
 })
 
 import { ReportKonvaEditor } from '@/features/report-editor/ReportKonvaEditor'
+import type { Doc } from '@/types/canvas'
+import { ptToMm, pxToMm } from '@/utils/units'
 
 beforeEach(() => {
   if (!globalThis.crypto || !('randomUUID' in globalThis.crypto)) {
@@ -205,11 +208,15 @@ describe('ReportKonvaEditor', () => {
       },
     })
 
-    expect(onTemplateChange).toHaveBeenCalledWith(
-      expect.objectContaining({
-        nodes: [expect.objectContaining({ t: 'text', bind: 'cat.f1', text: 'Hello', x: 10, y: 20 })],
-      })
-    )
+    expect(onTemplateChange).toHaveBeenCalled()
+    const next = onTemplateChange.mock.calls[0]?.[0] as Doc
+    const added = (next.nodes ?? []).find((n: any) => n.t === 'text' && n.bind === 'cat.f1') as any
+    expect(added).toBeTruthy()
+    expect(added.text).toBe('Hello')
+    expect(added.fontSize).toBeCloseTo(ptToMm(12), 10)
+    expect(added.x).toBeCloseTo(pxToMm(10, { dpi: 96 }), 10)
+    expect(added.y).toBeCloseTo(pxToMm(20, { dpi: 96 }), 10)
+
     expect(onElementSelect).toHaveBeenCalledWith(expect.objectContaining({ t: 'text', bind: 'cat.f1' }))
 
     ref.current?.downloadImage()

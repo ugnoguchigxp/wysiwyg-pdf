@@ -127,6 +127,7 @@ const resources = {
       toolbar_redo: 'やり直し',
       toolbar_select: '選択',
       toolbar_shape: '図形',
+      toolbar_signature: '署名',
       toolbar_text: 'テキスト',
       toolbar_text_block: 'テキストブロック',
       toolbar_undo: '元に戻す',

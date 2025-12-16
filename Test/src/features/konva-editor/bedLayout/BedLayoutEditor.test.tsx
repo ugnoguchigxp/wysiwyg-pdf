@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 const stage = {
   toDataURL: vi.fn(() => 'data:image/png;base64,bed'),
+  find: vi.fn((_sel: string) => []),
   findOne: vi.fn((_sel: string) => ({
     visible: () => true,
     hide: () => {},

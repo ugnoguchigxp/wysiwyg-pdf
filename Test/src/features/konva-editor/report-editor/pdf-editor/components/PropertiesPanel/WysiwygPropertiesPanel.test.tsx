@@ -2,6 +2,7 @@ import React from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { Doc, TextNode, SignatureNode } from '@/types/canvas'
+import { ptToMm } from '@/utils/units'
 
 vi.mock('@/features/konva-editor/utils/textUtils', () => ({
   measureText: () => ({ width: 50, height: 10 }),
@@ -50,7 +51,18 @@ describe('WysiwygPropertiesPanel', () => {
       unit: 'mm',
       surfaces: [{ id: 'p1', type: 'page', w: 100, h: 100 }],
       nodes: [
-        { id: 't1', t: 'text', s: 'p1', x: 0, y: 0, w: 10, h: 10, text: 'Hello', fontSize: 12, fill: '#000000' } as TextNode,
+        {
+          id: 't1',
+          t: 'text',
+          s: 'p1',
+          x: 0,
+          y: 0,
+          w: 10,
+          h: 10,
+          text: 'Hello',
+          fontSize: ptToMm(12),
+          fill: '#000000',
+        } as TextNode,
       ],
     }
 
@@ -74,10 +86,10 @@ describe('WysiwygPropertiesPanel', () => {
     expect(onTemplateChange).toHaveBeenCalled()
     const next = onTemplateChange.mock.calls.at(-1)?.[0] as Doc
     const updated = next.nodes.find((n: { id: string }) => n.id === 't1') as TextNode
-    expect(updated.fontSize).toBe(14)
-    // Current panel updates fontSize only (no auto-resize)
-    expect(updated.w).toBe(10)
-    expect(updated.h).toBe(10)
+    expect(updated.fontSize).toBe(ptToMm(14))
+    // Font size change should recalculate element size
+    expect(updated.w).toBeGreaterThan(10)
+    expect(updated.h).toBeGreaterThan(0)
   })
 
   it('renders signature panel and finish button when activeTool=signature and no selection', () => {

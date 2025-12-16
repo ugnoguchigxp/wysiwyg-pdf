@@ -44,7 +44,7 @@ describe('BedElement', () => {
         // Should render Groups wrapping content
         expect(screen.getAllByTestId('Group').length).toBeGreaterThan(0)
         // Should render a Rect (body of bed)
-        expect(screen.getByTestId('Rect')).toBeInTheDocument()
+        expect(screen.getAllByTestId('Rect').length).toBeGreaterThan(0)
         // Should render Text (name)
         const textElements = screen.getAllByTestId('Text')
         expect(textElements.length).toBeGreaterThan(0)

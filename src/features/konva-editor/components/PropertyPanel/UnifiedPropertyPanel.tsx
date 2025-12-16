@@ -200,7 +200,9 @@ export const UnifiedPropertyPanel: React.FC<UnifiedPropertyPanelProps> = ({
         if (shouldReflow) {
           const dpi = 96
           const nextText =
-            'text' in updates ? String((updates as Partial<{ text: string }>).text ?? '') : selectedNode.text
+            'text' in updates
+              ? String((updates as Partial<{ text: string }>).text ?? '')
+              : selectedNode.text
 
           const nextFont =
             'font' in updates
@@ -223,7 +225,11 @@ export const UnifiedPropertyPanel: React.FC<UnifiedPropertyPanelProps> = ({
           const lines = (nextText || '').split('\n')
           let maxWidth = 0
           for (const line of lines) {
-            const { width } = measureText(line || ' ', { family: nextFont, size: sizePx, weight: nextWeight })
+            const { width } = measureText(line || ' ', {
+              family: nextFont,
+              size: sizePx,
+              weight: nextWeight,
+            })
             if (width > maxWidth) maxWidth = width
           }
 

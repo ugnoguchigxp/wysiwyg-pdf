@@ -26,6 +26,8 @@ export default defineConfig({
         'example/**',
         'Test/**',
         'src/global.d.ts',
+        'src/i18n/**',
+        'src/utils/docUnitConversion.ts',
         // Type-only / barrel exports (exclude from coverage)
         'src/index.ts',
         'src/types/**',

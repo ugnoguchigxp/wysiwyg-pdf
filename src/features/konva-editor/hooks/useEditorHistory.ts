@@ -35,7 +35,9 @@ export function useEditorHistoryDoc(
     }
 
     // Doc is expected to be mm-based everywhere. Convert legacy docs at the import boundary.
-    console.warn('[useEditorHistoryDoc] Doc.unit is not mm. Please convert the document before passing it in.')
+    console.warn(
+      '[useEditorHistoryDoc] Doc.unit is not mm. Please convert the document before passing it in.'
+    )
     didNormalizeRef.current = true
   }, [document, setDocument])
 
