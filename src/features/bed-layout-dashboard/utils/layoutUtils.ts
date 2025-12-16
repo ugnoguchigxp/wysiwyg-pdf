@@ -51,7 +51,7 @@ export const getLayoutBoundingBox = (document: Doc): BoundingBox | null => {
       elMaxY = lineMaxY
 
       // Account for stroke width roughly
-      const padding = (line.strokeW || 1) / 2
+      const padding = (line.strokeW ?? 0.4) / 2
       elMinX -= padding
       elMinY -= padding
       elMaxX += padding

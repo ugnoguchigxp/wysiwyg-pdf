@@ -356,6 +356,7 @@ export const PrintLayout = React.forwardRef<
   const isLandscape = orientation === 'landscape'
   const width = isLandscape ? '297mm' : '210mm'
   const height = isLandscape ? '210mm' : '297mm'
+  const pageSize = isLandscape ? '297mm 210mm' : '210mm 297mm'
 
   const PrintPage = ({ surface, pageIndex }: { surface: Surface; pageIndex: number }) => {
     const [bgImageSrc, setBgImageSrc] = useState<string | null>(null)
@@ -424,6 +425,7 @@ export const PrintLayout = React.forwardRef<
 
   return (
     <div ref={ref} className="print-container" style={{ width }}>
+      <style>{`@media print { @page { size: ${pageSize}; margin: 0; } }`}</style>
       {doc.surfaces.map((surface, index) => (
         <PrintPage key={surface.id} surface={surface} pageIndex={index} />
       ))}

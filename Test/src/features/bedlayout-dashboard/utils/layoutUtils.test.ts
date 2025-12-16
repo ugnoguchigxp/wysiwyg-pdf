@@ -9,7 +9,7 @@ describe('bedlayout-dashboard/utils/layoutUtils', () => {
       v: 1,
       id: 'd',
       title: 't',
-      unit: 'pt',
+      unit: 'mm',
       surfaces: [],
     } as any
     expect(getLayoutBoundingBox(doc)).toBeNull()
@@ -20,7 +20,7 @@ describe('bedlayout-dashboard/utils/layoutUtils', () => {
       v: 1,
       id: 'd',
       title: 't',
-      unit: 'pt',
+      unit: 'mm',
       surfaces: [],
       nodes: [{ id: 'n1', t: 'text', s: 's', x: 0, y: 0, w: 10, h: 10, text: 'x', hidden: true }],
     } satisfies Doc
@@ -33,7 +33,7 @@ describe('bedlayout-dashboard/utils/layoutUtils', () => {
       v: 1,
       id: 'd',
       title: 't',
-      unit: 'pt',
+      unit: 'mm',
       surfaces: [],
       nodes: [
         { id: 'l1', t: 'line', s: 's', pts: [10, 20, 30, 40], stroke: '#000', strokeW: 4 },
@@ -50,7 +50,7 @@ describe('bedlayout-dashboard/utils/layoutUtils', () => {
       v: 1,
       id: 'd',
       title: 't',
-      unit: 'pt',
+      unit: 'mm',
       surfaces: [],
       nodes: [
         { id: 'l1', t: 'line', s: 's', pts: [0, 0, 10, 10], stroke: '#000', strokeW: undefined as any },
@@ -66,7 +66,7 @@ describe('bedlayout-dashboard/utils/layoutUtils', () => {
       v: 1,
       id: 'd',
       title: 't',
-      unit: 'pt',
+      unit: 'mm',
       surfaces: [],
       nodes: [
         { id: 't1', t: 'text', s: 's', x: 5, y: 10, w: 20, h: 10, text: 'x' },
@@ -82,7 +82,7 @@ describe('bedlayout-dashboard/utils/layoutUtils', () => {
       v: 1,
       id: 'd',
       title: 't',
-      unit: 'pt',
+      unit: 'mm',
       surfaces: [],
       nodes: [{ id: 'x', t: 'widget', s: 's' } as any],
     } satisfies Doc
@@ -95,7 +95,7 @@ describe('bedlayout-dashboard/utils/layoutUtils', () => {
       v: 1,
       id: 'd',
       title: 't',
-      unit: 'pt',
+      unit: 'mm',
       surfaces: [],
       nodes: [
         { id: 'b2', t: 'widget', s: 's', x: 0, y: 0, w: 1, h: 1, widget: 'bed', name: 'Bed 10' },
@@ -111,7 +111,7 @@ describe('bedlayout-dashboard/utils/layoutUtils', () => {
   })
 
   it('extractBedList returns empty list when nodes is missing', () => {
-    const doc = { v: 1, id: 'd', title: 't', unit: 'pt', surfaces: [] } as any
+    const doc = { v: 1, id: 'd', title: 't', unit: 'mm', surfaces: [] } as any
     expect(extractBedList(doc)).toEqual([])
   })
 })

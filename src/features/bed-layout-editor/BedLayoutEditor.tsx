@@ -1,3 +1,4 @@
+import type Konva from 'konva'
 import React from 'react'
 import {
   KonvaCanvasEditor,
@@ -55,24 +56,37 @@ export const BedLayoutEditor = React.forwardRef<BedLayoutEditorHandle, KonvaEdit
         if (stage) {
           // Hide grid layer
           const gridLayer = stage.findOne('.grid-layer')
-          const wasVisible = gridLayer?.visible()
-          if (gridLayer) {
-            gridLayer.hide()
+          const wasGridVisible = gridLayer?.visible()
+
+          // Hide transformer handles (selection UI)
+          const transformers = (stage.find('Transformer') as unknown as Konva.Node[]).filter(
+            (n): n is Konva.Transformer => n.getClassName?.() === 'Transformer'
+          )
+          const transformerVisibility = transformers.map((tr) => tr.visible())
+
+          try {
+            gridLayer?.hide()
+            transformers.forEach((tr) => tr.hide())
+
+            const dataURL = stage.toDataURL({ pixelRatio: 2 })
+
+            const link = window.document.createElement('a')
+            link.download = `${name || document.title || 'bed-layout'}.png`
+            link.href = dataURL
+            window.document.body.appendChild(link)
+            link.click()
+            window.document.body.removeChild(link)
+          } finally {
+            // Restore grid layer
+            if (gridLayer && wasGridVisible) {
+              gridLayer.show()
+            }
+            // Restore transformer handles
+            transformers.forEach((tr, idx) => {
+              const prev = transformerVisibility[idx]
+              if (prev) tr.show()
+            })
           }
-
-          const dataURL = stage.toDataURL({ pixelRatio: 2 })
-
-          // Restore grid layer
-          if (gridLayer && wasVisible) {
-            gridLayer.show()
-          }
-
-          const link = window.document.createElement('a')
-          link.download = `${name || document.title || 'bed-layout'}.png`
-          link.href = dataURL
-          window.document.body.appendChild(link)
-          link.click()
-          window.document.body.removeChild(link)
         }
       },
     }))

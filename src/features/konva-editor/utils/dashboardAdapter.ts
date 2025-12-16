@@ -1,8 +1,11 @@
 import type { BedDashboardRoom, BedStatus } from '@/features/bed-layout-dashboard/types'
 import type { Doc, LineNode, TextNode, UnifiedNode, WidgetNode } from '@/types/canvas'
+import { pxToMm } from '@/utils/units'
 
 export const convertDashboardRoomToDocument = (dashboardRoom: BedDashboardRoom): Doc => {
   const { room, statuses } = dashboardRoom
+
+  const dpi = 96
 
   // Create a map of bed statuses for quick lookup
   const statusMap = new Map<string, BedStatus>()
@@ -23,10 +26,10 @@ export const convertDashboardRoomToDocument = (dashboardRoom: BedDashboardRoom):
       t: 'widget',
       widget: 'bed',
       s: surfaceId,
-      x: bed.x,
-      y: bed.y,
-      w: bed.width,
-      h: bed.height,
+      x: pxToMm(bed.x, { dpi }),
+      y: pxToMm(bed.y, { dpi }),
+      w: pxToMm(bed.width, { dpi }),
+      h: pxToMm(bed.height, { dpi }),
       r: 0,
       name: 'Bed',
       data: {
@@ -51,9 +54,14 @@ export const convertDashboardRoomToDocument = (dashboardRoom: BedDashboardRoom):
         id: wall.id,
         t: 'line',
         s: surfaceId,
-        pts: [wall.start.x, wall.start.y, wall.end.x, wall.end.y],
+        pts: [
+          pxToMm(wall.start.x, { dpi }),
+          pxToMm(wall.start.y, { dpi }),
+          pxToMm(wall.end.x, { dpi }),
+          pxToMm(wall.end.y, { dpi }),
+        ],
         stroke: wall.stroke || '#000000',
-        strokeW: wall.strokeWidth || 6,
+        strokeW: typeof wall.strokeWidth === 'number' ? pxToMm(wall.strokeWidth, { dpi }) : 0.4,
         r: 0,
         locked: false,
         name: 'Wall',
@@ -69,13 +77,13 @@ export const convertDashboardRoomToDocument = (dashboardRoom: BedDashboardRoom):
         id: text.id,
         t: 'text',
         s: surfaceId,
-        x: text.x,
-        y: text.y,
-        w: 200,
-        h: 30, // defaults
+        x: pxToMm(text.x, { dpi }),
+        y: pxToMm(text.y, { dpi }),
+        w: pxToMm(200, { dpi }),
+        h: pxToMm(30, { dpi }), // defaults
         text: text.text,
         font: 'Meiryo',
-        fontSize: text.fontSize || 16,
+        fontSize: typeof text.fontSize === 'number' ? pxToMm(text.fontSize, { dpi }) : pxToMm(16, { dpi }),
         fontWeight: 400,
         fill: text.color || '#000000',
         align: (() => {
@@ -97,8 +105,15 @@ export const convertDashboardRoomToDocument = (dashboardRoom: BedDashboardRoom):
     v: 1,
     id: room.id,
     title: room.name,
-    unit: 'px',
-    surfaces: [{ id: surfaceId, type: 'canvas', w: room.width, h: room.height }],
+    unit: 'mm',
+    surfaces: [
+      {
+        id: surfaceId,
+        type: 'canvas',
+        w: pxToMm(room.width, { dpi }),
+        h: pxToMm(room.height, { dpi }),
+      },
+    ],
     nodes,
   }
 }

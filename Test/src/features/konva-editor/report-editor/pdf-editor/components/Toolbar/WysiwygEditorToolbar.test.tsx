@@ -23,7 +23,7 @@ const mockDoc: Doc = {
     v: 1,
     id: 'test',
     title: 'Test',
-    unit: 'pt',
+    unit: 'mm',
     surfaces: [{ id: 'page-1', type: 'page', w: 100, h: 100 }],
     nodes: [],
 }

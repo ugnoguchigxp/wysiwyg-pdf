@@ -24,7 +24,7 @@ describe('BedPrintLayout', () => {
       v: 1,
       id: 'doc',
       title: 'bed-layout',
-      unit: 'px',
+      unit: 'mm',
       surfaces: [{ id: 'layout', type: 'canvas', w: 300, h: 200 }],
       nodes: [
         {

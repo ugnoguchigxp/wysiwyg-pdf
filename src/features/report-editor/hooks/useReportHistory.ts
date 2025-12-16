@@ -1,6 +1,5 @@
 import { useCallback, useState } from 'react'
 import type { Doc } from '@/features/konva-editor/types'
-import { normalizeDocToMm } from '@/utils/normalizeDocToMm'
 
 interface UseHistoryReturn {
   document: Doc
@@ -16,13 +15,19 @@ interface UseHistoryReturn {
 }
 
 export function useReportHistory(initialDocument: Doc): UseHistoryReturn {
+  if (initialDocument?.unit && initialDocument.unit !== 'mm') {
+    // Doc is expected to be mm-based everywhere. Convert legacy docs at the import boundary.
+    // (We intentionally do not normalize here.)
+    console.warn('[useReportHistory] Doc.unit is not mm. Please convert the document before passing it in.')
+  }
+
   const [history, setHistory] = useState<{
     past: Doc[]
     present: Doc
     future: Doc[]
   }>({
     past: [],
-    present: normalizeDocToMm(initialDocument, { dpi: 96, assumeUnitIfMissing: 'mm' }),
+    present: initialDocument,
     future: [],
   })
 
@@ -92,9 +97,12 @@ export function useReportHistory(initialDocument: Doc): UseHistoryReturn {
   }, [])
 
   const reset = useCallback((doc: Doc) => {
+    if (doc?.unit && doc.unit !== 'mm') {
+      console.warn('[useReportHistory.reset] Doc.unit is not mm. Please convert the document before passing it in.')
+    }
     setHistory({
       past: [],
-      present: normalizeDocToMm(doc, { dpi: 96, assumeUnitIfMissing: 'mm' }),
+      present: doc,
       future: [],
     })
   }, [])

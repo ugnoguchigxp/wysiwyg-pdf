@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import '@/features/konva-editor/styles/print.css'
 import { useI18n } from '@/i18n/I18nContext'
 import { RenderLine, RenderShape } from '@/features/konva-editor/renderers/print/ReportPrintLayout'
 import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
@@ -292,11 +293,13 @@ export const BedPrintLayout = React.forwardRef<
   const surface = document.surfaces.find((s) => s.id === resolvedSurfaceId) || document.surfaces[0]
   const width = surface?.w ?? 0
   const height = surface?.h ?? 0
+  const pageSize = `${width}mm ${height}mm`
 
   const nodes = document.nodes.filter((n) => n.s === resolvedSurfaceId)
 
   return (
     <div ref={ref} className="print-container">
+      <style>{`@media print { @page { size: ${pageSize}; margin: 0; } }`}</style>
       <div
         className="print-page"
         style={{

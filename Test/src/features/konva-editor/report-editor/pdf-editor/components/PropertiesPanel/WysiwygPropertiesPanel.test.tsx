@@ -47,7 +47,7 @@ describe('WysiwygPropertiesPanel', () => {
       v: 1,
       id: 'd',
       title: 't',
-      unit: 'pt',
+      unit: 'mm',
       surfaces: [{ id: 'p1', type: 'page', w: 100, h: 100 }],
       nodes: [
         { id: 't1', t: 'text', s: 'p1', x: 0, y: 0, w: 10, h: 10, text: 'Hello', fontSize: 12, fill: '#000000' } as TextNode,
@@ -89,7 +89,7 @@ describe('WysiwygPropertiesPanel', () => {
           v: 1,
           id: 'd',
           title: 't',
-          unit: 'pt',
+          unit: 'mm',
           surfaces: [{ id: 'p1', type: 'page', w: 100, h: 100 }],
           nodes: [{ id: 'sig', t: 'signature', s: 'p1', x: 0, y: 0, w: 10, h: 10, strokes: [], stroke: '#000', strokeW: 1 } as SignatureNode],
         } as Doc}

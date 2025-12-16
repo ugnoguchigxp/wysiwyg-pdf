@@ -52,7 +52,7 @@ describe('bedLayout PropertyPanel', () => {
       v: 1,
       id: 'doc1',
       title: 'Test Doc',
-      unit: 'px',
+      unit: 'mm',
       surfaces: [{ id: 'layout', type: 'canvas', w: 100, h: 200, margin: { t: 0, r: 0, b: 0, l: 0 } }],
       nodes: [],
     } as any

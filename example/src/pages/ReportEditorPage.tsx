@@ -47,13 +47,13 @@ const INITIAL_DOC: Doc = {
     v: 1,
     id: 'doc-1',
     title: 'New Template',
-    unit: 'pt',
+    unit: 'mm',
     surfaces: [
         {
             id: 'page-1',
             type: 'page',
-            w: 595.28,
-            h: 841.89, // A4 at 72dpi? or PT. A4 is 595x842 pt
+            w: 210,
+            h: 297,
             bg: '#ffffff',
             margin: { t: 0, r: 0, b: 0, l: 0 },
         },

@@ -19,7 +19,7 @@ describe('PrintLayout', () => {
           v: 1,
           id: 'd',
           title: 't',
-          unit: 'pt',
+          unit: 'mm',
           surfaces: [
             { id: 'p1', type: 'page', w: 100, h: 100, bg: '#ff0000' },
             { id: 'p2', type: 'page', w: 100, h: 100, bg: 'asset-bg' },

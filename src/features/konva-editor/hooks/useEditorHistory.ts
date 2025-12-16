@@ -6,7 +6,6 @@ import type {
   Operation,
   UnifiedNode,
 } from '@/features/konva-editor/types'
-import { normalizeDocToMm } from '@/utils/normalizeDocToMm'
 
 const MAX_HISTORY_SIZE = 50
 
@@ -35,9 +34,9 @@ export function useEditorHistoryDoc(
       return
     }
 
-    const normalized = normalizeDocToMm(document, { dpi: 96, assumeUnitIfMissing: 'mm' })
+    // Doc is expected to be mm-based everywhere. Convert legacy docs at the import boundary.
+    console.warn('[useEditorHistoryDoc] Doc.unit is not mm. Please convert the document before passing it in.')
     didNormalizeRef.current = true
-    setDocument(normalized)
   }, [document, setDocument])
 
   const execute = useCallback(

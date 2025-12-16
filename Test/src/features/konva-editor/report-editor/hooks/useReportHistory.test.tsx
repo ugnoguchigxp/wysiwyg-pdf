@@ -8,7 +8,7 @@ const baseDoc = (id: string): Doc => ({
   v: 1,
   id,
   title: 't',
-  unit: 'pt',
+  unit: 'mm',
   surfaces: [],
   nodes: [],
 })

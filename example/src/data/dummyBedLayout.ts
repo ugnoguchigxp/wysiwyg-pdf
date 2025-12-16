@@ -3,13 +3,18 @@ import type { Doc, TextNode, LineNode, WidgetNode, BedStatusData } from 'wysiwyg
 // Helper to create IDs
 const id = (prefix: string) => `${prefix}-${crypto.randomUUID().slice(0, 8)}`
 
+const pxToMm = (px: number) => (px * 25.4) / 96
+
 // Helper to create Bed Elements (Unified: WidgetNode)
 const createBed = (x: number, y: number, label: string, rotation = 0): WidgetNode => ({
     id: id('bed'),
     t: 'widget',
     widget: 'bed',
     s: 'layout', // Dummy surface ID
-    x, y, w: 60, h: 120,
+    x: pxToMm(x),
+    y: pxToMm(y),
+    w: pxToMm(60),
+    h: pxToMm(120),
     r: rotation,
     name: label,
     opacity: 1,
@@ -22,9 +27,9 @@ const createWall = (x1: number, y1: number, x2: number, y2: number): LineNode =>
     id: id('wall'),
     t: 'line',
     s: 'layout',
-    pts: [x1, y1, x2, y2],
+    pts: [pxToMm(x1), pxToMm(y1), pxToMm(x2), pxToMm(y2)],
     stroke: '#334155', // Slate-700
-    strokeW: 4,
+    strokeW: pxToMm(4),
     arrows: ['none', 'none'],
     locked: true
 })
@@ -36,10 +41,13 @@ const createText = (x: number, y: number, text: string, fontSize = 14): TextNode
     s: 'layout',
     text,
     font: 'Meiryo',
-    fontSize: fontSize,
+    fontSize: pxToMm(fontSize),
     fontWeight: 700,
     fill: '#0f172a', // Slate-900
-    x, y, w: 200, h: 30,
+    x: pxToMm(x),
+    y: pxToMm(y),
+    w: pxToMm(200),
+    h: pxToMm(30),
     align: 'c',
     r: 0,
     locked: true
@@ -77,9 +85,9 @@ export const dummyBedLayout: Doc = {
     v: 1,
     id: 'demo-icu-ward',
     title: 'ICU Ward A',
-    unit: 'px',
+    unit: 'mm',
     surfaces: [
-        { id: 'layout', type: 'canvas', w: 800, h: 600 },
+        { id: 'layout', type: 'canvas', w: pxToMm(800), h: pxToMm(600) },
     ],
     nodes: [...walls, ...beds, ...labels],
 }

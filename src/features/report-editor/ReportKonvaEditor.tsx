@@ -1011,24 +1011,37 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
 
         // Hide grid layer
         const gridLayer = stage.findOne('.grid-layer')
-        const wasVisible = gridLayer?.visible()
-        if (gridLayer) {
-          gridLayer.hide()
+        const wasGridVisible = gridLayer?.visible()
+
+        // Hide transformer handles (selection UI)
+        const transformers = (stage.find('Transformer') as unknown as Konva.Node[]).filter(
+          (n): n is Konva.Transformer => n.getClassName?.() === 'Transformer'
+        )
+        const transformerVisibility = transformers.map((tr) => tr.visible())
+
+        try {
+          gridLayer?.hide()
+          transformers.forEach((tr) => tr.hide())
+
+          const dataURL = stage.toDataURL({ pixelRatio: 2 })
+
+          const link = document.createElement('a')
+          link.download = `report-${Date.now()}.png`
+          link.href = dataURL
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+        } finally {
+          // Restore grid layer
+          if (gridLayer && wasGridVisible) {
+            gridLayer.show()
+          }
+          // Restore transformer handles
+          transformers.forEach((tr, idx) => {
+            const prev = transformerVisibility[idx]
+            if (prev) tr.show()
+          })
         }
-
-        const dataURL = stage.toDataURL({ pixelRatio: 2 })
-
-        // Restore grid layer
-        if (gridLayer && wasVisible) {
-          gridLayer.show()
-        }
-
-        const link = document.createElement('a')
-        link.download = `report-${Date.now()}.png`
-        link.href = dataURL
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
       },
       flushSignature: () => {
         const result = commitSignature()

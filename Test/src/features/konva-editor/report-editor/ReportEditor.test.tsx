@@ -69,7 +69,7 @@ describe('ReportEditor', () => {
       v: 1,
       id: 'doc',
       title: 't',
-      unit: 'pt',
+      unit: 'mm',
       surfaces: [{ id: 'p1', type: 'page', w: 100, h: 100 }],
       nodes: [],
     } as any

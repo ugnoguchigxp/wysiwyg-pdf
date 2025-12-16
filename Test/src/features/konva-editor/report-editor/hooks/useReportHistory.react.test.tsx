@@ -9,7 +9,7 @@ describe('useReportHistory (react)', () => {
     v: 1,
     id: 'doc-1',
     title: 'Test',
-    unit: 'pt',
+    unit: 'mm',
     surfaces: [{ id: 'page-1', type: 'page', w: 100, h: 100 }],
     nodes: [],
   })

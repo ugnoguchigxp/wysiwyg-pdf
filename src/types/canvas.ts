@@ -11,7 +11,7 @@ export type NodeId = string // nanoid (21 chars recommended)
 export type SurfaceId = string
 export type LinkId = string
 export type Color = string // Hex (#RRGGBB), rgba(), hsl() supported
-export type Unit = 'mm' | 'pt' | 'px' | 'in'
+export type Unit = 'mm'
 
 // ========================================
 // Document Root

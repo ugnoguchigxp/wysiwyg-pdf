@@ -37,6 +37,9 @@ export * from './features/bed-layout-dashboard/types'
 export { SettingsDrawer } from './features/konva-editor/components/SettingsDrawer'
 export * from './features/konva-editor/signature/SignatureKonvaEditor'
 
+// Doc unit conversion helpers
+export * from './utils/docUnitConversion'
+
 // i18n
 export * from './i18n/I18nContext'
 

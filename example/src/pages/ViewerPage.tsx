@@ -40,7 +40,7 @@ import { Rect } from 'react-konva'
 
 const TemplateViewer: React.FC<{ doc: Doc; zoom: number }> = ({ doc, zoom }) => {
     const page = doc.surfaces[0]
-    const dims = page ? { width: page.w, height: page.h } : { width: 595.28, height: 841.89 }
+    const dims = page ? { width: page.w, height: page.h } : { width: 210, height: 297 }
     const bgColor = page?.bg || '#ffffff'
 
     // Cast elements to any to avoid strict type mismatch during rapid dev
