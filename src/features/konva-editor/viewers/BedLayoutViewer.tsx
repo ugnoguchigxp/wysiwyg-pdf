@@ -39,19 +39,13 @@ export const BedLayoutViewer: React.FC<BedLayoutViewerProps> = ({
       paperWidth={paperWidth}
       paperHeight={paperHeight}
       background={<PaperBackground document={document} surfaceId={resolvedSurfaceId} />}
-      overlay={
-        <>
-          {elements
-            .filter((n) => n.t === 'widget' && (n as WidgetNode).widget === 'bed')
-            .map((n) => {
-              const bed = n as WidgetNode
-              const bedStatus = dashboardData ? dashboardData[bed.id] : undefined
-              return (
-                <BedOverlayText key={`${bed.id}__overlay`} element={bed} bedStatus={bedStatus} />
-              )
-            })}
-        </>
-      }
+      overlay={elements
+        .filter((n) => n.t === 'widget' && (n as WidgetNode).widget === 'bed')
+        .map((n) => {
+          const bed = n as WidgetNode
+          const bedStatus = dashboardData ? dashboardData[bed.id] : undefined
+          return <BedOverlayText key={`${bed.id}__overlay`} element={bed} bedStatus={bedStatus} />
+        })}
       renderCustom={(el, commonProps, handleShapeRef) => {
         if (el.t === 'widget' && el.widget === 'bed') {
           const { ref: _ignoredRef, ...propsWithoutRef } = commonProps

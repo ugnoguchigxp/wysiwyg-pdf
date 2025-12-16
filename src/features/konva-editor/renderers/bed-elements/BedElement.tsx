@@ -163,7 +163,6 @@ export const BedElement: React.FC<BedElementProps> = ({
         strokeColor = '#64748b'
         break
       }
-      case 'free':
       default: {
         strokeColor = '#3b82f6'
         break
