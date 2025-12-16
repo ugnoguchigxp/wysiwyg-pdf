@@ -3,6 +3,9 @@ import type React from 'react'
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
 import { Layer, Stage } from 'react-konva'
 import type { TextNode, UnifiedNode } from '../../types/canvas'
+import { mmToPx } from '@/utils/units'
+import { measureText } from '@/features/konva-editor/utils/textUtils'
+import { ptToMm, pxToMm } from '@/utils/units'
 import {
   type CanvasElementCommonProps,
   CanvasElementRenderer,
@@ -77,9 +80,11 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       getStage: () => stageRef.current,
     }))
 
-    // Calculate stage size based on zoomed paper
-    const stageWidth = paperWidth * zoom
-    const stageHeight = paperHeight * zoom
+    const dpi = 96
+    const displayScale = mmToPx(1, { dpi }) * zoom
+
+    const stageWidth = paperWidth * displayScale
+    const stageHeight = paperHeight * displayScale
 
     const handleSelect = (
       id: string | null,
@@ -113,7 +118,39 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
 
     const handleTextUpdate = (text: string) => {
       if (!editingElementId) return
-      onChange(editingElementId, { text } as Partial<UnifiedNode>)
+
+      const element = elements.find((el) => el.id === editingElementId)
+      if (!element || element.t !== 'text') {
+        onChange(editingElementId, { text } as Partial<UnifiedNode>)
+        return
+      }
+
+      const textNode = element as TextNode
+      const dpi = 96
+
+      const font = {
+        family: textNode.font || 'Meiryo',
+        size: mmToPx(textNode.fontSize || ptToMm(12), { dpi }),
+        weight: textNode.fontWeight || 400,
+      }
+
+      const lines = text.split('\n')
+      let maxWidth = 0
+      for (const line of lines) {
+        const { width } = measureText(line || ' ', font)
+        if (width > maxWidth) maxWidth = width
+      }
+
+      const lineHeight = font.size * 1.2
+      const calculatedHeight = Math.max(1, lines.length) * lineHeight
+      const newWidthPx = maxWidth + 10
+      const newHeightPx = calculatedHeight + 4
+
+      onChange(editingElementId, {
+        text,
+        w: pxToMm(newWidthPx, { dpi }),
+        h: pxToMm(newHeightPx, { dpi }),
+      } as Partial<UnifiedNode>)
     }
 
     const handleTextEditFinish = () => {
@@ -165,8 +202,8 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
           <Stage
             width={stageWidth}
             height={stageHeight}
-            scaleX={zoom}
-            scaleY={zoom}
+            scaleX={displayScale}
+            scaleY={displayScale}
             ref={stageRef}
             onMouseDown={(e) => {
               if (onStageMouseDown) {
@@ -203,7 +240,7 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
             <GridLayer
               width={paperWidth}
               height={paperHeight}
-              scale={zoom}
+              scale={displayScale}
               visible={showGrid}
               gridSize={gridSize > 0 ? gridSize : 50}
             />
@@ -214,6 +251,7 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
                   element={element}
                   isSelected={selectedIds.includes(element.id)}
                   allElements={elements}
+                  stageScale={displayScale}
                   onSelect={(e) => handleSelect(element.id, e)}
                   onChange={(newAttrs) => onChange(element.id, newAttrs)}
                   onDblClick={() => handleElementDblClick(element)}
@@ -229,7 +267,7 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
           {editingElement && (
             <TextEditOverlay
               element={editingElement}
-              scale={zoom}
+              scale={displayScale}
               stageNode={stageRef.current}
               onUpdate={handleTextUpdate}
               onFinish={handleTextEditFinish}

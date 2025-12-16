@@ -12,7 +12,6 @@ import { EditableSelect } from '@/components/ui/EditableSelect'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/Tooltip'
 import { DEFAULT_FONT_FAMILIES } from '@/features/konva-editor/constants/propertyPanelConfig'
 import type { TableNode } from '@/types/canvas'
-import { BindingSelector } from './BindingSelector'
 
 // Helper type for cell properties
 type CellProps = TableNode['table']['cells'][number]
@@ -146,18 +145,9 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
       <div>
         <h4 className={headingClass}>
           {isGlobal
-            ? resolveText('properties_table_global_style', 'Table Style (All Cells)')
+            ? `${resolveText('properties_table_style', 'Table Style')} (All Cells)`
             : resolveText('properties_table_cell_style', 'Cell Style')}
         </h4>
-
-        {isGlobal && (
-          <BindingSelector
-            label={resolveText('properties_repeater_source', 'Repeater Source (Array)')}
-            binding={element.bind ? { field: element.bind } : undefined}
-            onUpdate={(binding) => onUpdate({ bind: binding?.field })}
-            i18nOverrides={i18nOverrides}
-          />
-        )}
 
         {!isGlobal && selectedCell && (
           <div className="text-[10px] text-blue-500 mb-2">
@@ -189,7 +179,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                 />
               </div>
               <div>
-                <label className={labelClass}>{resolveText('properties_color', 'Color')}</label>
+                <label className={labelClass}>{resolveText('properties_font_color', 'FontColor')}</label>
                 <input
                   type="color"
                   className="w-full h-8 rounded border border-theme-border bg-theme-bg-primary"
@@ -211,7 +201,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
           {/* Alignment */}
           <div>
             <label className={`${labelClass} font-medium`}>
-              {resolveText('properties_align', 'Alignment')}
+              {resolveText('properties_text_align', 'Text Align')}
             </label>
             <div className="flex bg-theme-bg-primary rounded border border-theme-border p-0.5 mb-2">
               <TooltipProvider>

@@ -15,6 +15,7 @@ import {
 } from 'react-konva'
 import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
 import { useI18n } from '@/i18n/I18nContext'
+import { ptToMm } from '@/utils/units'
 import type {
   Anchor,
   ImageNode,
@@ -67,6 +68,7 @@ interface CanvasElementRendererProps {
   showGrid?: boolean
   readOnly?: boolean
   allElements?: UnifiedNode[]
+  stageScale?: number
   renderCustom?: (
     element: UnifiedNode,
     commonProps: CanvasElementCommonProps,
@@ -77,8 +79,8 @@ interface CanvasElementRendererProps {
 // Separate component for Image to handle loading state
 const CanvasImage = forwardRef<
   Konva.Image | Konva.Group,
-  { element: ImageNode; commonProps: CanvasElementCommonProps }
->(({ element, commonProps }, ref) => {
+  { element: ImageNode; commonProps: CanvasElementCommonProps; invScale: number }
+>(({ element, commonProps, invScale }, ref) => {
   const { t } = useI18n()
   const [image, setImage] = useState<HTMLImageElement | null>(null)
   const [status, setStatus] = useState<'loading' | 'loaded' | 'error' | 'empty'>('empty')
@@ -157,7 +159,7 @@ const CanvasImage = forwardRef<
         height={element.h}
         fill={bgColor}
         stroke={borderColor}
-        strokeWidth={3}
+        strokeWidth={3 * invScale}
       />
       <Text
         x={0}
@@ -168,7 +170,7 @@ const CanvasImage = forwardRef<
         fill={textColor}
         align="center"
         verticalAlign="middle"
-        fontSize={14}
+        fontSize={14 * invScale}
         fontStyle="bold"
         fontFamily="Helvetica"
       />
@@ -194,9 +196,11 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
   snapStrength = 5,
   gridSize = 15,
   showGrid = false,
+  stageScale = 1,
 }) => {
   const shapeRef = useRef<Konva.Node | null>(null)
   const trRef = useRef<Konva.Transformer | null>(null)
+  const [isShiftDown, setIsShiftDown] = useState(false)
   const isLineHandleDraggingRef = useRef(false)
   const lineVisualRef = useRef<Konva.Line | null>(null)
   const lineStartHandleRef = useRef<Konva.Circle | null>(null)
@@ -212,6 +216,39 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
   type Conn = { nodeId: string; anchor: Anchor } | undefined
   const startConnDraftRef = useRef<Conn>(undefined)
   const endConnDraftRef = useRef<Conn>(undefined)
+
+  const invScale = stageScale > 0 ? 1 / stageScale : 1
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') setIsShiftDown(true)
+    }
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') setIsShiftDown(false)
+    }
+    const onBlur = () => setIsShiftDown(false)
+
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('keyup', onKeyUp)
+    window.addEventListener('blur', onBlur)
+
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keyup', onKeyUp)
+      window.removeEventListener('blur', onBlur)
+    }
+  }, [])
+
+  const rotationSnaps = useMemo(() => {
+    if (!isShiftDown) return undefined
+    return [0, 45, 90, 135, 180, 225, 270, 315]
+  }, [isShiftDown])
+
+  const rotationSnapTolerance = useMemo(() => {
+    // 45° snapping should feel "always on" while Shift is held.
+    // Any angle is within 22.5° of some 45° multiple, so set a tolerance slightly above that.
+    return isShiftDown ? 23 : 0
+  }, [isShiftDown])
 
   const handleShapeRef = useCallback(
     (node: Konva.Node | null) => {
@@ -242,6 +279,20 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
       trRef.current.getLayer()?.batchDraw()
     }
   }, [element.w, element.h, isSelected])
+
+  // Update rotation snaps dynamically (including mid-rotation) when Shift state changes.
+  useEffect(() => {
+    if (!isSelected || !trRef.current) return
+    // Konva getter/setter pattern: rotationSnaps([..]) sets, rotationSnaps() gets.
+    if (rotationSnaps) {
+      trRef.current.rotationSnaps(rotationSnaps)
+      trRef.current.rotationSnapTolerance(rotationSnapTolerance)
+    } else {
+      trRef.current.rotationSnaps([])
+      trRef.current.rotationSnapTolerance(0)
+    }
+    trRef.current.getLayer()?.batchDraw()
+  }, [isSelected, rotationSnaps, rotationSnapTolerance])
 
   // Text Auto-resize
   useEffect(() => {
@@ -906,8 +957,8 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           }
 
           // Connector snap (8-point anchors). Applied after grid/shift.
-          const threshold = 12
-          const showMargin = 80
+          const threshold = 12 * invScale
+          const showMargin = 80 * invScale
           let best: { nodeId: string; anchor: Anchor; x: number; y: number; dist2: number } | null =
             null
 
@@ -920,13 +971,13 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           if (anchorOverlayGroupRef.current) {
             for (const circle of anchorCircleMapRef.current.values()) {
               circle.visible(false)
-              circle.radius(5)
+              circle.radius(5 * invScale)
               circle.fill('#ffffff')
               circle.stroke(baseStroke)
-              circle.strokeWidth(2)
+              circle.strokeWidth(2 * invScale)
               circle.opacity(0.95)
               circle.shadowColor(glowColor)
-              circle.shadowBlur(10)
+              circle.shadowBlur(10 * invScale)
               circle.shadowOpacity(0.18)
               circle.shadowEnabled(true)
             }
@@ -976,13 +1027,13 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
             const circle = anchorCircleMapRef.current.get(key)
             if (circle) {
               circle.visible(true)
-              circle.radius(9)
+              circle.radius(9 * invScale)
               circle.fill(activeFill)
               circle.stroke(activeStroke)
-              circle.strokeWidth(3)
+              circle.strokeWidth(3 * invScale)
               circle.opacity(1)
               circle.shadowColor(glowColor)
-              circle.shadowBlur(22)
+              circle.shadowBlur(22 * invScale)
               circle.shadowOpacity(0.38)
               circle.shadowEnabled(true)
               lastHighlightedAnchorKeyRef.current = key
@@ -1086,13 +1137,13 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
                         key={`anchor - ${key} `}
                         x={p.x}
                         y={p.y}
-                        radius={5}
+                        radius={5 * invScale}
                         fill="#ffffff"
                         stroke="#0f766e"
-                        strokeWidth={2}
+                        strokeWidth={2 * invScale}
                         opacity={0.95}
                         shadowColor="#34d399"
-                        shadowBlur={10}
+                        shadowBlur={10 * invScale}
                         shadowOpacity={0.18}
                         shadowEnabled
                         visible={false}
@@ -1113,11 +1164,11 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
               name="line-body"
               points={pts}
               stroke={line.stroke || '#000000'}
-              strokeWidth={line.strokeW || 1}
+              strokeWidth={line.strokeW ?? 0.2}
               dash={line.dash}
               lineCap="round"
               lineJoin="round"
-              hitStrokeWidth={20}
+              hitStrokeWidth={20 * invScale}
               draggable={false}
             />
 
@@ -1132,7 +1183,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
               const startType = line.arrows?.[0] || 'none'
               const endType = line.arrows?.[1] || 'none'
               const color = line.stroke || '#000000'
-              const size = Math.max(8, (line.strokeW || 1) * 4)
+              const size = Math.max(8 * invScale, (line.strokeW ?? 0.2) * 4)
 
               return (
                 <>
@@ -1177,10 +1228,10 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
                       name="line-handle-start"
                       x={pts[0]}
                       y={pts[1]}
-                      radius={6}
+                      radius={6 * invScale}
                       fill="#ffffff"
                       stroke="#3b82f6"
-                      strokeWidth={2}
+                      strokeWidth={2 * invScale}
                       draggable
                       onDragStart={startHandleDrag}
                       onDragMove={(e) => moveHandleDrag(0, e)}
@@ -1197,10 +1248,10 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
                       name="line-handle-end"
                       x={pts[pts.length - 2]}
                       y={pts[pts.length - 1]}
-                      radius={6}
+                      radius={6 * invScale}
                       fill="#ffffff"
                       stroke="#3b82f6"
-                      strokeWidth={2}
+                      strokeWidth={2 * invScale}
                       draggable
                       onDragStart={startHandleDrag}
                       onDragMove={(e) => moveHandleDrag(pts.length - 2, e)}
@@ -1220,6 +1271,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           <CanvasImage
             element={element as ImageNode}
             commonProps={commonProps}
+            invScale={invScale}
             ref={handleShapeRef}
           />
         )
@@ -1305,10 +1357,10 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
             const h = getRowHeight(r, rs)
 
             const borderColor = cell?.borderColor || cell?.border || '#cccccc'
-            const borderW = cell?.borderW ?? (cell?.border ? 1 : 1)
+            const borderW = cell?.borderW ?? (cell?.border ? 0.2 : 0.2)
             const borderEnabled = borderW > 0
             const bg = cell?.bg
-            const fontSize = cell?.fontSize || 12
+            const fontSize = cell?.fontSize ?? ptToMm(12)
             const fontFamily = cell?.font || 'Meiryo'
             const color = cell?.color || '#000000'
             const align = cell?.align || 'l'
@@ -1347,9 +1399,9 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
                 {!!cell?.v && (
                   <Text
                     id={`${cellId} _text`}
-                    x={4}
+                    x={4 * invScale}
                     y={0}
-                    width={Math.max(0, w - 8)}
+                    width={Math.max(0, w - 8 * invScale)}
                     height={h}
                     text={cell.v}
                     fontSize={fontSize}
@@ -1368,7 +1420,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
                     width={w}
                     height={h}
                     stroke="#3b82f6"
-                    strokeWidth={2}
+                    strokeWidth={2 * invScale}
                     dash={[4, 4]}
                     fillEnabled={false}
                     listening={false}
@@ -1380,7 +1432,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
         }
 
         const handles: React.ReactNode[] = []
-        const HANDLE_SIZE = 8
+        const HANDLE_SIZE = 8 * invScale
         const MIN_ROW = 10
         const MIN_COL = 10
 
@@ -1533,8 +1585,8 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
               height={tableElement.h}
               fillEnabled={false}
               stroke="transparent"
-              strokeWidth={1}
-              hitStrokeWidth={40}
+              strokeWidth={1 * invScale}
+              hitStrokeWidth={40 * invScale}
               onMouseEnter={(e) => {
                 const container = e.target.getStage()?.container()
                 if (container) container.style.cursor = 'move'
@@ -1563,7 +1615,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
                 width={tableElement.w}
                 height={tableElement.h}
                 stroke="#cccccc"
-                strokeWidth={1}
+                strokeWidth={1 * invScale}
                 dash={[4, 4]}
                 fillEnabled={false}
                 listening={false}
@@ -1628,6 +1680,11 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           key={element.id} // Fixed key to prevent unmounting on resize
           ref={trRef as React.RefObject<Konva.Transformer>}
           rotateEnabled={true}
+          anchorSize={8}
+          borderStrokeWidth={1}
+          rotateAnchorOffset={16}
+          rotationSnaps={rotationSnaps}
+          rotationSnapTolerance={rotationSnapTolerance}
           enabledAnchors={[
             'top-left',
             'top-right',

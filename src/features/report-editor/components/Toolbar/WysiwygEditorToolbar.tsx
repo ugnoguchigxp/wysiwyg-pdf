@@ -44,6 +44,7 @@ import type {
   UnifiedNode,
 } from '@/types/canvas'
 import { createContextLogger } from '@/utils/logger'
+import { mmToPx, ptToMm, pxToMm } from '@/utils/units'
 
 const log = createContextLogger('WysiwygEditorToolbar')
 
@@ -93,6 +94,8 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
   onToolSelect,
 }) => {
   const { t } = useI18n()
+
+  const dpi = 96
 
   const resolveText = (key: string, defaultValue?: string) => {
     if (i18nOverrides?.[key]) return i18nOverrides[key]
@@ -148,9 +151,11 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
     const { x, y } = calculateInitialPosition(s)
     const id = `text-${crypto.randomUUID()}`
     const textContent = resolveText('toolbar_default_text', 'Text')
+    const fontSizePt = 12
+    const fontSizeMm = ptToMm(fontSizePt)
     const font = {
       family: 'Meiryo',
-      size: 12,
+      size: mmToPx(fontSizeMm, { dpi }),
       weight: 400,
     }
     const { width, height } = measureText(textContent, font)
@@ -164,15 +169,15 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
       name: 'Text',
       text: textContent,
       font: font.family,
-      fontSize: font.size,
+      fontSize: fontSizeMm,
       fontWeight: font.weight,
       fill: '#000000',
       align: 'l',
       vAlign: 't',
       x,
       y,
-      w: width + 10,
-      h: height + 4,
+      w: pxToMm(width + 10, { dpi }),
+      h: pxToMm(height + 4, { dpi }),
     }
     withNewElement(text)
   }
@@ -182,21 +187,21 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
     const { x, y } = calculateInitialPosition(s)
     const id = `${shapeType.toLowerCase()}-${crypto.randomUUID()}`
 
-    let width = 80
-    let height = 80
+    let width = 30
+    let height = 30
 
     if (shapeType === 'trapezoid') {
-      width = 100
-      height = 60
-    } else if (shapeType === 'cylinder') {
-      width = 60
-      height = 100
-    } else if (['arrow-u', 'arrow-d'].includes(shapeType)) {
       width = 40
-      height = 80
-    } else if (['arrow-l', 'arrow-r'].includes(shapeType)) {
-      width = 80
+      height = 24
+    } else if (shapeType === 'cylinder') {
+      width = 24
       height = 40
+    } else if (['arrow-u', 'arrow-d'].includes(shapeType)) {
+      width = 16
+      height = 32
+    } else if (['arrow-l', 'arrow-r'].includes(shapeType)) {
+      width = 32
+      height = 16
     }
 
     const shape: ShapeNode = {
@@ -212,7 +217,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
       w: width,
       h: height,
       stroke: '#000000',
-      strokeW: 1,
+      strokeW: 0.2,
       fill: '#ffffff',
     }
     withNewElement(shape)
@@ -233,9 +238,9 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
       s,
       locked: false,
       name: 'Line',
-      pts: [x, y, x + 160, y], // Simple horizontal line starting at x,y
+      pts: [x, y, x + 50, y],
       stroke: '#000000',
-      strokeW: 1,
+      strokeW: 0.2,
     }
     withNewElement(line)
   }
@@ -253,8 +258,8 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
       name: 'Image',
       x,
       y,
-      w: 120,
-      h: 80,
+      w: 40,
+      h: 30,
       src: '', // Empty
     }
     withNewElement(image)
@@ -273,16 +278,16 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
       name: 'Table',
       x,
       y,
-      w: 300,
-      h: 150,
+      w: 90,
+      h: 30,
       table: {
-        rows: [50, 50, 50],
-        cols: [100, 100, 100],
+        rows: [10, 10, 10],
+        cols: [30, 30, 30],
         cells: [
           // Minimal cells
-          { r: 0, c: 0, v: '', borderW: 2, borderColor: '#000000' },
-          { r: 0, c: 1, v: '', borderW: 2, borderColor: '#000000' },
-          { r: 0, c: 2, v: '', borderW: 2, borderColor: '#000000' },
+          { r: 0, c: 0, v: '', borderW: 0.2, borderColor: '#000000' },
+          { r: 0, c: 1, v: '', borderW: 0.2, borderColor: '#000000' },
+          { r: 0, c: 2, v: '', borderW: 0.2, borderColor: '#000000' },
         ],
       },
     }
@@ -290,7 +295,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
     for (let r = 0; r < 3; r++) {
       for (let c = 0; c < 3; c++) {
         if (!table.table.cells.find((cell) => cell.r === r && cell.c === c)) {
-          table.table.cells.push({ r, c, v: '', borderW: 2, borderColor: '#000000' })
+          table.table.cells.push({ r, c, v: '', borderW: 0.2, borderColor: '#000000' })
         }
       }
     }

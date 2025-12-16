@@ -19,9 +19,12 @@ import { measureText } from '@/features/konva-editor/utils/textUtils'
 import type { Doc, SignatureNode, Surface, TableNode, TextNode, UnifiedNode } from '@/types/canvas' // Direct import
 import { simplifyPoints } from '@/utils/geometry'
 import { createContextLogger } from '@/utils/logger'
+import { mmToPx, ptToMm, pxToMm } from '@/utils/units'
 import { TableContextMenu } from './components/ContextMenu/TableContextMenu'
 
 const log = createContextLogger('ReportKonvaEditor')
+
+const dpi = 96
 
 export interface ReportKonvaEditorHandle {
   downloadImage: () => void
@@ -247,7 +250,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
     const width = currentSurface.w
     const height = currentSurface.h
 
-    const displayScale = zoom
+    const displayScale = zoom * mmToPx(1, { dpi })
 
     const handleElementSelect = (element: UnifiedNode | null) => {
       onElementSelect(element)
@@ -341,7 +344,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
         const textNode = element as TextNode
         const font = {
           family: textNode.font || 'Meiryo',
-          size: textNode.fontSize || 12,
+          size: mmToPx(textNode.fontSize || ptToMm(12), { dpi }),
           weight: textNode.fontWeight || 400,
         }
 
@@ -368,8 +371,8 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
           {
             id: editingElementId,
             text,
-            w: newWidth,
-            h: newHeight,
+            w: pxToMm(newWidth, { dpi }),
+            h: pxToMm(newHeight, { dpi }),
           } as Partial<UnifiedNode> & { id?: string },
           { saveToHistory: false }
         )
@@ -1058,14 +1061,14 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
           name: fieldId,
           text: text,
           font: 'Helvetica',
-          fontSize: 12,
+          fontSize: ptToMm(12),
           fill: '#0000ff',
           align: 'l',
           vAlign: 't',
           x: logicX,
           y: logicY,
-          w: 150,
-          h: 20,
+          w: 50,
+          h: 8,
           bind: fieldId,
         }
 
@@ -1120,6 +1123,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
                   key={element.id}
                   element={element}
                   isSelected={element.id === selectedElementId}
+                  stageScale={displayScale}
                   allElements={nodes}
                   snapStrength={isDrawing ? 0 : snapStrength} // Disable snap while drawing signature
                   showGrid={showGrid}
@@ -1164,6 +1168,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
                     } as SignatureNode
                   }
                   isSelected={false}
+                  stageScale={displayScale}
                   onSelect={() => {}}
                   onChange={() => {}}
                 />
@@ -1209,7 +1214,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
                 width: `${Math.max(20, selectedCellBox.w * displayScale - 16)}px`,
                 height: `${Math.max(20, selectedCellBox.h * displayScale - 16)}px`,
                 zIndex: 1000,
-                fontSize: `${(selectedTable.table.cells.find((c) => c.r === editingCell.row && c.c === editingCell.col)?.fontSize || 12) * displayScale}px`,
+                fontSize: `${(selectedTable.table.cells.find((c) => c.r === editingCell.row && c.c === editingCell.col)?.fontSize ?? ptToMm(12)) * displayScale}px`,
                 fontFamily:
                   selectedTable.table.cells.find(
                     (c) => c.r === editingCell.row && c.c === editingCell.col

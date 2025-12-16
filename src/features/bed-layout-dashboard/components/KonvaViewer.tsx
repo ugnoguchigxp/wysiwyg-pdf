@@ -120,6 +120,7 @@ export const KonvaViewer: React.FC<KonvaViewerProps> = ({
                   key={element.id}
                   element={element}
                   isSelected={false}
+                  stageScale={viewParams.scale}
                   onSelect={() => {}} // No-op
                   onChange={() => {}} // No-op
                   readOnly={readOnly}

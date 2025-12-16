@@ -4,6 +4,7 @@ import { Group, Rect, Text } from 'react-konva'
 import type { CanvasElementCommonProps } from '@/components/canvas/CanvasElementRenderer'
 import type { BedStatusData } from '@/features/bed-layout-dashboard/types'
 import type { WidgetNode } from '@/types/canvas'
+import { ptToMm } from '@/utils/units'
 
 type BedElementProps = Omit<CanvasElementCommonProps, 'ref'> & {
   element: WidgetNode
@@ -25,7 +26,7 @@ const OutlinedText: React.FC<React.ComponentProps<typeof Text>> = (props) => {
         {...props}
         fill="white"
         stroke="white"
-        strokeWidth={4}
+        strokeWidth={ptToMm(1)}
         shadowBlur={0}
         shadowOffset={{ x: 0, y: 0 }}
         shadowOpacity={0}
@@ -94,11 +95,29 @@ export const BedElement: React.FC<BedElementProps> = ({
     strokeWidth = 2
   }
 
+  // In editor mode, use mm-based default border width from element data.
+  if (!bedStatus) {
+    const bw = (data as { borderW?: unknown }).borderW
+    if (typeof bw === 'number' && Number.isFinite(bw)) {
+      strokeWidth = Math.max(0, bw)
+    } else {
+      strokeWidth = 0.4
+    }
+  }
+
   // Access w/h directly from UnifiedNode
   const width = element.w || 100
   const height = element.h || 60
 
   const rotation = element.r || 0
+
+  const cornerR = 1
+  const pillowR = 0.5
+
+  const pillowW = Math.min(3, width * 0.25)
+  const pillowH = height * 0.8
+  const pillowX = 1
+  const pillowY = (height - pillowH) / 2
 
   return (
     <Group
@@ -118,16 +137,27 @@ export const BedElement: React.FC<BedElementProps> = ({
         fill={bgColor}
         stroke={strokeColor}
         strokeWidth={strokeWidth}
-        cornerRadius={4}
-        shadowColor={isSelected ? '#000' : 'transparent'}
-        shadowBlur={isSelected ? 10 : 0}
-        shadowOpacity={0.3}
+        cornerRadius={cornerR}
+        shadowColor="transparent"
+        shadowBlur={0}
+        shadowOpacity={0}
+      />
+
+      <Rect
+        x={pillowX}
+        y={pillowY}
+        width={pillowW}
+        height={pillowH}
+        fill="#e5e7eb"
+        opacity={0.5}
+        cornerRadius={pillowR}
+        listening={false}
       />
 
       {/* Text Content Group - Centered Vertically */}
-      <Group rotation={-rotation}>
+      <Group x={width / 2} y={height / 2} rotation={-rotation}>
         {(() => {
-          const fontSize = 16
+          const fontSize = Math.min(ptToMm(10), height * 0.3)
           const lineHeight = 1.2
           const isEditorMode = !bedStatus
 
@@ -154,8 +184,8 @@ export const BedElement: React.FC<BedElementProps> = ({
           return renderLines.map((text, index) => (
             <OutlinedText
               key={index}
-              x={textAreaX}
-              y={startY + index * fontSize * lineHeight}
+              x={textAreaX - width / 2}
+              y={startY + index * fontSize * lineHeight - height / 2}
               width={textAreaWidth}
               text={text}
               fontSize={fontSize}

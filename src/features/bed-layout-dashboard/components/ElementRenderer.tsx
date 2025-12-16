@@ -21,6 +21,7 @@ interface ElementRendererProps {
   isSelected: boolean
   onSelect: (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void
   onChange: (newAttrs: Partial<UnifiedNode>) => void
+  stageScale?: number
   readOnly?: boolean
   onBedClick?: (bedId: string, currentStatus?: BedStatusData) => void
   bedStatus?: BedStatusData
@@ -31,6 +32,7 @@ const ElementRendererComponent: React.FC<ElementRendererProps> = ({
   isSelected,
   onSelect,
   onChange,
+  stageScale = 1,
   readOnly = false,
   onBedClick,
   bedStatus,
@@ -136,6 +138,9 @@ const ElementRendererComponent: React.FC<ElementRendererProps> = ({
       {!readOnly && isSelected && element.t !== 'line' && (
         <Transformer
           ref={trRef}
+          anchorSize={8 / stageScale}
+          borderStrokeWidth={1 / stageScale}
+          rotateAnchorOffset={16 / stageScale}
           boundBoxFunc={(oldBox, newBox) => {
             // Limit resize
             if (newBox.width < 5 || newBox.height < 5) {
@@ -183,4 +188,4 @@ const ElementRendererComponent: React.FC<ElementRendererProps> = ({
   )
 }
 
-export const ElementRenderer = React.memo(ElementRendererComponent)
+export const ElementRenderer = React.memo(ElementRendererComponent) as React.FC<ElementRendererProps>

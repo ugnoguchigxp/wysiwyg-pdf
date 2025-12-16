@@ -2,6 +2,7 @@ import type Konva from 'konva'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import type { TextNode } from '@/types/canvas'
+import { ptToMm } from '@/utils/units'
 
 interface TextEditOverlayProps {
   element: TextNode
@@ -54,7 +55,7 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
       left: `${areaPosition.x}px`,
       width: `${element.w * scale}px`,
       height: `${element.h * scale}px`,
-      fontSize: `${(element.fontSize || 12) * scale}px`,
+      fontSize: `${(element.fontSize ?? ptToMm(12)) * scale}px`,
       fontFamily: element.font || 'Arial',
       fontWeight: element.fontWeight || 400,
       fontStyle: element.italic ? 'italic' : 'normal',

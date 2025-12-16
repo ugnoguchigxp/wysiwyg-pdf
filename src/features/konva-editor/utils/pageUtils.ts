@@ -1,24 +1,25 @@
 import type { PageSize } from '@/features/konva-editor/types'
+import { toMm } from '@/utils/units'
 
 export function getPageDimensions(size: PageSize): { width: number; height: number } {
   if (typeof size === 'object') {
-    const { width, height } = size
-    return width > height ? { width: height, height: width } : { width, height }
+    const { width, height, unit } = size
+    const wMm = toMm(width, unit, { dpi: 96 })
+    const hMm = toMm(height, unit, { dpi: 96 })
+    return wMm > hMm ? { width: hMm, height: wMm } : { width: wMm, height: hMm }
   }
-
-  const mmToPx = (mm: number) => Math.round((mm * 72) / 25.4)
 
   switch (size) {
     case 'A4':
-      return { width: mmToPx(210), height: mmToPx(297) }
+      return { width: 210, height: 297 }
     case 'A5':
-      return { width: mmToPx(148), height: mmToPx(210) }
+      return { width: 148, height: 210 }
     case 'B5':
-      return { width: mmToPx(182), height: mmToPx(257) }
+      return { width: 182, height: 257 }
     case 'Letter':
-      return { width: mmToPx(216), height: mmToPx(279) }
+      return { width: 216, height: 279 }
     default:
-      return { width: mmToPx(210), height: mmToPx(297) }
+      return { width: 210, height: 297 }
   }
 }
 
@@ -26,24 +27,22 @@ export function getPresentationPageDimensions(size: PageSize): { width: number; 
   const DISPLAY_SCALE = 0.7
 
   if (typeof size === 'object') {
-    return {
-      width: Math.round(size.width * DISPLAY_SCALE),
-      height: Math.round(size.height * DISPLAY_SCALE),
-    }
+    const { width, height, unit } = size
+    const wMm = toMm(width, unit, { dpi: 96 })
+    const hMm = toMm(height, unit, { dpi: 96 })
+    return { width: wMm * DISPLAY_SCALE, height: hMm * DISPLAY_SCALE }
   }
-
-  const mmToPx = (mm: number) => Math.round(((mm * 72) / 25.4) * DISPLAY_SCALE)
 
   switch (size) {
     case 'A4':
-      return { width: mmToPx(297), height: mmToPx(210) }
+      return { width: 297 * DISPLAY_SCALE, height: 210 * DISPLAY_SCALE }
     case 'A5':
-      return { width: mmToPx(210), height: mmToPx(148) }
+      return { width: 210 * DISPLAY_SCALE, height: 148 * DISPLAY_SCALE }
     case 'B5':
-      return { width: mmToPx(257), height: mmToPx(182) }
+      return { width: 257 * DISPLAY_SCALE, height: 182 * DISPLAY_SCALE }
     case 'Letter':
-      return { width: mmToPx(279), height: mmToPx(216) }
+      return { width: 279 * DISPLAY_SCALE, height: 216 * DISPLAY_SCALE }
     default:
-      return { width: mmToPx(297), height: mmToPx(210) }
+      return { width: 297 * DISPLAY_SCALE, height: 210 * DISPLAY_SCALE }
   }
 }

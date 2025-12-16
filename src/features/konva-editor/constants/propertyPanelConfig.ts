@@ -337,7 +337,7 @@ export const WIDGET_PRESETS: Record<string, WidgetConfig> = {
   },
   'border:default': {
     type: 'border',
-    labelKey: 'properties_border',
+    labelKey: 'properties_border_color',
     props: { showColor: true, showWidth: true },
   },
   'stroke:color': {
@@ -348,12 +348,12 @@ export const WIDGET_PRESETS: Record<string, WidgetConfig> = {
   'stroke:width': {
     type: 'stroke',
     labelKey: 'properties_line_width',
-    props: { showColor: false, showWidth: true, minWidth: 1, maxWidth: 20 },
+    props: { showColor: false, showWidth: true, minWidth: 0, maxWidth: 20 },
   },
   'stroke:full': {
     type: 'stroke',
     labelKey: 'properties_stroke',
-    props: { showColor: true, showWidth: true, minWidth: 1, maxWidth: 20 },
+    props: { showColor: true, showWidth: true, minWidth: 0, maxWidth: 20 },
   },
 
   // === Line Style ===
@@ -439,34 +439,15 @@ export const SECTION_PRESETS: Record<string, SectionConfig> = {
     widgets: [
       {
         type: 'colorPicker',
-        labelKey: 'color',
+        labelKey: 'properties_font_color',
         props: { fieldKey: 'fill' },
       },
       {
         type: 'colorPicker',
-        labelKey: 'properties_border',
+        labelKey: 'properties_border_color',
         props: { fieldKey: 'stroke' },
       },
-      {
-        type: 'select',
-        labelKey: 'properties_border_width',
-        props: {
-          fieldKey: 'strokeW',
-          options: [
-            { value: '0', labelKey: '0' },
-            { value: '1', labelKey: '1' },
-            { value: '2', labelKey: '2' },
-            { value: '3', labelKey: '3' },
-            { value: '4', labelKey: '4' },
-            { value: '5', labelKey: '5' },
-            { value: '6', labelKey: '6' },
-            { value: '7', labelKey: '7' },
-            { value: '8', labelKey: '8' },
-            { value: '9', labelKey: '9' },
-            { value: '10', labelKey: '10' },
-          ],
-        },
-      },
+      { type: 'border', props: { showColor: false, showWidth: true } },
     ],
   },
   'sec:text-alignment': {
@@ -539,21 +520,11 @@ export const SECTION_PRESETS: Record<string, SectionConfig> = {
   // === Bed Sections ===
   'sec:bed-label': {
     id: 'bed-label',
-    widgets: ['labelField:name'],
-  },
-  'sec:bed-orientation': {
-    id: 'bed-orientation',
     widgets: [
       {
-        type: 'select',
-        labelKey: 'rotation',
-        props: {
-          fieldKey: 'data.orientation',
-          options: [
-            { value: 'horizontal', labelKey: 'horizontal' },
-            { value: 'vertical', labelKey: 'vertical' },
-          ],
-        },
+        type: 'labelField',
+        labelKey: 'properties_bed_name',
+        props: { fieldKey: 'name' },
       },
     ],
   },
@@ -628,7 +599,7 @@ export const SIGNATURE_OBJECT_CONFIG: ObjectPanelConfig = {
 export const WIDGET_BED_OBJECT_CONFIG: ObjectPanelConfig = {
   objectType: 'widget:bed',
   header: { iconName: 'Bed', labelKey: 'toolbar_bed' },
-  sections: ['sec:bed-label', 'sec:bed-orientation'],
+  sections: ['sec:bed-label'],
 }
 
 // ========================================

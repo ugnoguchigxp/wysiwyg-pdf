@@ -57,6 +57,7 @@ import type {
   TextNode,
   UnifiedNode,
 } from '@/types/canvas'
+import { mmToPt, ptToMm, pxToMm } from '@/utils/units'
 import { cn } from '@/utils/utils'
 
 // ========================================
@@ -153,41 +154,59 @@ export const PosSizeWidget: React.FC<WidgetProps<PosSizeWidgetConfig>> = ({
       {props.showX && (
         <div className="w-full">
           <WidgetLabel>{resolveText('properties_x', 'X')}</WidgetLabel>
-          <WidgetInput
-            type="number"
-            value={Math.round(node.x ?? 0)}
-            onChange={(e) => onChange({ x: Number(e.target.value) })}
-          />
+          <div className="flex items-center gap-1">
+            <WidgetInput
+              type="number"
+              value={Math.round(node.x ?? 0)}
+              onChange={(e) => onChange({ x: Number(e.target.value) })}
+              className="w-20"
+            />
+            <span className="text-[12px] text-theme-text-secondary">mm</span>
+          </div>
         </div>
       )}
       {props.showY && (
         <div className="w-full">
           <WidgetLabel>{resolveText('properties_y', 'Y')}</WidgetLabel>
-          <WidgetInput
-            type="number"
-            value={Math.round(node.y ?? 0)}
-            onChange={(e) => onChange({ y: Number(e.target.value) })}
-          />
+          <div className="flex items-center gap-1">
+            <WidgetInput
+              type="number"
+              value={Math.round(node.y ?? 0)}
+              onChange={(e) => onChange({ y: Number(e.target.value) })}
+              className="w-20"
+            />
+            <span className="text-[12px] text-theme-text-secondary">mm</span>
+          </div>
         </div>
       )}
       {props.showW && (
         <div className="w-full">
           <WidgetLabel>{resolveText('properties_width', 'W')}</WidgetLabel>
-          <WidgetInput
-            type="number"
-            value={Math.round(node.w ?? 0)}
-            onChange={(e) => onChange({ w: Number(e.target.value) })}
-          />
+          <div className="flex items-center gap-1">
+            <WidgetInput
+              type="number"
+              min={0}
+              value={Math.round(node.w ?? 0)}
+              onChange={(e) => onChange({ w: Math.max(0, Number(e.target.value)) })}
+              className="w-20"
+            />
+            <span className="text-[12px] text-theme-text-secondary">mm</span>
+          </div>
         </div>
       )}
       {props.showH && (
         <div className="w-full">
           <WidgetLabel>{resolveText('properties_height', 'H')}</WidgetLabel>
-          <WidgetInput
-            type="number"
-            value={Math.round(node.h ?? 0)}
-            onChange={(e) => onChange({ h: Number(e.target.value) })}
-          />
+          <div className="flex items-center gap-1">
+            <WidgetInput
+              type="number"
+              min={0}
+              value={Math.round(node.h ?? 0)}
+              onChange={(e) => onChange({ h: Math.max(0, Number(e.target.value)) })}
+              className="w-20"
+            />
+            <span className="text-[12px] text-theme-text-secondary">mm</span>
+          </div>
         </div>
       )}
     </div>
@@ -240,10 +259,12 @@ export const FontWidget: React.FC<WidgetProps<FontWidgetConfig>> = ({
         )}
         {props.showSize !== false && (
           <div>
-            <WidgetLabel>{resolveText('properties_font_size', 'Size')}</WidgetLabel>
+            <WidgetLabel>{resolveText('properties_font_size', 'Size')}(pt)</WidgetLabel>
             <WidgetSelect
-              value={String(textNode.fontSize ?? 12)}
-              onChange={(e) => onChange({ fontSize: Number(e.target.value) } as Partial<TextNode>)}
+              value={String(mmToPt(textNode.fontSize ?? ptToMm(12)))}
+              onChange={(e) =>
+                onChange({ fontSize: ptToMm(Number(e.target.value)) } as Partial<TextNode>)
+              }
             >
               {sizes.map((s: number) => (
                 <option key={s} value={s}>
@@ -258,7 +279,7 @@ export const FontWidget: React.FC<WidgetProps<FontWidgetConfig>> = ({
       {/* Color */}
       {props.showColor !== false && (
         <div>
-          <WidgetLabel>{resolveText('color', 'Color')}</WidgetLabel>
+          <WidgetLabel>{resolveText('properties_font_color', 'FontColor')}</WidgetLabel>
           <WidgetInput
             type="color"
             value={textNode.fill ?? '#000000'}
@@ -465,10 +486,11 @@ export const StrokeWidget: React.FC<WidgetProps<StrokeWidgetConfig>> = ({
           </WidgetLabel>
           <WidgetInput
             type="number"
-            min={props.minWidth ?? 1}
+            min={0}
             max={props.maxWidth ?? 20}
-            value={strokeNode.strokeW ?? 1}
-            onChange={(e) => onChange({ strokeW: Number(e.target.value) })}
+            step={0.2}
+            value={strokeNode.strokeW ?? 0.2}
+            onChange={(e) => onChange({ strokeW: Math.max(0, Number(e.target.value)) })}
           />
         </div>
       )}
@@ -518,7 +540,9 @@ export const BorderWidget: React.FC<WidgetProps<BorderWidgetConfig>> = ({
     <div className="space-y-2">
       {props.showColor && (
         <div>
-          <WidgetLabel>{resolveText(config.labelKey ?? 'properties_border', 'Border')}</WidgetLabel>
+          <WidgetLabel>
+            {resolveText(config.labelKey ?? 'properties_border_color', 'BorderColor')}
+          </WidgetLabel>
           <WidgetInput
             type="color"
             value={shapeNode.stroke ?? '#000000'}
@@ -533,8 +557,9 @@ export const BorderWidget: React.FC<WidgetProps<BorderWidgetConfig>> = ({
           <WidgetInput
             type="number"
             min={0}
-            value={shapeNode.strokeW ?? 1}
-            onChange={(e) => onChange({ strokeW: Number(e.target.value) })}
+            step={0.2}
+            value={shapeNode.strokeW ?? 0.2}
+            onChange={(e) => onChange({ strokeW: Math.max(0, Number(e.target.value)) })}
           />
         </div>
       )}
@@ -555,9 +580,21 @@ export const ColorPickerWidget: React.FC<WidgetProps<ColorPickerWidgetConfig>> =
   const fieldKey = config.props.fieldKey
   const value = (node as unknown as Record<string, string>)[fieldKey] ?? '#000000'
 
+  const labelKey = config.labelKey ?? 'color'
+  const fallbackLabel =
+    labelKey === 'properties_font_color'
+      ? 'FontColor'
+      : labelKey === 'properties_border_color'
+        ? 'BorderColor'
+        : labelKey === 'properties_line_color'
+          ? 'LineColor'
+          : labelKey === 'properties_fill_color'
+            ? 'FillColor'
+            : 'Color'
+
   return (
     <div>
-      <WidgetLabel>{resolveText(config.labelKey ?? 'color', 'Color')}</WidgetLabel>
+      <WidgetLabel>{resolveText(labelKey, fallbackLabel)}</WidgetLabel>
       <WidgetInput
         type="color"
         value={value}
@@ -809,10 +846,14 @@ export const ImageWidget: React.FC<WidgetProps<ImageWidgetConfig>> = ({
                     if (result) {
                       const img = new Image()
                       img.onload = () => {
+                        const dpi = 96
+                        const naturalW = pxToMm(img.width, { dpi })
+                        const naturalH = pxToMm(img.height, { dpi })
+
                         onChange({
                           src: result,
-                          w: img.width,
-                          h: img.height,
+                          w: naturalW,
+                          h: naturalH,
                         } as Partial<ImageNode>)
                       }
                       img.src = result
@@ -841,6 +882,10 @@ export const SelectWidget: React.FC<WidgetProps<SelectWidgetConfig>> = ({
 }) => {
   const { fieldKey, options } = config.props
 
+  const labelKey =
+    config.labelKey ?? (fieldKey === 'strokeW' ? 'properties_stroke_width' : fieldKey)
+  const fallbackLabel = fieldKey === 'strokeW' ? 'StrokeWidth' : fieldKey
+
   // Handle nested field keys like 'data.orientation'
   const getValue = (): string => {
     const keys = fieldKey.split('.')
@@ -868,7 +913,7 @@ export const SelectWidget: React.FC<WidgetProps<SelectWidgetConfig>> = ({
 
   return (
     <div>
-      <WidgetLabel>{resolveText(config.labelKey ?? fieldKey, fieldKey)}</WidgetLabel>
+      <WidgetLabel>{resolveText(labelKey, fallbackLabel)}</WidgetLabel>
       <WidgetSelect value={getValue()} onChange={(e) => setValue(e.target.value)}>
         {options.map((opt: { value: string; labelKey: string }) => (
           <option key={opt.value} value={opt.value}>

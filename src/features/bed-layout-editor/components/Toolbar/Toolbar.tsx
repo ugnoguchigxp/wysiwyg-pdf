@@ -42,6 +42,7 @@ import type {
   UnifiedNode,
   WidgetNode,
 } from '@/types/canvas'
+import { mmToPx, ptToMm, pxToMm } from '@/utils/units'
 
 export type ToolType = 'select' | 'text' | 'image' | 'bed' | 'shape' | 'line'
 
@@ -162,9 +163,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     const { x, y } = calculateInitialPosition(s)
     const id = `text-${crypto.randomUUID()}`
     const textContent = resolveText('toolbar_default_text', 'Text')
+    const dpi = 96
+    const fontSizeMm = ptToMm(12)
     const font = {
       family: 'Meiryo',
-      size: 12,
+      size: mmToPx(fontSizeMm, { dpi }),
       weight: 400,
     }
     const { width, height } = measureText(textContent, font)
@@ -178,14 +181,14 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       name: 'Text',
       text: textContent,
       font: font.family,
-      fontSize: font.size,
+      fontSize: fontSizeMm,
       fontWeight: font.weight,
       fill: '#000000',
       align: 'l',
       x,
       y,
-      w: width + 10,
-      h: height + 4,
+      w: pxToMm(width + 10, { dpi }),
+      h: pxToMm(height + 4, { dpi }),
     }
     withNewElement(text)
   }
@@ -203,8 +206,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       name: 'Image',
       x,
       y,
-      w: 120,
-      h: 80,
+      w: 40,
+      h: 30,
       src: '',
     }
     withNewElement(image)
@@ -222,7 +225,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       name: 'Wall',
       pts: [x, y, x + 160, y],
       stroke: '#000000',
-      strokeW: 1,
+      strokeW: 0.4,
       arrows: ['none', 'none'],
     }
     withNewElement(line)
@@ -283,9 +286,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       name: 'Bed',
       x,
       y,
-      w: 50,
-      h: 100,
-      data: { bedType: 'standard' },
+      w: 15,
+      h: 30,
+      data: { bedType: 'standard', borderW: 0.4 },
     }
     withNewElement(bed)
   }

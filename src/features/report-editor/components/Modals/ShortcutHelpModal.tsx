@@ -20,6 +20,7 @@ export const ShortcutHelpModal: React.FC<ShortcutHelpModalProps> = ({ open, onOp
     { key: t('shortcut_select_all', 'Select All'), cmd: 'Ctrl/Cmd + A' },
     { key: t('shortcut_move', 'Move'), cmd: 'Arrow Keys' },
     { key: t('shortcut_move_fast', 'Move (Fast)'), cmd: 'Shift + Arrow Keys' },
+    { key: t('shortcut_rotate_snap', 'Snap rotation (45°)'), cmd: 'Hold Shift while rotating' },
   ]
 
   return (

@@ -20,9 +20,9 @@ const INITIAL_BED_DOC: Doc = {
     v: 1,
     id: 'bed-layout-1',
     title: 'New Bed Layout',
-    unit: 'px',
+    unit: 'mm',
     surfaces: [
-        { id: 'layout', type: 'canvas', w: 600, h: 800 },
+        { id: 'layout', type: 'canvas', w: 200, h: 300 },
     ],
     nodes: [],
 }
@@ -65,15 +65,15 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
             const surface = prev.surfaces.find((s: Doc['surfaces'][number]) => s.type === 'canvas') ?? prev.surfaces[0]
             if (!surface) return prev
 
-            let w = 600
-            let h = 800
+            let w = 200
+            let h = 300
 
             if (orientation === 'landscape') {
-                w = 800
-                h = 600
+                w = 300
+                h = 200
             } else if (orientation === 'square') {
-                w = 800
-                h = 800
+                w = 200
+                h = 200
             }
 
             if (surface.w === w && surface.h === h) return prev
@@ -325,8 +325,8 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                             onUndo={undoBed}
                             onRedo={redoBed}
                             zoom={zoom / 100}
-                            onZoomIn={() => setZoom(Math.min(zoom + 10, 200))}
-                            onZoomOut={() => setZoom(Math.max(zoom - 10, 10))}
+                            onZoomIn={() => setZoom(Math.min(zoom + 25, 200))}
+                            onZoomOut={() => setZoom(Math.max(zoom - 25, 25))}
                             surfaceId={bedDoc.surfaces.find((s: Doc['surfaces'][number]) => s.type === 'canvas')?.id || bedDoc.surfaces[0]?.id || 'layout'}
                             i18nOverrides={{
                                 toolbar_text: 'テキスト',

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type {
   BedLayoutDocument,
   Doc,
@@ -6,6 +6,7 @@ import type {
   Operation,
   UnifiedNode,
 } from '@/features/konva-editor/types'
+import { normalizeDocToMm } from '@/utils/normalizeDocToMm'
 
 const MAX_HISTORY_SIZE = 50
 
@@ -24,6 +25,20 @@ export function useEditorHistoryDoc(
 ): UseEditorHistoryReturn {
   const [past, setPast] = useState<Operation[]>([])
   const [future, setFuture] = useState<Operation[]>([])
+
+  const didNormalizeRef = useRef(false)
+
+  useEffect(() => {
+    if (didNormalizeRef.current) return
+    if (!document || document.unit === 'mm') {
+      didNormalizeRef.current = true
+      return
+    }
+
+    const normalized = normalizeDocToMm(document, { dpi: 96, assumeUnitIfMissing: 'mm' })
+    didNormalizeRef.current = true
+    setDocument(normalized)
+  }, [document, setDocument])
 
   const execute = useCallback(
     (operation: Operation) => {

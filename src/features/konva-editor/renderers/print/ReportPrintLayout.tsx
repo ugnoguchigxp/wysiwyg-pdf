@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import '@/features/konva-editor/styles/print.css'
 import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
+import { mmToPt, ptToMm } from '@/utils/units'
 import type {
   Doc,
   ImageNode,
@@ -13,30 +14,46 @@ import type {
   UnifiedNode,
 } from '@/types/canvas'
 
+const mmToPtValue = (mm: number | undefined) => mmToPt(mm ?? 0)
+const mmPt = (mm: number | undefined) => `${mmToPtValue(mm)}pt`
+
 export const RenderSignature = ({ element }: { element: SignatureNode }) => {
   const { strokes, stroke, strokeW } = element
   return (
-    <svg width="100%" height="100%" style={{ overflow: 'visible' }}>
-      {strokes.map((points, i) => (
+    <svg
+      width="100%"
+      height="100%"
+      viewBox={`0 0 ${mmToPtValue(element.w)} ${mmToPtValue(element.h)}`}
+      style={{ overflow: 'visible' }}
+    >
+      {strokes.map((points, i) => {
+        const ptPoints: string[] = []
+        for (let j = 0; j < points.length; j += 2) {
+          ptPoints.push(`${mmToPt(points[j])},${mmToPt(points[j + 1])}`)
+        }
+        return (
         <polyline
           key={i}
-          points={points.join(' ')}
+          points={ptPoints.join(' ')}
           fill="none"
           stroke={stroke || '#000'}
-          strokeWidth={strokeW || 2}
+          strokeWidth={mmToPtValue(strokeW || 2)}
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-      ))}
+        )
+      })}
     </svg>
   )
 }
 
 export const RenderShape = ({ element }: { element: ShapeNode }) => {
-  const { w: width, h: height, shape } = element
+  const { shape } = element
+  const width = mmToPtValue(element.w)
+  const height = mmToPtValue(element.h)
   const fill = element.fill || 'none'
   const stroke = element.stroke || 'none'
-  const strokeWidth = element.strokeW || 1
+  const strokeWidth = mmToPtValue(element.strokeW || 1)
 
   switch (shape) {
     case 'rect':
@@ -49,7 +66,7 @@ export const RenderShape = ({ element }: { element: ShapeNode }) => {
           fill={fill}
           stroke={stroke}
           strokeWidth={strokeWidth}
-          rx={element.radius}
+          rx={mmToPtValue(element.radius)}
         />
       )
     case 'circle':
@@ -92,16 +109,21 @@ export const RenderShape = ({ element }: { element: ShapeNode }) => {
 export const RenderLine = ({ element }: { element: LineNode }) => {
   const { pts, stroke, strokeW } = element
 
+  const ptsPt: number[] = []
+  for (let i = 0; i < pts.length; i++) {
+    ptsPt.push(mmToPt(pts[i]))
+  }
+
   // Calculate bounding box for SVG viewbox/positioning
   let minX = Infinity,
     minY = Infinity,
     maxX = -Infinity,
     maxY = -Infinity
-  for (let i = 0; i < pts.length; i += 2) {
-    if (pts[i] < minX) minX = pts[i]
-    if (pts[i] > maxX) maxX = pts[i]
-    if (pts[i + 1] < minY) minY = pts[i + 1]
-    if (pts[i + 1] > maxY) maxY = pts[i + 1]
+  for (let i = 0; i < ptsPt.length; i += 2) {
+    if (ptsPt[i] < minX) minX = ptsPt[i]
+    if (ptsPt[i] > maxX) maxX = ptsPt[i]
+    if (ptsPt[i + 1] < minY) minY = ptsPt[i + 1]
+    if (ptsPt[i + 1] > maxY) maxY = ptsPt[i + 1]
   }
 
   const width = Math.abs(maxX - minX)
@@ -109,17 +131,23 @@ export const RenderLine = ({ element }: { element: LineNode }) => {
 
   // Points relative to SVG
   const relativePts = []
-  for (let i = 0; i < pts.length; i += 2) {
-    relativePts.push(`${pts[i] - minX},${pts[i + 1] - minY}`)
+  for (let i = 0; i < ptsPt.length; i += 2) {
+    relativePts.push(`${ptsPt[i] - minX},${ptsPt[i + 1] - minY}`)
   }
 
   return (
     <svg
-      width={width + 20}
-      height={height + 20}
-      style={{ overflow: 'visible', position: 'absolute', left: minX, top: minY }}
+      width={`${width + 20}pt`}
+      height={`${height + 20}pt`}
+      viewBox={`0 0 ${width + 20} ${height + 20}`}
+      style={{ overflow: 'visible', position: 'absolute', left: `${minX}pt`, top: `${minY}pt` }}
     >
-      <polyline points={relativePts.join(' ')} stroke={stroke} strokeWidth={strokeW} fill="none" />
+      <polyline
+        points={relativePts.join(' ')}
+        stroke={stroke}
+        strokeWidth={mmToPtValue(strokeW)}
+        fill="none"
+      />
     </svg>
   )
 }
@@ -137,24 +165,24 @@ const RenderTable = ({ element }: { element: TableNode }) => {
   return (
     <table
       style={{
-        width: `${element.w}pt`,
-        height: `${element.h}pt`,
+        width: mmPt(element.w),
+        height: mmPt(element.h),
         borderCollapse: 'collapse',
         tableLayout: 'fixed',
         position: 'absolute',
-        left: `${element.x}pt`,
-        top: `${element.y}pt`,
+        left: mmPt(element.x),
+        top: mmPt(element.y),
         // zIndex: element.z, // Not used
       }}
     >
       <colgroup>
         {cols.map((w, i) => (
-          <col key={i} style={{ width: `${w}pt` }} />
+          <col key={i} style={{ width: mmPt(w) }} />
         ))}
       </colgroup>
       <tbody>
         {rows.map((h, rowIndex) => (
-          <tr key={rowIndex} style={{ height: `${h}pt` }}>
+          <tr key={rowIndex} style={{ height: mmPt(h) }}>
             {cols.map((_, colIndex) => {
               if (occupied[rowIndex][colIndex]) return null
               const cell = cells.find((c) => c.r === rowIndex && c.c === colIndex)
@@ -174,8 +202,8 @@ const RenderTable = ({ element }: { element: TableNode }) => {
 
               if (!cell) return <td key={`${rowIndex}-${colIndex}`} />
 
-              const fontSize = cell.fontSize || 12
-              const borderW = cell.borderW ?? (cell.border ? 1 : 1)
+              const fontSize = cell.fontSize ?? ptToMm(12)
+              const borderW = cell.borderW ?? (cell.border ? 0.2 : 0.2)
               const borderColor = cell.borderColor || cell.border || '#ccc'
 
               return (
@@ -184,16 +212,16 @@ const RenderTable = ({ element }: { element: TableNode }) => {
                   colSpan={colSpan}
                   rowSpan={rowSpan}
                   style={{
-                    border: borderW > 0 ? `${borderW}px solid ${borderColor}` : 'none',
+                    border: borderW > 0 ? `${mmToPtValue(borderW)}pt solid ${borderColor}` : 'none',
                     backgroundColor: cell.bg || 'transparent',
                     fontFamily: cell.font || 'Helvetica',
-                    fontSize: `${fontSize}pt`,
+                    fontSize: `${mmToPtValue(fontSize)}pt`,
                     textAlign:
                       cell.align === 'r' ? 'right' : cell.align === 'c' ? 'center' : 'left',
                     verticalAlign:
                       cell.vAlign === 'b' ? 'bottom' : cell.vAlign === 'm' ? 'middle' : 'top',
                     color: cell.color || '#000000',
-                    padding: '4px',
+                    padding: '4pt',
                     wordBreak: 'break-word',
                     whiteSpace: 'pre-wrap',
                   }}
@@ -241,10 +269,10 @@ const PrintElement = ({ element }: { element: UnifiedNode }) => {
 
   const style: React.CSSProperties = {
     position: 'absolute',
-    left: `${element.x}pt`,
-    top: `${element.y}pt`,
-    width: `${element.w}pt`,
-    height: `${element.h}pt`,
+    left: mmPt(element.x),
+    top: mmPt(element.y),
+    width: mmPt(element.w),
+    height: mmPt(element.h),
     transform: element.r ? `rotate(${element.r}deg)` : undefined,
   }
 
@@ -254,7 +282,7 @@ const PrintElement = ({ element }: { element: UnifiedNode }) => {
       <div
         style={{
           ...style,
-          fontSize: `${textEl.fontSize}pt`,
+          fontSize: `${mmToPtValue(textEl.fontSize)}pt`,
           fontWeight: textEl.fontWeight,
           fontStyle: textEl.italic ? 'italic' : 'normal',
           textDecoration: [
@@ -282,7 +310,12 @@ const PrintElement = ({ element }: { element: UnifiedNode }) => {
   if (element.t === 'shape') {
     return (
       <div style={style}>
-        <svg width="100%" height="100%" style={{ overflow: 'visible' }}>
+        <svg
+          width="100%"
+          height="100%"
+          viewBox={`0 0 ${mmToPtValue(element.w)} ${mmToPtValue(element.h)}`}
+          style={{ overflow: 'visible' }}
+        >
           <RenderShape element={element as ShapeNode} />
         </svg>
       </div>

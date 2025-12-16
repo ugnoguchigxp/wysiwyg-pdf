@@ -71,33 +71,33 @@ export const useKeyboardShortcuts = (handlers: IKeyboardShortcutsHandlers): void
       }
 
       // Arrow Keys: Move selected item
-      const step = e.shiftKey ? 10 : 1
+      const stepMm = e.shiftKey ? 10 : 1
 
       if (e.key === 'ArrowUp') {
         e.preventDefault()
-        log.debug('Keyboard shortcut: Move Up', { step })
-        handlers.onMoveUp?.(step)
+        log.debug('Keyboard shortcut: Move Up', { stepMm })
+        handlers.onMoveUp?.(stepMm)
         return
       }
 
       if (e.key === 'ArrowDown') {
         e.preventDefault()
-        log.debug('Keyboard shortcut: Move Down', { step })
-        handlers.onMoveDown?.(step)
+        log.debug('Keyboard shortcut: Move Down', { stepMm })
+        handlers.onMoveDown?.(stepMm)
         return
       }
 
       if (e.key === 'ArrowLeft') {
         e.preventDefault()
-        log.debug('Keyboard shortcut: Move Left', { step })
-        handlers.onMoveLeft?.(step)
+        log.debug('Keyboard shortcut: Move Left', { stepMm })
+        handlers.onMoveLeft?.(stepMm)
         return
       }
 
       if (e.key === 'ArrowRight') {
         e.preventDefault()
-        log.debug('Keyboard shortcut: Move Right', { step })
-        handlers.onMoveRight?.(step)
+        log.debug('Keyboard shortcut: Move Right', { stepMm })
+        handlers.onMoveRight?.(stepMm)
         return
       }
 

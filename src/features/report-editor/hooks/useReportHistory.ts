@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import type { Doc } from '@/features/konva-editor/types'
+import { normalizeDocToMm } from '@/utils/normalizeDocToMm'
 
 interface UseHistoryReturn {
   document: Doc
@@ -21,7 +22,7 @@ export function useReportHistory(initialDocument: Doc): UseHistoryReturn {
     future: Doc[]
   }>({
     past: [],
-    present: initialDocument,
+    present: normalizeDocToMm(initialDocument, { dpi: 96, assumeUnitIfMissing: 'mm' }),
     future: [],
   })
 
@@ -93,7 +94,7 @@ export function useReportHistory(initialDocument: Doc): UseHistoryReturn {
   const reset = useCallback((doc: Doc) => {
     setHistory({
       past: [],
-      present: doc,
+      present: normalizeDocToMm(doc, { dpi: 96, assumeUnitIfMissing: 'mm' }),
       future: [],
     })
   }, [])

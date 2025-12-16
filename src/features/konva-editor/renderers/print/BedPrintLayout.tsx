@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useI18n } from '@/i18n/I18nContext'
 import { RenderLine, RenderShape } from '@/features/konva-editor/renderers/print/ReportPrintLayout'
 import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
+import { mmToPt } from '@/utils/units'
 import type {
   Doc,
   ImageNode,
@@ -12,52 +13,50 @@ import type {
   WidgetNode,
 } from '@/types/canvas'
 
+const mmToPtValue = (mm: number | undefined) => mmToPt(mm ?? 0)
+const mmPt = (mm: number | undefined) => `${mmToPtValue(mm)}pt`
+
 const RenderBed = ({ element }: { element: WidgetNode }) => {
   const { t } = useI18n()
   const data = element.data || {}
   const status = (data.status as string) || 'idle'
   const patientName = (data.patientName as string) || ''
   const bloodPressure = (data.bloodPressure as string) || ''
-  const orientation = (data.orientation as string) || 'horizontal'
   const label = (data.label as string) || t('toolbar_bed', 'Bed')
 
   // Status colors (Matching BedElement.tsx)
   let strokeColor = '#3b82f6' // Default Blue (Idle)
-  let strokeWidth = 2
+  let strokeWidth = typeof (data as { borderW?: unknown }).borderW === 'number'
+    ? Math.max(0, (data as { borderW?: number }).borderW ?? 0.4)
+    : 0.4
   let bgColor = '#ffffff'
 
   if (status === 'active') {
     strokeColor = '#22c55e' // Green (Active)
-    strokeWidth = 3
+    strokeWidth = strokeWidth * 1.5
   } else if (status === 'warning') {
     strokeColor = '#eab308' // Yellow (Warning)
-    strokeWidth = 4
+    strokeWidth = strokeWidth * 2
     bgColor = '#fefce8' // Light yellow background
   } else if (status === 'alarm') {
     strokeColor = '#ef4444' // Red (Alarm)
-    strokeWidth = 4
+    strokeWidth = strokeWidth * 2
     bgColor = '#fef2f2' // Light red background
   }
 
-  const isVertical = orientation === 'vertical'
-
-  // Pillow style
-  const pillowStyle: React.CSSProperties = isVertical
-    ? {
-        top: '5px',
-        left: '10%',
-        width: '80%',
-        height: '20px',
-      }
-    : {
-        top: '10%',
-        left: '5px',
-        width: '20px',
-        height: '80%',
-      }
+  // Pillow style (fixed; bed rotation handles orientation)
+  const pillowStyle: React.CSSProperties = {
+    top: '10%',
+    left: '5pt',
+    width: '20pt',
+    height: '80%',
+  }
 
   const textHalo =
     '2px 0 0 white, -2px 0 0 white, 0 2px 0 white, 0 -2px 0 white, 1px 1px 0 white, -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white'
+
+  const cornerR = 1
+  const pillowR = 0.5
 
   return (
     <div
@@ -65,8 +64,8 @@ const RenderBed = ({ element }: { element: WidgetNode }) => {
         width: '100%',
         height: '100%',
         backgroundColor: bgColor,
-        border: `${strokeWidth}px solid ${strokeColor}`,
-        borderRadius: '4px',
+        border: `${mmToPtValue(strokeWidth)}pt solid ${strokeColor}`,
+        borderRadius: mmPt(cornerR),
         position: 'relative',
         boxSizing: 'border-box',
         overflow: 'hidden',
@@ -77,7 +76,7 @@ const RenderBed = ({ element }: { element: WidgetNode }) => {
         style={{
           position: 'absolute',
           backgroundColor: '#e5e7eb',
-          borderRadius: '2px',
+          borderRadius: mmPt(pillowR),
           opacity: 0.5,
           ...pillowStyle,
         }}
@@ -98,7 +97,7 @@ const RenderBed = ({ element }: { element: WidgetNode }) => {
       >
         <div
           style={{
-            fontSize: '18px',
+            fontSize: '18pt',
             fontWeight: 'bold',
             color: '#374151',
             textShadow: textHalo,
@@ -112,13 +111,13 @@ const RenderBed = ({ element }: { element: WidgetNode }) => {
         {patientName && (
           <div
             style={{
-              fontSize: '18px',
+              fontSize: '18pt',
               fontWeight: 'bold',
               color: '#000000',
               textShadow: textHalo,
               lineHeight: 1,
               textAlign: 'center',
-              marginTop: '18px',
+              marginTop: '18pt',
             }}
           >
             {patientName}
@@ -127,12 +126,12 @@ const RenderBed = ({ element }: { element: WidgetNode }) => {
         {bloodPressure && (
           <div
             style={{
-              fontSize: '18px',
+              fontSize: '18pt',
               color: '#000000',
               textShadow: textHalo,
               lineHeight: 1,
               textAlign: 'center',
-              marginTop: '18px',
+              marginTop: '18pt',
             }}
           >
             {bloodPressure}
@@ -181,10 +180,10 @@ const BedPrintElement: React.FC<{
 
   const style: React.CSSProperties = {
     position: 'absolute',
-    left: `${element.x}px`,
-    top: `${element.y}px`,
-    width: `${element.w}px`,
-    height: `${element.h}px`,
+    left: mmPt(element.x),
+    top: mmPt(element.y),
+    width: mmPt(element.w),
+    height: mmPt(element.h),
     transform: element.r ? `rotate(${element.r}deg)` : undefined,
     // zIndex: element.z,
   }
@@ -203,7 +202,7 @@ const BedPrintElement: React.FC<{
       <div
         style={{
           ...style,
-          fontSize: `${textEl.fontSize}px`,
+          fontSize: `${mmToPtValue(textEl.fontSize)}pt`,
           fontWeight: textEl.fontWeight,
           fontStyle: textEl.italic ? 'italic' : 'normal',
           textDecoration: [
@@ -230,7 +229,12 @@ const BedPrintElement: React.FC<{
   if (element.t === 'shape') {
     return (
       <div style={style}>
-        <svg width="100%" height="100%" style={{ overflow: 'visible' }}>
+        <svg
+          width="100%"
+          height="100%"
+          viewBox={`0 0 ${mmToPtValue(element.w)} ${mmToPtValue(element.h)}`}
+          style={{ overflow: 'visible' }}
+        >
           <title>{resolveText('properties_preview', 'Preview')}</title>
           <RenderShape element={element as ShapeNode} />
         </svg>
@@ -258,11 +262,11 @@ const BedPrintElement: React.FC<{
             style={{
               width: '100%',
               height: '100%',
-              border: '1px dashed gray',
+              border: '1pt dashed gray',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '10px',
+              fontSize: '10pt',
               color: 'gray',
             }}
           >
@@ -296,8 +300,8 @@ export const BedPrintLayout = React.forwardRef<
       <div
         className="print-page"
         style={{
-          width: `${width}px`,
-          height: `${height}px`,
+          width: mmPt(width),
+          height: mmPt(height),
           backgroundColor: 'white',
           position: 'relative',
           overflow: 'hidden',
