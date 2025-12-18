@@ -1,17 +1,9 @@
 import type React from 'react'
 import { Group, Rect } from 'react-konva'
-import type { BedLayoutDocument, Doc, FormDocument } from '@/types/canvas'
-
-function isDoc(document: Doc | FormDocument | BedLayoutDocument): document is Doc {
-  return (
-    (document as Doc).v === 1 &&
-    Array.isArray((document as Doc).surfaces) &&
-    Array.isArray((document as Doc).nodes)
-  )
-}
+import type { Doc } from '@/types/canvas'
 
 interface PaperBackgroundProps {
-  document: Doc | FormDocument | BedLayoutDocument
+  document: Doc
   surfaceId?: string
 }
 
@@ -19,19 +11,11 @@ export const PaperBackground: React.FC<PaperBackgroundProps> = ({ document, surf
   let width = 0
   let height = 0
 
-  if (isDoc(document)) {
-    const surface = surfaceId
-      ? document.surfaces.find((s) => s.id === surfaceId)
-      : (document.surfaces.find((s) => s.type === 'canvas') ?? document.surfaces[0])
-    width = surface?.w ?? 0
-    height = surface?.h ?? 0
-  } else if (document.type === 'form') {
-    width = document.paper.width
-    height = document.paper.height
-  } else {
-    width = document.layout.width
-    height = document.layout.height
-  }
+  const surface = surfaceId
+    ? document.surfaces.find((s) => s.id === surfaceId)
+    : (document.surfaces.find((s) => s.type === 'canvas') ?? document.surfaces[0])
+  width = surface?.w ?? 0
+  height = surface?.h ?? 0
 
   return (
     <Group>

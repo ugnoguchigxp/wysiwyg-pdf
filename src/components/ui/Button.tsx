@@ -11,7 +11,6 @@
 
 import { Slot } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
-// import { useTheme } from '@src/contexts/ThemeContext';
 import { Check, X } from 'lucide-react'
 import * as React from 'react'
 import { cn } from '../../utils/utils'
@@ -101,23 +100,15 @@ const ButtonComponent = React.forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    // deleted useTheme
-
     const statefulVariant = success ? 'positive' : error ? 'delete' : variant
     const resolvedVariant = (statefulVariant || 'default') as VariantProps<
       typeof buttonVariants
     >['variant']
 
-    const textColorClass = ''
-
     if (asChild) {
       return (
         <Slot
-          className={cn(
-            buttonVariants({ variant: resolvedVariant, size }),
-            textColorClass,
-            className
-          )}
+          className={cn(buttonVariants({ variant: resolvedVariant, size }), className)}
           ref={ref}
           {...props}
         >
@@ -154,7 +145,6 @@ const ButtonComponent = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         className={cn(
           buttonVariants({ variant: resolvedVariant, size }),
-          textColorClass,
           (loading || success || error) && 'hover:!brightness-100',
           className
         )}

@@ -46,7 +46,7 @@ export const KonvaViewer: React.FC<KonvaViewerProps> = ({
     const bbox = getLayoutBoundingBox({
       ...localDocument,
       nodes,
-    } as import('../../konva-editor/types').Doc)
+    })
 
     // Fallback to full layout if no content or error
     if (!bbox) {

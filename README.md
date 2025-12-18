@@ -68,6 +68,8 @@ Use versions compatible with this package’s `peerDependencies`.
 
 This package does not ship an i18n library. Instead, you inject a translator function via `I18nProvider`.
 
+`t` is optional; if omitted, the default translator returns `fallback ?? key`.
+
 ```tsx
 import { I18nProvider } from 'wysiwyg-pdf'
 
@@ -97,17 +99,143 @@ export function App() {
 The UI relies heavily on:
 
 - Tailwind utility classes (layout, spacing, borders)
-- Theme CSS variables such as `--theme-bg-primary`, `--theme-text-primary`, etc.
+- shadcn-style CSS variables such as `--background`, `--foreground`, `--primary`, `--border`, etc.
 
-You should either:
+You should:
 
-- Use Tailwind in your host app and define the required `--theme-*` variables
-- Or port the CSS from `wysiwyg-pdf/example/src/index.css` (and the root `src/index.css` in this repository) to your project
+- Use Tailwind in your host app, and ensure Tailwind scans this package for class usage
+- Define the required shadcn-style CSS variables in your global CSS (light/dark)
 
-This package also ships a base stylesheet you can import:
+This package also ships a base stylesheet you can import (recommended):
 
 ```ts
 import 'wysiwyg-pdf/styles.css'
+```
+
+#### Tailwind content/@source setup (host app)
+
+Because this package uses Tailwind class strings at runtime, your host app’s Tailwind build must include this package in its scan targets.
+
+Tailwind v3/v4 (tailwind.config):
+
+```js
+// tailwind.config.{js,ts}
+export default {
+  content: [
+    './src/**/*.{js,ts,jsx,tsx}',
+    './node_modules/wysiwyg-pdf/dist/**/*.{js,cjs,mjs}',
+  ],
+}
+```
+
+Tailwind v4 (@source):
+
+```css
+/* your app entry CSS */
+@source "../node_modules/wysiwyg-pdf/dist/**/*.{js,cjs,mjs}";
+```
+
+#### CSS variables (host app)
+
+Define shadcn-style tokens in your global CSS. Minimal example:
+
+```css
+:root {
+  --background: 0 0% 100%;
+  --foreground: 210 20% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 210 20% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 210 20% 10%;
+  --primary: 220 90% 45%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 96%;
+  --secondary-foreground: 210 20% 10%;
+  --muted: 0 0% 96%;
+  --muted-foreground: 210 10% 45%;
+  --accent: 210 100% 26%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 75% 65%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 210 16% 82%;
+  --input: 210 16% 82%;
+  --ring: 210 100% 26%;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 210 20% 10%;
+  --foreground: 210 30% 96%;
+  --card: 210 20% 10%;
+  --card-foreground: 210 30% 96%;
+  --popover: 210 20% 10%;
+  --popover-foreground: 210 30% 96%;
+  --primary: 200 95% 42%;
+  --primary-foreground: 210 20% 10%;
+  --secondary: 210 20% 16%;
+  --secondary-foreground: 210 30% 96%;
+  --muted: 210 20% 16%;
+  --muted-foreground: 210 15% 60%;
+  --accent: 210 85% 42%;
+  --accent-foreground: 210 20% 10%;
+  --destructive: 0 75% 38%;
+  --destructive-foreground: 210 30% 96%;
+  --border: 210 20% 30%;
+  --input: 210 20% 30%;
+  --ring: 210 85% 42%;
+}
+```
+
+And in your Tailwind config, map the tokens (shadcn convention):
+
+```js
+// tailwind.config.{js,ts}
+export default {
+  theme: {
+    extend: {
+      colors: {
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+        },
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
+        },
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
+        },
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
+        },
+      },
+      borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
+      },
+    },
+  },
+}
 ```
 
 ### 3) Print CSS import

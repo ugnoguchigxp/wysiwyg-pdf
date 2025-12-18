@@ -1,4 +1,4 @@
-import type { BedLayoutDocument, Doc, FormDocument, UnifiedNode } from '@/types/canvas'
+import type { Doc, UnifiedNode } from '@/types/canvas'
 
 export * from '@/types/canvas'
 
@@ -21,7 +21,7 @@ export type Operation =
 // エディタ状態 (EditorState)
 export interface EditorState {
   // 編集中のドキュメント実体
-  document: Doc | FormDocument | BedLayoutDocument
+  document: Doc
 
   // 履歴管理 (Undo/Redo用)
   history: {
@@ -60,13 +60,13 @@ export type PageSize =
     }
 
 export interface ICanvasEditorProps {
-  templateDoc: Doc | FormDocument | BedLayoutDocument // Unified Doc is preferred; legacy docs are supported for compatibility
+  templateDoc: Doc
   selectedElement?: UnifiedNode
   selectedElementId?: string
   onElementSelect: (element: UnifiedNode | null) => void
   onElementUpdate: (element: UnifiedNode) => void
-  onTemplateUpdate: (template: Doc | FormDocument | BedLayoutDocument) => void
-  onTemplateChange: (template: Doc | FormDocument | BedLayoutDocument) => void
+  onTemplateUpdate: (template: Doc) => void
+  onTemplateChange: (template: Doc) => void
   zoom: number
 
   isPresentationMode?: boolean

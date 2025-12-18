@@ -254,10 +254,7 @@ export const UnifiedPropertyPanel: React.FC<UnifiedPropertyPanelProps> = ({
   if (!selectedNode) {
     return emptyStateContent ? (
       <div
-        className={cn(
-          'bg-secondary border-l border-border p-4 overflow-y-auto',
-          className
-        )}
+        className={cn('bg-secondary border-l border-border p-4 overflow-y-auto', className)}
         style={{ width: config.layout.width }}
       >
         {emptyStateContent}
