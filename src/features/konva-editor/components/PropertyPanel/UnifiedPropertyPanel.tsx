@@ -60,7 +60,7 @@ const SectionHeader: React.FC<{
   return (
     <h4
       className={cn(
-        'text-[11px] font-medium text-theme-text-secondary mb-1',
+        'text-[11px] font-medium text-muted-foreground mb-1',
         collapsible && 'cursor-pointer flex items-center justify-between'
       )}
       onClick={collapsible ? onToggle : undefined}
@@ -137,7 +137,7 @@ const PanelHeader: React.FC<{
 }> = ({ labelKey, resolveText }) => {
   return (
     <div className="flex justify-end mb-1">
-      <span className="px-2 py-0.5 text-xs bg-theme-accent text-theme-text-on-color rounded-full">
+      <span className="px-2 py-0.5 text-xs bg-accent text-accent-foreground rounded-full">
         {resolveText(labelKey, labelKey)}
       </span>
     </div>
@@ -149,7 +149,7 @@ const DeleteButton: React.FC<{
   onClick: () => void
   resolveText: (key: string, fallback?: string) => string
 }> = ({ onClick, resolveText }) => (
-  <div className="mt-4 pt-4 border-t border-theme-border">
+  <div className="mt-4 pt-4 border-t border-border">
     <button
       onClick={onClick}
       className="w-full py-1 text-xs text-red-500 hover:text-red-700 border border-red-200 hover:bg-red-50 rounded"
@@ -255,7 +255,7 @@ export const UnifiedPropertyPanel: React.FC<UnifiedPropertyPanelProps> = ({
     return emptyStateContent ? (
       <div
         className={cn(
-          'bg-theme-bg-secondary border-l border-theme-border p-4 overflow-y-auto',
+          'bg-secondary border-l border-border p-4 overflow-y-auto',
           className
         )}
         style={{ width: config.layout.width }}
@@ -302,7 +302,7 @@ export const UnifiedPropertyPanel: React.FC<UnifiedPropertyPanelProps> = ({
   return (
     <div
       className={cn(
-        'w-full bg-theme-bg-secondary overflow-x-hidden overflow-y-auto text-theme-text-primary px-2 py-1',
+        'w-full bg-secondary overflow-x-hidden overflow-y-auto text-foreground px-2 py-1',
         className
       )}
     >

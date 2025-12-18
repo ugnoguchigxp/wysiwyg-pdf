@@ -139,7 +139,7 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
     }
 
     return (
-        <div className="flex flex-col h-screen w-screen overflow-hidden bg-theme-bg-primary text-theme-text-primary transition-colors duration-200">
+        <div className="flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground transition-colors duration-200">
             {/* Header */}
             <EditorHeader
                 templateName={templateName}
@@ -234,7 +234,7 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
             >
                 <button
                     onClick={() => setDarkMode(!darkMode)}
-                    className="p-2 rounded-md hover:bg-theme-bg-tertiary text-theme-text-secondary transition-colors"
+                    className="p-2 rounded-md hover:bg-accent text-muted-foreground transition-colors"
                 >
                     {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                 </button>
@@ -250,7 +250,7 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
             {/* Main Content Area */}
             <div className="flex flex-1 overflow-hidden">
                 {/* Left Toolbar */}
-                <div className="w-16 border-r border-theme-border bg-theme-bg-secondary shrink-0 flex flex-col z-10 shadow-[1px_0_3px_rgb(0,0,0,0.05)]">
+                <div className="w-16 border-r border-border bg-secondary shrink-0 flex flex-col z-10 shadow-[1px_0_3px_rgb(0,0,0,0.05)]">
                     <WysiwygEditorToolbar
                         zoom={zoom}
                         onZoomChange={setZoom}
@@ -294,7 +294,7 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
                 </div>
 
                 {/* Right Properties Panel */}
-                <div className="w-72 border-l border-theme-border bg-theme-bg-secondary shrink-0 overflow-hidden flex flex-col z-10 shadow-[-1px_0_3px_rgb(0,0,0,0.05)]">
+                <div className="w-72 border-l border-border bg-secondary shrink-0 overflow-hidden flex flex-col z-10 shadow-[-1px_0_3px_rgb(0,0,0,0.05)]">
                     <WysiwygPropertiesPanel
                         templateDoc={doc}
                         selectedElementId={selectedElementId}

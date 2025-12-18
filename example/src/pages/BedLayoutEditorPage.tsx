@@ -161,7 +161,7 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
     } as UseReactToPrintOptions)
 
     return (
-        <div className="flex flex-col h-screen w-screen overflow-hidden bg-theme-bg-primary text-theme-text-primary transition-colors duration-200">
+        <div className="flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground transition-colors duration-200">
             {/* Header */}
             {/* Header */}
             <BedLayoutHeader
@@ -278,7 +278,7 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
             >
                 <button
                     onClick={() => setIsDashboardMode(!isDashboardMode)}
-                    className={`p-2 rounded-md hover:bg-theme-bg-tertiary transition-colors flex items-center gap-2 ${isDashboardMode ? 'text-blue-500 bg-blue-100 dark:bg-blue-900' : 'text-theme-text-secondary'}`}
+                    className={`p-2 rounded-md hover:bg-accent transition-colors flex items-center gap-2 ${isDashboardMode ? 'text-blue-500 bg-blue-100 dark:bg-blue-900' : 'text-muted-foreground'}`}
                     title={isDashboardMode ? "Switch to Editor" : "Switch to Dashboard"}
                 >
                     {isDashboardMode ? <Edit className="w-4 h-4" /> : <LayoutDashboard className="w-4 h-4" />}
@@ -286,7 +286,7 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
 
                 <button
                     onClick={() => setDarkMode(!darkMode)}
-                    className="p-2 rounded-md hover:bg-theme-bg-tertiary text-theme-text-secondary transition-colors"
+                    className="p-2 rounded-md hover:bg-accent text-muted-foreground transition-colors"
                 >
                     {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                 </button>
@@ -308,7 +308,7 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
             {/* Main Content Area */}
             <div className="flex flex-1 overflow-hidden">
                 {!isDashboardMode && (
-                    <div className="w-16 border-r border-theme-border bg-theme-bg-secondary shrink-0 flex flex-col z-10 shadow-[1px_0_3px_rgb(0,0,0,0.05)]">
+                    <div className="w-16 border-r border-border bg-secondary shrink-0 flex flex-col z-10 shadow-[1px_0_3px_rgb(0,0,0,0.05)]">
                         <BedToolbar
                             activeTool={activeTool as any}
                             document={bedDoc}
@@ -382,7 +382,7 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
 
                 {/* Right Properties Panel */}
                 {!isDashboardMode && (
-                    <div className="w-72 border-l border-theme-border bg-theme-bg-secondary shrink-0 overflow-hidden flex flex-col z-10 shadow-[-1px_0_3px_rgb(0,0,0,0.05)]">
+                    <div className="w-72 border-l border-border bg-secondary shrink-0 overflow-hidden flex flex-col z-10 shadow-[-1px_0_3px_rgb(0,0,0,0.05)]">
                         <BedPropertyPanel
                             selectedElement={
                                 selectedElementId

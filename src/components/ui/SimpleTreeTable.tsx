@@ -45,12 +45,12 @@ export const SimpleTreeTable = <TData, TValue = unknown>({
   return (
     <div
       className={cn(
-        'w-full border border-theme-border rounded-md overflow-hidden bg-white',
+        'w-full border border-border rounded-md overflow-hidden bg-background',
         className
       )}
     >
       <table className="w-full text-sm text-left">
-        <thead className="bg-gray-50 text-gray-500 font-medium border-b border-theme-border">
+        <thead className="bg-muted text-muted-foreground font-medium border-b border-border">
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
@@ -69,7 +69,7 @@ export const SimpleTreeTable = <TData, TValue = unknown>({
               <tr
                 key={row.id}
                 className={cn(
-                  'border-b border-theme-border last:border-0 hover:bg-gray-50 transition-colors',
+                  'border-b border-border last:border-0 hover:bg-muted/50 transition-colors text-foreground',
                   onRowClick ? 'cursor-pointer' : ''
                 )}
                 onClick={() => onRowClick?.(row.original)}
@@ -85,7 +85,7 @@ export const SimpleTreeTable = <TData, TValue = unknown>({
                             e.stopPropagation()
                             row.toggleExpanded()
                           }}
-                          className="p-0.5 rounded hover:bg-gray-200"
+                          className="p-0.5 rounded hover:bg-accent"
                         >
                           <ChevronRight
                             size={14}
@@ -118,7 +118,7 @@ export const SimpleTreeTable = <TData, TValue = unknown>({
         </tbody>
       </table>
       {table.getRowModel().rows.length === 0 && (
-        <div className="p-4 text-center text-gray-400">No data found</div>
+        <div className="p-4 text-center text-muted-foreground">No data found</div>
       )}
     </div>
   )

@@ -610,7 +610,7 @@ export const DEFAULT_PANEL_LAYOUT: PanelLayout = {
   width: 256,
   padding: 16,
   sectionGap: 16,
-  backgroundColor: 'theme-bg-secondary',
+  backgroundColor: 'secondary',
 }
 
 export const REPORT_PANEL_CONFIG: PropertyPanelConfig = {

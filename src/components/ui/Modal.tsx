@@ -106,7 +106,7 @@ const Modal = React.memo(
           {!noHeader && (
             <div
               className={cn(
-                'flex flex-col space-y-1.5 border-b border-theme-border bg-theme-bg-secondary/50 flex-shrink-0',
+                'flex flex-col space-y-1.5 border-b border-border bg-secondary/50 flex-shrink-0',
                 draggable && 'cursor-move',
                 noPadding ? 'p-1' : 'p-1.5'
               )}
@@ -123,19 +123,19 @@ const Modal = React.memo(
               <div className="flex items-center justify-between">
                 <DialogPrimitive.Title
                   className={cn(
-                    'text-lg font-semibold leading-none tracking-tight text-theme-text-primary',
+                    'text-lg font-semibold leading-none tracking-tight text-foreground',
                     !title && 'sr-only'
                   )}
                 >
                   {title || t('dialog', 'Dialog')}
                 </DialogPrimitive.Title>
-                <DialogPrimitive.Close className="rounded-full p-1 opacity-70 ring-offset-background transition-all hover:opacity-100 hover:bg-theme-hover focus:outline-none disabled:pointer-events-none cursor-pointer">
-                  <X className="h-5 w-5 text-theme-text-primary" />
+                <DialogPrimitive.Close className="rounded-full p-1 opacity-70 ring-offset-background transition-all hover:opacity-100 hover:bg-accent focus:outline-none disabled:pointer-events-none cursor-pointer">
+                  <X className="h-5 w-5 text-foreground" />
                   <span className="sr-only">{t('close', 'Close')}</span>
                 </DialogPrimitive.Close>
               </div>
               {description && (
-                <DialogPrimitive.Description className="text-sm text-theme-text-secondary">
+                <DialogPrimitive.Description className="text-sm text-muted-foreground">
                   {description}
                 </DialogPrimitive.Description>
               )}
@@ -155,7 +155,7 @@ const Modal = React.memo(
           {footer && (
             <div
               className={cn(
-                'flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 bg-theme-bg-primary flex-shrink-0',
+                'flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 bg-background flex-shrink-0',
                 'p-2',
                 footerClassName
               )}
@@ -175,18 +175,18 @@ const Modal = React.memo(
               ref={ref}
               {...(!description ? ({ 'aria-describedby': undefined } as const) : {})}
               className={cn(
-                'fixed z-50 flex flex-col gap-0 bg-theme-bg-primary',
+                'fixed z-50 flex flex-col gap-0 bg-background',
                 !draggable && 'duration-200',
                 !draggable &&
                   'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
                 !draggable &&
-                  'bottom-0 left-0 right-0 w-full h-[90vh] rounded-t-xl border-t border-theme-border',
+                  'bottom-0 left-0 right-0 w-full h-[90vh] rounded-t-xl border-t border-border',
                 !draggable &&
                   'data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom',
                 draggable &&
-                  'left-[50%] top-[50%] h-auto max-h-[90vh] w-[90vw] max-w-lg rounded-md border border-theme-border',
+                  'left-[50%] top-[50%] h-auto max-h-[90vh] w-[90vw] max-w-lg rounded-md border border-border',
                 !draggable &&
-                  'sm:left-[50%] sm:top-[50%] sm:bottom-auto sm:right-auto sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-md sm:border sm:border-theme-border',
+                  'sm:left-[50%] sm:top-[50%] sm:bottom-auto sm:right-auto sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-md sm:border sm:border-border',
                 !draggable && 'sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95',
                 !draggable &&
                   'sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%]',
@@ -224,7 +224,7 @@ export const ModalFooter: React.FC<{
   return (
     <div
       className={cn(
-        'flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-2 bg-theme-bg-primary flex-shrink-0 p-2',
+        'flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-2 bg-background flex-shrink-0 p-2',
         className
       )}
     >

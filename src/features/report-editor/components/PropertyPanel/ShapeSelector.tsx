@@ -57,7 +57,7 @@ export const ShapeSelector: React.FC<ShapeSelectorProps> = ({
             }}
           >
             <div className="flex items-center gap-2">
-              <span className="flex items-center justify-center w-4 h-4 text-theme-text-primary">
+              <span className="flex items-center justify-center w-4 h-4 text-foreground">
                 {option.icon}
               </span>
               <span>{option.label}</span>

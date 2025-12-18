@@ -29,7 +29,7 @@ const SelectTrigger = React.memo(
       <SelectPrimitive.Icon asChild>
         <ChevronDown
           className="h-5 w-5 shrink-0"
-          style={{ color: 'hsl(var(--theme-text-primary))', opacity: 0.5 }}
+          style={{ color: 'hsl(var(--foreground))', opacity: 0.5 }}
         />
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
@@ -80,13 +80,13 @@ const SelectContent = React.memo(
         </SelectPrimitive.Viewport>
         <SelectPrimitive.ScrollUpButton
           className="flex cursor-default items-center justify-center py-2"
-          style={{ color: 'hsl(var(--theme-text-primary))' }}
+          style={{ color: 'hsl(var(--foreground))' }}
         >
           <ChevronUp className="h-5 w-5" />
         </SelectPrimitive.ScrollUpButton>
         <SelectPrimitive.ScrollDownButton
           className="flex cursor-default items-center justify-center py-2"
-          style={{ color: 'hsl(var(--theme-text-primary))' }}
+          style={{ color: 'hsl(var(--foreground))' }}
         >
           <ChevronDown className="h-5 w-5" />
         </SelectPrimitive.ScrollDownButton>
@@ -103,7 +103,7 @@ const SelectLabel = React.forwardRef<
   <SelectPrimitive.Label
     ref={ref}
     className={cn('px-3 py-2 text-base font-semibold', className)}
-    style={{ color: 'hsl(var(--theme-text-primary))' }}
+    style={{ color: 'hsl(var(--foreground))' }}
     {...props}
   />
 ))
@@ -124,7 +124,7 @@ const SelectItem = React.memo(
     >
       <span className="absolute left-4 flex h-5 w-5 items-center justify-center">
         <SelectPrimitive.ItemIndicator>
-          <Check className="h-4 w-4" style={{ color: 'hsl(var(--theme-accent))' }} />
+          <Check className="h-4 w-4" style={{ color: 'hsl(var(--accent))' }} />
         </SelectPrimitive.ItemIndicator>
       </span>
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
@@ -140,7 +140,7 @@ const SelectSeparator = React.forwardRef<
   <SelectPrimitive.Separator
     ref={ref}
     className={cn('-mx-1 my-1 h-px', className)}
-    style={{ backgroundColor: 'hsl(var(--theme-border))' }}
+    style={{ backgroundColor: 'hsl(var(--border))' }}
     {...props}
   />
 ))

@@ -155,8 +155,8 @@ export const DataBindingModal: React.FC<DataBindingModalProps> = ({
             <span
               className={
                 item.type === 'category'
-                  ? 'font-bold text-theme-text-primary'
-                  : 'font-medium text-theme-text-secondary'
+                  ? 'font-bold text-foreground'
+                  : 'font-medium text-muted-foreground'
               }
             >
               {info.getValue()}
@@ -171,14 +171,14 @@ export const DataBindingModal: React.FC<DataBindingModalProps> = ({
           const typeValue = info.getValue()
           if (typeValue === 'category')
             return (
-              <span className="text-xs font-semibold text-theme-text-tertiary uppercase tracking-wider">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 {t('data_binding_category', 'Category')}
               </span>
             )
           return (
             <div className="flex items-center gap-2">
               {getFieldIcon(typeValue as ISchemaField['type'])}
-              <span className="text-xs text-theme-text-secondary capitalize">{typeValue}</span>
+              <span className="text-xs text-muted-foreground capitalize">{typeValue}</span>
             </div>
           )
         },
@@ -195,7 +195,7 @@ export const DataBindingModal: React.FC<DataBindingModalProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0 gap-0">
-        <DialogHeader className="px-6 py-4 border-b border-theme-border">
+        <DialogHeader className="px-6 py-4 border-b border-border">
           <DialogTitle>
             {mode === 'field'
               ? t('data_binding_select_field', 'Select Field')
@@ -203,7 +203,7 @@ export const DataBindingModal: React.FC<DataBindingModalProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 flex flex-col p-4 min-h-0 overflow-hidden bg-theme-bg-secondary">
+        <div className="flex-1 flex flex-col p-4 min-h-0 overflow-hidden bg-secondary">
           <div className="w-full max-w-sm mb-4 shrink-0">
             <SimpleSearchInput
               placeholder={t('search_placeholder', 'Search...')}
@@ -212,7 +212,7 @@ export const DataBindingModal: React.FC<DataBindingModalProps> = ({
               autoFocus
             />
           </div>
-          <div className="flex-1 min-h-0 overflow-auto bg-theme-bg-primary rounded-md border border-theme-border">
+          <div className="flex-1 min-h-0 overflow-auto bg-background rounded-md border border-border">
             <SimpleTreeTable
               data={hierarchyItems}
               columns={columns}
@@ -224,7 +224,7 @@ export const DataBindingModal: React.FC<DataBindingModalProps> = ({
           </div>
         </div>
 
-        <DialogFooter className="p-4 border-t border-theme-border bg-theme-bg-primary">
+        <DialogFooter className="p-4 border-t border-border bg-background">
           <Button variant="outline" size="sm" onClick={onClose}>
             {t('cancel', 'Cancel')}
           </Button>

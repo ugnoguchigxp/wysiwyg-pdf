@@ -59,9 +59,9 @@ export const ReportEditor: React.FC<ReportEditorProps> = ({
   }, [])
 
   return (
-    <div className="flex h-full w-full overflow-hidden border border-theme-border bg-theme-bg-primary text-theme-text-primary">
+    <div className="flex h-full w-full overflow-hidden border border-border bg-background text-foreground">
       {/* Left Toolbar */}
-      <div className="w-16 border-r border-theme-border bg-theme-bg-secondary shrink-0 flex flex-col z-10 relative">
+      <div className="w-16 border-r border-border bg-secondary shrink-0 flex flex-col z-10 relative">
         <WysiwygEditorToolbar
           zoom={zoom}
           onZoomChange={setZoom}
@@ -93,7 +93,7 @@ export const ReportEditor: React.FC<ReportEditorProps> = ({
       </div>
 
       {/* Right Properties Panel */}
-      <div className="w-64 border-l border-theme-border bg-theme-bg-secondary shrink-0 overflow-hidden flex flex-col">
+      <div className="w-64 border-l border-border bg-secondary shrink-0 overflow-hidden flex flex-col">
         <WysiwygPropertiesPanel
           templateDoc={templateDoc}
           selectedElementId={selectedElementId}

@@ -56,12 +56,12 @@ export const TableContextMenu: React.FC<TableContextMenuProps> = ({
   if (!visible) return null
 
   const itemClass =
-    'flex items-center w-full px-3 py-2 text-sm text-left hover:bg-theme-bg-hover text-theme-text-primary gap-2 cursor-pointer'
+    'flex items-center w-full px-3 py-2 text-sm text-left hover:bg-accent text-foreground gap-2 cursor-pointer'
 
   return (
     <div
       ref={ref}
-      className="fixed z-50 bg-theme-bg-secondary border border-theme-border rounded shadow-lg w-56 py-1"
+      className="fixed z-50 bg-popover text-popover-foreground border border-border rounded shadow-lg w-56 py-1"
       style={{ top: y, left: x }}
       onContextMenu={(e) => e.preventDefault()}
       role="menu"
@@ -77,7 +77,7 @@ export const TableContextMenu: React.FC<TableContextMenuProps> = ({
         {t('table_ctx_unmerge', 'Unmerge')}
       </button>
 
-      <div className="my-1 border-t border-theme-border" />
+      <div className="my-1 border-t border-border" />
 
       <button type="button" onClick={() => onAction('insertRowAbove')} className={itemClass}>
         <ArrowUpToLine className="w-4 h-4" />
@@ -96,7 +96,7 @@ export const TableContextMenu: React.FC<TableContextMenuProps> = ({
         {t('table_ctx_delete_row', 'Delete Row')}
       </button>
 
-      <div className="my-1 border-t border-theme-border" />
+      <div className="my-1 border-t border-border" />
 
       <button type="button" onClick={() => onAction('insertColLeft')} className={itemClass}>
         <ArrowLeftToLine className="w-4 h-4" />

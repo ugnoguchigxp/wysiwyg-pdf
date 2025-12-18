@@ -38,19 +38,19 @@ export const EditableSelect: React.FC<IEditableSelectProps> = ({
 
   return (
     <div className={cn('relative', className)} ref={containerRef}>
-      <div className="flex items-center w-full border border-theme-border rounded bg-theme-bg-primary focus-within:ring-1 focus-within:ring-theme-accent">
+      <div className="flex items-center w-full border border-border rounded bg-background focus-within:ring-1 focus-within:ring-ring">
         <input
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full px-1.5 py-1 text-[11px] bg-transparent border-none focus:outline-none text-theme-text-primary"
+          className="w-full px-1.5 py-1 text-[11px] bg-transparent border-none focus:outline-none text-foreground"
           onFocus={() => setIsOpen(true)}
         />
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="px-1 py-1 text-theme-text-secondary hover:bg-theme-bg-secondary focus:outline-none"
+          className="px-1 py-1 text-muted-foreground hover:bg-accent focus:outline-none"
           tabIndex={-1}
         >
           <ChevronDown size={14} />
@@ -58,13 +58,13 @@ export const EditableSelect: React.FC<IEditableSelectProps> = ({
       </div>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 max-h-60 overflow-y-auto bg-theme-bg-primary border border-theme-border rounded shadow-lg scrollbar-thin">
+        <div className="absolute z-50 w-full mt-1 max-h-60 overflow-y-auto bg-background border border-border rounded shadow-lg scrollbar-thin">
           {options.map((option) => (
             <button
               key={option}
               type="button"
               onClick={() => handleOptionClick(option)}
-              className="w-full px-2 py-1 text-[11px] text-left text-theme-text-primary hover:bg-theme-accent hover:text-white"
+              className="w-full px-2 py-1 text-[11px] text-left text-foreground hover:bg-accent hover:text-accent-foreground"
             >
               {option}
             </button>

@@ -59,15 +59,14 @@ describe('WysiwygEditorToolbar', () => {
         render(<WysiwygEditorToolbar {...defaultProps} activeTool="signature" />)
         const signatureBtn = screen.getByLabelText('toolbar_signature')
         // Check for active class or style - based on TOOLBAR_BUTTON_ACTIVE_CLASS in source
-        // border-theme-object-primary is a good indicator, or text-theme-object-primary
-        expect(signatureBtn.className).toContain('border-theme-object-primary')
+        expect(signatureBtn.className).toContain('border-primary')
     })
 
     it('does not highlight Signature tool when activeTool is "select"', () => {
         render(<WysiwygEditorToolbar {...defaultProps} activeTool="select" />)
         const signatureBtn = screen.getByLabelText('toolbar_signature')
         // Should have standard border
-        expect(signatureBtn.className).toContain('border-theme-border')
-        expect(signatureBtn.className).not.toContain('border-theme-object-primary')
+        expect(signatureBtn.className).toContain('border-border')
+        expect(signatureBtn.className).not.toContain('border-primary')
     })
 })

@@ -32,7 +32,7 @@ export const ShortcutHelpModal: React.FC<ShortcutHelpModalProps> = ({ open, onOp
       className="max-w-md"
     >
       <div className="space-y-4">
-        <div className="flex items-center gap-2 text-theme-text-secondary mb-4">
+        <div className="flex items-center gap-2 text-muted-foreground mb-4">
           <Keyboard className="w-5 h-5" />
           <span className="text-sm">{t('shortcut_helper_text', 'Available shortcuts')}</span>
         </div>
@@ -40,11 +40,11 @@ export const ShortcutHelpModal: React.FC<ShortcutHelpModalProps> = ({ open, onOp
         <div className="grid grid-cols-[1fr_auto] gap-x-8 gap-y-3">
           {shortcuts.map((s, i) => (
             <React.Fragment key={i}>
-              <div className="text-sm font-medium text-theme-text-primary">{s.key}</div>
-              <div className="text-xs font-mono bg-theme-bg-tertiary px-2 py-1 rounded border border-theme-border text-theme-text-secondary self-center">
+              <div className="text-sm font-medium text-foreground">{s.key}</div>
+              <div className="text-xs font-mono bg-muted px-2 py-1 rounded border border-border text-muted-foreground self-center">
                 {s.cmd}
               </div>
-              <div className="col-span-2 h-px bg-theme-border/50 last:hidden" />
+              <div className="col-span-2 h-px bg-border/50 last:hidden" />
             </React.Fragment>
           ))}
         </div>
@@ -53,7 +53,7 @@ export const ShortcutHelpModal: React.FC<ShortcutHelpModalProps> = ({ open, onOp
       <ModalFooter>
         <button
           onClick={() => onOpenChange(false)}
-          className="px-4 py-2 text-sm font-medium text-white bg-theme-object-primary hover:bg-theme-object-primary/90 rounded-md transition-colors"
+          className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 rounded-md transition-colors"
         >
           {t('close', 'Close')}
         </button>

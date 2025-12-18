@@ -66,10 +66,10 @@ interface ToolbarProps {
 }
 
 const TOOLBAR_BUTTON_CLASS =
-  'w-10 h-10 flex items-center justify-center rounded border border-theme-border bg-theme-bg-tertiary text-theme-text-secondary hover:bg-theme-object-primary/20 transition-colors'
+  'w-10 h-10 flex items-center justify-center rounded border border-border bg-background text-muted-foreground hover:bg-accent transition-colors'
 
 const ACTIVE_BUTTON_CLASS =
-  'w-10 h-10 flex items-center justify-center rounded border-2 border-theme-object-primary bg-theme-object-primary/10 text-theme-object-primary'
+  'w-10 h-10 flex items-center justify-center rounded border-2 border-primary bg-primary/10 text-primary'
 
 const TrapezoidIcon = ({ size = 20, className = '', title = 'Trapezoid' }) => (
   <svg
@@ -294,7 +294,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   }
 
   return (
-    <div className="flex flex-col items-center gap-2 p-2 bg-theme-bg-secondary border-r border-theme-border text-theme-text-secondary h-full">
+    <div className="flex flex-col items-center gap-2 p-2 bg-secondary border-r border-border text-muted-foreground h-full">
       <TooltipProvider>
         {/* Select Tool */}
         <Tooltip>
@@ -400,13 +400,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
           <DropdownMenuContent
             align="start"
-            className="w-56 grid grid-cols-4 gap-1 p-2 bg-theme-bg-secondary border border-theme-border shadow-lg z-50"
+            className="w-56 grid grid-cols-4 gap-1 p-2 bg-popover text-popover-foreground border border-border shadow-lg z-50"
           >
             {shapes.map((shape) => (
               <DropdownMenuItem
                 key={shape.type}
                 onClick={() => addShape(shape.type.toLowerCase())}
-                className="flex items-center justify-center p-2 rounded cursor-pointer hover:bg-theme-bg-tertiary text-theme-text-primary outline-none"
+                className="flex items-center justify-center p-2 rounded cursor-pointer hover:bg-accent text-foreground outline-none"
               >
                 {shape.icon}
               </DropdownMenuItem>
@@ -419,7 +419,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       <div className="flex-1" />
 
       {/* Divider before Zoom Controls */}
-      <div className="border-t border-theme-border my-3 w-full" />
+      <div className="border-t border-border my-3 w-full" />
 
       {/* Zoom Controls */}
       <div className="flex flex-col items-center gap-1 pb-2">
@@ -433,7 +433,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           <ZoomIn size={18} />
         </button>
         <span
-          className="text-theme-text-secondary text-xs font-medium"
+          className="text-muted-foreground text-xs font-medium"
           aria-label={resolveText('toolbar_zoom_reset', 'Reset zoom')}
         >
           {Math.round(zoom * 100)}%

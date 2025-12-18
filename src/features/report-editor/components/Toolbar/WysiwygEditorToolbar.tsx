@@ -49,9 +49,9 @@ import { mmToPx, ptToMm, pxToMm } from '@/utils/units'
 const log = createContextLogger('WysiwygEditorToolbar')
 
 const TOOLBAR_BUTTON_CLASS =
-  'w-10 h-10 flex items-center justify-center rounded border border-theme-border bg-theme-bg-tertiary text-theme-text-secondary hover:bg-theme-object-primary/20 transition-colors'
+  'w-10 h-10 flex items-center justify-center rounded border border-border bg-muted text-muted-foreground hover:bg-accent transition-colors'
 const TOOLBAR_BUTTON_ACTIVE_CLASS =
-  'w-10 h-10 flex items-center justify-center rounded border border-theme-object-primary bg-theme-object-primary/10 text-theme-object-primary'
+  'w-10 h-10 flex items-center justify-center rounded border border-primary bg-primary/10 text-primary'
 
 const TrapezoidIcon = ({ size = 20, className = '', title = 'Trapezoid' }) => (
   <svg
@@ -326,7 +326,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
   ] as const
 
   return (
-    <div className="flex flex-col items-center gap-2 p-2 bg-theme-bg-secondary border-r border-theme-border text-theme-text-secondary">
+    <div className="flex flex-col items-center gap-2 p-2 bg-secondary border-r border-border text-muted-foreground">
       <TooltipProvider>
         {/* Select Tool */}
         <Tooltip>
@@ -369,7 +369,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
         </Tooltip>
 
         {/* Divider */}
-        <div className="border-t border-theme-border my-1 w-full" />
+        <div className="border-t border-border my-1 w-full" />
 
         {/* Add Text Button */}
         <Tooltip>
@@ -457,7 +457,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
               <DropdownMenuItem
                 key={shape.type}
                 onClick={() => addShape(shape.type)}
-                className="flex items-center justify-center p-2 rounded cursor-pointer hover:bg-theme-hover text-theme-text-primary"
+                className="flex items-center justify-center p-2 rounded cursor-pointer hover:bg-accent text-foreground"
               >
                 {shape.icon}
               </DropdownMenuItem>
@@ -467,7 +467,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
       </TooltipProvider>
 
       {/* Divider before Zoom Controls */}
-      <div className="border-t border-theme-border my-3 w-full" />
+      <div className="border-t border-border my-3 w-full" />
 
       {/* Zoom Controls */}
       <div className="flex flex-col items-center gap-1">
@@ -483,7 +483,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
         <button
           type="button"
           onClick={handleZoomReset}
-          className="text-theme-text-secondary text-xs font-medium hover:text-theme-object-primary transition-colors"
+          className="text-muted-foreground text-xs font-medium hover:text-primary transition-colors"
           aria-label={resolveText('toolbar_zoom_reset', 'Reset zoom')}
         >
           {zoom}%

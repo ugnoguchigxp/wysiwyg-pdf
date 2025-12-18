@@ -52,9 +52,9 @@ export interface WysiwygPropertiesPanelProps {
 // Shared UI Components
 // ========================================
 
-const labelClass = 'block text-[13px] text-theme-text-secondary mb-0.5'
+const labelClass = 'block text-[13px] text-muted-foreground mb-0.5'
 const inputClass =
-  'w-full px-1.5 py-1 border border-theme-border rounded text-[13px] bg-theme-bg-primary text-theme-text-primary focus:outline-none focus:ring-1 focus:ring-theme-accent'
+  'w-full px-1.5 py-1 border border-border rounded text-[13px] bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring'
 
 // ========================================
 // Canvas Settings Panel (選択なし時)
@@ -100,10 +100,10 @@ const CanvasSettingsPanel: React.FC<{
   }
 
   return (
-    <div className="w-64 bg-theme-bg-secondary px-2 py-1 overflow-x-hidden overflow-y-auto text-theme-text-primary">
+    <div className="w-64 bg-secondary px-2 py-1 overflow-x-hidden overflow-y-auto text-foreground">
       {/* Page Background */}
       <div className="mb-3">
-        <h4 className="text-[13px] font-medium text-theme-text-secondary mb-1">
+        <h4 className="text-[13px] font-medium text-muted-foreground mb-1">
           {resolveText('properties_page_background', 'Background')}
         </h4>
         <div className="mb-1">
@@ -130,7 +130,7 @@ const CanvasSettingsPanel: React.FC<{
       {onShowGridChange && (
         <div className="mb-3">
           <div className="flex items-center justify-between mb-1">
-            <label className="text-[13px] text-theme-text-secondary">
+            <label className="text-[13px] text-muted-foreground">
               {t('settings_show_grid', 'Grid')}
             </label>
             <input
@@ -163,7 +163,7 @@ const CanvasSettingsPanel: React.FC<{
       {onSnapStrengthChange && (
         <div className="mb-3">
           <div className="flex items-center justify-between">
-            <label className="text-[13px] text-theme-text-secondary">
+            <label className="text-[13px] text-muted-foreground">
               {t('settings_snap_to_grid', 'Snap to Grid')}
             </label>
             <input
@@ -194,7 +194,7 @@ const SignatureDrawingPanel: React.FC<{
   resolveText: (key: string, fallback?: string) => string
 }> = ({ drawingSettings, onDrawingSettingsChange, onToolSelect, resolveText }) => (
   <div className="mb-4 space-y-3">
-    <h4 className="text-[13px] font-medium text-theme-text-secondary mb-1">
+    <h4 className="text-[13px] font-medium text-muted-foreground mb-1">
       {resolveText('toolbar_signature', 'Signature')}
     </h4>
 
@@ -236,18 +236,18 @@ const SignatureDrawingPanel: React.FC<{
         onChange={(e) =>
           onDrawingSettingsChange({ ...drawingSettings, tolerance: parseFloat(e.target.value) })
         }
-        className="w-full accent-theme-accent"
+        className="w-full accent-accent"
       />
     </div>
 
-    <div className="mt-4 pt-4 border-t border-theme-border">
-      <p className="text-xs text-theme-text-secondary mb-3">
+    <div className="mt-4 pt-4 border-t border-border">
+      <p className="text-xs text-muted-foreground mb-3">
         {resolveText('signature_instruction', 'Drag on canvas to draw.')}
       </p>
       <button
         type="button"
         onClick={() => onToolSelect('select')}
-        className="w-full flex items-center justify-center py-2 px-4 rounded bg-theme-object-primary text-white hover:bg-theme-object-primary/90 transition-colors"
+        className="w-full flex items-center justify-center py-2 px-4 rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
       >
         {resolveText('properties_finish_drawing', 'Finish Drawing')}
       </button>
@@ -308,7 +308,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
   // Drawing mode panel
   if (isDrawing && drawingSettings && onDrawingSettingsChange && onToolSelect) {
     return (
-      <div className="w-full h-full bg-theme-bg-secondary px-2 py-1 overflow-x-hidden overflow-y-auto">
+      <div className="w-full h-full bg-secondary px-2 py-1 overflow-x-hidden overflow-y-auto">
         <SignatureDrawingPanel
           drawingSettings={drawingSettings}
           onDrawingSettingsChange={onDrawingSettingsChange}
@@ -379,7 +379,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
   }
 
   return (
-    <div className="w-full h-full bg-theme-bg-secondary px-2 py-1 overflow-x-hidden overflow-y-auto">
+    <div className="w-full h-full bg-secondary px-2 py-1 overflow-x-hidden overflow-y-auto">
       <UnifiedPropertyPanel
         config={REPORT_PANEL_CONFIG}
         selectedNode={selectedElement}

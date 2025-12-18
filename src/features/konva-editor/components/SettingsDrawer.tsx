@@ -30,15 +30,15 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
 
   return (
     <div
-      className={`absolute top-0 right-0 h-full w-64 bg-theme-bg-secondary shadow-xl border-l-[3px] border-theme-border z-50 flex flex-col transform transition-transform duration-300 ease-in-out ${
+      className={`absolute top-0 right-0 h-full w-64 bg-secondary shadow-xl border-l-[3px] border-border z-50 flex flex-col transform transition-transform duration-300 ease-in-out ${
         isOpen ? 'translate-x-0' : 'translate-x-full'
       }`}
     >
-      <div className="flex items-center justify-between p-4 border-b border-theme-border">
-        <h3 className="font-semibold text-theme-text-primary">{t('settings_title', 'Settings')}</h3>
+      <div className="flex items-center justify-between p-4 border-b border-border">
+        <h3 className="font-semibold text-foreground">{t('settings_title', 'Settings')}</h3>
         <button
           onClick={onClose}
-          className="p-1 rounded hover:bg-theme-bg-tertiary text-theme-text-secondary transition-colors"
+          className="p-1 rounded hover:bg-accent text-muted-foreground transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
@@ -48,7 +48,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
         {/* Grid Toggle */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-theme-text-primary">
+            <label className="text-sm font-medium text-foreground">
               {t('settings_show_grid', 'Show Grid')}
             </label>
             <input
@@ -61,7 +61,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
 
           {showGrid && (
             <div className="flex items-center justify-between pl-2">
-              <label className="text-xs font-medium text-theme-text-secondary">
+              <label className="text-xs font-medium text-muted-foreground">
                 {t('settings_grid_size', 'Grid Size (pt)')}
               </label>
               <div className="w-24">
@@ -83,7 +83,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
         {/* Snap to Grid */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-theme-text-primary">
+            <label className="text-sm font-medium text-foreground">
               {t('settings_snap_to_grid', 'Snap to Grid')}
             </label>
             <input

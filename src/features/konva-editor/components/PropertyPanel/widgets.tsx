@@ -82,7 +82,7 @@ export const WidgetLabel: React.FC<{
 }> = ({ htmlFor, children, className }) => (
   <label
     htmlFor={htmlFor}
-    className={cn('block text-[13px] text-theme-text-secondary mb-0.5', className)}
+    className={cn('block text-[13px] text-muted-foreground mb-0.5', className)}
   >
     {children}
   </label>
@@ -93,9 +93,9 @@ export const WidgetInput: React.FC<
 > = ({ className, inputClassName, ...props }) => (
   <input
     className={cn(
-      'w-full px-1.5 py-1 border border-theme-border rounded text-[13px]',
-      'bg-theme-bg-primary text-theme-text-primary',
-      'focus:outline-none focus:ring-1 focus:ring-theme-accent',
+      'w-full px-1.5 py-1 border border-border rounded text-[13px]',
+      'bg-background text-foreground',
+      'focus:outline-none focus:ring-1 focus:ring-ring',
       inputClassName,
       className
     )}
@@ -108,9 +108,9 @@ export const WidgetSelect: React.FC<
 > = ({ className, children, ...props }) => (
   <select
     className={cn(
-      'w-full px-1.5 py-1 border border-theme-border rounded text-[13px]',
-      'bg-theme-bg-primary text-theme-text-primary',
-      'focus:outline-none focus:ring-1 focus:ring-theme-accent',
+      'w-full px-1.5 py-1 border border-border rounded text-[13px]',
+      'bg-background text-foreground',
+      'focus:outline-none focus:ring-1 focus:ring-ring',
       className
     )}
     {...props}
@@ -161,7 +161,7 @@ export const PosSizeWidget: React.FC<WidgetProps<PosSizeWidgetConfig>> = ({
               onChange={(e) => onChange({ x: Number(e.target.value) })}
               className="w-20"
             />
-            <span className="text-[12px] text-theme-text-secondary">mm</span>
+            <span className="text-[12px] text-muted-foreground">mm</span>
           </div>
         </div>
       )}
@@ -175,7 +175,7 @@ export const PosSizeWidget: React.FC<WidgetProps<PosSizeWidgetConfig>> = ({
               onChange={(e) => onChange({ y: Number(e.target.value) })}
               className="w-20"
             />
-            <span className="text-[12px] text-theme-text-secondary">mm</span>
+            <span className="text-[12px] text-muted-foreground">mm</span>
           </div>
         </div>
       )}
@@ -190,7 +190,7 @@ export const PosSizeWidget: React.FC<WidgetProps<PosSizeWidgetConfig>> = ({
               onChange={(e) => onChange({ w: Math.max(0, Number(e.target.value)) })}
               className="w-20"
             />
-            <span className="text-[12px] text-theme-text-secondary">mm</span>
+            <span className="text-[12px] text-muted-foreground">mm</span>
           </div>
         </div>
       )}
@@ -205,7 +205,7 @@ export const PosSizeWidget: React.FC<WidgetProps<PosSizeWidgetConfig>> = ({
               onChange={(e) => onChange({ h: Math.max(0, Number(e.target.value)) })}
               className="w-20"
             />
-            <span className="text-[12px] text-theme-text-secondary">mm</span>
+            <span className="text-[12px] text-muted-foreground">mm</span>
           </div>
         </div>
       )}
@@ -298,8 +298,8 @@ export const FontWidget: React.FC<WidgetProps<FontWidgetConfig>> = ({
             className={cn(
               'p-1.5 rounded border',
               textNode.fontWeight === 700
-                ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
-                : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
+                ? 'bg-accent text-accent-foreground border-border'
+                : 'bg-background text-muted-foreground border-border hover:bg-muted'
             )}
           >
             <Bold size={14} />
@@ -312,8 +312,8 @@ export const FontWidget: React.FC<WidgetProps<FontWidgetConfig>> = ({
             className={cn(
               'p-1.5 rounded border',
               textNode.italic
-                ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
-                : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
+                ? 'bg-accent text-accent-foreground border-border'
+                : 'bg-background text-muted-foreground border-border hover:bg-muted'
             )}
           >
             <Italic size={14} />
@@ -326,8 +326,8 @@ export const FontWidget: React.FC<WidgetProps<FontWidgetConfig>> = ({
             className={cn(
               'p-1.5 rounded border',
               textNode.underline
-                ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
-                : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
+                ? 'bg-accent text-accent-foreground border-border'
+                : 'bg-background text-muted-foreground border-border hover:bg-muted'
             )}
           >
             <Underline size={14} />
@@ -340,8 +340,8 @@ export const FontWidget: React.FC<WidgetProps<FontWidgetConfig>> = ({
             className={cn(
               'p-1.5 rounded border',
               textNode.lineThrough
-                ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
-                : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
+                ? 'bg-accent text-accent-foreground border-border'
+                : 'bg-background text-muted-foreground border-border hover:bg-muted'
             )}
           >
             <Strikethrough size={14} />
@@ -378,7 +378,7 @@ export const AlignmentWidget: React.FC<WidgetProps<AlignmentWidgetConfig>> = ({
   return (
     <div>
       {config.labelKey && <WidgetLabel>{resolveText(config.labelKey, 'Align')}</WidgetLabel>}
-      <div className="flex bg-theme-bg-primary rounded border border-theme-border p-0.5">
+      <div className="flex bg-background rounded border border-border p-0.5">
         {options.map((opt: AlignOption) => {
           const Icon = alignIcons[opt]
           const isActive = textNode.align === opt
@@ -390,8 +390,8 @@ export const AlignmentWidget: React.FC<WidgetProps<AlignmentWidgetConfig>> = ({
               className={cn(
                 'flex-1 py-1 flex justify-center rounded transition-colors',
                 isActive
-                  ? 'bg-blue-500 text-white'
-                  : 'hover:bg-theme-bg-tertiary text-theme-text-secondary'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'hover:bg-accent text-muted-foreground'
               )}
             >
               <Icon size={14} />
@@ -428,7 +428,7 @@ export const VAlignmentWidget: React.FC<WidgetProps<VAlignmentWidgetConfig>> = (
   return (
     <div>
       {config.labelKey && <WidgetLabel>{resolveText(config.labelKey, 'V-Align')}</WidgetLabel>}
-      <div className="flex bg-theme-bg-primary rounded border border-theme-border p-0.5">
+      <div className="flex bg-background rounded border border-border p-0.5">
         {options.map((opt: VAlignOption) => {
           const Icon = vAlignIcons[opt]
           const isActive = (textNode.vAlign || 't') === opt // Default to 't' (top)
@@ -440,8 +440,8 @@ export const VAlignmentWidget: React.FC<WidgetProps<VAlignmentWidgetConfig>> = (
               className={cn(
                 'flex-1 py-1 flex justify-center rounded transition-colors',
                 isActive
-                  ? 'bg-blue-500 text-white'
-                  : 'hover:bg-theme-bg-tertiary text-theme-text-secondary'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'hover:bg-accent text-muted-foreground'
               )}
             >
               <Icon size={14} />
@@ -635,7 +635,7 @@ export const SliderWidget: React.FC<WidgetProps<SliderWidgetConfig>> = ({
         onChange={(e) =>
           onChange({ [fieldKey]: parseFloat(e.target.value) } as unknown as Partial<UnifiedNode>)
         }
-        className="w-full accent-theme-accent"
+        className="w-full accent-accent"
       />
     </div>
   )
@@ -665,9 +665,9 @@ export const TextContentWidget: React.FC<WidgetProps<TextContentWidgetConfig>> =
         onChange={(e) => onChange({ text: e.target.value } as Partial<TextNode>)}
         rows={rows}
         className={cn(
-          'w-full px-1.5 py-1 border border-theme-border rounded text-[11px]',
-          'bg-theme-bg-primary text-theme-text-primary resize-y',
-          'focus:outline-none focus:ring-1 focus:ring-theme-accent'
+          'w-full px-1.5 py-1 border border-border rounded text-[11px]',
+          'bg-background text-foreground resize-y',
+          'focus:outline-none focus:ring-1 focus:ring-ring'
         )}
       />
     </div>
@@ -715,8 +715,8 @@ export const LineStyleWidget: React.FC<WidgetProps<LineStyleWidgetConfig>> = ({
             className={cn(
               'flex-1 py-1.5 px-2 rounded border text-[10px]',
               currentStyle === style
-                ? 'bg-theme-bg-tertiary text-theme-accent border-theme-accent'
-                : 'bg-theme-bg-primary text-theme-text-secondary border-theme-border hover:bg-theme-bg-secondary'
+                ? 'bg-accent text-accent-foreground border-border'
+                : 'bg-background text-muted-foreground border-border hover:bg-muted'
             )}
           >
             {style === 'solid' && <div className="w-full h-0.5 bg-current" />}
@@ -801,18 +801,18 @@ export const ImageWidget: React.FC<WidgetProps<ImageWidgetConfig>> = ({
       {config.props?.showPreview !== false && (
         <div className="mb-2">
           {status === 'loading' && (
-            <div className="w-full h-20 bg-theme-bg-tertiary border border-theme-border rounded flex items-center justify-center text-xs text-theme-text-secondary">
+            <div className="w-full h-20 bg-muted border border-border rounded flex items-center justify-center text-xs text-muted-foreground">
               {resolveText('loading', 'Loading...')}
             </div>
           )}
           {status === 'error' && (
-            <div className="w-full h-20 bg-theme-bg-tertiary border border-theme-border rounded flex items-center justify-center text-xs text-red-500">
+            <div className="w-full h-20 bg-muted border border-border rounded flex items-center justify-center text-xs text-red-500">
               {resolveText('no_image', 'No Image')}
             </div>
           )}
           {status === 'loaded' && imageSrc && (
             <div
-              className="w-full bg-theme-bg-tertiary border border-theme-border rounded flex items-center justify-center p-2 mb-2"
+              className="w-full bg-muted border border-border rounded flex items-center justify-center p-2 mb-2"
               style={{ maxHeight }}
             >
               <img
@@ -829,8 +829,8 @@ export const ImageWidget: React.FC<WidgetProps<ImageWidgetConfig>> = ({
       {config.props?.showUploader && (
         <div>
           <WidgetLabel>{resolveText('source', 'Source')}</WidgetLabel>
-          <label className="flex flex-col items-center justify-center w-full h-8 border border-theme-border border-dashed rounded cursor-pointer hover:bg-theme-bg-tertiary transition-colors">
-            <span className="text-xs text-theme-text-secondary">
+          <label className="flex flex-col items-center justify-center w-full h-8 border border-border border-dashed rounded cursor-pointer hover:bg-muted transition-colors">
+            <span className="text-xs text-muted-foreground">
               {resolveText('browse', 'Browse...')}
             </span>
             <input
@@ -956,7 +956,7 @@ export const PolygonWidget: React.FC<WidgetProps<PolygonWidgetConfig>> = ({
         step={step}
         value={points}
         onChange={(e) => onChange({ sides: parseInt(e.target.value, 10) } as Partial<ShapeNode>)}
-        className="w-full accent-theme-accent"
+        className="w-full accent-accent"
       />
     </div>
   )
@@ -972,7 +972,7 @@ export const DataBindingWidget: React.FC<WidgetProps<DataBindingWidgetConfig>> =
 }) => {
   // Placeholder implementation
   return (
-    <div className="text-xs text-theme-text-secondary italic">
+    <div className="text-xs text-muted-foreground italic">
       {config.props?.mode === 'repeater'
         ? resolveText('data_binding_repeater', 'Repeater Binding')
         : resolveText('data_binding_field', 'Field Binding')}{' '}
@@ -1017,7 +1017,7 @@ export const ArrowheadWidget: React.FC<WidgetProps<ArrowheadWidgetConfig>> = ({
           position === 'start' ? 'Start Arrow' : 'End Arrow'
         )}
       </WidgetLabel>
-      <div className="flex bg-theme-bg-tertiary rounded p-0.5 border border-theme-border">
+      <div className="flex bg-muted rounded p-0.5 border border-border">
         {options.map((opt) => (
           <button
             key={opt}
@@ -1025,12 +1025,12 @@ export const ArrowheadWidget: React.FC<WidgetProps<ArrowheadWidgetConfig>> = ({
             className={cn(
               'flex-1 py-1.5 flex items-center justify-center rounded transition-colors',
               currentArrow === opt
-                ? 'bg-blue-500 text-white shadow-sm'
-                : 'hover:bg-theme-bg-secondary text-theme-text-secondary'
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'hover:bg-accent text-muted-foreground'
             )}
             title={
               opt === 'none'
-                ? resolveText('properties_arrow_none', 'None')
+                ? resolveText('none', 'None')
                 : opt === 'arrow'
                   ? resolveText('properties_arrow_standard', 'Standard')
                   : opt === 'circle'

@@ -66,36 +66,36 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   const currentOptions = orientationOptions || defaultOptions
 
   return (
-    <div className="px-5 py-3 bg-theme-bg-secondary border-b border-theme-border flex items-center justify-between shrink-0 h-16 transition-colors shadow-sm">
+    <div className="px-5 py-3 bg-secondary border-b border-border flex items-center justify-between shrink-0 h-16 transition-colors shadow-sm">
       <div className="flex items-center gap-4 min-w-0 flex-1 mr-4">
         <button
           onClick={onBack}
-          className="flex items-center text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary transition-colors whitespace-nowrap shrink-0"
+          className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap shrink-0"
         >
           <ChevronLeft className="w-4 h-4 mr-1" />
           {resolveText('back', 'Back')}
         </button>
 
-        <div className="h-6 w-px bg-theme-border shrink-0" />
+        <div className="h-6 w-px bg-border shrink-0" />
 
         <input
           type="text"
           value={templateName}
           onChange={(e) => onTemplateNameChange(e.target.value)}
-          className="border border-theme-border rounded-md px-3 py-1.5 text-sm w-full max-w-64 bg-theme-bg-primary text-theme-text-primary focus:outline-none focus:ring-1 focus:ring-theme-object-primary transition-colors min-w-[50px]"
+          className="border border-border rounded-md px-3 py-1.5 text-sm w-full max-w-64 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors min-w-[50px]"
         />
       </div>
 
       <div className="flex items-center gap-3 shrink-0">
         {/* Orientation Select */}
-        <div className="flex items-center gap-2 border border-theme-border rounded-md px-2 py-1 bg-theme-bg-primary">
-          <span className="text-xs font-medium text-theme-text-secondary whitespace-nowrap">
+        <div className="flex items-center gap-2 border border-border rounded-md px-2 py-1 bg-background">
+          <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
             {resolveText('editor_orientation', 'Orientation')}:
           </span>
           <select
             value={orientation}
             onChange={(e) => onOrientationChange(e.target.value as 'portrait' | 'landscape')}
-            className="text-xs bg-transparent border-none focus:ring-0 text-theme-text-primary cursor-pointer outline-none"
+            className="text-xs bg-transparent border-none focus:ring-0 text-foreground cursor-pointer outline-none"
           >
             {currentOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -105,13 +105,13 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
           </select>
         </div>
 
-        <div className="h-6 w-px bg-theme-border mx-1" />
+        <div className="h-6 w-px bg-border mx-1" />
 
         {/* History Controls */}
         <button
           onClick={onUndo}
           disabled={!canUndo}
-          className="p-2 rounded-md hover:bg-theme-bg-tertiary text-theme-text-secondary disabled:opacity-30 transition-colors"
+          className="p-2 rounded-md hover:bg-accent text-muted-foreground disabled:opacity-30 transition-colors"
           title={resolveText('toolbar_undo', 'Undo')}
         >
           <Undo className="w-4 h-4" />
@@ -119,13 +119,13 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
         <button
           onClick={onRedo}
           disabled={!canRedo}
-          className="p-2 rounded-md hover:bg-theme-bg-tertiary text-theme-text-secondary disabled:opacity-30 transition-colors"
+          className="p-2 rounded-md hover:bg-accent text-muted-foreground disabled:opacity-30 transition-colors"
           title={resolveText('toolbar_redo', 'Redo')}
         >
           <Redo className="w-4 h-4" />
         </button>
 
-        <div className="h-6 w-px bg-theme-border mx-1" />
+        <div className="h-6 w-px bg-border mx-1" />
 
         <Button
           variant="circle-help"
@@ -136,12 +136,12 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
           ?
         </Button>
 
-        <div className="h-6 w-px bg-theme-border mx-1" />
+        <div className="h-6 w-px bg-border mx-1" />
 
         {/* Actions */}
         <button
           onClick={onDownloadImage}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-theme-text-primary hover:bg-theme-bg-tertiary rounded-md border border-theme-border transition-colors shadow-sm whitespace-nowrap flex-shrink-0"
+          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-foreground hover:bg-accent rounded-md border border-border transition-colors shadow-sm whitespace-nowrap flex-shrink-0"
         >
           <ImageIcon className="w-4 h-4" />
           {resolveText('header_image', 'Image')}
@@ -149,7 +149,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
 
         <button
           onClick={onDownloadPdf}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-theme-text-primary hover:bg-theme-bg-tertiary rounded-md border border-theme-border transition-colors shadow-sm whitespace-nowrap flex-shrink-0"
+          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-foreground hover:bg-accent rounded-md border border-border transition-colors shadow-sm whitespace-nowrap flex-shrink-0"
         >
           <Download className="w-4 h-4" />
           {resolveText('header_pdf', 'PDF')}
@@ -157,7 +157,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
 
         <button
           onClick={onSave}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-theme-object-primary hover:bg-theme-object-primary/90 rounded-md shadow-sm transition-colors whitespace-nowrap flex-shrink-0"
+          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 rounded-md shadow-sm transition-colors whitespace-nowrap flex-shrink-0"
         >
           <Save className="w-4 h-4" />
           {resolveText('save', 'Save')}
@@ -168,7 +168,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
             variant="ghost"
             size="icon"
             onClick={onSettingsClick}
-            className="text-theme-text-secondary hover:text-theme-text-primary"
+            className="text-muted-foreground hover:text-foreground"
             title={resolveText('header_settings', 'Settings')}
           >
             <Settings2 className="w-5 h-5" />

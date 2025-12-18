@@ -134,8 +134,8 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
     if (element.table.cells.length > 0) activeData = element.table.cells[0]
   }
 
-  const labelClass = 'block text-[11px] text-theme-text-secondary mb-0.5'
-  const headingClass = 'text-[11px] font-medium text-theme-text-secondary mb-1.5'
+  const labelClass = 'block text-[11px] text-muted-foreground mb-0.5'
+  const headingClass = 'text-[11px] font-medium text-muted-foreground mb-1.5'
 
   const fontSizes = [8, 9, 10, 10.5, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72]
   const borderWidthOptions = [0, 0.5, 1, 1.5, 2, 3, 4]
@@ -184,7 +184,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                 </label>
                 <input
                   type="color"
-                  className="w-full h-8 rounded border border-theme-border bg-theme-bg-primary"
+                  className="w-full h-8 rounded border border-border bg-background"
                   value={activeData.color || '#000000'}
                   onChange={(e) => updateCells({ color: e.target.value })}
                 />
@@ -205,7 +205,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
             <label className={`${labelClass} font-medium`}>
               {resolveText('properties_text_align', 'Text Align')}
             </label>
-            <div className="flex bg-theme-bg-primary rounded border border-theme-border p-0.5 mb-2">
+            <div className="flex bg-background rounded border border-border p-0.5 mb-2">
               <TooltipProvider>
                 {/* Left */}
                 <Tooltip>
@@ -213,7 +213,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                     <button
                       type="button"
                       onClick={() => updateCells({ align: 'l' })}
-                      className={`flex-1 flex items-center justify-center py-1 rounded ${activeData.align === 'l' ? 'bg-theme-bg-tertiary text-theme-accent' : 'text-theme-text-secondary hover:bg-theme-bg-secondary'}`}
+                      className={`flex-1 flex items-center justify-center py-1 rounded ${activeData.align === 'l' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent'}`}
                     >
                       <AlignLeft size={14} />
                     </button>
@@ -228,7 +228,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                     <button
                       type="button"
                       onClick={() => updateCells({ align: 'c' })}
-                      className={`flex-1 flex items-center justify-center py-1 rounded ${activeData.align === 'c' ? 'bg-theme-bg-tertiary text-theme-accent' : 'text-theme-text-secondary hover:bg-theme-bg-secondary'}`}
+                      className={`flex-1 flex items-center justify-center py-1 rounded ${activeData.align === 'c' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent'}`}
                     >
                       <AlignCenter size={14} />
                     </button>
@@ -243,7 +243,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                     <button
                       type="button"
                       onClick={() => updateCells({ align: 'r' })}
-                      className={`flex-1 flex items-center justify-center py-1 rounded ${activeData.align === 'r' ? 'bg-theme-bg-tertiary text-theme-accent' : 'text-theme-text-secondary hover:bg-theme-bg-secondary'}`}
+                      className={`flex-1 flex items-center justify-center py-1 rounded ${activeData.align === 'r' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent'}`}
                     >
                       <AlignRight size={14} />
                     </button>
@@ -261,14 +261,14 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
             <label className={`${labelClass} font-medium`}>
               {resolveText('properties_vertical_align', 'Vertical Alignment')}
             </label>
-            <div className="flex bg-theme-bg-primary rounded border border-theme-border p-0.5">
+            <div className="flex bg-background rounded border border-border p-0.5">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
                       type="button"
                       onClick={() => updateCells({ vAlign: 't' })}
-                      className={`flex-1 flex items-center justify-center py-1 rounded ${activeData.vAlign === 't' ? 'bg-theme-bg-tertiary text-theme-accent' : 'text-theme-text-secondary hover:bg-theme-bg-secondary'}`}
+                      className={`flex-1 flex items-center justify-center py-1 rounded ${activeData.vAlign === 't' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent'}`}
                     >
                       <ArrowUpToLine size={14} />
                     </button>
@@ -283,7 +283,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                     <button
                       type="button"
                       onClick={() => updateCells({ vAlign: 'm' })}
-                      className={`flex-1 flex items-center justify-center py-1 rounded ${activeData.vAlign === 'm' ? 'bg-theme-bg-tertiary text-theme-accent' : 'text-theme-text-secondary hover:bg-theme-bg-secondary'}`}
+                      className={`flex-1 flex items-center justify-center py-1 rounded ${activeData.vAlign === 'm' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent'}`}
                     >
                       <AlignVerticalJustifyCenter size={14} />
                     </button>
@@ -298,7 +298,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                     <button
                       type="button"
                       onClick={() => updateCells({ vAlign: 'b' })}
-                      className={`flex-1 flex items-center justify-center py-1 rounded ${activeData.vAlign === 'b' ? 'bg-theme-bg-tertiary text-theme-accent' : 'text-theme-text-secondary hover:bg-theme-bg-secondary'}`}
+                      className={`flex-1 flex items-center justify-center py-1 rounded ${activeData.vAlign === 'b' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent'}`}
                     >
                       <ArrowDownToLine size={14} />
                     </button>
@@ -319,7 +319,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
               </label>
               <input
                 type="color"
-                className="w-full h-8 rounded border border-theme-border bg-theme-bg-primary"
+                className="w-full h-8 rounded border border-border bg-background"
                 value={activeData.bg || '#ffffff'}
                 onChange={(e) => updateCells({ bg: e.target.value })}
               />
@@ -330,7 +330,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
               </label>
               <input
                 type="color"
-                className="w-full h-8 rounded border border-theme-border bg-theme-bg-primary"
+                className="w-full h-8 rounded border border-border bg-background"
                 value={activeData.borderColor || activeData.border || '#000000'}
                 onChange={(e) =>
                   updateCells({ borderColor: e.target.value, border: e.target.value })
