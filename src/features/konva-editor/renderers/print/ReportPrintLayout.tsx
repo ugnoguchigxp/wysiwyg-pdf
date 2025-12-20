@@ -108,6 +108,7 @@ export const RenderShape = ({ element }: { element: ShapeNode }) => {
 
 export const RenderLine = ({ element }: { element: LineNode }) => {
   const { pts, stroke, strokeW } = element
+  if (!pts) return null
 
   const ptsPt: number[] = []
   for (let i = 0; i < pts.length; i++) {

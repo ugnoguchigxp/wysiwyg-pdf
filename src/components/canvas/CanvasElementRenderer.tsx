@@ -13,6 +13,10 @@ import {
   Transformer,
 } from 'react-konva'
 import { ptToMm } from '@/utils/units'
+import {
+  getAnchorPointAndDirection,
+  getOrthogonalPath
+} from './utils/connectionRouting'
 import type {
   Anchor,
   ImageNode,
@@ -80,7 +84,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
   const anchorCircleMapRef = useRef<Map<string, Konva.Circle>>(new Map())
   const lastHighlightedAnchorKeyRef = useRef<string | null>(null)
 
-  type Conn = { nodeId: string; anchor: Anchor } | undefined
+  type Conn = { nodeId: string; anchor: Anchor } | undefined | null
   const startConnDraftRef = useRef<Conn>(undefined)
   const endConnDraftRef = useRef<Conn>(undefined)
 
@@ -596,6 +600,13 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
         const resolvedStart = resolveEndpoint(line.startConn)
         const resolvedEnd = resolveEndpoint(line.endConn)
 
+        console.log('[CanvasElementRenderer] Render Line:', {
+          id: line.id,
+          startConn: line.startConn,
+          resolvedStart,
+          pts0: basePts[0]
+        })
+
         // Use resolved endpoints for rendering (connector follow)
         const pts = [...basePts]
         if (resolvedStart) {
@@ -677,28 +688,38 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           if (pointIndex === 0) refPoint = { x: base[2], y: base[3] }
           else refPoint = { x: base[pointIndex - 2], y: base[pointIndex - 1] }
 
+
           const isOrthogonal = line.routing === 'orthogonal'
           const isShift = e.evt.shiftKey
 
-          if (isOrthogonal || isShift) {
-            const step = isOrthogonal && !isShift ? Math.PI / 2 : Math.PI / 4
+          let newPts: number[] = [...base]
+
+          // 1. Determine Next Handle Position
+          if (isOrthogonal && !isShift) {
+            // Free movement (snapped to grid)
+            nextPos = snapToGrid(nextPos)
+          } else if (isShift) {
+            const step = Math.PI / 4
             nextPos = snapAngle(nextPos, refPoint, step)
           } else {
             nextPos = snapToGrid(nextPos)
           }
 
-          // Connector snap (8-point anchors). Applied after grid/shift.
+          // -------------------------------------------------------------------
+          // 2. Connector Snapping (8-point anchors) - Determine 'best' snap target
+          // -------------------------------------------------------------------
           const threshold = 12 * invScale
           const showMargin = 80 * invScale
           let best: { nodeId: string; anchor: Anchor; x: number; y: number; dist2: number } | null =
             null
 
+          // Common styles for highlighting
           const baseStroke = '#0f766e'
-          const glowColor = '#34d399'
+          const glowColor = '#34d399' // This variable is not used in the provided snippet, keeping it for context
           const activeFill = '#059669'
-          const activeStroke = '#064e3b'
+          const activeStroke = '#064e3b' // This variable is not used in the provided snippet, keeping it for context
 
-          // Update anchor overlay visibility + reset highlight
+          // Reset overlays
           if (anchorOverlayGroupRef.current) {
             for (const circle of anchorCircleMapRef.current.values()) {
               circle.visible(false)
@@ -707,39 +728,29 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
               circle.stroke(baseStroke)
               circle.strokeWidth(2 * invScale)
               circle.opacity(0.95)
-              circle.shadowColor(glowColor)
-              circle.shadowBlur(10 * invScale)
-              circle.shadowOpacity(0.18)
-              circle.shadowEnabled(true)
             }
             lastHighlightedAnchorKeyRef.current = null
           }
 
-          // Only snap endpoints (start/end) to other nodes
+          // Check for snap candidates (endpoints only)
           if (pointIndex === 0 || pointIndex === base.length - 2) {
             for (const n of nodesForSnap) {
               if (n.t === 'line') continue
-
-              const nx = n.x ?? 0
-              const ny = n.y ?? 0
-              const nw = n.w ?? 0
-              const nh = n.h ?? 0
-              const inCandidateRange =
-                nextPos.x >= nx - showMargin &&
-                nextPos.x <= nx + nw + showMargin &&
-                nextPos.y >= ny - showMargin &&
-                nextPos.y <= ny + nh + showMargin
+              // Bounding box check
+              const nx = n.x ?? 0, ny = n.y ?? 0, nw = n.w ?? 0, nh = n.h ?? 0
+              if (nextPos.x < nx - showMargin || nextPos.x > nx + nw + showMargin ||
+                nextPos.y < ny - showMargin || nextPos.y > ny + nh + showMargin) continue
 
               for (const a of anchors) {
                 const p = getAnchorPoint(n, a)
                 if (!p) continue
 
-                if (inCandidateRange) {
-                  const key = `${n.id}:${a} `
-                  const circle = anchorCircleMapRef.current.get(key)
-                  if (circle) circle.visible(true)
-                }
+                // Show candidate anchors
+                const key = `${n.id}:${a} `
+                const circle = anchorCircleMapRef.current.get(key)
+                if (circle) circle.visible(true)
 
+                // Distance check
                 const dx = p.x - nextPos.x
                 const dy = p.y - nextPos.y
                 const d2 = dx * dx + dy * dy
@@ -750,42 +761,72 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
             }
           }
 
+          // Apply Snap
           if (best) {
             nextPos = { x: best.x, y: best.y }
-            e.target.position(nextPos)
+            // Update draft connection info
             if (pointIndex === 0)
               startConnDraftRef.current = { nodeId: best.nodeId, anchor: best.anchor }
             else if (pointIndex === base.length - 2)
               endConnDraftRef.current = { nodeId: best.nodeId, anchor: best.anchor }
 
+            // Highlight snapped anchor
             const key = `${best.nodeId}:${best.anchor} `
             const circle = anchorCircleMapRef.current.get(key)
             if (circle) {
               circle.visible(true)
               circle.radius(9 * invScale)
               circle.fill(activeFill)
-              circle.stroke(activeStroke)
-              circle.strokeWidth(3 * invScale)
-              circle.opacity(1)
-              circle.shadowColor(glowColor)
-              circle.shadowBlur(22 * invScale)
-              circle.shadowOpacity(0.38)
-              circle.shadowEnabled(true)
-              lastHighlightedAnchorKeyRef.current = key
             }
           } else {
-            // Clear connections if detached
-            if (pointIndex === 0) startConnDraftRef.current = undefined
-            else if (pointIndex === base.length - 2) endConnDraftRef.current = undefined
+            // Detach if no snap - Explicitly set to null to ensure update clears it
+            if (pointIndex === 0) startConnDraftRef.current = null
+            else if (pointIndex === base.length - 2) endConnDraftRef.current = null
           }
 
           e.target.position(nextPos)
 
-          const next = [...base]
-          next[pointIndex] = nextPos.x
-          next[pointIndex + 1] = nextPos.y
-          lineDraftPtsRef.current = next
-          applyDraftToVisuals(next)
+
+          // -------------------------------------------------------------------
+          // 3. Draft Path Calculation
+          // -------------------------------------------------------------------
+
+          if (isOrthogonal && !isShift) {
+            // Dynamic Routing: Re-calculate the whole path
+            const isStart = pointIndex === 0
+            // Endpoints
+            const pStart = isStart ? nextPos : { x: base[0], y: base[1] }
+            const pEnd = isStart ? { x: base[base.length - 2], y: base[base.length - 1] } : nextPos
+
+            // Setup for getOrthogonalPath
+            const getDir = (conn: LineNode['startConn']) => {
+              if (!conn) return null
+              const node = nodesForSnap.find(n => n.id === conn.nodeId)
+              if (!node) return null
+              const info = getAnchorPointAndDirection(node as any, conn.anchor)
+              return { x: info.nx, y: info.ny }
+            }
+
+            const startDirInfo = getDir(startConnDraftRef.current)
+            const endDirInfo = getDir(endConnDraftRef.current)
+
+            const computedPath = getOrthogonalPath(
+              pStart,
+              startDirInfo || { x: 0, y: 0 },
+              pEnd,
+              endDirInfo
+            )
+
+            if (computedPath.length > 0) newPts = computedPath
+
+          } else {
+            // Standard behavior (Manual / Straight)
+            newPts[pointIndex] = nextPos.x
+            newPts[pointIndex + 1] = nextPos.y
+          }
+
+          lineDraftPtsRef.current = newPts
+          applyDraftToVisuals(newPts)
           e.cancelBubble = true
         }
 
@@ -801,18 +842,34 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           }
           // Commit once
           if (next) {
+            console.log('[CanvasElementRenderer] DragEnd Commit:', {
+              id: element.id,
+              startConn: startConnDraftRef.current,
+              endConn: endConnDraftRef.current,
+              pts: next
+            })
+
             const updated: Partial<LineNode> = {
               id: element.id,
               pts: next,
-              startConn: startConnDraftRef.current,
-              endConn: endConnDraftRef.current,
             }
+            // Only update connection properties if they were modified (not undefined)
+            if (startConnDraftRef.current !== undefined) {
+              updated.startConn = startConnDraftRef.current as any
+            }
+            if (endConnDraftRef.current !== undefined) {
+              updated.endConn = endConnDraftRef.current as any
+            }
+
             onChange(updated as unknown as Partial<UnifiedNode>)
           }
           // Release after this tick so any stray group dragend won't apply
           setTimeout(() => {
             isLineHandleDraggingRef.current = false
             lineDraftPtsRef.current = null
+            // Reset connection drafts to undefined so next drag starts fresh
+            startConnDraftRef.current = undefined
+            endConnDraftRef.current = undefined
           }, 0)
         }
 

@@ -1,6 +1,6 @@
 import { UnifiedNode, LineNode } from '../../../types/canvas'
 import { isWHElement } from './elementUtils'
-import { getAnchorPointAndDirection, getManhattanPath } from './connectionRouting'
+import { getAnchorPointAndDirection, getOrthogonalConnectionPath } from './connectionRouting'
 
 export const getUpdateForConnectedLines = (
     currentElementId: string,
@@ -31,7 +31,7 @@ export const getUpdateForConnectedLines = (
         let nextPts: number[] = []
 
         if (ln.routing === 'orthogonal') {
-            nextPts = getManhattanPath(
+            nextPts = getOrthogonalConnectionPath(
                 sNode as any,
                 ln.startConn?.anchor || 'auto',
                 eNode as any,

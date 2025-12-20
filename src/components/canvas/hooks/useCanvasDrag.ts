@@ -2,7 +2,7 @@ import type Konva from 'konva'
 import { useCallback } from 'react'
 import type { LineNode, ShapeNode, UnifiedNode } from '../../../types/canvas'
 import { isWHElement } from '../utils/elementUtils'
-import { getAnchorPointAndDirection, getManhattanPath } from '../utils/connectionRouting'
+import { getAnchorPointAndDirection, getOrthogonalConnectionPath } from '../utils/connectionRouting'
 import { getUpdateForConnectedLines } from '../utils/lineUtils'
 
 interface UseCanvasDragProps {
@@ -127,7 +127,7 @@ export const useCanvasDrag = ({ element, allElements, onChange }: UseCanvasDragP
 
                 let nextPts: number[] = []
                 if (ln.routing === 'orthogonal') {
-                    nextPts = getManhattanPath(
+                    nextPts = getOrthogonalConnectionPath(
                         sNode as any,
                         ln.startConn?.anchor || 'auto',
                         eNode as any,
@@ -140,6 +140,7 @@ export const useCanvasDrag = ({ element, allElements, onChange }: UseCanvasDragP
                 }
 
                 // Update View
+                if (!nextPts || nextPts.length < 4) return
                 const endIdx = nextPts.length - 2
                 lineBody.points(nextPts)
 

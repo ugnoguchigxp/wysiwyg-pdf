@@ -1,3 +1,4 @@
+// Force update
 import { Anchor } from '../../../types/canvas'
 
 interface Point {
@@ -104,16 +105,58 @@ export const getAnchorPointAndDirection = (
 }
 
 /**
- * Main function to calculate Manhattan path.
+ * Main function to calculate Orthogonal (Manhattan-style) path for connections.
  */
-export const getManhattanPath = (
+export const getOrthogonalConnectionPath = (
     startGeo: NodeGeometry,
     startAnchor: Anchor,
     endGeo: NodeGeometry,
     endAnchor: Anchor
 ): number[] => {
-    const s = getAnchorPointAndDirection(startGeo, startAnchor)
-    const e = getAnchorPointAndDirection(endGeo, endAnchor)
+    let s = getAnchorPointAndDirection(startGeo, startAnchor)
+    let e = getAnchorPointAndDirection(endGeo, endAnchor)
+
+    // Fix for Corner Anchors (Diagonal Normals):
+    // If an anchor has a diagonal normal (e.g. -1, -1), it causes a diagonal stub line.
+    // We must resolve this to a cardinal direction (Vertical or Horizontal) based on the relative position of the other node.
+
+    const resolveDiagonal = (
+        current: AnchorInfo,
+        target: { x: number; y: number }
+    ): AnchorInfo => {
+        if (current.nx !== 0 && current.ny !== 0) {
+            // It's diagonal. Decide strictly Horizontal or strictly Vertical.
+            const dx = target.x - current.x
+            const dy = target.y - current.y
+
+            // If horizontal distance is greater, prefer exiting horizontally.
+            // Unless the alignment suggests otherwise?
+            // Simple heuristic available: Match the sign of delta?
+            // Actually, we just need to pick ONE axis that makes sense.
+            // If target is to the Right (dx > 0) and normal has Right component (nx > 0), that's a good exit.
+
+            const matchX = (dx >= 0 && current.nx > 0) || (dx < 0 && current.nx < 0)
+            const matchY = (dy >= 0 && current.ny > 0) || (dy < 0 && current.ny < 0)
+
+            if (Math.abs(dx) > Math.abs(dy)) {
+                // Horizontal preference
+                if (matchX) return { ...current, ny: 0 }
+                if (matchY) return { ...current, nx: 0 }
+                // Fallback: Just force X
+                return { ...current, ny: 0 }
+            } else {
+                // Vertical preference
+                if (matchY) return { ...current, nx: 0 }
+                if (matchX) return { ...current, ny: 0 }
+                return { ...current, nx: 0 }
+            }
+        }
+        return current
+    }
+
+    // Resolve Start vs End
+    s = resolveDiagonal(s, { x: e.x, y: e.y })
+    e = resolveDiagonal(e, { x: s.x, y: s.y })
 
     // Start Point
     const p0 = { x: s.x, y: s.y }
@@ -128,21 +171,20 @@ export const getManhattanPath = (
     // We route from p1 to pE_stub.
     // Then append pE.
 
-    const path = simpleManhattanRoute(p1, pE_stub, s.nx, s.ny, e.nx, e.ny)
+    const path = computeOrthogonalSegments(p1, pE_stub, s.nx, s.ny, e.nx, e.ny)
 
     // Flatten
     const points = [p0.x, p0.y]
     path.forEach((p) => points.push(p.x, p.y))
     points.push(pE.x, pE.y)
-
     return points
 }
 
 /**
- * Route from A to B with Manhattan segments.
+ * Route from A to B with Orthogonal segments.
  * Tries to minimize bends and avoid "backward" movement against start direction.
  */
-function simpleManhattanRoute(
+function computeOrthogonalSegments(
     a: Point,
     b: Point,
     startDirX: number,
@@ -233,4 +275,46 @@ function simpleManhattanRoute(
         points.push(b)
         return points
     }
+}
+
+/**
+ * Robust orthogonal path finding.
+ * Returns a set of points connecting Start to End with 90-degree turns.
+ */
+export const getOrthogonalPath = (
+    start: { x: number; y: number },
+    startDir: { x: number; y: number },
+    end: { x: number; y: number },
+    endDir: { x: number; y: number } | null
+): number[] => {
+    // If endDir is null, we can infer it or treat it as "omni-directional"
+    // But for better routing, we usually assume a standard entry (e.g. opposite to startDir or based on relative pos).
+
+    // Default endDir if not provided:
+    let dirE = endDir
+    if (!dirE) {
+        // Infer best entry direction based on relative position
+        const dx = end.x - start.x
+        const dy = end.y - start.y
+        if (Math.abs(dx) > Math.abs(dy)) {
+            dirE = { x: dx > 0 ? -1 : 1, y: 0 } // Enter from Left or Right
+        } else {
+            dirE = { x: 0, y: dy > 0 ? -1 : 1 } // Enter from Top or Bottom
+        }
+    }
+
+    // Use the existing computeOrthogonalSegments logic but wrapped for Points API
+    const points = computeOrthogonalSegments(
+        start,
+        end,
+        startDir.x,
+        startDir.y,
+        dirE.x,
+        dirE.y
+    )
+
+    // Flatten
+    const flatPoints: number[] = []
+    points.forEach((p) => flatPoints.push(p.x, p.y))
+    return flatPoints
 }
