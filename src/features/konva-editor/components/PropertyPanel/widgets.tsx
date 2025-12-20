@@ -22,10 +22,8 @@ import {
   Strikethrough,
   Underline,
 } from 'lucide-react'
-import { HexAlphaColorPicker } from 'react-colorful'
 import type React from 'react'
 import { useEffect, useState } from 'react'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import type {
   AlignmentWidgetConfig,
   ArrowheadWidgetConfig,
@@ -534,78 +532,19 @@ export const ColorPickerWidget: React.FC<WidgetProps<ColorPickerWidgetConfig>> =
   return (
     <div>
       <WidgetLabel>{resolveText(labelKey, fallbackLabel)}</WidgetLabel>
-      <div className="flex items-center gap-2">
-        <Popover>
-          <PopoverTrigger asChild>
-            <div
-              className="w-8 h-8 rounded border border-border cursor-pointer relative overflow-hidden"
-              style={{
-                background:
-                  'conic-gradient(#eee 0 25%, white 0 50%, #eee 0 75%, white 0)',
-                backgroundSize: '8px 8px',
-              }}
-            >
-              <div
-                className="absolute inset-0 w-full h-full"
-                style={{ backgroundColor: value }}
-              />
-            </div>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-3" align="start">
-            <HexAlphaColorPicker
-              color={value === 'transparent' ? '#00000000' : value}
-              onChange={(newColor) => {
-                const updates: Partial<UnifiedNode> = { [fieldKey]: newColor } as unknown as Partial<UnifiedNode>
-                if (fieldKey === 'borderColor') {
-                  const currentWidth = (node as unknown as Record<string, number>)['borderWidth']
-                  if (!currentWidth || currentWidth === 0) {
-                    (updates as unknown as Record<string, number>)['borderWidth'] = 0.1
-                  }
-                }
-                onChange(updates)
-              }}
-            />
-            <div className="mt-3">
-              <WidgetInput
-                value={value}
-                onChange={(e) => {
-                  const newVal = e.target.value
-                  const updates: Partial<UnifiedNode> = { [fieldKey]: newVal } as unknown as Partial<UnifiedNode>
-                  if (fieldKey === 'borderColor') {
-                    const currentWidth = (node as unknown as Record<string, number>)['borderWidth']
-                    if (!currentWidth || currentWidth === 0) {
-                      (updates as unknown as Record<string, number>)['borderWidth'] = 0.1
-                    }
-                  }
-                  onChange(updates)
-                }}
-                className="uppercase flex-1"
-              />
-              <button
-                className="w-10 h-10 border border-border rounded ml-2 flex items-center justify-center bg-muted hover:bg-muted/80 relative overflow-hidden"
-                onClick={() => {
-                  const updates: Partial<UnifiedNode> = { [fieldKey]: 'transparent' } as unknown as Partial<UnifiedNode>
-                  if (fieldKey === 'borderColor') {
-                    const currentWidth = (node as unknown as Record<string, number>)['borderWidth']
-                    if (!currentWidth || currentWidth === 0) {
-                      (updates as unknown as Record<string, number>)['borderWidth'] = 0.1
-                    }
-                  }
-                  onChange(updates)
-                }}
-                title="Transparent"
-              >
-                <div className="absolute inset-0" style={{
-                  background: 'conic-gradient(#eee 0 25%, white 0 50%, #eee 0 75%, white 0)',
-                  backgroundSize: '8px 8px',
-                  opacity: 0.5
-                }} />
-                <div className="absolute inset-0 border-t border-red-500 transform rotate-45" />
-              </button>
-            </div>
-          </PopoverContent>
-        </Popover>
-      </div>
+      <ColorInput
+        value={value}
+        onChange={(newColor) => {
+          const updates: Partial<UnifiedNode> = { [fieldKey]: newColor } as unknown as Partial<UnifiedNode>
+          if (fieldKey === 'borderColor') {
+            const currentWidth = (node as unknown as Record<string, number>)['borderWidth']
+            if (!currentWidth || currentWidth === 0) {
+              (updates as unknown as Record<string, number>)['borderWidth'] = 0.1
+            }
+          }
+          onChange(updates)
+        }}
+      />
     </div>
   )
 }

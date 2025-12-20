@@ -3,7 +3,7 @@
  * Handles keyboard shortcuts for the editor
  */
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { createContextLogger } from '../../../utils/logger'
 
 const log = createContextLogger('useKeyboardShortcuts')
@@ -22,11 +22,18 @@ interface IKeyboardShortcutsHandlers {
 }
 
 export const useKeyboardShortcuts = (handlers: IKeyboardShortcutsHandlers): void => {
+  const handlersRef = useRef(handlers)
+
+  useEffect(() => {
+    handlersRef.current = handlers
+  }, [handlers])
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Check if we're in an input field - if so, skip shortcuts
       const target = e.target as HTMLElement
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+
+      // Check if we're in an input field - if so, skip shortcuts
+      if (['INPUT', 'TEXTAREA'].includes(target.tagName) || target.isContentEditable) {
         return
       }
 
@@ -35,11 +42,13 @@ export const useKeyboardShortcuts = (handlers: IKeyboardShortcutsHandlers): void
       const key = e.key.toLowerCase()
       const code = e.code
 
+      const currentHandlers = handlersRef.current
+
       // Undo: Ctrl/Cmd + Z
       if (ctrlOrCmd && !e.shiftKey && (key === 'z' || code === 'KeyZ')) {
         e.preventDefault()
         log.debug('Keyboard shortcut: Undo')
-        handlers.onUndo?.()
+        currentHandlers.onUndo?.()
         return
       }
 
@@ -50,7 +59,7 @@ export const useKeyboardShortcuts = (handlers: IKeyboardShortcutsHandlers): void
       ) {
         e.preventDefault()
         log.debug('Keyboard shortcut: Redo')
-        handlers.onRedo?.()
+        currentHandlers.onRedo?.()
         return
       }
 
@@ -58,7 +67,7 @@ export const useKeyboardShortcuts = (handlers: IKeyboardShortcutsHandlers): void
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault()
         log.debug('Keyboard shortcut: Delete')
-        handlers.onDelete?.()
+        currentHandlers.onDelete?.()
         return
       }
 
@@ -66,7 +75,7 @@ export const useKeyboardShortcuts = (handlers: IKeyboardShortcutsHandlers): void
       if (ctrlOrCmd && e.key === 'a') {
         e.preventDefault()
         log.debug('Keyboard shortcut: Select All')
-        handlers.onSelectAll?.()
+        currentHandlers.onSelectAll?.()
         return
       }
 
@@ -76,28 +85,28 @@ export const useKeyboardShortcuts = (handlers: IKeyboardShortcutsHandlers): void
       if (e.key === 'ArrowUp') {
         e.preventDefault()
         log.debug('Keyboard shortcut: Move Up', { stepMm })
-        handlers.onMoveUp?.(stepMm)
+        currentHandlers.onMoveUp?.(stepMm)
         return
       }
 
       if (e.key === 'ArrowDown') {
         e.preventDefault()
         log.debug('Keyboard shortcut: Move Down', { stepMm })
-        handlers.onMoveDown?.(stepMm)
+        currentHandlers.onMoveDown?.(stepMm)
         return
       }
 
       if (e.key === 'ArrowLeft') {
         e.preventDefault()
         log.debug('Keyboard shortcut: Move Left', { stepMm })
-        handlers.onMoveLeft?.(stepMm)
+        currentHandlers.onMoveLeft?.(stepMm)
         return
       }
 
       if (e.key === 'ArrowRight') {
         e.preventDefault()
         log.debug('Keyboard shortcut: Move Right', { stepMm })
-        handlers.onMoveRight?.(stepMm)
+        currentHandlers.onMoveRight?.(stepMm)
         return
       }
 
@@ -105,7 +114,7 @@ export const useKeyboardShortcuts = (handlers: IKeyboardShortcutsHandlers): void
       if (ctrlOrCmd && (key === 'c' || code === 'KeyC')) {
         e.preventDefault()
         log.debug('Keyboard shortcut: Copy')
-        handlers.onCopy?.()
+        currentHandlers.onCopy?.()
         return
       }
 
@@ -113,15 +122,17 @@ export const useKeyboardShortcuts = (handlers: IKeyboardShortcutsHandlers): void
       if (ctrlOrCmd && (key === 'v' || code === 'KeyV')) {
         e.preventDefault()
         log.debug('Keyboard shortcut: Paste')
-        handlers.onPaste?.()
+        currentHandlers.onPaste?.()
         return
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown)
+    // Capture phrase might be better to avoid propagation issues?
+    // Using capture: true
+    window.addEventListener('keydown', handleKeyDown, { capture: true })
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keydown', handleKeyDown, { capture: true })
     }
-  }, [handlers])
+  }, []) // Bind once
 }

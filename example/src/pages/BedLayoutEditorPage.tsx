@@ -331,7 +331,11 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                             i18nOverrides={{
                                 toolbar_text: 'テキスト',
                                 toolbar_bed: 'ベッド',
+                                toolbar_copy: 'コピー',
+                                toolbar_paste: '貼り付け',
                             }}
+                            onCopy={() => bedEditorRef.current?.copy()}
+                            onPaste={() => bedEditorRef.current?.paste()}
                         />
                     </div>
                 )}
@@ -376,6 +380,17 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                             showGrid={showGrid}
                             gridSize={gridSize}
                             snapStrength={snapStrength}
+                            onCreateNodes={(nodes) => {
+                                nodes.forEach((element) => {
+                                    executeBedOp({
+                                        kind: 'create-element',
+                                        element,
+                                    })
+                                })
+                                if (nodes.length > 0) {
+                                    setSelectedElementId(nodes[nodes.length - 1].id)
+                                }
+                            }}
                         />
                     )}
                 </div>

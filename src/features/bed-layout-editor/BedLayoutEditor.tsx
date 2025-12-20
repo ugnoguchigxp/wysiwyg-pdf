@@ -27,6 +27,8 @@ interface KonvaEditorProps {
 
 export interface BedLayoutEditorHandle {
   downloadImage: () => void
+  copy: () => void
+  paste: () => void
 }
 
 export const BedLayoutEditor = React.forwardRef<BedLayoutEditorHandle, KonvaEditorProps>(
@@ -93,6 +95,8 @@ export const BedLayoutEditor = React.forwardRef<BedLayoutEditorHandle, KonvaEdit
           }
         }
       },
+      copy: () => editorRef.current?.copy(),
+      paste: () => editorRef.current?.paste(),
     }))
     const resolvedSurfaceId =
       surfaceId ||

@@ -17,6 +17,8 @@ import { TextEditOverlay } from './TextEditOverlay'
 
 export interface KonvaCanvasEditorHandle {
   getStage: () => Konva.Stage | null
+  copy: () => void
+  paste: () => void
 }
 
 interface KonvaCanvasEditorProps {
@@ -82,6 +84,8 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
 
     useImperativeHandle(ref, () => ({
       getStage: () => stageRef.current,
+      copy: handleCopy,
+      paste: handlePaste,
     }))
 
     const dpi = 96
@@ -182,16 +186,26 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       onSelect(elements.map((el) => el.id))
     }
 
+    const [pasteCount, setPasteCount] = useState(1)
+
     const handleCopy = () => {
       if (selectedIds.length === 0) return
       const selectedElements = elements.filter((el) => selectedIds.includes(el.id))
+
       if (selectedElements.length > 0) {
         localStorage.setItem('__konva_clipboard', JSON.stringify(selectedElements))
+        // Reset paste counter on new copy
+        setPasteCount(1)
       }
     }
 
     const handlePaste = () => {
-      if (!onCreateElements || readOnly) return
+      if (readOnly) {
+        return
+      }
+      if (!onCreateElements) {
+        return
+      }
       try {
         const json = localStorage.getItem('__konva_clipboard')
         if (!json) return
@@ -199,19 +213,19 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
 
         if (!Array.isArray(clipboardElements) || clipboardElements.length === 0) return
 
-        // Calculate center or offset
-        // For simplicity, just offset by 10mm
+        // Offset based on paper width (similar to toolbar behavior)
+        // Toolbar uses 1% of width per new element
+        const step = paperWidth * 0.01
+        const offset = step * pasteCount
+
         const newElements = clipboardElements.map((el) => {
           const newId = crypto.randomUUID()
           const newEl = { ...el, id: newId }
 
           if ('x' in newEl && 'y' in newEl && typeof newEl.x === 'number' && typeof newEl.y === 'number') {
-            // Offset by 10mm (approx 38px at 96dpi, but we work in mm here? 
-            // Wait, units in this app: x,y are in mm? 
-            // Looking at `handleMove`, it adds dx directly.
-            // Looking at `pxToMm`, it seems coordinates are mm.
-            newEl.x += 10
-            newEl.y += 10
+            // Offset by offset mm from original
+            newEl.x += offset
+            newEl.y += offset
           }
           return newEl
         })
@@ -220,23 +234,28 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
         // Optionally select the pasted elements
         onSelect(newElements.map(e => e.id))
 
+        // Increment paste counter for next paste
+        setPasteCount(prev => prev + 1)
+
       } catch (e) {
         console.error('Failed to paste elements', e)
       }
     }
 
-    useKeyboardShortcuts({
+    const shortcutsHandlers = {
       onUndo,
       onRedo,
       onDelete,
       onCopy: handleCopy,
       onPaste: handlePaste,
       onSelectAll: handleSelectAll,
-      onMoveUp: (step) => handleMove(0, -step),
-      onMoveDown: (step) => handleMove(0, step),
-      onMoveLeft: (step) => handleMove(-step, 0),
-      onMoveRight: (step) => handleMove(step, 0),
-    })
+      onMoveUp: (step: number) => handleMove(0, -step),
+      onMoveDown: (step: number) => handleMove(0, step),
+      onMoveLeft: (step: number) => handleMove(-step, 0),
+      onMoveRight: (step: number) => handleMove(step, 0),
+    }
+
+    useKeyboardShortcuts(shortcutsHandlers)
 
     const editingElement = editingElementId
       ? (elements.find((el) => el.id === editingElementId) as TextNode)

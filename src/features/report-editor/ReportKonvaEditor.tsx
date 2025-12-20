@@ -170,6 +170,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
     const stageRef = useRef<Konva.Stage>(null)
     const containerRef = useRef<HTMLDivElement>(null)
     const [editingElementId, setEditingElementId] = useState<string | null>(null)
+    const [pasteCount, setPasteCount] = useState(1)
 
     const [selectedCell, setSelectedCell] = useState<{
       elementId: string
@@ -993,10 +994,66 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       }
     }
 
+    const handleCopy = () => {
+      if (!selectedElementId) return
+      const selected = nodes.find((n) => n.id === selectedElementId)
+      if (selected) {
+        // Report editor currently supports single selection mostly, but we use array for clipboard consistency
+        const clipboardData = [selected]
+        localStorage.setItem('__konva_clipboard', JSON.stringify(clipboardData))
+        setPasteCount(1)
+      }
+    }
+
+    const handlePaste = () => {
+      try {
+        const json = localStorage.getItem('__konva_clipboard')
+        if (!json) return
+        const clipboardElements = JSON.parse(json) as UnifiedNode[]
+
+        if (!Array.isArray(clipboardElements) || clipboardElements.length === 0) return
+
+        // Offset based on surface width (similar to toolbar behavior)
+        // Toolbar uses 1% of width per new element
+        const step = currentSurface.w * 0.01
+        const offset = step * pasteCount
+
+        const newNodes: UnifiedNode[] = []
+        clipboardElements.forEach((el) => {
+          const newId = crypto.randomUUID()
+          const newEl = { ...el, id: newId, s: currentSurface.id }
+
+          if ('x' in newEl && 'y' in newEl && typeof newEl.x === 'number' && typeof newEl.y === 'number') {
+            newEl.x += offset
+            newEl.y += offset
+          }
+          // Ensure unique cell IDs for table if copied
+          if (newEl.t === 'table' && 'table' in newEl) {
+            // Deep copy could be needed if table structure has IDs? 
+            // Currently table cells don't have unique IDs in this model, just r/c.
+          }
+          newNodes.push(newEl)
+        })
+
+        onTemplateChange({ ...templateDoc, nodes: [...templateDoc.nodes, ...newNodes] })
+
+        // Select the last pasted element
+        if (newNodes.length > 0) {
+          onElementSelect(newNodes[newNodes.length - 1])
+        }
+
+        setPasteCount((c) => c + 1)
+      } catch (e) {
+        console.error('Failed to paste elements', e)
+      }
+    }
+
     useKeyboardShortcuts({
       onUndo,
       onRedo,
       onDelete: handleDelete,
+      onCopy: handleCopy,
+      onPaste: handlePaste,
       onSelectAll: handleSelectAll,
       onMoveUp: (step) => handleMove(0, -step),
       onMoveDown: (step) => handleMove(0, step),
@@ -1184,8 +1241,8 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
                   }
                   isSelected={false}
                   stageScale={displayScale}
-                  onSelect={() => {}}
-                  onChange={() => {}}
+                  onSelect={() => { }}
+                  onChange={() => { }}
                 />
               )}
             </Layer>

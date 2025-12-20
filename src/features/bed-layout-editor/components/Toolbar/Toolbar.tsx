@@ -22,6 +22,8 @@ import {
   Type,
   ZoomIn,
   ZoomOut,
+  Copy,
+  ClipboardPaste,
 } from 'lucide-react'
 import type React from 'react'
 import { useI18n } from '@/i18n/I18nContext'
@@ -63,6 +65,8 @@ interface ToolbarProps {
   onUndo?: () => void
   onRedo?: () => void
   i18nOverrides?: Record<string, string>
+  onCopy?: () => void
+  onPaste?: () => void
 }
 
 const TOOLBAR_BUTTON_CLASS =
@@ -99,6 +103,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onZoomOut,
   surfaceId,
   i18nOverrides,
+  onCopy,
+  onPaste,
 }) => {
   const { t } = useI18n()
 
@@ -417,6 +423,42 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
       {/* Spacer */}
       <div className="flex-1" />
+
+      {/* Copy/Paste Controls */}
+      <div className="border-t border-border my-2 w-full" />
+      <div className="flex flex-col items-center gap-1">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={onCopy}
+              className={TOOLBAR_BUTTON_CLASS}
+              aria-label={resolveText('toolbar_copy', 'Copy')}
+            >
+              <Copy size={20} />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <p>{resolveText('toolbar_copy', 'Copy')}</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={onPaste}
+              className={TOOLBAR_BUTTON_CLASS}
+              aria-label={resolveText('toolbar_paste', 'Paste')}
+            >
+              <ClipboardPaste size={20} />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <p>{resolveText('toolbar_paste', 'Paste')}</p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
 
       {/* Divider before Zoom Controls */}
       <div className="border-t border-border my-3 w-full" />
