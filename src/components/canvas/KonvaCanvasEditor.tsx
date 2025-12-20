@@ -6,11 +6,8 @@ import type { TextNode, UnifiedNode } from '../../types/canvas'
 import { mmToPx } from '@/utils/units'
 import { measureText } from '@/features/konva-editor/utils/textUtils'
 import { ptToMm, pxToMm } from '@/utils/units'
-import {
-  type CanvasElementCommonProps,
-  CanvasElementRenderer,
-  type CanvasShapeRefCallback,
-} from './CanvasElementRenderer'
+import { CanvasElementRenderer } from './CanvasElementRenderer'
+import type { CanvasElementCommonProps, CanvasShapeRefCallback } from './types'
 import { GridLayer } from './GridLayer'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { TextEditOverlay } from './TextEditOverlay'
@@ -25,7 +22,10 @@ interface KonvaCanvasEditorProps {
   elements: UnifiedNode[]
   selectedIds: string[]
   onSelect: (ids: string[]) => void
-  onChange: (id: string, newAttrs: Partial<UnifiedNode>) => void
+  onChange: (
+    updates: (Partial<UnifiedNode> & { id?: string }) | (Partial<UnifiedNode> & { id?: string })[],
+    options?: { saveToHistory?: boolean; force?: boolean }
+  ) => void
   zoom: number
   paperWidth: number
   paperHeight: number
@@ -82,6 +82,8 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
     const stageRef = useRef<Konva.Stage>(null)
     const [editingElementId, setEditingElementId] = useState<string | null>(null)
 
+
+
     useImperativeHandle(ref, () => ({
       getStage: () => stageRef.current,
       copy: handleCopy,
@@ -129,7 +131,7 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
 
       const element = elements.find((el) => el.id === editingElementId)
       if (!element || element.t !== 'text') {
-        onChange(editingElementId, { text } as Partial<UnifiedNode>)
+        onChange({ id: editingElementId, text } as Partial<UnifiedNode> & { id: string })
         return
       }
 
@@ -154,11 +156,12 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       const newWidthPx = maxWidth + 10
       const newHeightPx = calculatedHeight + 4
 
-      onChange(editingElementId, {
+      onChange({
+        id: editingElementId,
         text,
         w: pxToMm(newWidthPx, { dpi }),
         h: pxToMm(newHeightPx, { dpi }),
-      } as Partial<UnifiedNode>)
+      } as Partial<UnifiedNode> & { id: string })
     }
 
     const handleTextEditFinish = () => {
@@ -172,7 +175,8 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
         if (element && element.t !== 'line') {
           // Assuming elements with x/y
           if ('x' in element && 'y' in element) {
-            onChange(id, {
+            onChange({
+              id,
               x: (element.x ?? 0) + dx,
               y: (element.y ?? 0) + dy,
             })
@@ -321,7 +325,7 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
                   allElements={elements}
                   stageScale={displayScale}
                   onSelect={(e) => handleSelect(element.id, e)}
-                  onChange={(newAttrs) => onChange(element.id, newAttrs)}
+                  onChange={onChange}
                   onDblClick={() => handleElementDblClick(element)}
                   isEditing={element.id === editingElementId}
                   renderCustom={renderCustom}

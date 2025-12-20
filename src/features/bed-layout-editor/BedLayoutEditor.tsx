@@ -14,7 +14,11 @@ interface KonvaEditorProps {
   zoom: number
   selection: string[]
   onSelect: (ids: string[]) => void
-  onChangeElement: (id: string, newAttrs: Partial<UnifiedNode>) => void
+  onChangeElement: (
+    updates: (Partial<UnifiedNode> & { id?: string }) | (Partial<UnifiedNode> & { id?: string })[],
+    options?: { saveToHistory?: boolean; force?: boolean }
+  ) => void
+
   onDelete?: (id: string) => void
   onUndo?: () => void
   onRedo?: () => void

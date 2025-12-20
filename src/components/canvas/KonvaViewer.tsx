@@ -2,7 +2,7 @@ import type Konva from 'konva'
 import type React from 'react'
 import { forwardRef, useImperativeHandle, useRef } from 'react'
 import type { UnifiedNode } from '../../types/canvas'
-import type { CanvasElementCommonProps, CanvasShapeRefCallback } from './CanvasElementRenderer'
+import type { CanvasElementCommonProps, CanvasShapeRefCallback } from './types'
 import { KonvaCanvasEditor, type KonvaCanvasEditorHandle } from './KonvaCanvasEditor'
 
 export interface KonvaViewerHandle {
@@ -36,8 +36,8 @@ export const KonvaViewer = forwardRef<KonvaViewerHandle, KonvaViewerProps>(
         ref={editorRef}
         elements={elements}
         selectedIds={[]}
-        onSelect={() => {}}
-        onChange={() => {}}
+        onSelect={() => { }}
+        onChange={() => { }}
         zoom={zoom}
         paperWidth={paperWidth}
         paperHeight={paperHeight}

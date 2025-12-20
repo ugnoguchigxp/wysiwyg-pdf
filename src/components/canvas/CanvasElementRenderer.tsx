@@ -1,11 +1,10 @@
 import type Konva from 'konva'
 import type React from 'react'
-import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Circle,
   Ellipse,
   Group,
-  Image as KonvaImage,
   Line,
   Path,
   Rect,
@@ -13,8 +12,6 @@ import {
   Text,
   Transformer,
 } from 'react-konva'
-import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
-import { useI18n } from '@/i18n/I18nContext'
 import { ptToMm } from '@/utils/units'
 import type {
   Anchor,
@@ -28,155 +25,12 @@ import type {
 } from '../../types/canvas'
 import { LineMarker } from './LineMarker'
 
-export type CanvasShapeRefCallback = (node: Konva.Node | null) => void
 
-export type CanvasElementCommonProps = Konva.NodeConfig & {
-  ref: CanvasShapeRefCallback
-}
-
-// Helpers
-const isWHElement = (
-  node: UnifiedNode
-): node is Extract<UnifiedNode, { w: number; h: number; x: number; y: number }> => {
-  return node.t !== 'line' // Line does not have w/h/x/y in the same way (pts only)
-}
-
-type TransformableNode = Konva.Node & {
-  x(): number
-  y(): number
-  width(): number
-  height(): number
-  scaleX(): number
-  scaleY(): number
-  rotation(): number
-}
-
-interface CanvasElementRendererProps {
-  element: UnifiedNode
-  isSelected: boolean
-  onSelect: (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void
-  onChange: (newAttrs: Partial<UnifiedNode> & { id?: string }) => void
-  onDblClick?: () => void
-  onCellDblClick?: (elementId: string, row: number, col: number) => void
-  onCellClick?: (elementId: string, row: number, col: number) => void
-  onContextMenu?: (e: Konva.KonvaEventObject<PointerEvent>) => void
-  editingCell?: { elementId: string; row: number; col: number } | null
-  selectedCell?: { row: number; col: number } | null
-  isEditing?: boolean
-  snapStrength?: number
-  gridSize?: number
-  showGrid?: boolean
-  readOnly?: boolean
-  allElements?: UnifiedNode[]
-  stageScale?: number
-  renderCustom?: (
-    element: UnifiedNode,
-    commonProps: CanvasElementCommonProps,
-    shapeRef: CanvasShapeRefCallback
-  ) => React.ReactNode
-}
-
-// Separate component for Image to handle loading state
-const CanvasImage = forwardRef<
-  Konva.Image | Konva.Group,
-  { element: ImageNode; commonProps: CanvasElementCommonProps; invScale: number }
->(({ element, commonProps, invScale }, ref) => {
-  const { t } = useI18n()
-  const [image, setImage] = useState<HTMLImageElement | null>(null)
-  const [status, setStatus] = useState<'loading' | 'loaded' | 'error' | 'empty'>('empty')
-
-  useEffect(() => {
-    if (!element.src) {
-      setStatus('empty')
-      setImage(null)
-      return
-    }
-
-    setStatus('loading')
-
-    // Support both direct URL and extension lookup if needed (assuming src is URL for now based on V2, but let's keep findImage logic if src looks like an ID?)
-    // V2 Schema says src: string (URL or base64).
-    // If it's a simple ID, we might need findImageWithExtension.
-    // Let's assume valid URL first, or check if it has extension.
-    if (element.src.startsWith('http') || element.src.startsWith('data:')) {
-      const img = new window.Image()
-      img.src = element.src
-      img.onload = () => {
-        setImage(img)
-        setStatus('loaded')
-      }
-      img.onerror = () => {
-        setStatus('error')
-      }
-    } else {
-      // Fallback/Legacy ID behavior
-      findImageWithExtension(element.src)
-        .then((result) => {
-          if (result) {
-            setImage(result.img)
-            setStatus('loaded')
-          } else {
-            setStatus('error')
-          }
-        })
-        .catch((_err) => {
-          setStatus('error')
-        })
-    }
-  }, [element.src])
-
-  const { ref: _ignoredRef, ...propsWithoutRef } = commonProps
-
-  if (status === 'loaded' && image) {
-    return (
-      <KonvaImage
-        {...propsWithoutRef}
-        image={image}
-        width={element.w}
-        height={element.h}
-        ref={ref as React.Ref<Konva.Image>}
-        opacity={element.opacity ?? 1}
-      />
-    )
-  }
-
-  // Placeholder styling
-  const isError = status === 'error'
-  const isLoading = status === 'loading'
-  const bgColor = isError ? '#fee2e2' : isLoading ? '#eff6ff' : '#e5e7eb'
-  const borderColor = isError ? '#ef4444' : isLoading ? '#3b82f6' : '#6b7280'
-  const textColor = isError ? '#b91c1c' : isLoading ? '#1d4ed8' : '#374151'
-  const labelText = isError
-    ? t('error', 'Error')
-    : isLoading
-      ? t('loading', 'Loading...')
-      : t('properties_element_image', 'Image')
-
-  return (
-    <Group {...propsWithoutRef} ref={ref as React.Ref<Konva.Group>}>
-      <Rect
-        width={element.w}
-        height={element.h}
-        fill={bgColor}
-        stroke={borderColor}
-        strokeWidth={3 * invScale}
-      />
-      <Text
-        x={0}
-        y={0}
-        width={element.w}
-        height={element.h}
-        text={labelText}
-        fill={textColor}
-        align="center"
-        verticalAlign="middle"
-        fontSize={14 * invScale}
-        fontStyle="bold"
-        fontFamily="Helvetica"
-      />
-    </Group>
-  )
-})
+// Helpers & Components Imports
+import { CanvasImage } from './CanvasImage'
+import { useCanvasDrag } from './hooks/useCanvasDrag'
+import { useCanvasTransform } from './hooks/useCanvasTransform'
+import type { CanvasElementCommonProps, CanvasElementRendererProps } from './types'
 
 export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
   element,
@@ -208,6 +62,19 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
   const lineStartMarkerGroupRef = useRef<Konva.Group | null>(null)
   const lineEndMarkerGroupRef = useRef<Konva.Group | null>(null)
   const lineDraftPtsRef = useRef<number[] | null>(null)
+
+  const { handleDragEnd, handleDragMove } = useCanvasDrag({
+    element,
+    allElements,
+    onChange,
+  })
+
+  const { handleTransformEnd } = useCanvasTransform({
+    element,
+    allElements,
+    shapeRef,
+    onChange,
+  })
 
   const anchorOverlayGroupRef = useRef<Konva.Group | null>(null)
   const anchorCircleMapRef = useRef<Map<string, Konva.Circle>>(new Map())
@@ -310,280 +177,8 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
     }
   }, [element, onChange])
 
-  const handleTransformEnd = useCallback(() => {
-    const node = shapeRef.current as TransformableNode | null
-    if (!node || !isWHElement(element)) return
 
-    const scaleX = node.scaleX()
-    const scaleY = node.scaleY()
 
-    node.scaleX(1)
-    node.scaleY(1)
-
-    const newWidth = Math.max(5, node.width() * scaleX)
-    const newHeight = Math.max(5, node.height() * scaleY)
-
-    let newX = node.x()
-    let newY = node.y()
-
-    // Shapes like Circle are drawn from center if we used offsetX, but here we render with explicit x/y/w/h usually.
-    // Let's check how we render shapes.
-    // If we use standard Rect, x/y is top-left.
-    // If we use Ellipse, x/y is center.
-    // We should adjust consistent with renderer.
-
-    if (element.t === 'shape') {
-      const type = element.shape
-      if (['circle', 'star', 'pentagon', 'hexagon'].includes(type as string)) {
-        // These are centered. Konva Node x/y tracks the center.
-        // We want newX to be top-left of bounding box.
-        newX -= newWidth / 2
-        newY -= newHeight / 2
-      }
-    }
-
-    if (element.t === 'table') {
-      const tableElement = element as TableNode
-      const oldWidth = tableElement.w || 1
-      const oldHeight = tableElement.h || 1
-      const widthRatio = newWidth / oldWidth
-      const heightRatio = newHeight / oldHeight
-
-      const newCols = tableElement.table.cols.map((w) => w * widthRatio)
-      const newRows = tableElement.table.rows.map((h) => h * heightRatio)
-
-      onChange({
-        id: element.id,
-        x: newX,
-        y: newY,
-        w: newWidth,
-        h: newHeight,
-        r: node.rotation(),
-        table: {
-          ...tableElement.table,
-          cols: newCols,
-          rows: newRows,
-        },
-      } as unknown as Partial<UnifiedNode>)
-      return
-    }
-
-    onChange({
-      id: element.id,
-      x: newX,
-      y: newY,
-      w: newWidth,
-      h: newHeight,
-      r: node.rotation(),
-    })
-  }, [element, onChange])
-
-  const handleDragEnd = useCallback(
-    (e: Konva.KonvaEventObject<DragEvent>) => {
-      if (isWHElement(element)) {
-        let newX = e.target.x()
-        let newY = e.target.y()
-        const w = element.w ?? 0
-        const h = element.h ?? 0
-
-        if (element.t === 'shape') {
-          if (['circle', 'star', 'pentagon', 'hexagon'].includes(element.shape as string)) {
-            newX -= element.w / 2
-            newY -= element.h / 2
-          }
-        }
-
-        onChange({
-          id: element.id,
-          x: newX,
-          y: newY,
-        })
-
-        // Update connected lines
-        if (allElements && allElements.length > 0) {
-          const targetId = element.id
-          const connected = allElements.filter(
-            (n): n is LineNode =>
-              n.t === 'line' && (n.startConn?.nodeId === targetId || n.endConn?.nodeId === targetId)
-          )
-
-          if (connected.length > 0) {
-            // Re-calculate endpoints for all connected lines based on new position
-            // We use the same logic as handleDragMove, but now committing via onChange
-            const anchorPointForThis = (anchor: Anchor): { x: number; y: number } => {
-              // Calculate based on new "final" X/Y
-              let topLeftX = newX
-              let topLeftY = newY
-
-              // But wait, newX/newY is what we sent to onChange. 
-              // Depending on shape type, newX/newY is top-left.
-              // anchorPoint logic usually assumes top-left X,Y.
-
-              switch (anchor) {
-                case 'tl': return { x: topLeftX, y: topLeftY }
-                case 't': return { x: topLeftX + w / 2, y: topLeftY }
-                case 'tr': return { x: topLeftX + w, y: topLeftY }
-                case 'l': return { x: topLeftX, y: topLeftY + h / 2 }
-                case 'r': return { x: topLeftX + w, y: topLeftY + h / 2 }
-                case 'bl': return { x: topLeftX, y: topLeftY + h }
-                case 'b': return { x: topLeftX + w / 2, y: topLeftY + h }
-                case 'br': return { x: topLeftX + w, y: topLeftY + h }
-                default: return { x: topLeftX + w / 2, y: topLeftY + h / 2 }
-              }
-            }
-
-            connected.forEach(ln => {
-              const currentPts = ln.pts || [0, 0, 0, 0]
-              const nextPts = [...currentPts]
-              const endIdx = Math.max(0, nextPts.length - 2)
-
-              let changed = false
-              if (ln.startConn?.nodeId === targetId) {
-                const p = anchorPointForThis(ln.startConn.anchor)
-                nextPts[0] = p.x
-                nextPts[1] = p.y
-                changed = true
-              }
-              if (ln.endConn?.nodeId === targetId) {
-                const p = anchorPointForThis(ln.endConn.anchor)
-                nextPts[endIdx] = p.x
-                nextPts[endIdx + 1] = p.y
-                changed = true
-              }
-
-              if (changed) {
-                onChange({
-                  id: ln.id,
-                  pts: nextPts
-                })
-              }
-            })
-          }
-        }
-
-      } else if (element.t === 'line') {
-        // Line Dragging
-        const node = e.target
-        const dx = node.x()
-        const dy = node.y()
-        const line = element as LineNode
-
-        // Update pts
-        const newPts = line.pts.map((p, i) => (i % 2 === 0 ? p + dx : p + dy))
-
-        onChange({
-          id: element.id,
-          pts: newPts,
-        })
-
-        node.x(0)
-        node.y(0)
-      }
-    },
-    [element, onChange, allElements]
-  )
-
-  const handleDragMove = useCallback(
-    (e: Konva.KonvaEventObject<DragEvent>) => {
-      if (!isWHElement(element)) return
-      if (!allElements || allElements.length === 0) return
-
-      const targetId = element.id
-      const connected = allElements.filter(
-        (n): n is LineNode =>
-          n.t === 'line' && (n.startConn?.nodeId === targetId || n.endConn?.nodeId === targetId)
-      )
-      if (connected.length === 0) return
-
-      const stage = e.target.getStage()
-      if (!stage) return
-
-      const w = element.w ?? 0
-      const h = element.h ?? 0
-
-      let topLeftX = e.target.x()
-      let topLeftY = e.target.y()
-
-      if (element.t === 'shape') {
-        const shape = element as ShapeNode
-        if (['circle', 'star', 'pentagon', 'hexagon'].includes(shape.shape as string)) {
-          topLeftX = topLeftX - w / 2
-          topLeftY = topLeftY - h / 2
-        }
-      }
-
-      const anchorPointForThis = (anchor: Anchor): { x: number; y: number } => {
-        switch (anchor) {
-          case 'tl':
-            return { x: topLeftX, y: topLeftY }
-          case 't':
-            return { x: topLeftX + w / 2, y: topLeftY }
-          case 'tr':
-            return { x: topLeftX + w, y: topLeftY }
-          case 'l':
-            return { x: topLeftX, y: topLeftY + h / 2 }
-          case 'r':
-            return { x: topLeftX + w, y: topLeftY + h / 2 }
-          case 'bl':
-            return { x: topLeftX, y: topLeftY + h }
-          case 'b':
-            return { x: topLeftX + w / 2, y: topLeftY + h }
-          case 'br':
-            return { x: topLeftX + w, y: topLeftY + h }
-          default:
-            return { x: topLeftX + w / 2, y: topLeftY + h / 2 }
-        }
-      }
-
-      for (const ln of connected) {
-        const lineGroup = stage.findOne(`#${ln.id}`) as Konva.Group | null
-        if (!lineGroup) continue
-
-        const lineBody = lineGroup.findOne('.line-body') as Konva.Line | null
-        if (!lineBody) continue
-
-        const currentPts = lineBody.points()
-        const nextPts = [...currentPts]
-        const endIdx = Math.max(0, nextPts.length - 2)
-
-        if (ln.startConn?.nodeId === targetId) {
-          const p = anchorPointForThis(ln.startConn.anchor)
-          nextPts[0] = p.x
-          nextPts[1] = p.y
-        }
-        if (ln.endConn?.nodeId === targetId) {
-          const p = anchorPointForThis(ln.endConn.anchor)
-          nextPts[endIdx] = p.x
-          nextPts[endIdx + 1] = p.y
-        }
-
-        lineBody.points(nextPts)
-
-        const dx = nextPts[endIdx] - nextPts[0]
-        const dy = nextPts[endIdx + 1] - nextPts[1]
-        const angleToEnd = Math.atan2(dy, dx)
-        const angleToStart = angleToEnd + Math.PI
-
-        const startHandle = lineGroup.findOne('.line-handle-start') as Konva.Circle | null
-        if (startHandle) startHandle.position({ x: nextPts[0], y: nextPts[1] })
-        const endHandle = lineGroup.findOne('.line-handle-end') as Konva.Circle | null
-        if (endHandle) endHandle.position({ x: nextPts[endIdx], y: nextPts[endIdx + 1] })
-
-        const startMarker = lineGroup.findOne('.line-marker-start') as Konva.Group | null
-        if (startMarker) {
-          startMarker.position({ x: nextPts[0], y: nextPts[1] })
-          startMarker.rotation((angleToStart * 180) / Math.PI)
-        }
-        const endMarker = lineGroup.findOne('.line-marker-end') as Konva.Group | null
-        if (endMarker) {
-          endMarker.position({ x: nextPts[endIdx], y: nextPts[endIdx + 1] })
-          endMarker.rotation((angleToEnd * 180) / Math.PI)
-        }
-        lineGroup.getLayer()?.batchDraw()
-      }
-    },
-    [element, allElements]
-  )
 
   const handleMouseEnter = useCallback(
     (e: Konva.KonvaEventObject<MouseEvent>) => {
@@ -1022,12 +617,12 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           }
         }
 
-        const snap45 = (moving: { x: number; y: number }, fixed: { x: number; y: number }) => {
+        const snapAngle = (moving: { x: number; y: number }, fixed: { x: number; y: number }, step: number) => {
           const dx = moving.x - fixed.x
           const dy = moving.y - fixed.y
           const angle = Math.atan2(dy, dx)
           const dist = Math.sqrt(dx * dx + dy * dy)
-          const snapAngle = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4)
+          const snapAngle = Math.round(angle / step) * step
           return {
             x: fixed.x + Math.cos(snapAngle) * dist,
             y: fixed.y + Math.sin(snapAngle) * dist,
@@ -1075,16 +670,19 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
 
         const moveHandleDrag = (pointIndex: number, e: Konva.KonvaEventObject<DragEvent>) => {
           const base = lineDraftPtsRef.current || [...pts]
-
-          const endIdx = Math.max(0, base.length - 2)
-
           let nextPos = { x: e.target.x(), y: e.target.y() }
 
-          const other =
-            pointIndex === 0 ? { x: base[endIdx], y: base[endIdx + 1] } : { x: base[0], y: base[1] }
+          // Determine reference point (neighbor)
+          let refPoint = { x: 0, y: 0 }
+          if (pointIndex === 0) refPoint = { x: base[2], y: base[3] }
+          else refPoint = { x: base[pointIndex - 2], y: base[pointIndex - 1] }
 
-          if (e.evt.shiftKey) {
-            nextPos = snap45(nextPos, other)
+          const isOrthogonal = line.routing === 'orthogonal'
+          const isShift = e.evt.shiftKey
+
+          if (isOrthogonal || isShift) {
+            const step = isOrthogonal && !isShift ? Math.PI / 2 : Math.PI / 4
+            nextPos = snapAngle(nextPos, refPoint, step)
           } else {
             nextPos = snapToGrid(nextPos)
           }
@@ -1117,34 +715,37 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
             lastHighlightedAnchorKeyRef.current = null
           }
 
-          for (const n of nodesForSnap) {
-            if (n.t === 'line') continue
+          // Only snap endpoints (start/end) to other nodes
+          if (pointIndex === 0 || pointIndex === base.length - 2) {
+            for (const n of nodesForSnap) {
+              if (n.t === 'line') continue
 
-            const nx = n.x ?? 0
-            const ny = n.y ?? 0
-            const nw = n.w ?? 0
-            const nh = n.h ?? 0
-            const inCandidateRange =
-              nextPos.x >= nx - showMargin &&
-              nextPos.x <= nx + nw + showMargin &&
-              nextPos.y >= ny - showMargin &&
-              nextPos.y <= ny + nh + showMargin
+              const nx = n.x ?? 0
+              const ny = n.y ?? 0
+              const nw = n.w ?? 0
+              const nh = n.h ?? 0
+              const inCandidateRange =
+                nextPos.x >= nx - showMargin &&
+                nextPos.x <= nx + nw + showMargin &&
+                nextPos.y >= ny - showMargin &&
+                nextPos.y <= ny + nh + showMargin
 
-            for (const a of anchors) {
-              const p = getAnchorPoint(n, a)
-              if (!p) continue
+              for (const a of anchors) {
+                const p = getAnchorPoint(n, a)
+                if (!p) continue
 
-              if (inCandidateRange) {
-                const key = `${n.id}:${a} `
-                const circle = anchorCircleMapRef.current.get(key)
-                if (circle) circle.visible(true)
-              }
+                if (inCandidateRange) {
+                  const key = `${n.id}:${a} `
+                  const circle = anchorCircleMapRef.current.get(key)
+                  if (circle) circle.visible(true)
+                }
 
-              const dx = p.x - nextPos.x
-              const dy = p.y - nextPos.y
-              const d2 = dx * dx + dy * dy
-              if (d2 <= threshold * threshold && (!best || d2 < best.dist2)) {
-                best = { nodeId: n.id, anchor: a, x: p.x, y: p.y, dist2: d2 }
+                const dx = p.x - nextPos.x
+                const dy = p.y - nextPos.y
+                const d2 = dx * dx + dy * dy
+                if (d2 <= threshold * threshold && (!best || d2 < best.dist2)) {
+                  best = { nodeId: n.id, anchor: a, x: p.x, y: p.y, dist2: d2 }
+                }
               }
             }
           }
@@ -1154,7 +755,8 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
             e.target.position(nextPos)
             if (pointIndex === 0)
               startConnDraftRef.current = { nodeId: best.nodeId, anchor: best.anchor }
-            else endConnDraftRef.current = { nodeId: best.nodeId, anchor: best.anchor }
+            else if (pointIndex === base.length - 2)
+              endConnDraftRef.current = { nodeId: best.nodeId, anchor: best.anchor }
 
             const key = `${best.nodeId}:${best.anchor} `
             const circle = anchorCircleMapRef.current.get(key)
@@ -1172,8 +774,9 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
               lastHighlightedAnchorKeyRef.current = key
             }
           } else {
+            // Clear connections if detached
             if (pointIndex === 0) startConnDraftRef.current = undefined
-            else endConnDraftRef.current = undefined
+            else if (pointIndex === base.length - 2) endConnDraftRef.current = undefined
           }
 
           e.target.position(nextPos)
@@ -1385,126 +988,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
               )
             })()}
 
-            {/* Midpoint Waypoint Handles */}
-            {isSelected && !readOnly && (() => {
-              const segments: { x1: number, y1: number, x2: number, y2: number, idx: number }[] = []
-              for (let i = 0; i < pts.length - 2; i += 2) {
-                segments.push({
-                  x1: pts[i], y1: pts[i + 1],
-                  x2: pts[i + 2], y2: pts[i + 3],
-                  idx: i
-                })
-              }
-
-              return (
-                <>
-                  {segments.map((seg, i) => {
-                    const midX = (seg.x1 + seg.x2) / 2
-                    const midY = (seg.y1 + seg.y2) / 2
-                    return (
-                      <Circle
-                        key={`mid-handle-${i} `}
-                        x={midX}
-                        y={midY}
-                        radius={4 * invScale}
-                        fill="#fbbf24" // Amber for waypoints
-                        stroke="#d97706"
-                        strokeWidth={1 * invScale}
-                        opacity={0.6}
-                        onMouseEnter={(e) => {
-                          e.target.opacity(1)
-                          const container = e.target.getStage()?.container()
-                          if (container) container.style.cursor = 'copy' // Indicate "add point"
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.opacity(0.6)
-                          const container = e.target.getStage()?.container()
-                          if (container) container.style.cursor = 'default'
-                        }}
-                        draggable
-                        onDragStart={(e) => {
-                          // Start dragging a new point
-                          e.cancelBubble = true
-                          isLineHandleDraggingRef.current = true
-                          // Insert point in pts (conceptually)
-                          const newPts = [...pts]
-                          // insert at seg.idx + 2
-                          newPts.splice(seg.idx + 2, 0, midX, midY)
-
-                          lineDraftPtsRef.current = newPts;
-
-                          // We are effectively dragging the point at index seg.idx + 2
-                          // Use 'name' to store index? trickier.
-                          // We will just invoke logic similar to moveHandleDrag but shift indices
-                          (e.target as any).setAttr('pointIndex', seg.idx + 2)
-
-                          if (anchorOverlayGroupRef.current) {
-                            anchorOverlayGroupRef.current.visible(true)
-                          }
-                          const group = e.target.getParent()
-                          if (group) (group as Konva.Group).draggable(false)
-                        }}
-                        onDragMove={(e) => {
-                          const idx = (e.target as any).getAttr('pointIndex') as number
-                          // Reuse moveHandleDrag logic effectively
-                          const base = lineDraftPtsRef.current || [...pts] // This might fail if draft not set?
-                          // Actually, dragStart set inline draft.
-                          // We need to implement the move logic here or call a shared function.
-                          // duplicating minimal logic here for safety
-                          let nextPos = { x: e.target.x(), y: e.target.y() }
-
-                          // Snap logic
-                          if (e.evt.shiftKey) {
-                            // Snap to previous or next point?
-                            // midpoint connects idx-2 and idx+2 (in new array)
-                            // Let's snap to prev point for now
-                            if (idx >= 2) {
-                              nextPos = snap45(nextPos, { x: base[idx - 2], y: base[idx - 1] })
-                            }
-                          } else {
-                            nextPos = snapToGrid(nextPos)
-                          }
-
-                          e.target.position(nextPos)
-
-                          const next = [...base]
-                          next[idx] = nextPos.x
-                          next[idx + 1] = nextPos.y
-                          lineDraftPtsRef.current = next
-                          applyDraftToVisuals(next)
-                          e.cancelBubble = true
-                        }}
-                        onDragEnd={(e) => {
-                          e.cancelBubble = true
-                          const next = lineDraftPtsRef.current
-                          const group = e.target.getParent()
-                          if (group) (group as Konva.Group).draggable((readOnly ? false : !element.locked) && isSelected)
-                          if (anchorOverlayGroupRef.current) {
-                            anchorOverlayGroupRef.current.visible(false)
-                          }
-
-                          if (next) {
-                            onChange({
-                              id: element.id,
-                              pts: next
-                            })
-                          }
-                          setTimeout(() => {
-                            isLineHandleDraggingRef.current = false
-                            lineDraftPtsRef.current = null
-                          }, 0)
-                        }}
-                        onMouseDown={(e) => {
-                          e.cancelBubble = true
-                        }}
-                      />
-                    )
-                  })}
-                </>
-              )
-            })()
-            }
-          </Group >
+          </Group>
         )
       }
       case 'image': {

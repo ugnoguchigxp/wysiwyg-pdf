@@ -10,7 +10,7 @@ import { useI18n } from '@/i18n/I18nContext'
 import { UnifiedPropertyPanel } from '@/features/konva-editor/components/PropertyPanel/UnifiedPropertyPanel'
 import type { WidgetProps } from '@/features/konva-editor/components/PropertyPanel/widgets'
 import { REPORT_PANEL_CONFIG } from '@/features/konva-editor/constants/propertyPanelConfig'
-import type { Doc, TableNode, UnifiedNode } from '@/types/canvas'
+import type { Doc, LineNode, TableNode, UnifiedNode } from '@/types/canvas'
 import type { IDataSchema } from '@/types/schema'
 import { BindingSelector } from './BindingSelector'
 import { DataBindingModal } from './DataBindingModal'
@@ -83,101 +83,101 @@ const CanvasSettingsPanel: React.FC<{
   onSnapStrengthChange,
   resolveText,
 }) => {
-  const { t } = useI18n()
-  const currentSurface =
-    templateDoc.surfaces.find((s) => s.id === currentPageId) || templateDoc.surfaces[0]
-  const bg = currentSurface?.bg || '#ffffff'
-  const isColor = bg.startsWith('#') || bg.startsWith('rgb')
+    const { t } = useI18n()
+    const currentSurface =
+      templateDoc.surfaces.find((s) => s.id === currentPageId) || templateDoc.surfaces[0]
+    const bg = currentSurface?.bg || '#ffffff'
+    const isColor = bg.startsWith('#') || bg.startsWith('rgb')
 
-  const updateSurface = (updates: Partial<typeof currentSurface>) => {
-    const nextDoc = {
-      ...templateDoc,
-      surfaces: templateDoc.surfaces.map((s) =>
-        s.id === currentSurface.id ? { ...s, ...updates } : s
-      ),
+    const updateSurface = (updates: Partial<typeof currentSurface>) => {
+      const nextDoc = {
+        ...templateDoc,
+        surfaces: templateDoc.surfaces.map((s) =>
+          s.id === currentSurface.id ? { ...s, ...updates } : s
+        ),
+      }
+      onTemplateChange(nextDoc)
     }
-    onTemplateChange(nextDoc)
-  }
 
-  return (
-    <div className="w-64 bg-secondary px-2 py-1 overflow-x-hidden overflow-y-auto text-foreground">
-      {/* Page Background */}
-      <div className="mb-3">
-        <h4 className="text-[13px] font-medium text-muted-foreground mb-1">
-          {resolveText('properties_page_background', 'Background')}
-        </h4>
-        <div className="mb-1">
-          <label className={labelClass}>{resolveText('color', 'Color')}</label>
-          <input
-            type="color"
-            value={isColor ? bg : '#ffffff'}
-            onChange={(e) => updateSurface({ bg: e.target.value })}
-            className={`${inputClass} h-8 p-0.5 cursor-pointer`}
-          />
-        </div>
-        <div>
-          <label className={labelClass}>{resolveText('properties_image_url', 'Image URL')}</label>
-          <input
-            value={!isColor ? bg : ''}
-            onChange={(e) => updateSurface({ bg: e.target.value })}
-            placeholder={resolveText('properties_image_url_placeholder', 'http://...')}
-            className={inputClass}
-          />
-        </div>
-      </div>
-
-      {/* Grid Settings */}
-      {onShowGridChange && (
+    return (
+      <div className="w-64 bg-secondary px-2 py-1 overflow-x-hidden overflow-y-auto text-foreground">
+        {/* Page Background */}
         <div className="mb-3">
-          <div className="flex items-center justify-between mb-1">
-            <label className="text-[13px] text-muted-foreground">
-              {t('settings_show_grid', 'Grid')}
-            </label>
+          <h4 className="text-[13px] font-medium text-muted-foreground mb-1">
+            {resolveText('properties_page_background', 'Background')}
+          </h4>
+          <div className="mb-1">
+            <label className={labelClass}>{resolveText('color', 'Color')}</label>
             <input
-              type="checkbox"
-              checked={showGrid ?? false}
-              onChange={(e) => onShowGridChange(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              type="color"
+              value={isColor ? bg : '#ffffff'}
+              onChange={(e) => updateSurface({ bg: e.target.value })}
+              className={`${inputClass} h-8 p-0.5 cursor-pointer`}
             />
           </div>
-          {showGrid && onGridSizeChange && (
-            <div>
-              <label className={labelClass}>{t('settings_grid_size', 'Size')}</label>
-              <select
-                value={gridSize ?? 13}
-                onChange={(e) => onGridSizeChange(Number(e.target.value))}
-                className={inputClass}
-              >
-                {FIBONACCI_GRID_SIZES.map((size) => (
-                  <option key={size} value={size}>
-                    {size}pt
-                  </option>
-                ))}
-              </select>
+          <div>
+            <label className={labelClass}>{resolveText('properties_image_url', 'Image URL')}</label>
+            <input
+              value={!isColor ? bg : ''}
+              onChange={(e) => updateSurface({ bg: e.target.value })}
+              placeholder={resolveText('properties_image_url_placeholder', 'http://...')}
+              className={inputClass}
+            />
+          </div>
+        </div>
+
+        {/* Grid Settings */}
+        {onShowGridChange && (
+          <div className="mb-3">
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-[13px] text-muted-foreground">
+                {t('settings_show_grid', 'Grid')}
+              </label>
+              <input
+                type="checkbox"
+                checked={showGrid ?? false}
+                onChange={(e) => onShowGridChange(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
             </div>
-          )}
-        </div>
-      )}
-
-      {/* Snap to Grid */}
-      {onSnapStrengthChange && (
-        <div className="mb-3">
-          <div className="flex items-center justify-between">
-            <label className="text-[13px] text-muted-foreground">
-              {t('settings_snap_to_grid', 'Snap to Grid')}
-            </label>
-            <input
-              type="checkbox"
-              checked={(snapStrength ?? 0) > 0}
-              onChange={(e) => onSnapStrengthChange(e.target.checked ? (gridSize ?? 15) : 0)}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
+            {showGrid && onGridSizeChange && (
+              <div>
+                <label className={labelClass}>{t('settings_grid_size', 'Size')}</label>
+                <select
+                  value={gridSize ?? 13}
+                  onChange={(e) => onGridSizeChange(Number(e.target.value))}
+                  className={inputClass}
+                >
+                  {FIBONACCI_GRID_SIZES.map((size) => (
+                    <option key={size} value={size}>
+                      {size}pt
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
-        </div>
-      )}
-    </div>
-  )
-}
+        )}
+
+        {/* Snap to Grid */}
+        {onSnapStrengthChange && (
+          <div className="mb-3">
+            <div className="flex items-center justify-between">
+              <label className="text-[13px] text-muted-foreground">
+                {t('settings_snap_to_grid', 'Snap to Grid')}
+              </label>
+              <input
+                type="checkbox"
+                checked={(snapStrength ?? 0) > 0}
+                onChange={(e) => onSnapStrengthChange(e.target.checked ? (gridSize ?? 15) : 0)}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
 
 // ========================================
 // Signature Drawing Panel (署名描画モード時)
@@ -369,6 +369,74 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
         />
       </div>
     ),
+    lineRouting: ({ node }) => {
+      const line = node as LineNode
+      return (
+        <div className="mb-3">
+          <label className="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={line.routing === 'orthogonal'}
+              onChange={e => handleChange(node.id, { routing: e.target.checked ? 'orthogonal' : 'straight' })}
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-[13px] text-muted-foreground">Orthogonal Routing (90°)</span>
+          </label>
+        </div>
+      )
+    },
+    lineWaypoints: ({ node }) => {
+      const line = node as LineNode
+      const intermediateCount = Math.max(0, (line.pts.length - 4) / 2)
+
+      const updateCount = (newCount: number) => {
+        if (isNaN(newCount) || newCount < 0) return
+        const currentCount = (line.pts.length - 4) / 2
+        if (newCount === currentCount) return
+
+        let newPts = [...line.pts]
+
+        if (newCount > currentCount) {
+          // Add points
+          const addCount = newCount - currentCount
+          for (let i = 0; i < addCount; i++) {
+            // Insert at midpoint of last segment (closest to end)
+            // Current end is at length-2, length-1
+            // Previous point is at length-4, length-3
+            const len = newPts.length
+            const p1x = newPts[len - 4], p1y = newPts[len - 3]
+            const p2x = newPts[len - 2], p2y = newPts[len - 1]
+            const mx = (p1x + p2x) / 2
+            const my = (p1y + p2y) / 2
+            // Insert before end point (at index len-2)
+            newPts.splice(len - 2, 0, mx, my)
+          }
+        } else {
+          // Remove points (from end of intermediate list)
+          const removeCount = currentCount - newCount
+          // Remove intermediate points before end point.
+          // End point is at len-2.
+          // Last intermediate is at len-4.
+          // Remove range: [len-2 - (removeCount*2), len-2] ?
+          // Splice start index: length - 2 - (count * 2)
+          newPts.splice(newPts.length - 2 - (removeCount * 2), removeCount * 2)
+        }
+        handleChange(node.id, { pts: newPts })
+      }
+
+      return (
+        <div className="mb-3">
+          <label className={labelClass}>Waypoints Count</label>
+          <input
+            type="number"
+            min="0"
+            value={intermediateCount}
+            onChange={e => updateCount(parseInt(e.target.value))}
+            className={inputClass}
+          />
+        </div>
+      )
+    },
   }
 
   const handleBindingSelect = (binding: { field?: string }) => {

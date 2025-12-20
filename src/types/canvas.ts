@@ -161,6 +161,7 @@ export interface LineNode extends BaseNode {
   stroke: Color
   strokeW: number
   dash?: number[]
+  routing?: 'straight' | 'orthogonal' | 'bezier'
 }
 
 export interface ImageNode extends BaseNode {

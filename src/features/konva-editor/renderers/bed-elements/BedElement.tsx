@@ -1,7 +1,7 @@
 import type Konva from 'konva'
 import type React from 'react'
 import { Group, Rect, Text } from 'react-konva'
-import type { CanvasElementCommonProps } from '@/components/canvas/CanvasElementRenderer'
+import type { CanvasElementCommonProps } from '@/components/canvas/types'
 import type { BedStatusData } from '@/features/bed-layout-dashboard/types'
 import type { WidgetNode } from '@/types/canvas'
 import { ptToMm } from '@/utils/units'

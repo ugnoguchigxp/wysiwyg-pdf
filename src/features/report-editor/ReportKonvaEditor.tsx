@@ -191,8 +191,9 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       x: number
       y: number
       elementId: string
-      row: number
-      col: number
+      type: 'table' | 'line'
+      row?: number
+      col?: number
     } | null>(null)
 
     // Sync selectedCell to parent
@@ -301,6 +302,8 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
           table: {
             ...table.table,
             cells,
+            rows: table.table.rows,
+            cols: table.table.cols,
           },
         } as TableNode
       })
@@ -311,18 +314,26 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
 
     const handleElementChange = useCallback(
       (
-        updates: Partial<UnifiedNode> & { id?: string },
+        updates: (Partial<UnifiedNode> & { id?: string }) | (Partial<UnifiedNode> & { id?: string })[],
         options?: { saveToHistory?: boolean; force?: boolean }
       ) => {
-        const targetId = updates.id || selectedElementId
-        if (!targetId) return
+        const updateList = Array.isArray(updates) ? updates : [updates]
 
+        // Optimize: Create a map of updates by ID for O(1) lookup
+        const updateMap = new Map(updateList.map(u => {
+          const id = u.id || selectedElementId
+          return [id, u]
+        }))
+
+        // Iterate once over all nodes
         const nextNodes = templateDoc.nodes.map((el) => {
-          if (el.id === targetId) {
-            return { ...el, ...updates, id: targetId } as UnifiedNode
+          const update = updateMap.get(el.id)
+          if (update) {
+            return { ...el, ...update, id: el.id } as UnifiedNode
           }
           return el
         })
+
         onTemplateChange({ ...templateDoc, nodes: nextNodes }, options)
       },
       [onTemplateChange, selectedElementId, templateDoc]
@@ -398,6 +409,8 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
 
     const handleContextMenu = (e: Konva.KonvaEventObject<PointerEvent>, element: UnifiedNode) => {
       e.evt.preventDefault()
+
+
       if (element.t !== 'table') return
 
       // Prefer parsing the actual clicked cell from target id.
@@ -435,10 +448,12 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
         x: e.evt.clientX,
         y: e.evt.clientY,
         elementId: parsed.elementId,
+        type: 'table',
         row: parsed.row,
         col: parsed.col,
       })
     }
+
 
     const applyTableUpdate = useCallback(
       (elementId: string, updater: (t: TableNode) => TableNode) => {
@@ -465,9 +480,17 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
           | 'unmerge'
       ) => {
         if (!contextMenu) return
-        const { elementId, row, col } = contextMenu
+        const { elementId, row, col, type } = contextMenu
+
+
+        if (type !== 'table' || row === undefined || col === undefined) return
+        // proceed with table logic...
 
         applyTableUpdate(elementId, (table) => {
+          // ... strict check for row/col existence?
+          // The `applyTableUpdate` callback uses `row` and `col` from closure context (the consts above).
+          // So they are now guarded (number).
+
           const rowCount = table.table.rows.length
           const colCount = table.table.cols.length
           const cells = [...table.table.cells]
@@ -1259,12 +1282,13 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
           )}
 
           <TableContextMenu
-            visible={!!contextMenu?.visible}
+            visible={!!contextMenu?.visible && contextMenu?.type === 'table'}
             x={contextMenu?.x || 0}
             y={contextMenu?.y || 0}
             onClose={() => setContextMenu(null)}
             onAction={handleContextMenuAction}
           />
+
 
           {editingCell && selectedCellBox && selectedTable && (
             <textarea

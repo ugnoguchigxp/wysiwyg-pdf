@@ -241,6 +241,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
       pts: [x, y, x + 50, y],
       stroke: '#000000',
       strokeW: 0.2,
+      routing: 'orthogonal',
     }
     withNewElement(line)
   }
