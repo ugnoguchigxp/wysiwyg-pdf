@@ -11,6 +11,7 @@ import { useI18n } from '@/i18n/I18nContext'
 import { EditableSelect } from '@/components/ui/EditableSelect'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/Tooltip'
 import { DEFAULT_FONT_FAMILIES } from '@/features/konva-editor/constants/propertyPanelConfig'
+import { ColorInput } from '@/features/konva-editor/components/PropertyPanel/ColorInput'
 import type { TableNode } from '@/types/canvas'
 
 // Helper type for cell properties
@@ -114,7 +115,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
   const defaultCell: Partial<CellProps> = {
     fontSize: 12,
     font: 'Meiryo',
-    bg: '#ffffff',
+    bg: 'transparent',
     align: 'l',
     vAlign: 'm',
     color: '#000000',
@@ -182,11 +183,9 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                 <label className={labelClass}>
                   {resolveText('properties_font_color', 'FontColor')}
                 </label>
-                <input
-                  type="color"
-                  className="w-full h-8 rounded border border-border bg-background"
+                <ColorInput
                   value={activeData.color || '#000000'}
-                  onChange={(e) => updateCells({ color: e.target.value })}
+                  onChange={(val) => updateCells({ color: val })}
                 />
               </div>
             </div>
@@ -317,23 +316,19 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
               <label className={labelClass}>
                 {resolveText('properties_background_color', 'Background Color')}
               </label>
-              <input
-                type="color"
-                className="w-full h-8 rounded border border-border bg-background"
-                value={activeData.bg || '#ffffff'}
-                onChange={(e) => updateCells({ bg: e.target.value })}
+              <ColorInput
+                value={activeData.bg || 'transparent'}
+                onChange={(val) => updateCells({ bg: val })}
               />
             </div>
             <div>
               <label className={labelClass}>
                 {resolveText('properties_border_color', 'Border Color')}
               </label>
-              <input
-                type="color"
-                className="w-full h-8 rounded border border-border bg-background"
+              <ColorInput
                 value={activeData.borderColor || activeData.border || '#000000'}
-                onChange={(e) =>
-                  updateCells({ borderColor: e.target.value, border: e.target.value })
+                onChange={(val) =>
+                  updateCells({ borderColor: val, border: val })
                 }
               />
             </div>
@@ -351,6 +346,6 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div >
   )
 }

@@ -46,6 +46,7 @@ interface KonvaCanvasEditorProps {
   showGrid?: boolean
   snapStrength?: number
   gridSize?: number
+  onCreateElements?: (elements: UnifiedNode[]) => void
 }
 
 export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvasEditorProps>(
@@ -71,6 +72,7 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       showGrid = false,
       snapStrength = 5,
       gridSize = 5,
+      onCreateElements,
     },
     ref
   ) => {
@@ -180,10 +182,55 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       onSelect(elements.map((el) => el.id))
     }
 
+    const handleCopy = () => {
+      if (selectedIds.length === 0) return
+      const selectedElements = elements.filter((el) => selectedIds.includes(el.id))
+      if (selectedElements.length > 0) {
+        localStorage.setItem('__konva_clipboard', JSON.stringify(selectedElements))
+      }
+    }
+
+    const handlePaste = () => {
+      if (!onCreateElements || readOnly) return
+      try {
+        const json = localStorage.getItem('__konva_clipboard')
+        if (!json) return
+        const clipboardElements = JSON.parse(json) as UnifiedNode[]
+
+        if (!Array.isArray(clipboardElements) || clipboardElements.length === 0) return
+
+        // Calculate center or offset
+        // For simplicity, just offset by 10mm
+        const newElements = clipboardElements.map((el) => {
+          const newId = crypto.randomUUID()
+          const newEl = { ...el, id: newId }
+
+          if ('x' in newEl && 'y' in newEl && typeof newEl.x === 'number' && typeof newEl.y === 'number') {
+            // Offset by 10mm (approx 38px at 96dpi, but we work in mm here? 
+            // Wait, units in this app: x,y are in mm? 
+            // Looking at `handleMove`, it adds dx directly.
+            // Looking at `pxToMm`, it seems coordinates are mm.
+            newEl.x += 10
+            newEl.y += 10
+          }
+          return newEl
+        })
+
+        onCreateElements(newElements)
+        // Optionally select the pasted elements
+        onSelect(newElements.map(e => e.id))
+
+      } catch (e) {
+        console.error('Failed to paste elements', e)
+      }
+    }
+
     useKeyboardShortcuts({
       onUndo,
       onRedo,
       onDelete,
+      onCopy: handleCopy,
+      onPaste: handlePaste,
       onSelectAll: handleSelectAll,
       onMoveUp: (step) => handleMove(0, -step),
       onMoveDown: (step) => handleMove(0, step),

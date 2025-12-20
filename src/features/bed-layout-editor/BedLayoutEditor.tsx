@@ -22,6 +22,7 @@ interface KonvaEditorProps {
   snapStrength?: number
   gridSize?: number
   surfaceId?: string
+  onCreateNodes?: (nodes: UnifiedNode[]) => void
 }
 
 export interface BedLayoutEditorHandle {
@@ -44,6 +45,7 @@ export const BedLayoutEditor = React.forwardRef<BedLayoutEditorHandle, KonvaEdit
       snapStrength = 5,
       gridSize = 15,
       surfaceId,
+      onCreateNodes,
     },
     ref
   ) => {
@@ -140,6 +142,7 @@ export const BedLayoutEditor = React.forwardRef<BedLayoutEditorHandle, KonvaEdit
         showGrid={showGrid}
         snapStrength={snapStrength}
         gridSize={gridSize}
+        onCreateElements={onCreateNodes}
       />
     )
   }

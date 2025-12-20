@@ -22,8 +22,10 @@ import {
   Strikethrough,
   Underline,
 } from 'lucide-react'
+import { HexAlphaColorPicker } from 'react-colorful'
 import type React from 'react'
 import { useEffect, useState } from 'react'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import type {
   AlignmentWidgetConfig,
   ArrowheadWidgetConfig,
@@ -32,7 +34,6 @@ import type {
   DataBindingWidgetConfig,
   FillWidgetConfig,
   FontWidgetConfig,
-  GridLayout,
   ImageWidgetConfig,
   LabelFieldWidgetConfig,
   LineStyleWidgetConfig,
@@ -58,6 +59,9 @@ import type {
   TextNode,
   UnifiedNode,
 } from '@/types/canvas'
+
+import { ColorInput } from './ColorInput'
+
 import { mmToPt, ptToMm, pxToMm } from '@/utils/units'
 import { cn } from '@/utils/utils'
 
@@ -76,67 +80,7 @@ export interface WidgetProps<T extends WidgetConfig = WidgetConfig> {
 // Shared UI Components
 // ========================================
 
-export const WidgetLabel: React.FC<{
-  htmlFor?: string
-  children: React.ReactNode
-  className?: string
-}> = ({ htmlFor, children, className }) => (
-  <label
-    htmlFor={htmlFor}
-    className={cn('block text-[13px] text-muted-foreground mb-0.5', className)}
-  >
-    {children}
-  </label>
-)
-
-export const WidgetInput: React.FC<
-  React.InputHTMLAttributes<HTMLInputElement> & { inputClassName?: string }
-> = ({ className, inputClassName, ...props }) => (
-  <input
-    className={cn(
-      'w-full px-1.5 py-1 border border-border rounded text-[13px]',
-      'bg-background text-foreground',
-      'focus:outline-none focus:ring-1 focus:ring-ring',
-      inputClassName,
-      className
-    )}
-    {...props}
-  />
-)
-
-export const WidgetSelect: React.FC<
-  React.SelectHTMLAttributes<HTMLSelectElement> & { children: React.ReactNode }
-> = ({ className, children, ...props }) => (
-  <select
-    className={cn(
-      'w-full px-1.5 py-1 border border-border rounded text-[13px]',
-      'bg-background text-foreground',
-      'focus:outline-none focus:ring-1 focus:ring-ring',
-      className
-    )}
-    {...props}
-  >
-    {children}
-  </select>
-)
-
-export const GridContainer: React.FC<{
-  grid?: GridLayout
-  children: React.ReactNode
-}> = ({ grid, children }) => {
-  if (!grid) return <>{children}</>
-  return (
-    <div
-      className="grid w-full"
-      style={{
-        gridTemplateColumns: `repeat(${grid.cols}, 1fr)`,
-        gap: `${grid.gap ?? 8}px`,
-      }}
-    >
-      {children}
-    </div>
-  )
-}
+import { GridContainer, WidgetInput, WidgetLabel, WidgetSelect } from './shared'
 
 // ========================================
 // Position & Size Widget
@@ -472,11 +416,9 @@ export const StrokeWidget: React.FC<WidgetProps<StrokeWidgetConfig>> = ({
       {props.showColor && (
         <div>
           <WidgetLabel>{resolveText('properties_stroke_color', 'Stroke Color')}</WidgetLabel>
-          <WidgetInput
-            type="color"
+          <ColorInput
             value={strokeNode.stroke ?? '#000000'}
-            onChange={(e) => onChange({ stroke: e.target.value })}
-            className="h-8 p-0.5 cursor-pointer"
+            onChange={(color) => onChange({ stroke: color })}
           />
         </div>
       )}
@@ -514,11 +456,9 @@ export const FillWidget: React.FC<WidgetProps<FillWidgetConfig>> = ({
   return (
     <div>
       <WidgetLabel>{resolveText(config.labelKey ?? 'properties_fill_color', 'Fill')}</WidgetLabel>
-      <WidgetInput
-        type="color"
-        value={fillNode.fill ?? '#ffffff'}
-        onChange={(e) => onChange({ fill: e.target.value })}
-        className="h-8 p-0.5 cursor-pointer"
+      <ColorInput
+        value={fillNode.fill ?? '#000000'}
+        onChange={(color) => onChange({ fill: color })}
       />
     </div>
   )
@@ -544,11 +484,9 @@ export const BorderWidget: React.FC<WidgetProps<BorderWidgetConfig>> = ({
           <WidgetLabel>
             {resolveText(config.labelKey ?? 'properties_border_color', 'BorderColor')}
           </WidgetLabel>
-          <WidgetInput
-            type="color"
+          <ColorInput
             value={shapeNode.stroke ?? '#000000'}
-            onChange={(e) => onChange({ stroke: e.target.value })}
-            className="h-8 p-0.5 cursor-pointer"
+            onChange={(color) => onChange({ stroke: color })}
           />
         </div>
       )}
@@ -596,24 +534,78 @@ export const ColorPickerWidget: React.FC<WidgetProps<ColorPickerWidgetConfig>> =
   return (
     <div>
       <WidgetLabel>{resolveText(labelKey, fallbackLabel)}</WidgetLabel>
-      <WidgetInput
-        type="color"
-        value={value}
-        onChange={(e) => {
-          const newVal = e.target.value
-          const updates: Partial<UnifiedNode> = { [fieldKey]: newVal } as unknown as Partial<UnifiedNode>
-
-          // If changing border color and width is 0/undefined, set a default width
-          if (fieldKey === 'borderColor') {
-            const currentWidth = (node as unknown as Record<string, number>)['borderWidth']
-            if (!currentWidth || currentWidth === 0) {
-              (updates as unknown as Record<string, number>)['borderWidth'] = 0.1
-            }
-          }
-          onChange(updates)
-        }}
-        className="h-8 p-0.5 cursor-pointer"
-      />
+      <div className="flex items-center gap-2">
+        <Popover>
+          <PopoverTrigger asChild>
+            <div
+              className="w-8 h-8 rounded border border-border cursor-pointer relative overflow-hidden"
+              style={{
+                background:
+                  'conic-gradient(#eee 0 25%, white 0 50%, #eee 0 75%, white 0)',
+                backgroundSize: '8px 8px',
+              }}
+            >
+              <div
+                className="absolute inset-0 w-full h-full"
+                style={{ backgroundColor: value }}
+              />
+            </div>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-3" align="start">
+            <HexAlphaColorPicker
+              color={value === 'transparent' ? '#00000000' : value}
+              onChange={(newColor) => {
+                const updates: Partial<UnifiedNode> = { [fieldKey]: newColor } as unknown as Partial<UnifiedNode>
+                if (fieldKey === 'borderColor') {
+                  const currentWidth = (node as unknown as Record<string, number>)['borderWidth']
+                  if (!currentWidth || currentWidth === 0) {
+                    (updates as unknown as Record<string, number>)['borderWidth'] = 0.1
+                  }
+                }
+                onChange(updates)
+              }}
+            />
+            <div className="mt-3">
+              <WidgetInput
+                value={value}
+                onChange={(e) => {
+                  const newVal = e.target.value
+                  const updates: Partial<UnifiedNode> = { [fieldKey]: newVal } as unknown as Partial<UnifiedNode>
+                  if (fieldKey === 'borderColor') {
+                    const currentWidth = (node as unknown as Record<string, number>)['borderWidth']
+                    if (!currentWidth || currentWidth === 0) {
+                      (updates as unknown as Record<string, number>)['borderWidth'] = 0.1
+                    }
+                  }
+                  onChange(updates)
+                }}
+                className="uppercase flex-1"
+              />
+              <button
+                className="w-10 h-10 border border-border rounded ml-2 flex items-center justify-center bg-muted hover:bg-muted/80 relative overflow-hidden"
+                onClick={() => {
+                  const updates: Partial<UnifiedNode> = { [fieldKey]: 'transparent' } as unknown as Partial<UnifiedNode>
+                  if (fieldKey === 'borderColor') {
+                    const currentWidth = (node as unknown as Record<string, number>)['borderWidth']
+                    if (!currentWidth || currentWidth === 0) {
+                      (updates as unknown as Record<string, number>)['borderWidth'] = 0.1
+                    }
+                  }
+                  onChange(updates)
+                }}
+                title="Transparent"
+              >
+                <div className="absolute inset-0" style={{
+                  background: 'conic-gradient(#eee 0 25%, white 0 50%, #eee 0 75%, white 0)',
+                  backgroundSize: '8px 8px',
+                  opacity: 0.5
+                }} />
+                <div className="absolute inset-0 border-t border-red-500 transform rotate-45" />
+              </button>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
     </div>
   )
 }
