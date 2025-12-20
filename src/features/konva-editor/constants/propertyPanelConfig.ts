@@ -50,6 +50,7 @@ export type WidgetType =
   | 'dataBinding'
   | 'custom'
   | 'arrowhead'
+  | 'numberInput'
 
 // ========================================
 // Preset System (プリセットシステム)
@@ -173,13 +174,24 @@ export interface DataBindingWidgetConfig extends BaseWidgetConfig {
 }
 export interface CustomWidgetConfig extends BaseWidgetConfig {
   type: 'custom'
-  props: { renderKey: string; [key: string]: unknown }
+  props: { renderKey: string;[key: string]: unknown }
 }
 
 export interface ArrowheadWidgetConfig extends BaseWidgetConfig {
   type: 'arrowhead'
   props?: {
     position: 'start' | 'end'
+  }
+}
+
+export interface NumberInputWidgetConfig extends BaseWidgetConfig {
+  type: 'numberInput'
+  props: {
+    fieldKey: string
+    min?: number
+    max?: number
+    step?: number
+    unit?: string
   }
 }
 
@@ -219,6 +231,7 @@ export type WidgetConfig =
   | ArrowheadWidgetConfig
   | DataBindingWidgetConfig
   | CustomWidgetConfig
+  | NumberInputWidgetConfig
 
 // ========================================
 // Section Configuration
@@ -433,8 +446,8 @@ export const SECTION_PRESETS: Record<string, SectionConfig> = {
     id: 'text-font',
     widgets: ['font:full'],
   },
-  'sec:text-colors': {
-    id: 'text-colors',
+  'sec:text-style': {
+    id: 'text-style',
     grid: { cols: 3, gap: 4 },
     widgets: [
       {
@@ -444,10 +457,24 @@ export const SECTION_PRESETS: Record<string, SectionConfig> = {
       },
       {
         type: 'colorPicker',
-        labelKey: 'properties_border_color',
-        props: { fieldKey: 'stroke' },
+        labelKey: 'properties_background_color',
+        props: { fieldKey: 'backgroundColor' },
       },
-      { type: 'border', props: { showColor: false, showWidth: true } },
+      {
+        type: 'colorPicker',
+        labelKey: 'properties_border_color_box',
+        props: { fieldKey: 'borderColor' },
+      },
+      {
+        type: 'numberInput',
+        labelKey: 'properties_border_width_box',
+        props: { fieldKey: 'borderWidth', min: 0, step: 0.1, unit: 'mm' },
+      },
+      {
+        type: 'numberInput',
+        labelKey: 'properties_padding',
+        props: { fieldKey: 'padding', min: 0, step: 0.5, unit: 'mm' },
+      },
     ],
   },
   'sec:text-alignment': {
@@ -539,7 +566,7 @@ export const TEXT_OBJECT_CONFIG: ObjectPanelConfig = {
   header: { iconName: 'Type', labelKey: 'properties_element_text' },
   sections: [
     'sec:text-font',
-    'sec:text-colors',
+    'sec:text-style',
     'sec:text-alignment',
     'sec:text-content',
     'sec:text-binding',

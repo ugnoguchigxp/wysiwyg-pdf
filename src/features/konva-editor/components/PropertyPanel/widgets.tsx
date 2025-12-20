@@ -36,6 +36,7 @@ import type {
   ImageWidgetConfig,
   LabelFieldWidgetConfig,
   LineStyleWidgetConfig,
+  NumberInputWidgetConfig,
   PolygonWidgetConfig,
   PosSizeWidgetConfig,
   SelectWidgetConfig,
@@ -584,7 +585,7 @@ export const ColorPickerWidget: React.FC<WidgetProps<ColorPickerWidgetConfig>> =
   const fallbackLabel =
     labelKey === 'properties_font_color'
       ? 'FontColor'
-      : labelKey === 'properties_border_color'
+      : labelKey === 'properties_border_color' || labelKey === 'properties_border_color_box'
         ? 'BorderColor'
         : labelKey === 'properties_line_color'
           ? 'LineColor'
@@ -598,9 +599,19 @@ export const ColorPickerWidget: React.FC<WidgetProps<ColorPickerWidgetConfig>> =
       <WidgetInput
         type="color"
         value={value}
-        onChange={(e) =>
-          onChange({ [fieldKey]: e.target.value } as unknown as Partial<UnifiedNode>)
-        }
+        onChange={(e) => {
+          const newVal = e.target.value
+          const updates: Partial<UnifiedNode> = { [fieldKey]: newVal } as unknown as Partial<UnifiedNode>
+
+          // If changing border color and width is 0/undefined, set a default width
+          if (fieldKey === 'borderColor') {
+            const currentWidth = (node as unknown as Record<string, number>)['borderWidth']
+            if (!currentWidth || currentWidth === 0) {
+              (updates as unknown as Record<string, number>)['borderWidth'] = 0.1
+            }
+          }
+          onChange(updates)
+        }}
         className="h-8 p-0.5 cursor-pointer"
       />
     </div>
@@ -1051,6 +1062,39 @@ export const ArrowheadWidget: React.FC<WidgetProps<ArrowheadWidgetConfig>> = ({
 }
 
 // ========================================
+// Number Input Widget
+// ========================================
+
+export const NumberInputWidget: React.FC<WidgetProps<NumberInputWidgetConfig>> = ({
+  config,
+  node,
+  onChange,
+  resolveText,
+}) => {
+  const { fieldKey, min, max, step = 1, unit } = config.props
+  const value = (node as unknown as Record<string, number>)[fieldKey] ?? 0
+
+  return (
+    <div>
+      <WidgetLabel>{resolveText(config.labelKey ?? fieldKey, fieldKey)}</WidgetLabel>
+      <div className="flex items-center gap-1">
+        <WidgetInput
+          type="number"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(e) =>
+            onChange({ [fieldKey]: parseFloat(e.target.value) } as unknown as Partial<UnifiedNode>)
+          }
+        />
+        {unit && <span className="text-[12px] text-muted-foreground">{unit}</span>}
+      </div>
+    </div>
+  )
+}
+
+// ========================================
 // Widget Renderer (Factory)
 // ========================================
 
@@ -1100,6 +1144,8 @@ export const renderWidget = (
       return null
     case 'dataBinding':
       return <DataBindingWidget {...commonProps} config={config} />
+    case 'numberInput':
+      return <NumberInputWidget {...commonProps} config={config} />
     case 'custom':
       if (customRenderers?.[config.props.renderKey]) {
         const CustomComponent = customRenderers[config.props.renderKey]

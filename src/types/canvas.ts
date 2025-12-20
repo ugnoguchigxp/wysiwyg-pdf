@@ -117,6 +117,12 @@ export interface TextNode extends BaseNode {
   vAlign?: 't' | 'm' | 'b' // top/middle/bottom (short)
   fill?: Color // Text color
 
+  // Box Style
+  borderColor?: Color
+  borderWidth?: number
+  backgroundColor?: Color
+  padding?: number
+
   // Border (for connector/label use cases)
   stroke?: Color
   strokeW?: number

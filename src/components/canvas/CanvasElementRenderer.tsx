@@ -383,6 +383,8 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
       if (isWHElement(element)) {
         let newX = e.target.x()
         let newY = e.target.y()
+        const w = element.w ?? 0
+        const h = element.h ?? 0
 
         if (element.t === 'shape') {
           if (['circle', 'star', 'pentagon', 'hexagon'].includes(element.shape as string)) {
@@ -396,6 +398,69 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           x: newX,
           y: newY,
         })
+
+        // Update connected lines
+        if (allElements && allElements.length > 0) {
+          const targetId = element.id
+          const connected = allElements.filter(
+            (n): n is LineNode =>
+              n.t === 'line' && (n.startConn?.nodeId === targetId || n.endConn?.nodeId === targetId)
+          )
+
+          if (connected.length > 0) {
+            // Re-calculate endpoints for all connected lines based on new position
+            // We use the same logic as handleDragMove, but now committing via onChange
+            const anchorPointForThis = (anchor: Anchor): { x: number; y: number } => {
+              // Calculate based on new "final" X/Y
+              let topLeftX = newX
+              let topLeftY = newY
+
+              // But wait, newX/newY is what we sent to onChange. 
+              // Depending on shape type, newX/newY is top-left.
+              // anchorPoint logic usually assumes top-left X,Y.
+
+              switch (anchor) {
+                case 'tl': return { x: topLeftX, y: topLeftY }
+                case 't': return { x: topLeftX + w / 2, y: topLeftY }
+                case 'tr': return { x: topLeftX + w, y: topLeftY }
+                case 'l': return { x: topLeftX, y: topLeftY + h / 2 }
+                case 'r': return { x: topLeftX + w, y: topLeftY + h / 2 }
+                case 'bl': return { x: topLeftX, y: topLeftY + h }
+                case 'b': return { x: topLeftX + w / 2, y: topLeftY + h }
+                case 'br': return { x: topLeftX + w, y: topLeftY + h }
+                default: return { x: topLeftX + w / 2, y: topLeftY + h / 2 }
+              }
+            }
+
+            connected.forEach(ln => {
+              const currentPts = ln.pts || [0, 0, 0, 0]
+              const nextPts = [...currentPts]
+              const endIdx = Math.max(0, nextPts.length - 2)
+
+              let changed = false
+              if (ln.startConn?.nodeId === targetId) {
+                const p = anchorPointForThis(ln.startConn.anchor)
+                nextPts[0] = p.x
+                nextPts[1] = p.y
+                changed = true
+              }
+              if (ln.endConn?.nodeId === targetId) {
+                const p = anchorPointForThis(ln.endConn.anchor)
+                nextPts[endIdx] = p.x
+                nextPts[endIdx + 1] = p.y
+                changed = true
+              }
+
+              if (changed) {
+                onChange({
+                  id: ln.id,
+                  pts: nextPts
+                })
+              }
+            })
+          }
+        }
+
       } else if (element.t === 'line') {
         // Line Dragging
         const node = e.target
@@ -415,7 +480,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
         node.y(0)
       }
     },
-    [element, onChange]
+    [element, onChange, allElements]
   )
 
   const handleDragMove = useCallback(
@@ -598,6 +663,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
 
     switch (element.t) {
       case 'text': {
+        const textNode = element as TextNode
         const {
           text,
           font,
@@ -611,7 +677,72 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           vAlign,
           stroke,
           strokeW,
-        } = element as TextNode
+          borderColor,
+          borderWidth,
+          backgroundColor,
+          padding = 0,
+        } = textNode
+
+        const hasBox = borderColor || (borderWidth && borderWidth > 0) || backgroundColor
+
+        // Common text props
+
+
+        if (hasBox) {
+          // Calculate Text dimensions inside the box
+          const textX = padding
+          const textY = padding
+          const textW = Math.max(0, element.w - padding * 2)
+          const textH = Math.max(0, element.h - padding * 2)
+
+          return (
+            <Group
+              {...commonProps}
+            // Ensure we don't pass Text-specific props to Group if they conflict, but commonProps are mostly transform/events
+            >
+              <Rect
+                width={element.w}
+                height={element.h}
+                fill={backgroundColor}
+                stroke={borderColor}
+                strokeWidth={borderWidth}
+                cornerRadius={0}
+              />
+              <Text
+                x={textX}
+                y={textY}
+                width={textW}
+                height={textH}
+                text={text}
+                fontSize={fontSize}
+                fontFamily={font}
+                fontStyle={
+                  `${italic ? 'italic ' : ''}${fontWeight && fontWeight >= 700 ? 'bold' : ''} `.trim() ||
+                  'normal'
+                }
+                textDecoration={[underline ? 'underline' : '', lineThrough ? 'line-through' : '']
+                  .filter(Boolean)
+                  .join(' ')}
+                fill={fill}
+                stroke={stroke}
+                strokeWidth={strokeW}
+                align={
+                  align === 'l'
+                    ? 'left'
+                    : align === 'r'
+                      ? 'right'
+                      : align === 'c'
+                        ? 'center'
+                        : 'justify'
+                }
+                verticalAlign={vAlign === 'm' ? 'middle' : vAlign === 'b' ? 'bottom' : 'top'}
+                lineHeight={1.2}
+                listening={false} // Let the group handle events
+              />
+            </Group>
+          )
+        }
+
         return (
           <Text
             {...commonProps}
@@ -1217,55 +1348,163 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
               )
             })()}
             {/* Endpoint drag handles (only when selected) */}
-            {isSelected &&
-              !readOnly &&
-              (() => {
-                return (
-                  <>
-                    {/* Start point handle */}
-                    <Circle
-                      ref={(node) => {
-                        lineStartHandleRef.current = node
-                      }}
-                      name="line-handle-start"
-                      x={pts[0]}
-                      y={pts[1]}
-                      radius={6 * invScale}
-                      fill="#ffffff"
-                      stroke="#3b82f6"
-                      strokeWidth={2 * invScale}
-                      draggable
-                      onDragStart={startHandleDrag}
-                      onDragMove={(e) => moveHandleDrag(0, e)}
-                      onDragEnd={endHandleDrag}
-                      onMouseDown={(e) => {
-                        e.cancelBubble = true
-                      }}
-                    />
-                    {/* End point handle */}
-                    <Circle
-                      ref={(node) => {
-                        lineEndHandleRef.current = node
-                      }}
-                      name="line-handle-end"
-                      x={pts[pts.length - 2]}
-                      y={pts[pts.length - 1]}
-                      radius={6 * invScale}
-                      fill="#ffffff"
-                      stroke="#3b82f6"
-                      strokeWidth={2 * invScale}
-                      draggable
-                      onDragStart={startHandleDrag}
-                      onDragMove={(e) => moveHandleDrag(pts.length - 2, e)}
-                      onDragEnd={endHandleDrag}
-                      onMouseDown={(e) => {
-                        e.cancelBubble = true
-                      }}
-                    />
-                  </>
-                )
-              })()}
-          </Group>
+            {isSelected && !readOnly && (() => {
+              return (
+                <>
+                  <Circle
+                    ref={(node) => { lineStartHandleRef.current = node }}
+                    name="line-handle-start"
+                    x={pts[0]}
+                    y={pts[1]}
+                    radius={6 * invScale}
+                    fill="#ffffff"
+                    stroke="#3b82f6"
+                    strokeWidth={2 * invScale}
+                    draggable
+                    onDragStart={startHandleDrag}
+                    onDragMove={(e) => moveHandleDrag(0, e)}
+                    onDragEnd={endHandleDrag}
+                    onMouseDown={(e) => { e.cancelBubble = true }}
+                  />
+                  <Circle
+                    ref={(node) => { lineEndHandleRef.current = node }}
+                    name="line-handle-end"
+                    x={pts[pts.length - 2]}
+                    y={pts[pts.length - 1]}
+                    radius={6 * invScale}
+                    fill="#ffffff"
+                    stroke="#3b82f6"
+                    strokeWidth={2 * invScale}
+                    draggable
+                    onDragStart={startHandleDrag}
+                    onDragMove={(e) => moveHandleDrag(pts.length - 2, e)}
+                    onDragEnd={endHandleDrag}
+                    onMouseDown={(e) => { e.cancelBubble = true }}
+                  />
+                </>
+              )
+            })()}
+
+            {/* Midpoint Waypoint Handles */}
+            {isSelected && !readOnly && (() => {
+              const segments: { x1: number, y1: number, x2: number, y2: number, idx: number }[] = []
+              for (let i = 0; i < pts.length - 2; i += 2) {
+                segments.push({
+                  x1: pts[i], y1: pts[i + 1],
+                  x2: pts[i + 2], y2: pts[i + 3],
+                  idx: i
+                })
+              }
+
+              return (
+                <>
+                  {segments.map((seg, i) => {
+                    const midX = (seg.x1 + seg.x2) / 2
+                    const midY = (seg.y1 + seg.y2) / 2
+                    return (
+                      <Circle
+                        key={`mid-handle-${i} `}
+                        x={midX}
+                        y={midY}
+                        radius={4 * invScale}
+                        fill="#fbbf24" // Amber for waypoints
+                        stroke="#d97706"
+                        strokeWidth={1 * invScale}
+                        opacity={0.6}
+                        onMouseEnter={(e) => {
+                          e.target.opacity(1)
+                          const container = e.target.getStage()?.container()
+                          if (container) container.style.cursor = 'copy' // Indicate "add point"
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.opacity(0.6)
+                          const container = e.target.getStage()?.container()
+                          if (container) container.style.cursor = 'default'
+                        }}
+                        draggable
+                        onDragStart={(e) => {
+                          // Start dragging a new point
+                          e.cancelBubble = true
+                          isLineHandleDraggingRef.current = true
+                          // Insert point in pts (conceptually)
+                          const newPts = [...pts]
+                          // insert at seg.idx + 2
+                          newPts.splice(seg.idx + 2, 0, midX, midY)
+
+                          lineDraftPtsRef.current = newPts;
+
+                          // We are effectively dragging the point at index seg.idx + 2
+                          // Use 'name' to store index? trickier.
+                          // We will just invoke logic similar to moveHandleDrag but shift indices
+                          (e.target as any).setAttr('pointIndex', seg.idx + 2)
+
+                          if (anchorOverlayGroupRef.current) {
+                            anchorOverlayGroupRef.current.visible(true)
+                          }
+                          const group = e.target.getParent()
+                          if (group) (group as Konva.Group).draggable(false)
+                        }}
+                        onDragMove={(e) => {
+                          const idx = (e.target as any).getAttr('pointIndex') as number
+                          // Reuse moveHandleDrag logic effectively
+                          const base = lineDraftPtsRef.current || [...pts] // This might fail if draft not set?
+                          // Actually, dragStart set inline draft.
+                          // We need to implement the move logic here or call a shared function.
+                          // duplicating minimal logic here for safety
+                          let nextPos = { x: e.target.x(), y: e.target.y() }
+
+                          // Snap logic
+                          if (e.evt.shiftKey) {
+                            // Snap to previous or next point?
+                            // midpoint connects idx-2 and idx+2 (in new array)
+                            // Let's snap to prev point for now
+                            if (idx >= 2) {
+                              nextPos = snap45(nextPos, { x: base[idx - 2], y: base[idx - 1] })
+                            }
+                          } else {
+                            nextPos = snapToGrid(nextPos)
+                          }
+
+                          e.target.position(nextPos)
+
+                          const next = [...base]
+                          next[idx] = nextPos.x
+                          next[idx + 1] = nextPos.y
+                          lineDraftPtsRef.current = next
+                          applyDraftToVisuals(next)
+                          e.cancelBubble = true
+                        }}
+                        onDragEnd={(e) => {
+                          e.cancelBubble = true
+                          const next = lineDraftPtsRef.current
+                          const group = e.target.getParent()
+                          if (group) (group as Konva.Group).draggable((readOnly ? false : !element.locked) && isSelected)
+                          if (anchorOverlayGroupRef.current) {
+                            anchorOverlayGroupRef.current.visible(false)
+                          }
+
+                          if (next) {
+                            onChange({
+                              id: element.id,
+                              pts: next
+                            })
+                          }
+                          setTimeout(() => {
+                            isLineHandleDraggingRef.current = false
+                            lineDraftPtsRef.current = null
+                          }, 0)
+                        }}
+                        onMouseDown={(e) => {
+                          e.cancelBubble = true
+                        }}
+                      />
+                    )
+                  })}
+                </>
+              )
+            })()
+            }
+          </Group >
         )
       }
       case 'image': {
