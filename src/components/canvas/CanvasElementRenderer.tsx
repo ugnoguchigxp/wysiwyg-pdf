@@ -679,8 +679,12 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           e.cancelBubble = true
         }
 
-        const moveHandleDrag = (pointIndex: number, e: Konva.KonvaEventObject<DragEvent>) => {
+        const moveHandleDrag = (handleType: 'start' | 'end', e: Konva.KonvaEventObject<DragEvent>) => {
           const base = lineDraftPtsRef.current || [...pts]
+
+          // Determine index based on handle type and CURRENT base length (which changes with routing)
+          const pointIndex = handleType === 'start' ? 0 : base.length - 2
+
           let nextPos = { x: e.target.x(), y: e.target.y() }
 
           // Determine reference point (neighbor)
@@ -741,7 +745,12 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
               if (nextPos.x < nx - showMargin || nextPos.x > nx + nw + showMargin ||
                 nextPos.y < ny - showMargin || nextPos.y > ny + nh + showMargin) continue
 
+              const isSmall = nw < 15 || nh < 15
+
               for (const a of anchors) {
+                // Skip corner anchors for small objects to prevent clutter
+                if (isSmall && ['tl', 'tr', 'bl', 'br'].includes(a)) continue
+
                 const p = getAnchorPoint(n, a)
                 if (!p) continue
 
@@ -1022,7 +1031,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
                     strokeWidth={2 * invScale}
                     draggable
                     onDragStart={startHandleDrag}
-                    onDragMove={(e) => moveHandleDrag(0, e)}
+                    onDragMove={(e) => moveHandleDrag('start', e)}
                     onDragEnd={endHandleDrag}
                     onMouseDown={(e) => { e.cancelBubble = true }}
                   />
@@ -1037,7 +1046,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
                     strokeWidth={2 * invScale}
                     draggable
                     onDragStart={startHandleDrag}
-                    onDragMove={(e) => moveHandleDrag(pts.length - 2, e)}
+                    onDragMove={(e) => moveHandleDrag('end', e)}
                     onDragEnd={endHandleDrag}
                     onMouseDown={(e) => { e.cancelBubble = true }}
                   />
