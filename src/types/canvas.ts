@@ -9,7 +9,7 @@
 
 export type NodeId = string // nanoid (21 chars recommended)
 export type SurfaceId = string
-export type LinkId = string
+// LinkId removed
 export type Color = string // Hex (#RRGGBB), rgba(), hsl() supported
 export type Unit = 'mm'
 
@@ -31,7 +31,7 @@ export interface Doc {
   nodes: UnifiedNode[]
 
   // Connections between nodes (optional, for mindmap/flowchart)
-  links?: Link[]
+  // links property removed as part of schema cleanup
 
   // Optional features (omit if unused)
   binding?: BindingConfig
@@ -269,22 +269,7 @@ export interface Cell {
   color?: string
 }
 
-// ========================================
-// Links (Smart Connectors)
-// ========================================
-
-export interface Link {
-  id: LinkId
-  s: SurfaceId // Surface where the link is rendered
-  from: NodeId // Both from/to nodes MUST be on the same Surface
-  to: NodeId // Cross-surface links are NOT supported
-  fromAnchor?: Anchor // Default: 'auto'
-  toAnchor?: Anchor
-  routing?: 'straight' | 'orthogonal' | 'bezier'
-  stroke?: Color
-  strokeW?: number
-  arrows?: [ArrowType, ArrowType]
-}
+// Link interface removed
 
 export type Anchor = 'auto' | 't' | 'b' | 'l' | 'r' | 'tl' | 'tr' | 'bl' | 'br'
 

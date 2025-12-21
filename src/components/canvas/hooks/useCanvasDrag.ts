@@ -3,7 +3,7 @@ import { useCallback } from 'react'
 import type { LineNode, ShapeNode, UnifiedNode } from '../../../types/canvas'
 import { isWHElement } from '../utils/elementUtils'
 import { getAnchorPointAndDirection, getOrthogonalConnectionPath } from '../utils/connectionRouting'
-import { getUpdateForConnectedLines } from '../utils/lineUtils'
+import { calculateNodeMoveUpdates } from '../utils/nodeOperations'
 
 interface UseCanvasDragProps {
     element: UnifiedNode
@@ -30,23 +30,11 @@ export const useCanvasDrag = ({ element, allElements, onChange }: UseCanvasDragP
                     }
                 }
 
-                const updates: (Partial<UnifiedNode> & { id?: string })[] = []
-
-                updates.push({
-                    id: element.id,
-                    x: newX,
-                    y: newY,
-                })
-
-                if (allElements) {
-                    // Construct geometry object for routing calc
-                    // We must cast/force type because UnifiedNode union is strict, 
-                    // but we know it matches the shape of element with new x/y.
-                    const currentGeo = { ...element, x: newX, y: newY } as UnifiedNode
-
-                    const lineUpdates = getUpdateForConnectedLines(element.id, currentGeo, allElements)
-                    updates.push(...lineUpdates)
-                }
+                const updates = calculateNodeMoveUpdates(
+                    element,
+                    { x: newX, y: newY },
+                    allElements || []
+                )
 
                 // Batch commit
                 onChange(updates)

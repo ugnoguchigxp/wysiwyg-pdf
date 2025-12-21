@@ -600,12 +600,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
         const resolvedStart = resolveEndpoint(line.startConn)
         const resolvedEnd = resolveEndpoint(line.endConn)
 
-        console.log('[CanvasElementRenderer] Render Line:', {
-          id: line.id,
-          startConn: line.startConn,
-          resolvedStart,
-          pts0: basePts[0]
-        })
+
 
         // Use resolved endpoints for rendering (connector follow)
         const pts = [...basePts]
@@ -719,9 +714,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
 
           // Common styles for highlighting
           const baseStroke = '#0f766e'
-          const glowColor = '#34d399' // This variable is not used in the provided snippet, keeping it for context
           const activeFill = '#059669'
-          const activeStroke = '#064e3b' // This variable is not used in the provided snippet, keeping it for context
 
           // Reset overlays
           if (anchorOverlayGroupRef.current) {
@@ -816,8 +809,8 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
               return { x: info.nx, y: info.ny }
             }
 
-            const startDirInfo = getDir(startConnDraftRef.current)
-            const endDirInfo = getDir(endConnDraftRef.current)
+            const startDirInfo = getDir(startConnDraftRef.current || undefined)
+            const endDirInfo = getDir(endConnDraftRef.current || undefined)
 
             const computedPath = getOrthogonalPath(
               pStart,
@@ -851,12 +844,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           }
           // Commit once
           if (next) {
-            console.log('[CanvasElementRenderer] DragEnd Commit:', {
-              id: element.id,
-              startConn: startConnDraftRef.current,
-              endConn: endConnDraftRef.current,
-              pts: next
-            })
+
 
             const updated: Partial<LineNode> = {
               id: element.id,
