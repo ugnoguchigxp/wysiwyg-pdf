@@ -28,6 +28,7 @@ import type {
   AlignmentWidgetConfig,
   ArrowheadWidgetConfig,
   BorderWidgetConfig,
+  CheckboxWidgetConfig,
   ColorPickerWidgetConfig,
   DataBindingWidgetConfig,
   FillWidgetConfig,
@@ -1026,6 +1027,61 @@ export const NumberInputWidget: React.FC<WidgetProps<NumberInputWidgetConfig>> =
 }
 
 // ========================================
+// Checkbox Widget
+// ========================================
+
+export const CheckboxWidget: React.FC<WidgetProps<CheckboxWidgetConfig>> = ({
+  config,
+  node,
+  onChange,
+  resolveText,
+}) => {
+  const { fieldKey } = config.props
+
+  // Special handling for 'routing' (Line Smart Connection)
+  const isRouting = fieldKey === 'routing'
+  const value = isRouting
+    ? (node as unknown as Record<string, string>)[fieldKey] === 'orthogonal'
+    : !!(node as unknown as Record<string, boolean>)[fieldKey]
+
+  const handleChange = (checked: boolean) => {
+    if (isRouting) {
+      if (checked) {
+        // Enable Orthogonal
+        onChange({ routing: 'orthogonal' } as any)
+      } else {
+        // Disable Orthogonal -> Reset to Straight Line (Start -> End)
+        const lineNode = node as LineNode
+        const pts = lineNode.pts || []
+        if (pts.length >= 4) {
+          const newPts = [pts[0], pts[1], pts[pts.length - 2], pts[pts.length - 1]]
+          onChange({ routing: 'straight', pts: newPts } as any)
+        } else {
+          onChange({ routing: 'straight' } as any)
+        }
+      }
+    } else {
+      onChange({ [fieldKey]: checked } as unknown as Partial<UnifiedNode>)
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        type="checkbox"
+        id={`checkbox-${fieldKey}`}
+        checked={value}
+        onChange={(e) => handleChange(e.target.checked)}
+        className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+      />
+      <label htmlFor={`checkbox-${fieldKey}`} className="text-xs text-muted-foreground cursor-pointer select-none">
+        {resolveText(config.labelKey ?? fieldKey, fieldKey)}
+      </label>
+    </div>
+  )
+}
+
+// ========================================
 // Widget Renderer (Factory)
 // ========================================
 
@@ -1077,6 +1133,8 @@ export const renderWidget = (
       return <DataBindingWidget {...commonProps} config={config} />
     case 'numberInput':
       return <NumberInputWidget {...commonProps} config={config} />
+    case 'checkbox':
+      return <CheckboxWidget {...commonProps} config={config} />
     case 'custom':
       if (customRenderers?.[config.props.renderKey]) {
         const CustomComponent = customRenderers[config.props.renderKey]

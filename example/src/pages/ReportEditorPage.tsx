@@ -14,6 +14,7 @@ import {
 import { useReactToPrint, type UseReactToPrintOptions } from 'react-to-print'
 import { useTranslation } from 'react-i18next'
 import { Moon, Sun } from 'lucide-react'
+import { EDITOR_TRANSLATIONS } from '../constants/translations'
 
 // Local Mock Data (Moved from App.tsx)
 const MOCK_SCHEMA: IDataSchema = {
@@ -155,82 +156,7 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
                 onSave={handleSave}
                 onShowShortcuts={() => setShowShortcuts(true)}
                 onBack={onBack}
-                i18nOverrides={{
-                    // Header
-                    editor_orientation: '用紙方向',
-                    orientations_portrait: '縦',
-                    orientations_landscape: '横',
-                    save: '保存',
-                    back: '戻る',
-                    header_image: '画像保存',
-                    header_pdf: 'PDF保存',
-                    toolbar_undo: '元に戻す',
-                    toolbar_redo: 'やり直す',
-                    toolbar_shortcuts: 'ショートカット',
-
-                    // Toolbar
-                    toolbar_add_text: 'テキスト追加',
-                    toolbar_add_image: '画像追加',
-                    toolbar_line: '線',
-                    toolbar_add_table: '表追加',
-                    toolbar_shape: '図形',
-                    shape_trapezoid: '台形',
-                    toolbar_default_text: 'テキスト',
-
-                    // Properties
-                    properties_layout: 'レイアウト',
-                    position: '位置',
-                    properties_size: 'サイズ',
-                    properties_width: '幅',
-                    properties_height: '高さ',
-                    properties_opacity: '不透明度',
-                    properties_rotation: '回転',
-                    color: '色',
-
-                    properties_element_text: 'テキスト',
-                    properties_font: 'フォント',
-                    properties_font_size: 'サイズ',
-                    properties_font_style_bold: '太字',
-                    properties_font_style_italic: '斜体',
-                    properties_text_decoration: '装飾',
-                    properties_text_underline: '下線',
-                    properties_text_strikethrough: '取り消し線',
-                    properties_text_align: '配置',
-                    properties_text_align_left: '左揃え',
-                    properties_text_align_center: '中央揃え',
-                    properties_text_align_right: '右揃え',
-
-                    properties_element_image: '画像',
-                    properties_select_image: '画像選択',
-                    properties_preview: 'プレビュー',
-                    no_image: '画像なし',
-
-                    properties_element_line: '線',
-                    properties_line_color: '線の色',
-                    properties_line_width: '線の太さ',
-                    properties_arrow_start: '始点',
-                    properties_arrow_end: '終点',
-
-                    properties_element_rect: '長方形',
-                    properties_element_circle: '円',
-                    properties_element_triangle: '三角形',
-                    // ... add all shapes if needed similar to BedLayout
-                    properties_shape_style: 'スタイル',
-
-                    properties_element_table: '表',
-                    properties_table_rows: '行',
-                    properties_table_cols: '列',
-                    properties_table_border: '枠線',
-                    properties_table_cell: 'セル',
-                    properties_vertical_align: '垂直配置',
-                    properties_vertical_align_top: '上',
-                    properties_vertical_align_middle: '中',
-                    properties_vertical_align_bottom: '下',
-
-                    // Print
-                    shape_preview: '図形プレビュー',
-                    report_image_alt: 'アセット',
-                }}
+                i18nOverrides={EDITOR_TRANSLATIONS}
             >
                 <button
                     onClick={() => setDarkMode(!darkMode)}
@@ -260,10 +186,7 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
                         currentPageId={doc.surfaces[0]?.id}
                         activeTool={activeTool}
                         onToolSelect={setActiveTool}
-                        i18nOverrides={{
-                            toolbar_text: 'Text',
-                            toolbar_image: 'Img',
-                        }}
+                        i18nOverrides={EDITOR_TRANSLATIONS}
                     />
                 </div>
 
@@ -312,11 +235,7 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
                         onGridSizeChange={setGridSize}
                         snapStrength={snapStrength}
                         onSnapStrengthChange={setSnapStrength}
-                        i18nOverrides={{
-                            properties_layout: 'Page Layout',
-                            properties_text_align: 'Text Align',
-                            properties_finish_drawing: 'Finish Drawing',
-                        }}
+                        i18nOverrides={EDITOR_TRANSLATIONS}
                     />
                 </div>
             </div>

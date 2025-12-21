@@ -1,0 +1,137 @@
+/**
+ * Unified Translation Dictionary
+ * 
+ * Shared translation keys for both BedLayout and Report editors to prevent duplication.
+ */
+export const EDITOR_TRANSLATIONS = {
+    // Header
+    editor_orientation: '用紙方向',
+    orientations_portrait: '縦',
+    orientations_landscape: '横',
+    save: '保存',
+    back: '戻る',
+    header_image: '画像保存',
+    header_pdf: 'PDF保存',
+    toolbar_undo: '元に戻す',
+    toolbar_redo: 'やり直す',
+    toolbar_shortcuts: 'ショートカット',
+    editor_save_success: '保存しました',
+
+    // Toolbar
+    toolbar_text: '文字',
+    toolbar_add_text: 'テキスト追加',
+    toolbar_image: '画像',
+    toolbar_add_image: '画像追加',
+    toolbar_bed: 'ベッド',
+    toolbar_wall: '壁',
+    toolbar_shape: '図形',
+    toolbar_line: '線',
+    toolbar_add_table: '表追加',
+    shape_trapezoid: '台形',
+    toolbar_zoom_in: '拡大',
+    toolbar_zoom_out: '縮小',
+    toolbar_zoom_reset: 'リセット',
+    toolbar_default_text: 'テキスト',
+
+    // Properties Panel
+    loading: '読み込み中',
+    no_image: '画像なし',
+    properties_layout: 'レイアウト',
+    properties_width: '幅',
+    properties_height: '高さ',
+    position: '位置',
+    properties_size: 'サイズ',
+
+    // Element Types
+    properties_element_text: 'テキスト',
+    properties_element_rect: '長方形',
+    properties_element_triangle: '三角形',
+    properties_element_trapezoid: '台形',
+    properties_element_circle: '円',
+    properties_element_diamond: 'ひし形',
+    properties_element_cylinder: '円柱',
+    properties_element_heart: 'ハート',
+    properties_element_star: '星',
+    properties_element_pentagon: '五角形',
+    properties_element_hexagon: '六角形',
+    properties_element_arrow_up: '上矢印',
+    properties_element_arrow_down: '下矢印',
+    properties_element_arrow_left: '左矢印',
+    properties_element_arrow_right: '右矢印',
+    properties_element_tree: '木',
+    properties_element_house: '家',
+    properties_element_line: '線',
+    properties_element_image: '画像',
+    properties_element_table: '表',
+
+    // Bed Properties
+    properties_bed_info: 'ベッド情報',
+    properties_label: 'ラベル',
+    properties_orientation: '方向',
+    properties_orientation_vertical: '縦',
+    properties_orientation_horizontal: '横',
+
+    // Shape/Line Properties
+    properties_shape_style: 'スタイル',
+    properties_line_color: '線の色',
+    properties_line_width: '線の太さ',
+    properties_line_style: '線の種類',
+    properties_line_style_solid: '実線',
+    properties_line_style_dashed: '破線',
+    properties_line_style_dotted: '点線',
+    properties_arrow_start: '始点',
+    properties_arrow_end: '終点',
+    properties_arrow_none: 'なし',
+    properties_arrow_standard: '標準',
+    properties_arrow_filled: '塗りつぶし',
+    properties_arrow_triangle: '三角',
+    properties_arrow_open: '開く',
+    properties_arrow_circle: '円',
+    properties_arrow_diamond: 'ダイヤ',
+    properties_arrow_square: '四角',
+
+    properties_smart_connection: 'スマート接続',
+    properties_border_color: '枠線の色',
+    properties_border_width: '枠線の太さ',
+    properties_padding: 'パディング',
+
+    // Common
+    color: '色',
+    properties_font: 'フォント',
+    properties_font_size: 'サイズ',
+    properties_font_style_bold: '太字',
+    properties_font_style_italic: '斜体',
+    properties_text_decoration: '装飾',
+    properties_font_color: '文字色',
+    properties_background_color: '背景色',
+    properties_border_color_box: '枠線の色',
+    properties_border_width_box: '枠線の太さ',
+
+    properties_text_underline: '下線',
+    properties_text_strikethrough: '取り消し線',
+    properties_text_align: '配置',
+    properties_text_align_left: '左揃え',
+    properties_text_align_center: '中央揃え',
+    properties_text_align_right: '右揃え',
+    properties_opacity: '不透明度',
+    properties_rotation: '回転',
+    properties_select_image: '画像選択',
+    properties_preview: 'プレビュー',
+    properties_finish_drawing: '描画終了',
+
+    // Table Properties
+    properties_table_rows: '行',
+    properties_table_cols: '列',
+    properties_table_border: '枠線',
+    properties_table_cell: 'セル',
+    properties_vertical_align: '垂直配置',
+    properties_vertical_align_top: '上',
+    properties_vertical_align_middle: '中',
+    properties_vertical_align_bottom: '下',
+
+    // Print
+    bed_layout_shape_preview: '図形プレビュー',
+    bed_layout_image_preview: '画像プレビュー',
+    shape_preview: '図形プレビュー',
+    report_image_alt: 'アセット',
+}

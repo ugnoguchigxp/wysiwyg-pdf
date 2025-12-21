@@ -51,6 +51,7 @@ export type WidgetType =
   | 'custom'
   | 'arrowhead'
   | 'numberInput'
+  | 'checkbox'
 
 // ========================================
 // Preset System (プリセットシステム)
@@ -195,6 +196,13 @@ export interface NumberInputWidgetConfig extends BaseWidgetConfig {
   }
 }
 
+export interface CheckboxWidgetConfig extends BaseWidgetConfig {
+  type: 'checkbox'
+  props: {
+    fieldKey: string
+  }
+}
+
 export type WidgetConfig =
   | PosSizeWidgetConfig
   | FontWidgetConfig
@@ -228,10 +236,11 @@ export type WidgetConfig =
   | SliderWidgetConfig
   | TextContentWidgetConfig
   | LineStyleWidgetConfig
-  | ArrowheadWidgetConfig
   | DataBindingWidgetConfig
   | CustomWidgetConfig
+  | ArrowheadWidgetConfig
   | NumberInputWidgetConfig
+  | CheckboxWidgetConfig
 
 // ========================================
 // Section Configuration
@@ -504,7 +513,16 @@ export const SECTION_PRESETS: Record<string, SectionConfig> = {
   // === Line Sections ===
   'sec:line-style': {
     id: 'line-style',
-    widgets: ['stroke:color', 'stroke:width', 'lineStyle:default'],
+    widgets: [
+      'stroke:color',
+      'stroke:width',
+      'lineStyle:default',
+      {
+        type: 'checkbox',
+        labelKey: 'properties_smart_connection',
+        props: { fieldKey: 'routing' },
+      },
+    ],
   },
   'sec:line-arrow': {
     id: 'line-arrow',
