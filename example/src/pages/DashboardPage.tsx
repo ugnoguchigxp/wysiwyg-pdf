@@ -1,9 +1,9 @@
 import React from 'react'
-import { FileText, LayoutTemplate, Moon, Sun, Monitor } from 'lucide-react'
+import { FileText, LayoutTemplate, Moon, Sun, Monitor, GitBranch } from 'lucide-react'
 
 
 interface DashboardPageProps {
-    onNavigate: (page: 'report' | 'bed' | 'viewer' | 'signature') => void
+    onNavigate: (page: 'report' | 'bed' | 'viewer' | 'signature' | 'mindmap') => void
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
@@ -78,6 +78,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                         <h2 className="text-2xl font-bold mb-2 text-foreground">Signature Demo</h2>
                         <p className="text-muted-foreground text-center">
                             Draw and save signatures.
+                        </p>
+                    </button>
+
+                    <button
+                        onClick={() => onNavigate('mindmap')}
+                        className="flex flex-col items-center justify-center p-12 rounded-xl border-2 border-border bg-card hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-all duration-200 group h-80"
+                    >
+                        <div className="w-24 h-24 rounded-full bg-teal-100 dark:bg-teal-900/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
+                            <GitBranch className="w-12 h-12 text-teal-600 dark:text-teal-400" />
+                        </div>
+                        <h2 className="text-2xl font-bold mb-2 text-foreground">Mindmap Editor</h2>
+                        <p className="text-muted-foreground text-center">
+                            FreeMind-like keyboard centric mind mapping.
                         </p>
                     </button>
                 </div>
