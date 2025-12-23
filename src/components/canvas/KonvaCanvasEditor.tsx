@@ -4,8 +4,9 @@ import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
 import { Layer, Stage } from 'react-konva'
 import type { TextNode, UnifiedNode } from '../../types/canvas'
 import { mmToPx } from '@/utils/units'
-import { measureText } from '@/features/konva-editor/utils/textUtils'
-import { ptToMm, pxToMm } from '@/utils/units'
+// import { measureText } from '@/features/konva-editor/utils/textUtils'
+import { ptToMm } from '@/utils/units'
+import { useTextDimensions } from '@/features/konva-editor/hooks/useTextDimensions'
 import { CanvasElementRenderer } from './CanvasElementRenderer'
 import type { CanvasElementCommonProps, CanvasShapeRefCallback } from './types'
 import { GridLayer } from './GridLayer'
@@ -126,6 +127,8 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       }
     }
 
+    const { calculateDimensions } = useTextDimensions()
+
     const handleTextUpdate = (text: string) => {
       if (!editingElementId) return
 
@@ -136,31 +139,19 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       }
 
       const textNode = element as TextNode
-      const dpi = 96
 
-      const font = {
-        family: textNode.font || 'Meiryo',
-        size: mmToPx(textNode.fontSize || ptToMm(12), { dpi }),
-        weight: textNode.fontWeight || 400,
-      }
-
-      const lines = text.split('\n')
-      let maxWidth = 0
-      for (const line of lines) {
-        const { width } = measureText(line || ' ', font)
-        if (width > maxWidth) maxWidth = width
-      }
-
-      const lineHeight = font.size * 1.2
-      const calculatedHeight = Math.max(1, lines.length) * lineHeight
-      const newWidthPx = maxWidth + 10
-      const newHeightPx = calculatedHeight + 4
+      const dimensions = calculateDimensions(text, {
+        family: textNode.font,
+        size: textNode.fontSize,
+        weight: textNode.fontWeight,
+        padding: textNode.padding
+      })
 
       onChange({
         id: editingElementId,
         text,
-        w: pxToMm(newWidthPx, { dpi }),
-        h: pxToMm(newHeightPx, { dpi }),
+        w: dimensions.w,
+        h: dimensions.h,
       } as Partial<UnifiedNode> & { id: string })
     }
 

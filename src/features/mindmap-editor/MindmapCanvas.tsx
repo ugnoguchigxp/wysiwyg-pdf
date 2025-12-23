@@ -3,6 +3,8 @@ import { Stage, Layer } from 'react-konva'
 import { Doc } from '@/types/canvas'
 import { CanvasElementRenderer } from '@/components/canvas/CanvasElementRenderer'
 import { MindmapGraph } from './types'
+import { TextEditOverlay } from '@/components/canvas/TextEditOverlay'
+import { useTextDimensions } from '@/features/konva-editor/hooks/useTextDimensions'
 
 interface MindmapCanvasProps {
     doc: Doc
@@ -11,6 +13,8 @@ interface MindmapCanvasProps {
     selectedNodeId: string | null
     onSelectNode: (id: string | null) => void
     onChangeNodes: (changes: { id: string;[key: string]: any }[]) => void
+    editingNodeId: string | null
+    onSetEditingNodeId: (id: string | null) => void
 }
 
 export const MindmapCanvas: React.FC<MindmapCanvasProps> = ({
@@ -20,6 +24,8 @@ export const MindmapCanvas: React.FC<MindmapCanvasProps> = ({
     selectedNodeId,
     onSelectNode,
     onChangeNodes,
+    editingNodeId,
+    onSetEditingNodeId,
 }) => {
     const stageRef = useRef<any>(null)
 
@@ -62,79 +68,48 @@ export const MindmapCanvas: React.FC<MindmapCanvasProps> = ({
     }
 
     // Text Editing State
-    const [editingNodeId, setEditingNodeId] = useState<string | null>(null)
-    const [editingText, setEditingText] = useState('')
-    const textareaRef = useRef<HTMLTextAreaElement>(null)
-
     const handleNodeDblClick = (nodeId: string, text: string) => {
-        setEditingNodeId(nodeId)
-        setEditingText(text)
+        onSetEditingNodeId(nodeId)
+        // setEditingText(text) // TextEditOverlay handles its own initial value via element prop
     }
 
-    const commitText = () => {
-        if (editingNodeId) {
-            onChangeNodes([{ id: editingNodeId, text: editingText }])
-            setEditingNodeId(null)
-        }
-    }
+    const { calculateDimensions } = useTextDimensions()
 
-    // Effect to focus textarea when editing starts
-    React.useEffect(() => {
-        if (editingNodeId && textareaRef.current) {
-            textareaRef.current.focus()
-            textareaRef.current.select()
-        }
-    }, [editingNodeId])
-
-    // Effect to adjust textarea position (this assumes we can get the node's position from doc or stage)
-    // Actually we need the absolute position on screen.
-    const getEditingStyle = (): React.CSSProperties | undefined => {
-        if (!editingNodeId || !stageRef.current) return undefined
+    // Text Editing Handlers using TextEditOverlay
+    const handleTextUpdate = (text: string) => {
+        if (!editingNodeId) return
 
         const node = doc.nodes.find(n => n.id === editingNodeId)
-        if (!node || node.t !== 'text') return undefined
+        if (!node || node.t !== 'text') return
 
-        // Calculate position relative to stage container
-        const stage = stageRef.current
+        const dimensions = calculateDimensions(text, {
+            family: node.font,
+            size: node.fontSize,
+            weight: node.fontWeight,
+            padding: node.padding
+        })
 
-        // Node's position in stage coords
-        const nodeX = node.x
-        const nodeY = node.y
-
-        // Convert to absolute DOM position
-        // The stage has a transform (x, y, scale)
-        const stageX = stage.x()
-        const stageY = stage.y()
-        const stageScale = stage.scaleX()
-
-        const absX = stageX + nodeX * stageScale
-        const absY = stageY + nodeY * stageScale
-        const absW = node.w * stageScale
-        const absH = node.h * stageScale
-
-        return {
-            position: 'absolute',
-            top: absY,
-            left: absX,
-            width: absW,
-            height: absH,
-            // Match styling roughly
-            padding: (node.padding || 0) * stageScale,
-            fontSize: (node.fontSize || 12) * stageScale,
-            lineHeight: (node as any).lineHeight || 1.2,
-            fontFamily: 'sans-serif',
-            border: '2px solid #2563eb',
-            background: 'white',
-            zIndex: 100,
-            overflow: 'hidden',
-            resize: 'none',
-            outline: 'none',
-            textAlign: node.align as any || 'center',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-        }
+        onChangeNodes([{
+            id: editingNodeId,
+            text,
+            w: dimensions.w,
+            h: dimensions.h
+        }])
     }
+
+    const handleTextEditFinish = () => {
+        onSetEditingNodeId(null)
+    }
+
+    // Effect to adjust textarea position is replaced by TextEditOverlay logic
+    const editingNode = editingNodeId ? doc.nodes.find(n => n.id === editingNodeId) : null
+    const editingTextElement = editingNode && editingNode.t === 'text' ? (editingNode as any) : null
+
+    // Helper to get scale for overlay
+    // MindmapCanvas manages scale via state.
+    // TextEditOverlay requires 'scale' prop which often refers to display scale (zoom).
+    // Here we pass the current stage scale.
+    const displayScale = scale
 
     return (
         <div className="w-full h-full bg-slate-50 overflow-hidden relative">
@@ -155,7 +130,6 @@ export const MindmapCanvas: React.FC<MindmapCanvasProps> = ({
                     {doc.nodes.map((node) => {
                         // Check visibility
                         const parentId = graph.parentIdMap.get(node.id)
-                        // Ancestor visibility check
                         let isVisible = true
                         let curr = parentId
                         while (curr) {
@@ -171,12 +145,12 @@ export const MindmapCanvas: React.FC<MindmapCanvasProps> = ({
                         return (
                             <CanvasElementRenderer
                                 key={node.id}
-                                element={{ ...node, locked: true }} // Force locked to prevent dragging
+                                element={{ ...node, locked: true }}
                                 isSelected={selectedNodeId === node.id}
                                 onSelect={() => onSelectNode(node.id)}
                                 onChange={(attrs) => onChangeNodes([{ id: node.id, ...attrs }])}
                                 onDblClick={() => node.t === 'text' && handleNodeDblClick(node.id, node.text)}
-                                readOnly={false} // ReadOnly might disable selection hooks in some implementations, relying on locked instead
+                                readOnly={false}
                                 allElements={doc.nodes}
                             />
                         )
@@ -184,22 +158,13 @@ export const MindmapCanvas: React.FC<MindmapCanvasProps> = ({
                 </Layer>
             </Stage>
 
-            {editingNodeId && (
-                <textarea
-                    ref={textareaRef}
-                    value={editingText}
-                    onChange={(e) => setEditingText(e.target.value)}
-                    onBlur={commitText}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault()
-                            commitText()
-                        }
-                        if (e.key === 'Escape') {
-                            setEditingNodeId(null)
-                        }
-                    }}
-                    style={getEditingStyle()}
+            {editingTextElement && (
+                <TextEditOverlay
+                    element={editingTextElement}
+                    scale={displayScale}
+                    stageNode={stageRef.current}
+                    onUpdate={handleTextUpdate}
+                    onFinish={handleTextEditFinish}
                 />
             )}
         </div>

@@ -12,6 +12,7 @@ import type { WidgetProps } from '@/features/konva-editor/components/PropertyPan
 import { REPORT_PANEL_CONFIG } from '@/features/konva-editor/constants/propertyPanelConfig'
 import type { Doc, LineNode, TableNode, UnifiedNode } from '@/types/canvas'
 import type { IDataSchema } from '@/types/schema'
+import { calculateTextDimensions } from '@/features/konva-editor/utils/textUtils'
 import { BindingSelector } from './BindingSelector'
 import { DataBindingModal } from './DataBindingModal'
 import { TableProperties } from './TableProperties'
@@ -296,10 +297,31 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
 
   // Handle element change through templateDoc
   const handleChange = (id: string, updates: Partial<UnifiedNode>) => {
+    let finalUpdates = { ...updates }
+
+    // If TextNode and relevant properties changed, recalculate dimensions
+    const currentNode = templateDoc.nodes.find(n => n.id === id)
+    if (currentNode && currentNode.t === 'text') {
+      const textNode = { ...currentNode, ...updates } as import('@/types/canvas').TextNode // Cast to TextNode
+
+      const relevantKeys = ['text', 'font', 'fontSize', 'fontWeight', 'padding']
+      const hasRelevantChange = relevantKeys.some(key => key in updates)
+
+      if (hasRelevantChange) {
+        const dims = calculateTextDimensions(textNode.text, {
+          family: textNode.font,
+          size: textNode.fontSize,
+          weight: textNode.fontWeight,
+          padding: textNode.padding
+        })
+        finalUpdates = { ...finalUpdates, ...dims }
+      }
+    }
+
     const nextDoc: Doc = {
       ...templateDoc,
       nodes: templateDoc.nodes.map((el) =>
-        el.id === id ? ({ ...el, ...updates } as UnifiedNode) : el
+        el.id === id ? ({ ...el, ...finalUpdates } as UnifiedNode) : el
       ),
     }
     onTemplateChange(nextDoc)

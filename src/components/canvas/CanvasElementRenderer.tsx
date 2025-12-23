@@ -280,6 +280,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           borderWidth,
           backgroundColor,
           padding = 0,
+          cornerRadius = 0,
         } = textNode
 
         const hasBox = borderColor || (borderWidth && borderWidth > 0) || backgroundColor
@@ -294,6 +295,17 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           const textW = Math.max(0, element.w - padding * 2)
           const textH = Math.max(0, element.h - padding * 2)
 
+          // Calculate dynamic corner radius
+          // User selects value (0~1).
+          // 0 -> 0%
+          // 1 -> 50% (Pill/Circle)
+          // Linear mapping: ratio * 0.5
+          const ratio = Math.max(0, Math.min(1, Number(cornerRadius))) // Clamp 0-1 just in case
+          const percent = ratio * 0.5
+
+          const minDim = Math.min(element.w, element.h)
+          const actualCornerRadius = minDim * percent
+
           return (
             <Group
               {...commonProps}
@@ -305,7 +317,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
                 fill={backgroundColor}
                 stroke={borderColor}
                 strokeWidth={borderWidth}
-                cornerRadius={0}
+                cornerRadius={actualCornerRadius}
               />
               <Text
                 x={textX}

@@ -10,17 +10,20 @@ interface UseMindmapInteractionParams {
         addSiblingNode: () => void
         deleteNode: () => void
     }
+    isEditing: boolean
 }
 
 export const useMindmapInteraction = ({
     selectedNodeId,
     setSelectedNodeId,
     graph,
-    ops
+    ops,
+    isEditing
 }: UseMindmapInteractionParams) => {
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            if (isEditing) return
             // Ignore if typing in an input
             if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') {
                 if ((e.target as HTMLElement).closest('.canvas-editor') === null) {

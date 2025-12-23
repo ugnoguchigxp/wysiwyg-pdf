@@ -122,6 +122,7 @@ export interface TextNode extends BaseNode {
   borderWidth?: number
   backgroundColor?: Color
   padding?: number
+  cornerRadius?: number
 
   // Border (for connector/label use cases)
   stroke?: Color

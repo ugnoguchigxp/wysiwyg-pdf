@@ -15,11 +15,11 @@ import { useKeyboardShortcuts } from '@/components/canvas/hooks/useKeyboardShort
 import { TextEditOverlay } from '@/components/canvas/TextEditOverlay'
 import { PEN_CURSOR_URL } from '@/features/konva-editor/cursors'
 import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
-import { measureText } from '@/features/konva-editor/utils/textUtils'
 import type { Doc, SignatureNode, Surface, TableNode, TextNode, UnifiedNode } from '@/types/canvas' // Direct import
 import { simplifyPoints } from '@/utils/geometry'
 import { createContextLogger } from '@/utils/logger'
-import { mmToPx, ptToMm, pxToMm } from '@/utils/units'
+import { mmToPx, ptToMm } from '@/utils/units'
+import { useTextDimensions } from '@/features/konva-editor/hooks/useTextDimensions'
 import { TableContextMenu } from './components/ContextMenu/TableContextMenu'
 
 const log = createContextLogger('ReportKonvaEditor')
@@ -339,6 +339,8 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       [onTemplateChange, selectedElementId, templateDoc]
     )
 
+    const { calculateDimensions } = useTextDimensions()
+
     const handleTextUpdate = useCallback(
       (text: string) => {
         if (!editingElementId) return
@@ -354,42 +356,39 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
         }
 
         const textNode = element as TextNode
-        const font = {
-          family: textNode.font || 'Meiryo',
-          size: mmToPx(textNode.fontSize || ptToMm(12), { dpi }),
-          weight: textNode.fontWeight || 400,
-        }
+        const dimensions = calculateDimensions(text, {
+          family: textNode.font,
+          size: textNode.fontSize,
+          weight: textNode.fontWeight,
+          padding: textNode.padding
+        })
 
-        // Measure each line and find the maximum width
-        const lines = text.split('\n')
-        let maxWidth = 0
-        for (const line of lines) {
-          const { width } = measureText(line || ' ', font)
-          if (width > maxWidth) maxWidth = width
-        }
+        // Note: fontSize in textNode is usually in 'pt' or 'px'?
+        // Looking at ReportKonvaEditor lines 359: size: mmToPx(textNode.fontSize || ptToMm(12), { dpi })
+        // It seems textNode.fontSize is stored in 'mm' in the model?
+        // Let's re-verify the types and assumptions.
+        // ReportKonvaEditor L359: mmToPx(textNode.fontSize || ptToMm(12), { dpi })
+        // If textNode.fontSize is defined, it is treated as mm by mmToPx directly?
+        // Actually, let's look at L359 again:
+        // size: mmToPx(textNode.fontSize || ptToMm(12), { dpi })
+        // If textNode.fontSize is 10 (mm), mmToPx(10) -> px.
+        // If textNode.fontSize is undefined, ptToMm(12) -> mm, then mmToPx -> px.
+        // So textNode.fontSize IS in mm.
 
-        // Calculate height based on number of lines
-        const lineHeight = font.size * 1.2
-        const calculatedHeight = lines.length * lineHeight
-
-        // Add padding
-        const newWidth = maxWidth + 10
-        const newHeight = calculatedHeight + 4
-
-        console.log('[ReportKonvaEditor] handleTextUpdate:', { text, newWidth, newHeight })
+        console.log('[ReportKonvaEditor] handleTextUpdate:', { text, ...dimensions })
 
         // Update text and dimensions together (Transient)
         handleElementChange(
           {
             id: editingElementId,
             text,
-            w: pxToMm(newWidth, { dpi }),
-            h: pxToMm(newHeight, { dpi }),
+            w: dimensions.w,
+            h: dimensions.h,
           } as Partial<UnifiedNode> & { id?: string },
           { saveToHistory: false }
         )
       },
-      [editingElementId, templateDoc.nodes, handleElementChange]
+      [editingElementId, templateDoc.nodes, handleElementChange, calculateDimensions]
     )
 
     const handleTextEditFinish = useCallback(() => {

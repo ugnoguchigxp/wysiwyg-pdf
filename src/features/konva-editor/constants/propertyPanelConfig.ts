@@ -484,6 +484,20 @@ export const SECTION_PRESETS: Record<string, SectionConfig> = {
         labelKey: 'properties_padding',
         props: { fieldKey: 'padding', min: 0, step: 0.5, unit: 'mm' },
       },
+      {
+        type: 'select',
+        labelKey: 'properties_corner_radius', // Need to make sure this key exists or fallback
+        props: {
+          fieldKey: 'cornerRadius',
+          options: [
+            { value: '0', labelKey: '0%' },
+            { value: '0.25', labelKey: '25%' },
+            { value: '0.5', labelKey: '50%' },
+            { value: '0.75', labelKey: '75%' },
+            { value: '1', labelKey: '100%' },
+          ]
+        }
+      }
     ],
   },
   'sec:text-alignment': {

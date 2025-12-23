@@ -36,6 +36,7 @@ const INITIAL_DOC: Doc = {
 export const MindmapEditor: React.FC = () => {
     const [doc, setDoc] = useState<Doc>(INITIAL_DOC)
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
+    const [editingNodeId, setEditingNodeId] = useState<string | null>(null)
     const [collapsedNodes] = useState<Set<string>>(new Set())
 
     // Core Graph Logic
@@ -85,7 +86,8 @@ export const MindmapEditor: React.FC = () => {
         selectedNodeId,
         setSelectedNodeId,
         graph,
-        ops: operations
+        ops: operations,
+        isEditing: !!editingNodeId
     })
 
     // General Change Handler
@@ -116,6 +118,8 @@ export const MindmapEditor: React.FC = () => {
                     selectedNodeId={selectedNodeId}
                     onSelectNode={setSelectedNodeId}
                     onChangeNodes={handleChangeNodes}
+                    editingNodeId={editingNodeId}
+                    onSetEditingNodeId={setEditingNodeId}
                 />
             </div>
         </div>
