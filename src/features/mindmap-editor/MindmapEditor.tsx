@@ -8,6 +8,8 @@ import { Modal, ModalFooter } from '@/components/ui/Modal'
 import { useMindmapGraph } from './hooks/useMindmapGraph'
 import { useMindmapLayout } from './hooks/useMindmapLayout'
 import { useMindmapOperations } from './hooks/useMindmapOperations'
+import { useMindmapHistory } from './hooks/useMindmapHistory'
+import { useMindmapInteraction } from './hooks/useMindmapInteraction'
 
 // Initial Doc with standard TextNode
 const INITIAL_DOC: Doc = {
@@ -43,11 +45,32 @@ const INITIAL_DOC: Doc = {
   ],
 }
 
+interface DragState {
+  isDragging: boolean
+  draggedNodeId: string | null
+  dragStartPosition: { x: number; y: number } | null
+  dragPosition: { x: number; y: number } | null
+  dropTargetId: string | null
+  dropPosition: 'child' | 'before' | 'after' | null
+  canDrop: boolean
+}
+
+const initialDragState: DragState = {
+  isDragging: false,
+  draggedNodeId: null,
+  dragStartPosition: null,
+  dragPosition: null,
+  dropTargetId: null,
+  dropPosition: null,
+  canDrop: false,
+}
+
 export const MindmapEditor: React.FC = () => {
-  const [doc, setDoc] = useState<Doc>(INITIAL_DOC)
+  const { doc, setDoc, undo, redo } = useMindmapHistory(INITIAL_DOC)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [collapsedNodes, setCollapsedNodes] = useState<Set<string>>(new Set())
   const [showShortcuts, setShowShortcuts] = useState(false)
+  const [dragState, setDragState] = useState<DragState>(initialDragState)
   const { t } = useI18n()
 
   // Core Graph Logic (pure data)
@@ -108,6 +131,99 @@ export const MindmapEditor: React.FC = () => {
     setCollapsedNodes(new Set(collapsibleIds))
   }, [graph])
 
+  const handleNodeReplace = useCallback(
+    (sourceId: string, targetId: string, position: 'child' | 'before' | 'after') => {
+      operations.moveNode(sourceId, targetId, position)
+    },
+    [operations]
+  )
+
+  const handleDragStart = useCallback(
+    (nodeId: string, startPosition: { x: number; y: number }) => {
+      if (nodeId === graph.rootId) return
+
+      setDragState({
+        isDragging: false,
+        draggedNodeId: nodeId,
+        dragStartPosition: startPosition,
+        dragPosition: startPosition,
+        dropTargetId: null,
+        dropPosition: null,
+        canDrop: false,
+      })
+    },
+    [graph.rootId]
+  )
+
+  const handleDragMove = useCallback(
+    (position: { x: number; y: number }) => {
+      if (!dragState.draggedNodeId || !dragState.dragStartPosition) return
+
+      const currentPos = position
+      const distance = Math.hypot(
+        currentPos.x - dragState.dragStartPosition.x,
+        currentPos.y - dragState.dragStartPosition.y
+      )
+
+      if (distance > 5 && !dragState.isDragging) {
+        setDragState((prev) => ({ ...prev, isDragging: true }))
+      }
+
+      if (dragState.isDragging) {
+        setDragState((prev) => ({ ...prev, dragPosition: currentPos }))
+      }
+    },
+    [dragState.draggedNodeId, dragState.dragStartPosition, dragState.isDragging]
+  )
+
+  const handleDragEnter = useCallback(
+    (targetNodeId: string, relativeY: number) => {
+      if (!dragState.isDragging) return
+
+      const isAncestor = graph.isAncestor(dragState.draggedNodeId!, targetNodeId)
+      const isSelf = targetNodeId === dragState.draggedNodeId
+      const canDrop = !isAncestor && !isSelf
+
+      let dropPosition: 'child' | 'before' | 'after' = 'child'
+      if (relativeY < 0.2) {
+        dropPosition = 'before'
+      } else if (relativeY > 0.8) {
+        dropPosition = 'after'
+      }
+
+      setDragState((prev) => ({
+        ...prev,
+        dropTargetId: targetNodeId,
+        dropPosition,
+        canDrop,
+      }))
+    },
+    [dragState.isDragging, dragState.draggedNodeId, graph]
+  )
+
+  const handleDragLeave = useCallback(() => {
+    if (!dragState.isDragging) return
+
+    setDragState((prev) => ({
+      ...prev,
+      dropTargetId: null,
+      dropPosition: null,
+      canDrop: false,
+    }))
+  }, [dragState.isDragging])
+
+  const handleDragEnd = useCallback(() => {
+    if (
+      dragState.canDrop &&
+      dragState.dropTargetId &&
+      dragState.draggedNodeId &&
+      dragState.dropPosition
+    ) {
+      handleNodeReplace(dragState.draggedNodeId, dragState.dropTargetId, dragState.dropPosition)
+    }
+    setDragState(initialDragState)
+  }, [dragState, handleNodeReplace])
+
   // Filter visible nodes based on collapsed state
   const visibleNodes = useMemo(() => {
     // 1. Identify visible node IDs
@@ -163,12 +279,25 @@ export const MindmapEditor: React.FC = () => {
   }, [doc.nodes, graph, collapsedNodes])
 
   const handleLayoutChange = useCallback(
-    (updates: { id: string; [key: string]: any }[]) => {
-      if (updates.length > 0) {
-        operations.updateNodes(updates)
-      }
+    (updates: { id: string;[key: string]: any }[]) => {
+      if (updates.length === 0) return
+
+      // Layout updates should NOT be saved to history
+      // Otherwise, Undo would be immediately overwritten by layout recalculation
+      setDoc((prev) => {
+        const updateMap = new Map(updates.map((u) => [u.id, u]))
+        const newNodes = prev.nodes.map((node) => {
+          if (updateMap.has(node.id)) {
+            const update = updateMap.get(node.id)!
+            const { id, ...rest } = update
+            return { ...node, ...rest }
+          }
+          return node
+        })
+        return { ...prev, nodes: newNodes }
+      }, { saveToHistory: false })
     },
-    [operations]
+    [setDoc]
   )
 
   // Layout
@@ -185,6 +314,15 @@ export const MindmapEditor: React.FC = () => {
     setSelectedNodeId(ids.length > 0 ? ids[0] : null)
   }, [])
 
+  // Interaction (Keyboard shortcuts for Node operations)
+  useMindmapInteraction({
+    selectedNodeId,
+    setSelectedNodeId,
+    graph,
+    ops: operations,
+    isEditing: false, // We rely on event target check inside the hook for now
+  })
+
   // Keyboard Shortcuts
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -194,21 +332,20 @@ export const MindmapEditor: React.FC = () => {
         return
       }
 
-      if (e.key === 'Tab') {
-        e.preventDefault()
-        operations.addChildNode()
-      } else if (e.key === 'Enter') {
-        e.preventDefault()
-        operations.addSiblingNode()
-      } else if (e.key === 'Backspace' || e.key === 'Delete') {
-        // Optional: Delete node
-        operations.deleteNode()
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+        if (e.shiftKey) {
+          e.preventDefault()
+          redo()
+        } else {
+          e.preventDefault()
+          undo()
+        }
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [operations])
+  }, [operations, undo, redo])
 
   return (
     <div className="flex flex-col w-full h-full">
@@ -246,6 +383,12 @@ export const MindmapEditor: React.FC = () => {
             readOnly={false}
             initialScrollCenter={{ x: 300, y: 200 }}
             onToggleCollapse={handleToggleCollapse}
+            onDragStart={handleDragStart}
+            onDragMove={handleDragMove}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragEnd={handleDragEnd}
+            dragState={dragState}
           />
         </div>
       </div>
@@ -268,7 +411,10 @@ export const MindmapEditor: React.FC = () => {
               { key: t('shortcut_add_child', '子ノード追加'), cmd: 'Tab' },
               { key: t('shortcut_add_sibling', '兄弟ノード追加'), cmd: 'Enter' },
               { key: t('shortcut_delete', 'ノード削除'), cmd: 'Delete / Backspace' },
+              { key: t('shortcut_delete', 'ノード削除'), cmd: 'Delete / Backspace' },
               { key: t('shortcut_edit_text', 'テキスト編集'), cmd: 'ダブルクリック' },
+              { key: t('shortcut_undo', '元に戻す'), cmd: 'Ctrl/Cmd + Z' },
+              { key: t('shortcut_redo', 'やり直し'), cmd: 'Ctrl/Cmd + Shift + Z' },
             ].map((s, i) => (
               <React.Fragment key={i}>
                 <div className="text-sm font-medium text-foreground">{s.key}</div>

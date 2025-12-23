@@ -42,6 +42,11 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
   showGrid = false,
   stageScale = 1,
   onToggleCollapse,
+  onDragStart,
+  onDragEnter,
+  onDragLeave,
+  dragState,
+  onDragEnd,
 }) => {
   const shapeRef = useRef<Konva.Node | null>(null)
   const trRef = useRef<Konva.Transformer | null>(null)
@@ -188,6 +193,25 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
     [readOnly, isSelected]
   )
 
+  // Mindmap drag & drop handlers
+  const handleMindmapDragStart = useCallback(
+    (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+      if (element.t !== 'text') return
+      if (!onDragStart) return
+      onDragStart(element.id, e)
+    },
+    [element.t, element.id, onDragStart]
+  )
+
+  const handleMindmapDragEnter = useCallback(
+    (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+      if (element.t !== 'text') return
+      if (!onDragEnter) return
+      onDragEnter(element.id, e)
+    },
+    [element.t, element.id, onDragEnter]
+  )
+
   const content = useMemo(() => {
     const commonProps: CanvasElementCommonProps = {
       id: element.id,
@@ -200,16 +224,45 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
       height: element.t === 'line' ? 0 : (element.h ?? 0),
       rotation: element.r || 0,
       draggable: readOnly ? false : !element.locked,
-      onMouseDown: onSelect,
+      onMouseDown: (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+        if (onDragStart) {
+          handleMindmapDragStart(e)
+        }
+        onSelect(e)
+      },
       onTap: onSelect,
       onDblClick,
       ref: handleShapeRef,
-      onDragMove: handleDragMove,
-      onDragEnd: handleDragEnd,
+      onDragMove: (e: Konva.KonvaEventObject<DragEvent>) => {
+        if (onDragStart) {
+          // Mindmap drag: notify parent
+        } else {
+          handleDragMove(e)
+        }
+      },
+      onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => {
+        if (onDragStart) {
+          // Props onDragEnd (Mindmap logic)
+          // We need to differentiate props.onDragEnd usage from local useCanvasDrag hook
+          // The prop is passed as onDragEnd (no args in MindmapEditor logic currently, or expects nothing)
+          // Actually MindmapEditor's handleDragEnd takes no args.
+          dragState && onDragEnd && onDragEnd()
+        } else {
+          handleDragEnd(e)
+        }
+      },
       onTransformEnd: handleTransformEnd,
       visible: !element.hidden,
-      onMouseEnter: handleMouseEnter,
-      onMouseLeave: handleMouseLeave,
+      onMouseEnter: (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+        handleMouseEnter(e as Konva.KonvaEventObject<MouseEvent>)
+        if (onDragEnter) {
+          handleMindmapDragEnter(e)
+        }
+      },
+      onMouseLeave: (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+        handleMouseLeave(e as Konva.KonvaEventObject<MouseEvent>)
+        onDragLeave?.(e)
+      },
       onContextMenu: (e: Konva.KonvaEventObject<PointerEvent>) => onContextMenu?.(e),
       dragBoundFunc: function (pos) {
         let snap = 0
@@ -296,16 +349,58 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           return (
             <Group
               {...commonProps}
-              // Ensure we don't pass Text-specific props to Group if they conflict, but commonProps are mostly transform/events
+            // Ensure we don't pass Text-specific props to Group if they conflict, but commonProps are mostly transform/events
             >
+              {/* Drop Indicator - Insertion Line */}
+              {dragState?.dropTargetId === element.id && dragState.canDrop && dragState.dropPosition !== 'child' && (
+                <Line
+                  points={
+                    dragState.dropPosition === 'before'
+                      ? [0, -4, element.w, -4] // Top
+                      : [0, element.h + 4, element.w, element.h + 4] // Bottom
+                  }
+                  stroke="hsl(217, 91%, 60%)"
+                  strokeWidth={4 * invScale}
+                  strokeCap="round"
+                  listening={false}
+                />
+              )}
+
               <Rect
                 width={element.w}
                 height={element.h}
                 fill={backgroundColor}
-                stroke={borderColor}
-                strokeWidth={borderWidth}
+                stroke={
+                  dragState?.dropTargetId === element.id
+                    ? dragState.canDrop
+                      ? dragState.dropPosition === 'child'
+                        ? 'hsl(142, 70%, 50%)' // Green for child
+                        : borderColor // Keep original border if showing insertion line separately
+                      : 'hsl(0, 70%, 50%)' // Red for invalid
+                    : borderColor
+                }
+                strokeWidth={
+                  dragState?.dropTargetId === element.id && dragState.canDrop
+                    ? dragState.dropPosition === 'child'
+                      ? 3 * invScale
+                      : borderWidth * invScale
+                    : borderWidth * invScale
+                }
                 cornerRadius={actualCornerRadius}
               />
+              {/* Overlay for invalid drop (Red X or tint) */}
+              {dragState?.dropTargetId === element.id && !dragState.canDrop && (
+                <Path
+                  x={element.w / 2 - 6}
+                  y={element.h / 2 - 6}
+                  data="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"
+                  fill="hsl(0, 70%, 50%)"
+                  scaleX={invScale}
+                  scaleY={invScale}
+                  opacity={0.8}
+                  listening={false}
+                />
+              )}
               <Text
                 x={textX}
                 y={textY}
@@ -1539,15 +1634,15 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           enabledAnchors={
             !element.locked
               ? [
-                  'top-left',
-                  'top-right',
-                  'bottom-left',
-                  'bottom-right',
-                  'middle-left',
-                  'middle-right',
-                  'top-center',
-                  'bottom-center',
-                ]
+                'top-left',
+                'top-right',
+                'bottom-left',
+                'bottom-right',
+                'middle-left',
+                'middle-right',
+                'top-center',
+                'bottom-center',
+              ]
               : []
           }
           boundBoxFunc={(oldBox, newBox) => {

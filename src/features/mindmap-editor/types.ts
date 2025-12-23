@@ -8,6 +8,7 @@ export interface MindmapGraph {
   linesMap: Map<string, LineNode> // child ID -> LineNode connecting to parent
   linesById: Map<string, LineNode> // Line ID -> LineNode
   depthMap: Map<string, number> // node ID -> depth level (0 = root)
+  isAncestor: (ancestorId: string, descendantId: string) => boolean
 }
 
 export interface MindmapLayoutConfig {

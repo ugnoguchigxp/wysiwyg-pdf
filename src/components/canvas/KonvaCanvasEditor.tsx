@@ -1,10 +1,9 @@
 import type Konva from 'konva'
-import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react'
+import React, { useCallback, forwardRef, useImperativeHandle, useRef, useState } from 'react'
 import { Layer, Stage, Rect } from 'react-konva'
 import type { TextNode, UnifiedNode } from '../../types/canvas'
 import { mmToPx } from '@/utils/units'
 // import { measureText } from '@/features/konva-editor/utils/textUtils'
-import { ptToMm } from '@/utils/units'
 import { useTextDimensions } from '@/features/konva-editor/hooks/useTextDimensions'
 import { CanvasElementRenderer } from './CanvasElementRenderer'
 import type { CanvasElementCommonProps, CanvasShapeRefCallback } from './types'
@@ -51,6 +50,20 @@ interface KonvaCanvasEditorProps {
   onCreateElements?: (elements: UnifiedNode[]) => void
   initialScrollCenter?: { x: number; y: number }
   onToggleCollapse?: (id: string) => void
+  // Mindmap drag & drop
+  onDragStart?: (nodeId: string, startPosition: { x: number; y: number }) => void
+  onDragMove?: (position: { x: number; y: number }) => void
+  onDragEnter?: (targetNodeId: string, relativeY: number) => void
+  onDragLeave?: () => void
+  onDragEnd?: () => void
+  dragState?: {
+    isDragging: boolean
+    draggedNodeId: string | null
+    dragPosition: { x: number; y: number } | null
+    dropTargetId: string | null
+    dropPosition: 'child' | 'before' | 'after' | null
+    canDrop: boolean
+  }
 }
 
 export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvasEditorProps>(
@@ -78,7 +91,13 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       gridSize = 5,
       onCreateElements,
       initialScrollCenter,
-      onToggleCollapse
+      onToggleCollapse,
+      onDragStart,
+      onDragMove,
+      onDragEnter,
+      onDragLeave,
+      onDragEnd,
+      dragState,
     },
     ref
   ) => {
@@ -169,7 +188,7 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
         family: textNode.font,
         size: textNode.fontSize,
         weight: textNode.fontWeight,
-        padding: textNode.padding
+        padding: textNode.padding,
       })
 
       onChange({
@@ -225,7 +244,12 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
           const newId = crypto.randomUUID()
           const newEl = { ...el, id: newId }
 
-          if ('x' in newEl && 'y' in newEl && typeof newEl.x === 'number' && typeof newEl.y === 'number') {
+          if (
+            'x' in newEl &&
+            'y' in newEl &&
+            typeof newEl.x === 'number' &&
+            typeof newEl.y === 'number'
+          ) {
             // Offset by offset mm from original
             newEl.x += offset
             newEl.y += offset
@@ -235,11 +259,10 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
 
         onCreateElements(newElements)
         // Optionally select the pasted elements
-        onSelect(newElements.map(e => e.id))
+        onSelect(newElements.map((e) => e.id))
 
         // Increment paste counter for next paste
-        setPasteCount(prev => prev + 1)
-
+        setPasteCount((prev) => prev + 1)
       } catch (e) {
         console.error('Failed to paste elements', e)
       }
@@ -256,13 +279,36 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       onCopy: handleCopy,
       onPaste: handlePaste,
       onSelectAll: handleSelectAll,
-      onMoveUp: () => { }, // Disabled
-      onMoveDown: () => { }, // Disabled
-      onMoveLeft: () => { }, // Disabled
-      onMoveRight: () => { }, // Disabled
+      onMoveUp: () => {}, // Disabled
+      onMoveDown: () => {}, // Disabled
+      onMoveLeft: () => {}, // Disabled
+      onMoveRight: () => {}, // Disabled
     }
 
     useKeyboardShortcuts(shortcutsHandlers)
+
+    // Mindmap drag & drop handlers
+    const handleNodeDragStart = useCallback(
+      (nodeId: string, e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+        const pos = e.target.getStage()?.getPointerPosition()
+        if (pos) {
+          onDragStart?.(nodeId, { x: pos.x, y: pos.y })
+        }
+      },
+      [onDragStart]
+    )
+
+    const handleNodeDragEnter = useCallback(
+      (nodeId: string, e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+        const pos = e.target.getStage()?.getPointerPosition()
+        const rect = e.target.getClientRect()
+        if (pos && rect) {
+          const relativeY = (pos.y - rect.y) / rect.height
+          onDragEnter?.(nodeId, relativeY)
+        }
+      },
+      [onDragEnter]
+    )
 
     const editingElement = editingElementId
       ? (elements.find((el) => el.id === editingElementId) as TextNode)
@@ -275,7 +321,7 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
         style={{
           cursor: isPanning.current ? 'grabbing' : 'default',
           minWidth: 0,
-          minHeight: 0
+          minHeight: 0,
         }}
       >
         <div
@@ -292,7 +338,8 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
               if (onStageMouseDown) {
                 onStageMouseDown(e)
               }
-              const isBackground = e.target === e.target.getStage() || e.target.name() === 'paper-background'
+              const isBackground =
+                e.target === e.target.getStage() || e.target.name() === 'paper-background'
 
               if (isBackground) {
                 if (!onStageMouseDown) {
@@ -309,6 +356,14 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
             onMouseMove={(e) => {
               onStageMouseMove?.(e)
 
+              // Mindmap drag move
+              if (onDragMove) {
+                const pos = e.target.getStage()?.getPointerPosition()
+                if (pos) {
+                  onDragMove({ x: pos.x, y: pos.y })
+                }
+              }
+
               if (isPanning.current && containerRef.current) {
                 e.evt.preventDefault() // Prevent selection
                 const dx = e.evt.clientX - lastMousePos.current.x
@@ -322,6 +377,10 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
             }}
             onMouseUp={(e) => {
               onStageMouseUp?.(e)
+
+              // Mindmap drag end
+              onDragEnd?.()
+
               if (isPanning.current) {
                 isPanning.current = false
                 if (containerRef.current) containerRef.current.style.cursor = 'default'
@@ -383,6 +442,10 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
                   showGrid={showGrid}
                   gridSize={gridSize}
                   onToggleCollapse={onToggleCollapse}
+                  onDragStart={handleNodeDragStart}
+                  onDragEnter={handleNodeDragEnter}
+                  onDragLeave={onDragLeave}
+                  dragState={dragState}
                 />
               ))}
             </Layer>

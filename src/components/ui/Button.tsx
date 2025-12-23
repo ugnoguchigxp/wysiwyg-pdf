@@ -16,7 +16,7 @@ import * as React from 'react'
 import { cn } from '../../utils/utils'
 
 const buttonVariants = cva(
-  'inline-flex min-h-[44px] min-w-[64px] items-center justify-center gap-2 whitespace-nowrap rounded-[6px] border border-solid text-base font-semibold shadow-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed hover:brightness-95 active:shadow-none active:translate-y-[1px]',
+  'inline-flex min-h-[44px] min-w-[64px] items-center justify-center gap-2 whitespace-nowrap rounded-[6px] border border-solid text-base font-semibold shadow-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 hover:brightness-95 active:shadow-none active:translate-y-[1px]',
   {
     variants: {
       variant: {
@@ -75,7 +75,7 @@ const buttonVariants = cva(
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  VariantProps<typeof buttonVariants> {
   asChild?: boolean
   icon?: React.ElementType
   loading?: boolean
