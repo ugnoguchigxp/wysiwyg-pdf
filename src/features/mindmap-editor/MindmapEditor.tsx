@@ -1,8 +1,9 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import type Konva from 'konva'
+import React, { useState, useCallback, useMemo, useRef } from 'react'
 import { Doc, UnifiedNode } from '@/types/canvas'
-import { KonvaCanvasEditor } from '@/components/canvas/KonvaCanvasEditor'
+import { KonvaCanvasEditor, KonvaCanvasEditorHandle } from '@/components/canvas/KonvaCanvasEditor'
 import { Button } from '@/components/ui/Button'
-import { ChevronsDown, ChevronsUp, Keyboard } from 'lucide-react'
+import { ChevronsDown, ChevronsUp, Download, Upload, Keyboard, ImageIcon, FileDown } from 'lucide-react'
 import { useI18n } from '@/i18n/I18nContext'
 import { Modal, ModalFooter } from '@/components/ui/Modal'
 import { useMindmapGraph } from './hooks/useMindmapGraph'
@@ -10,6 +11,9 @@ import { useMindmapLayout } from './hooks/useMindmapLayout'
 import { useMindmapOperations } from './hooks/useMindmapOperations'
 import { useMindmapHistory } from './hooks/useMindmapHistory'
 import { useMindmapInteraction } from './hooks/useMindmapInteraction'
+import { MermaidExportModal } from './components/MermaidExportModal'
+import { MermaidImportModal } from './components/MermaidImportModal'
+import './mindmap-print.css'
 
 // Initial Doc with standard TextNode
 const INITIAL_DOC: Doc = {
@@ -66,10 +70,13 @@ const initialDragState: DragState = {
 }
 
 export const MindmapEditor: React.FC = () => {
+  const canvasRef = useRef<KonvaCanvasEditorHandle>(null)
   const { doc, setDoc, undo, redo } = useMindmapHistory(INITIAL_DOC)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [collapsedNodes, setCollapsedNodes] = useState<Set<string>>(new Set())
   const [showShortcuts, setShowShortcuts] = useState(false)
+  const [showMermaidExport, setShowMermaidExport] = useState(false)
+  const [showMermaidImport, setShowMermaidImport] = useState(false)
   const [dragState, setDragState] = useState<DragState>(initialDragState)
   const { t } = useI18n()
 
@@ -131,11 +138,78 @@ export const MindmapEditor: React.FC = () => {
     setCollapsedNodes(new Set(collapsibleIds))
   }, [graph])
 
+  const handleMermaidImport = useCallback((importedDoc: Doc) => {
+    setDoc(importedDoc)
+    setCollapsedNodes(new Set())
+    setShowMermaidImport(false)
+  }, [])
+
+  // Image Download Handler
+  const handleDownloadImage = useCallback(() => {
+    const stage = canvasRef.current?.getStage()
+    if (!stage) return
+
+    // Hide grid layer
+    const gridLayer = stage.findOne('.grid-layer')
+    const wasGridVisible = gridLayer?.visible()
+
+    // Hide transformer handles (selection UI)
+    const transformers = (stage.find('Transformer') as unknown as Konva.Node[]).filter(
+      (n): n is Konva.Transformer => n.getClassName?.() === 'Transformer'
+    )
+    const transformerVisibility = transformers.map((tr) => tr.visible())
+
+    try {
+      gridLayer?.hide()
+      transformers.forEach((tr) => tr.hide())
+
+      const dataURL = stage.toDataURL({ pixelRatio: 2 })
+
+      const link = document.createElement('a')
+      link.download = `mindmap-${Date.now()}.png`
+      link.href = dataURL
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } finally {
+      // Restore grid layer
+      if (gridLayer && wasGridVisible) {
+        gridLayer.show()
+      }
+      // Restore transformer handles
+      transformers.forEach((tr, idx) => {
+        const prev = transformerVisibility[idx]
+        if (prev) tr.show()
+      })
+    }
+  }, [])
+
+  // PDF Download Handler (via print dialog)
+  const handleDownloadPdf = useCallback(() => {
+    window.print()
+  }, [])
+
   const handleNodeReplace = useCallback(
     (sourceId: string, targetId: string, position: 'child' | 'before' | 'after') => {
-      operations.moveNode(sourceId, targetId, position)
+      const oldParentId = graph.parentIdMap.get(sourceId)
+
+      if (oldParentId) {
+        operations.removeChildNode(oldParentId, sourceId)
+      }
+
+      if (position === 'child') {
+        operations.addChildNodeTo(targetId, sourceId)
+      } else {
+        const targetParentId = graph.parentIdMap.get(targetId)
+        if (targetParentId) {
+          const siblings = graph.childrenMap.get(targetParentId) ?? []
+          const targetIndex = siblings.indexOf(targetId)
+          const insertIndex = position === 'before' ? targetIndex : targetIndex + 1
+          operations.insertChildNodeAt(targetParentId, sourceId, insertIndex)
+        }
+      }
     },
-    [operations]
+    [graph, operations]
   )
 
   const handleDragStart = useCallback(
@@ -284,18 +358,21 @@ export const MindmapEditor: React.FC = () => {
 
       // Layout updates should NOT be saved to history
       // Otherwise, Undo would be immediately overwritten by layout recalculation
-      setDoc((prev) => {
-        const updateMap = new Map(updates.map((u) => [u.id, u]))
-        const newNodes = prev.nodes.map((node) => {
-          if (updateMap.has(node.id)) {
-            const update = updateMap.get(node.id)!
-            const { id, ...rest } = update
-            return { ...node, ...rest }
-          }
-          return node
-        })
-        return { ...prev, nodes: newNodes }
-      }, { saveToHistory: false })
+      setDoc(
+        (prev) => {
+          const updateMap = new Map(updates.map((u) => [u.id, u]))
+          const newNodes = prev.nodes.map((node) => {
+            if (updateMap.has(node.id)) {
+              const update = updateMap.get(node.id)!
+              const { id, ...rest } = update
+              return { ...node, ...rest }
+            }
+            return node
+          })
+          return { ...prev, nodes: newNodes }
+        },
+        { saveToHistory: false }
+      )
     },
     [setDoc]
   )
@@ -348,8 +425,8 @@ export const MindmapEditor: React.FC = () => {
   }, [operations, undo, redo])
 
   return (
-    <div className="flex flex-col w-full h-full">
-      <div className="h-12 border-b bg-white flex items-center justify-between px-4 shadow-sm z-10">
+    <div className="flex flex-col w-full h-full mindmap-root">
+      <div className="h-12 border-b bg-white flex items-center justify-between px-4 shadow-sm z-10 mindmap-header">
         <h1 className="font-bold text-slate-700">Mindmap Editor</h1>
         <div className="flex gap-2">
           <Button
@@ -368,11 +445,29 @@ export const MindmapEditor: React.FC = () => {
             <ChevronsUp className="h-4 w-4 mr-1" />
             全て折りたたみ
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowMermaidExport(true)}>
+            <Download className="h-4 w-4 mr-1" />
+            {t('export_mermaid', 'エクスポート')}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowMermaidImport(true)}>
+            <Upload className="h-4 w-4 mr-1" />
+            {t('import_mermaid', 'インポート')}
+          </Button>
+          <div className="h-6 w-px bg-border" />
+          <Button variant="outline" size="sm" onClick={handleDownloadImage}>
+            <ImageIcon className="h-4 w-4 mr-1" />
+            {t('download_image', 'Image')}
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
+            <FileDown className="h-4 w-4 mr-1" />
+            {t('download_pdf', 'PDF')}
+          </Button>
         </div>
       </div>
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden mindmap-canvas-container">
         <div className="w-full h-full content-container">
           <KonvaCanvasEditor
+            ref={canvasRef}
             elements={visibleNodes}
             selectedIds={selectedNodeId ? [selectedNodeId] : []}
             onSelect={handleSelect}
@@ -436,6 +531,19 @@ export const MindmapEditor: React.FC = () => {
           </button>
         </ModalFooter>
       </Modal>
+
+      <MermaidExportModal
+        isOpen={showMermaidExport}
+        onClose={() => setShowMermaidExport(false)}
+        doc={doc}
+        graph={graph}
+      />
+
+      <MermaidImportModal
+        isOpen={showMermaidImport}
+        onClose={() => setShowMermaidImport(false)}
+        onImport={handleMermaidImport}
+      />
     </div>
   )
 }

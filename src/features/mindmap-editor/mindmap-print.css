@@ -1,0 +1,50 @@
+/* Mindmap Editor Print Styles */
+
+/* Hide non-printable elements */
+@media print {
+  @page {
+    margin: 0;
+    size: landscape;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Hide header and other UI elements */
+  .mindmap-header {
+    display: none !important;
+  }
+
+  /* Hide modals */
+  [role="dialog"] {
+    display: none !important;
+  }
+
+  /* Make canvas container fill the page */
+  .mindmap-canvas-container {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    overflow: visible !important;
+    z-index: 9999 !important;
+  }
+
+  /* Hide scrollbars and borders */
+  .mindmap-canvas-container > div {
+    overflow: visible !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Root container adjustments */
+  .mindmap-root {
+    height: 100vh !important;
+    overflow: visible !important;
+  }
+}

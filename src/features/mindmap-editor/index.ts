@@ -1,2 +1,5 @@
 export * from './MindmapEditor'
 export * from './types'
+export * from './components/MermaidExportModal'
+export * from './components/MermaidImportModal'
+export * from './utils/mermaidUtils'
