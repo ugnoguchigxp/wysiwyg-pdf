@@ -50,6 +50,7 @@ interface KonvaCanvasEditorProps {
   gridSize?: number
   onCreateElements?: (elements: UnifiedNode[]) => void
   initialScrollCenter?: { x: number; y: number }
+  onToggleCollapse?: (id: string) => void
 }
 
 export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvasEditorProps>(
@@ -77,6 +78,7 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       gridSize = 5,
       onCreateElements,
       initialScrollCenter,
+      onToggleCollapse
     },
     ref
   ) => {
@@ -380,6 +382,7 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
                   snapStrength={snapStrength}
                   showGrid={showGrid}
                   gridSize={gridSize}
+                  onToggleCollapse={onToggleCollapse}
                 />
               ))}
             </Layer>

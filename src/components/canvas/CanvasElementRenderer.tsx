@@ -1,22 +1,9 @@
 import type Konva from 'konva'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-  Circle,
-  Ellipse,
-  Group,
-  Line,
-  Path,
-  Rect,
-  Star,
-  Text,
-  Transformer,
-} from 'react-konva'
+import { Circle, Ellipse, Group, Line, Path, Rect, Star, Text, Transformer } from 'react-konva'
 import { ptToMm } from '@/utils/units'
-import {
-  getAnchorPointAndDirection,
-  getOrthogonalPath
-} from './utils/connectionRouting'
+import { getAnchorPointAndDirection, getOrthogonalPath } from './utils/connectionRouting'
 import type {
   Anchor,
   ImageNode,
@@ -28,7 +15,6 @@ import type {
   UnifiedNode,
 } from '../../types/canvas'
 import { LineMarker } from './LineMarker'
-
 
 // Helpers & Components Imports
 import { CanvasImage } from './CanvasImage'
@@ -55,6 +41,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
   gridSize = 15,
   showGrid = false,
   stageScale = 1,
+  onToggleCollapse,
 }) => {
   const shapeRef = useRef<Konva.Node | null>(null)
   const trRef = useRef<Konva.Transformer | null>(null)
@@ -181,9 +168,6 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
     }
   }, [element, onChange])
 
-
-
-
   const handleMouseEnter = useCallback(
     (e: Konva.KonvaEventObject<MouseEvent>) => {
       if (readOnly) return
@@ -286,9 +270,10 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
 
         // Determine if we should show the box
         // Backward compatibility: if hasFrame is undefined, check properties
-        const shouldShowBox = hasFrame !== undefined
-          ? hasFrame
-          : (borderColor || (borderWidth && borderWidth > 0) || backgroundColor)
+        const shouldShowBox =
+          hasFrame !== undefined
+            ? hasFrame
+            : borderColor || (borderWidth && borderWidth > 0) || backgroundColor
 
         if (shouldShowBox) {
           // Calculate Text dimensions inside the box
@@ -311,7 +296,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           return (
             <Group
               {...commonProps}
-            // Ensure we don't pass Text-specific props to Group if they conflict, but commonProps are mostly transform/events
+              // Ensure we don't pass Text-specific props to Group if they conflict, but commonProps are mostly transform/events
             >
               <Rect
                 width={element.w}
@@ -353,6 +338,58 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
                 listening={false} // Let the group handle events
                 visible={!isEditing} // Hide underlying text while editing to prevent visual mismatch
               />
+              {/* Collapse Toggle Button - Only if enabled for this node */}
+              {element.data?.hasChildren &&
+                onToggleCollapse &&
+                (() => {
+                  const isCollapsed = !!element.data.isCollapsed
+                  const buttonColor = isCollapsed ? '#22c55e' : '#ef4444' // Green for expand (+), Red for collapse (-)
+
+                  return (
+                    <Group
+                      x={element.w}
+                      y={0}
+                      onMouseDown={(e) => {
+                        e.cancelBubble = true
+                        onToggleCollapse(element.id)
+                      }}
+                      onTap={(e) => {
+                        e.cancelBubble = true
+                        onToggleCollapse(element.id)
+                      }}
+                      onMouseEnter={(e) => {
+                        const container = e.target.getStage()?.container()
+                        if (container) container.style.cursor = 'pointer'
+                      }}
+                      onMouseLeave={(e) => {
+                        const container = e.target.getStage()?.container()
+                        if (container) container.style.cursor = 'default'
+                      }}
+                    >
+                      <Circle
+                        radius={8 * invScale}
+                        fill="#ffffff"
+                        stroke={buttonColor}
+                        strokeWidth={1.5 * invScale}
+                        shadowColor="#000000"
+                        shadowBlur={3 * invScale}
+                        shadowOpacity={0.15}
+                      />
+                      <Path
+                        x={-4 * invScale}
+                        y={-4 * invScale}
+                        width={8 * invScale}
+                        height={8 * invScale}
+                        data={isCollapsed ? 'M4 1.5v5M1.5 4h5' : 'M1.5 4h5'}
+                        stroke={buttonColor}
+                        strokeWidth={1.5}
+                        scale={{ x: invScale, y: invScale }}
+                        listening={false}
+                        lineCap="round"
+                      />
+                    </Group>
+                  )
+                })()}
             </Group>
           )
         }
@@ -616,8 +653,6 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
         const resolvedStart = resolveEndpoint(line.startConn)
         const resolvedEnd = resolveEndpoint(line.endConn)
 
-
-
         // Use resolved endpoints for rendering (connector follow)
         const pts = [...basePts]
         if (resolvedStart) {
@@ -639,7 +674,11 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           }
         }
 
-        const snapAngle = (moving: { x: number; y: number }, fixed: { x: number; y: number }, step: number) => {
+        const snapAngle = (
+          moving: { x: number; y: number },
+          fixed: { x: number; y: number },
+          step: number
+        ) => {
           const dx = moving.x - fixed.x
           const dy = moving.y - fixed.y
           const angle = Math.atan2(dy, dx)
@@ -690,7 +729,10 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           e.cancelBubble = true
         }
 
-        const moveHandleDrag = (handleType: 'start' | 'end', e: Konva.KonvaEventObject<DragEvent>) => {
+        const moveHandleDrag = (
+          handleType: 'start' | 'end',
+          e: Konva.KonvaEventObject<DragEvent>
+        ) => {
           const base = lineDraftPtsRef.current || [...pts]
 
           // Determine index based on handle type and CURRENT base length (which changes with routing)
@@ -702,7 +744,6 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           let refPoint = { x: 0, y: 0 }
           if (pointIndex === 0) refPoint = { x: base[2], y: base[3] }
           else refPoint = { x: base[pointIndex - 2], y: base[pointIndex - 1] }
-
 
           const isOrthogonal = line.routing === 'orthogonal'
           const isShift = e.evt.shiftKey
@@ -750,9 +791,17 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
             for (const n of nodesForSnap) {
               if (n.t === 'line') continue
               // Bounding box check
-              const nx = n.x ?? 0, ny = n.y ?? 0, nw = n.w ?? 0, nh = n.h ?? 0
-              if (nextPos.x < nx - showMargin || nextPos.x > nx + nw + showMargin ||
-                nextPos.y < ny - showMargin || nextPos.y > ny + nh + showMargin) continue
+              const nx = n.x ?? 0,
+                ny = n.y ?? 0,
+                nw = n.w ?? 0,
+                nh = n.h ?? 0
+              if (
+                nextPos.x < nx - showMargin ||
+                nextPos.x > nx + nw + showMargin ||
+                nextPos.y < ny - showMargin ||
+                nextPos.y > ny + nh + showMargin
+              )
+                continue
 
               const isSmall = nw < 15 || nh < 15
 
@@ -804,7 +853,6 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
 
           e.target.position(nextPos)
 
-
           // -------------------------------------------------------------------
           // 3. Draft Path Calculation
           // -------------------------------------------------------------------
@@ -819,7 +867,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
             // Setup for getOrthogonalPath
             const getDir = (conn: LineNode['startConn']) => {
               if (!conn) return null
-              const node = nodesForSnap.find(n => n.id === conn.nodeId)
+              const node = nodesForSnap.find((n) => n.id === conn.nodeId)
               if (!node) return null
               const info = getAnchorPointAndDirection(node as any, conn.anchor)
               return { x: info.nx, y: info.ny }
@@ -836,7 +884,6 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
             )
 
             if (computedPath.length > 0) newPts = computedPath
-
           } else {
             // Standard behavior (Manual / Straight)
             newPts[pointIndex] = nextPos.x
@@ -860,8 +907,6 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           }
           // Commit once
           if (next) {
-
-
             const updated: Partial<LineNode> = {
               id: element.id,
               pts: next,
@@ -1021,43 +1066,53 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
               )
             })()}
             {/* Endpoint drag handles (only when selected) */}
-            {isSelected && !readOnly && (() => {
-              return (
-                <>
-                  <Circle
-                    ref={(node) => { lineStartHandleRef.current = node }}
-                    name="line-handle-start"
-                    x={pts[0]}
-                    y={pts[1]}
-                    radius={6 * invScale}
-                    fill="#ffffff"
-                    stroke="#3b82f6"
-                    strokeWidth={2 * invScale}
-                    draggable
-                    onDragStart={startHandleDrag}
-                    onDragMove={(e) => moveHandleDrag('start', e)}
-                    onDragEnd={endHandleDrag}
-                    onMouseDown={(e) => { e.cancelBubble = true }}
-                  />
-                  <Circle
-                    ref={(node) => { lineEndHandleRef.current = node }}
-                    name="line-handle-end"
-                    x={pts[pts.length - 2]}
-                    y={pts[pts.length - 1]}
-                    radius={6 * invScale}
-                    fill="#ffffff"
-                    stroke="#3b82f6"
-                    strokeWidth={2 * invScale}
-                    draggable
-                    onDragStart={startHandleDrag}
-                    onDragMove={(e) => moveHandleDrag('end', e)}
-                    onDragEnd={endHandleDrag}
-                    onMouseDown={(e) => { e.cancelBubble = true }}
-                  />
-                </>
-              )
-            })()}
-
+            {isSelected &&
+              !readOnly &&
+              !element.locked &&
+              (() => {
+                return (
+                  <>
+                    <Circle
+                      ref={(node) => {
+                        lineStartHandleRef.current = node
+                      }}
+                      name="line-handle-start"
+                      x={pts[0]}
+                      y={pts[1]}
+                      radius={6 * invScale}
+                      fill="#ffffff"
+                      stroke="#3b82f6"
+                      strokeWidth={2 * invScale}
+                      draggable
+                      onDragStart={startHandleDrag}
+                      onDragMove={(e) => moveHandleDrag('start', e)}
+                      onDragEnd={endHandleDrag}
+                      onMouseDown={(e) => {
+                        e.cancelBubble = true
+                      }}
+                    />
+                    <Circle
+                      ref={(node) => {
+                        lineEndHandleRef.current = node
+                      }}
+                      name="line-handle-end"
+                      x={pts[pts.length - 2]}
+                      y={pts[pts.length - 1]}
+                      radius={6 * invScale}
+                      fill="#ffffff"
+                      stroke="#3b82f6"
+                      strokeWidth={2 * invScale}
+                      draggable
+                      onDragStart={startHandleDrag}
+                      onDragMove={(e) => moveHandleDrag('end', e)}
+                      onDragEnd={endHandleDrag}
+                      onMouseDown={(e) => {
+                        e.cancelBubble = true
+                      }}
+                    />
+                  </>
+                )
+              })()}
           </Group>
         )
       }
@@ -1475,22 +1530,26 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
         <Transformer
           key={element.id} // Fixed key to prevent unmounting on resize
           ref={trRef as React.RefObject<Konva.Transformer>}
-          rotateEnabled={true}
+          rotateEnabled={!element.locked}
           anchorSize={8}
-          borderStrokeWidth={1}
+          borderStrokeWidth={element.locked ? 3 : 1}
           rotateAnchorOffset={16}
           rotationSnaps={rotationSnaps}
           rotationSnapTolerance={rotationSnapTolerance}
-          enabledAnchors={[
-            'top-left',
-            'top-right',
-            'bottom-left',
-            'bottom-right',
-            'middle-left',
-            'middle-right',
-            'top-center',
-            'bottom-center',
-          ]}
+          enabledAnchors={
+            !element.locked
+              ? [
+                  'top-left',
+                  'top-right',
+                  'bottom-left',
+                  'bottom-right',
+                  'middle-left',
+                  'middle-right',
+                  'top-center',
+                  'bottom-center',
+                ]
+              : []
+          }
           boundBoxFunc={(oldBox, newBox) => {
             if (newBox.width < 5 || newBox.height < 5) return oldBox
             return newBox

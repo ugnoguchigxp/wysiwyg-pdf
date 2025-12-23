@@ -26,17 +26,30 @@ export const calculateMindmapLayout = (
     const rootNode = nodeMap.get(rootId)
     if (!rootNode) return { updates, lineUpdates }
 
+    const startX = rootNode.x ?? config.rootX
+
     // 1. Separate Root's children into Left and Right lists
-    // For a stable layout, we can alternate, or rely on a stored 'direction' property if we added one.
-    // For this version: Split evenly by index.
+    // Hierarchy: Explicit Dir > Visual Position > Alternating
     const rootChildren = childrenMap.get(rootId) || []
     const rightChildren: string[] = []
     const leftChildren: string[] = []
 
     rootChildren.forEach((childId, index) => {
-        // If we had persisted direction, check here.
-        // For now: alternate.
-        if (index % 2 === 0) rightChildren.push(childId)
+        const node = nodeMap.get(childId)
+        let side: 'left' | 'right' = 'right'
+
+        if (node?.data?.layoutDir) {
+            side = node.data.layoutDir as 'left' | 'right'
+        } else if (node && typeof node.x === 'number') {
+            // Fallback: visual position
+            if (node.x < startX) side = 'left'
+            else side = 'right'
+        } else {
+            // Fallback: Alternating
+            side = index % 2 === 0 ? 'right' : 'left'
+        }
+
+        if (side === 'right') rightChildren.push(childId)
         else leftChildren.push(childId)
     })
 
@@ -187,7 +200,6 @@ export const calculateMindmapLayout = (
     }
 
     // Place Root
-    const startX = rootNode.x ?? config.rootX
     const startY = rootNode.y ?? config.rootY
     // Place Root immediately
     updates.set(rootId, { x: startX, y: startY })

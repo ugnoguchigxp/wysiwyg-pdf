@@ -96,6 +96,7 @@ export interface BaseNode {
 
   // Metadata
   name?: string
+  data?: Record<string, unknown> // Flexible data for specific features handling
 }
 
 export interface TextNode extends BaseNode {

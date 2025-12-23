@@ -35,4 +35,5 @@ export interface CanvasElementRendererProps {
         commonProps: CanvasElementCommonProps,
         shapeRef: CanvasShapeRefCallback
     ) => React.ReactNode
+    onToggleCollapse?: (id: string) => void
 }
