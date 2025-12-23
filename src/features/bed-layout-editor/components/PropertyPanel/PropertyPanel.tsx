@@ -20,7 +20,7 @@ const FIBONACCI_GRID_SIZES = [2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377]
 
 export interface PropertyPanelProps {
   selectedElement: UnifiedNode | null
-  onChange: (id: string, newAttrs: Partial<UnifiedNode>) => void
+  onChange: (id: string, newAttrs: Partial<UnifiedNode>, options?: { saveToHistory?: boolean }) => void
   onDelete: (id: string) => void
   document?: Doc
   onDocumentChange?: (newDoc: Doc) => void
@@ -70,107 +70,107 @@ const CanvasSettingsPanel: React.FC<{
   onSnapStrengthChange,
   resolveText,
 }) => {
-  const { t } = useI18n()
+    const { t } = useI18n()
 
-  const resolvedSurfaceId =
-    surfaceId ||
-    document?.surfaces.find((s) => s.type === 'canvas')?.id ||
-    document?.surfaces[0]?.id ||
-    'layout'
-  const surface =
-    document?.surfaces.find((s) => s.id === resolvedSurfaceId) || document?.surfaces[0]
+    const resolvedSurfaceId =
+      surfaceId ||
+      document?.surfaces.find((s) => s.type === 'canvas')?.id ||
+      document?.surfaces[0]?.id ||
+      'layout'
+    const surface =
+      document?.surfaces.find((s) => s.id === resolvedSurfaceId) || document?.surfaces[0]
 
-  const updateSurface = (patch: Partial<{ w: number; h: number }>) => {
-    if (!document || !onDocumentChange || !surface) return
-    onDocumentChange({
-      ...document,
-      surfaces: document.surfaces.map((s) => (s.id === surface.id ? { ...s, ...patch } : s)),
-    })
+    const updateSurface = (patch: Partial<{ w: number; h: number }>) => {
+      if (!document || !onDocumentChange || !surface) return
+      onDocumentChange({
+        ...document,
+        surfaces: document.surfaces.map((s) => (s.id === surface.id ? { ...s, ...patch } : s)),
+      })
+    }
+
+    return (
+      <div className="w-64 bg-secondary px-2 py-1 overflow-x-hidden overflow-y-auto text-foreground">
+        {/* Canvas Size (if document provided) */}
+        {document && onDocumentChange && surface && (
+          <div className="mb-3">
+            <h4 className="text-[13px] font-medium text-muted-foreground mb-1">
+              {resolveText('properties_layout', 'Canvas')}
+            </h4>
+            <div className="grid grid-cols-2 gap-1">
+              <div>
+                <label className={labelClass}>{resolveText('properties_width', 'W')}</label>
+                <input
+                  type="number"
+                  value={surface.w}
+                  onChange={(e) => updateSurface({ w: Number(e.target.value) })}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>{resolveText('properties_height', 'H')}</label>
+                <input
+                  type="number"
+                  value={surface.h}
+                  onChange={(e) => updateSurface({ h: Number(e.target.value) })}
+                  className={inputClass}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Grid Settings */}
+        {onShowGridChange && (
+          <div className="mb-3">
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-[13px] text-muted-foreground">
+                {t('settings_show_grid', 'Grid')}
+              </label>
+              <input
+                type="checkbox"
+                checked={showGrid ?? false}
+                onChange={(e) => onShowGridChange(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+            </div>
+            {showGrid && onGridSizeChange && (
+              <div>
+                <label className={labelClass}>{t('settings_grid_size', 'Size')}</label>
+                <select
+                  value={gridSize ?? 13}
+                  onChange={(e) => onGridSizeChange(Number(e.target.value))}
+                  className={inputClass}
+                >
+                  {FIBONACCI_GRID_SIZES.map((size) => (
+                    <option key={size} value={size}>
+                      {size}pt
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Snap to Grid */}
+        {onSnapStrengthChange && (
+          <div className="mb-3">
+            <div className="flex items-center justify-between">
+              <label className="text-[13px] text-muted-foreground">
+                {t('settings_snap_to_grid', 'Snap to Grid')}
+              </label>
+              <input
+                type="checkbox"
+                checked={(snapStrength ?? 0) > 0}
+                onChange={(e) => onSnapStrengthChange(e.target.checked ? (gridSize ?? 15) : 0)}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    )
   }
-
-  return (
-    <div className="w-64 bg-secondary px-2 py-1 overflow-x-hidden overflow-y-auto text-foreground">
-      {/* Canvas Size (if document provided) */}
-      {document && onDocumentChange && surface && (
-        <div className="mb-3">
-          <h4 className="text-[13px] font-medium text-muted-foreground mb-1">
-            {resolveText('properties_layout', 'Canvas')}
-          </h4>
-          <div className="grid grid-cols-2 gap-1">
-            <div>
-              <label className={labelClass}>{resolveText('properties_width', 'W')}</label>
-              <input
-                type="number"
-                value={surface.w}
-                onChange={(e) => updateSurface({ w: Number(e.target.value) })}
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>{resolveText('properties_height', 'H')}</label>
-              <input
-                type="number"
-                value={surface.h}
-                onChange={(e) => updateSurface({ h: Number(e.target.value) })}
-                className={inputClass}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Grid Settings */}
-      {onShowGridChange && (
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-1">
-            <label className="text-[13px] text-muted-foreground">
-              {t('settings_show_grid', 'Grid')}
-            </label>
-            <input
-              type="checkbox"
-              checked={showGrid ?? false}
-              onChange={(e) => onShowGridChange(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-          </div>
-          {showGrid && onGridSizeChange && (
-            <div>
-              <label className={labelClass}>{t('settings_grid_size', 'Size')}</label>
-              <select
-                value={gridSize ?? 13}
-                onChange={(e) => onGridSizeChange(Number(e.target.value))}
-                className={inputClass}
-              >
-                {FIBONACCI_GRID_SIZES.map((size) => (
-                  <option key={size} value={size}>
-                    {size}pt
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Snap to Grid */}
-      {onSnapStrengthChange && (
-        <div className="mb-3">
-          <div className="flex items-center justify-between">
-            <label className="text-[13px] text-muted-foreground">
-              {t('settings_snap_to_grid', 'Snap to Grid')}
-            </label>
-            <input
-              type="checkbox"
-              checked={(snapStrength ?? 0) > 0}
-              onChange={(e) => onSnapStrengthChange(e.target.checked ? (gridSize ?? 15) : 0)}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
 
 // ========================================
 // Main Component

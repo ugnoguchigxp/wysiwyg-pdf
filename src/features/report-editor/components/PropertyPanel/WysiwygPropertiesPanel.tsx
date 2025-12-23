@@ -27,7 +27,7 @@ export interface WysiwygPropertiesPanelProps {
   templateDoc: Doc
   selectedElementId: string | null
   selectedCell?: { elementId: string; row: number; col: number } | null
-  onTemplateChange: (newDoc: Doc) => void
+  onTemplateChange: (newDoc: Doc, options?: { saveToHistory?: boolean }) => void
   currentPageId: string
   schema?: IDataSchema
   i18nOverrides?: Record<string, string>
@@ -296,7 +296,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
   const isDrawing = activeTool === 'signature'
 
   // Handle element change through templateDoc
-  const handleChange = (id: string, updates: Partial<UnifiedNode>) => {
+  const handleChange = (id: string, updates: Partial<UnifiedNode>, options?: { saveToHistory?: boolean }) => {
     let finalUpdates = { ...updates }
 
     // If TextNode and relevant properties changed, recalculate dimensions
@@ -324,7 +324,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
         el.id === id ? ({ ...el, ...finalUpdates } as UnifiedNode) : el
       ),
     }
-    onTemplateChange(nextDoc)
+    onTemplateChange(nextDoc, options)
   }
 
   // Drawing mode panel

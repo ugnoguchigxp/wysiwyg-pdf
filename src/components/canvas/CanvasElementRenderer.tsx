@@ -277,18 +277,20 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           stroke,
           strokeW,
           borderColor,
-          borderWidth,
+          borderWidth = 0,
           backgroundColor,
           padding = 0,
           cornerRadius = 0,
+          hasFrame, // Added property
         } = textNode
 
-        const hasBox = borderColor || (borderWidth && borderWidth > 0) || backgroundColor
+        // Determine if we should show the box
+        // Backward compatibility: if hasFrame is undefined, check properties
+        const shouldShowBox = hasFrame !== undefined
+          ? hasFrame
+          : (borderColor || (borderWidth && borderWidth > 0) || backgroundColor)
 
-        // Common text props
-
-
-        if (hasBox) {
+        if (shouldShowBox) {
           // Calculate Text dimensions inside the box
           const textX = padding
           const textY = padding

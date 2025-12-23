@@ -106,6 +106,8 @@ export const EDITOR_TRANSLATIONS = {
     properties_background_color: '背景色',
     properties_border_color_box: '枠線の色',
     properties_border_width_box: '枠線の太さ',
+    properties_show_frame: '枠線をつける',
+    properties_corner_radius: '角丸',
 
     properties_text_underline: '下線',
     properties_text_strikethrough: '取り消し線',

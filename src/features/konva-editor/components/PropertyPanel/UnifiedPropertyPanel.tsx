@@ -33,7 +33,7 @@ import { renderWidget } from './widgets'
 export interface UnifiedPropertyPanelProps {
   config: PropertyPanelConfig
   selectedNode: UnifiedNode | null
-  onChange: (id: string, updates: Partial<UnifiedNode>) => void
+  onChange: (id: string, updates: Partial<UnifiedNode>, options?: { saveToHistory?: boolean }) => void
   onDelete?: (id: string) => void
   i18nOverrides?: Record<string, string>
   /** カスタムウィジェットレンダラー */
@@ -77,7 +77,7 @@ const SectionHeader: React.FC<{
 const SectionCard: React.FC<{
   section: SectionConfig
   node: UnifiedNode
-  onChange: (updates: Partial<UnifiedNode>) => void
+  onChange: (updates: Partial<UnifiedNode>, options?: { saveToHistory?: boolean }) => void
   resolveText: (key: string, fallback?: string) => string
   customRenderers?: Record<string, React.FC<WidgetProps>>
 }> = ({ section, node, onChange, resolveText, customRenderers }) => {
@@ -119,7 +119,11 @@ const SectionCard: React.FC<{
           }
         >
           {visibleWidgets.map((widget, i) => (
-            <div key={`${section.id}-widget-${i}`} className="w-full">
+            <div
+              key={`${section.id}-widget-${i}`}
+              className="w-full"
+              style={widget.colSpan ? { gridColumn: `span ${widget.colSpan}` } : undefined}
+            >
               {renderWidget(widget, node, onChange, resolveText, customRenderers)}
             </div>
           ))}
@@ -191,13 +195,14 @@ export const UnifiedPropertyPanel: React.FC<UnifiedPropertyPanelProps> = ({
   const customRenderers = { ...builtInCustomRenderers, ...externalCustomRenderers }
 
   // Handle element updates
-  const handleChange = (updates: Partial<UnifiedNode>) => {
+  const handleChange = (updates: Partial<UnifiedNode>, options?: { saveToHistory?: boolean }) => {
     if (selectedNode) {
       if (selectedNode.t === 'text') {
         const shouldReflow =
           'text' in updates || 'fontSize' in updates || 'font' in updates || 'fontWeight' in updates
 
         if (shouldReflow) {
+          // ... (existing logic)
           const dpi = 96
           const nextText =
             'text' in updates
@@ -241,12 +246,12 @@ export const UnifiedPropertyPanel: React.FC<UnifiedPropertyPanelProps> = ({
           const wMm = pxToMm(newWidthPx, { dpi })
           const hMm = pxToMm(newHeightPx, { dpi })
 
-          onChange(selectedNode.id, { ...updates, w: wMm, h: hMm })
+          onChange(selectedNode.id, { ...updates, w: wMm, h: hMm }, options)
           return
         }
       }
 
-      onChange(selectedNode.id, updates)
+      onChange(selectedNode.id, updates, options)
     }
   }
 

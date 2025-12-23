@@ -71,7 +71,8 @@ import { cn } from '@/utils/utils'
 export interface WidgetProps<T extends WidgetConfig = WidgetConfig> {
   config: T
   node: UnifiedNode
-  onChange: (updates: Partial<UnifiedNode>) => void
+  // Support options for transient updates (e.g. dragging a slider or color picker)
+  onChange: (updates: Partial<UnifiedNode>, options?: { saveToHistory?: boolean }) => void
   resolveText: (key: string, fallback?: string) => string
 }
 
@@ -220,76 +221,80 @@ export const FontWidget: React.FC<WidgetProps<FontWidgetConfig>> = ({
         )}
       </GridContainer>
 
-      {/* Color */}
-      {props.showColor !== false && (
-        <div>
-          <WidgetLabel>{resolveText('properties_font_color', 'FontColor')}</WidgetLabel>
-          <WidgetInput
-            type="color"
-            value={textNode.fill ?? '#000000'}
-            onChange={(e) => onChange({ fill: e.target.value } as Partial<TextNode>)}
-            className="h-8 p-0.5 cursor-pointer"
-          />
+      {/* Font Styles & Color Row */}
+      <div className="flex gap-2 items-end">
+        {/* Style Buttons */}
+        <div className="flex gap-1">
+          {props.showBold !== false && (
+            <button
+              type="button"
+              onClick={() => toggleStyle('fontWeight', textNode.fontWeight, 700, 400)}
+              className={cn(
+                'p-1.5 rounded border h-8 w-8 flex items-center justify-center',
+                textNode.fontWeight === 700
+                  ? 'bg-accent text-accent-foreground border-border'
+                  : 'bg-background text-muted-foreground border-border hover:bg-muted'
+              )}
+            >
+              <Bold size={14} />
+            </button>
+          )}
+          {props.showItalic !== false && (
+            <button
+              type="button"
+              onClick={() => toggleStyle('italic', textNode.italic, true, false)}
+              className={cn(
+                'p-1.5 rounded border h-8 w-8 flex items-center justify-center',
+                textNode.italic
+                  ? 'bg-accent text-accent-foreground border-border'
+                  : 'bg-background text-muted-foreground border-border hover:bg-muted'
+              )}
+            >
+              <Italic size={14} />
+            </button>
+          )}
+          {props.showUnderline !== false && (
+            <button
+              type="button"
+              onClick={() => toggleStyle('underline', textNode.underline, true, false)}
+              className={cn(
+                'p-1.5 rounded border h-8 w-8 flex items-center justify-center',
+                textNode.underline
+                  ? 'bg-accent text-accent-foreground border-border'
+                  : 'bg-background text-muted-foreground border-border hover:bg-muted'
+              )}
+            >
+              <Underline size={14} />
+            </button>
+          )}
+          {props.showStrikethrough && (
+            <button
+              type="button"
+              onClick={() => toggleStyle('lineThrough', textNode.lineThrough, true, false)}
+              className={cn(
+                'p-1.5 rounded border h-8 w-8 flex items-center justify-center',
+                textNode.lineThrough
+                  ? 'bg-accent text-accent-foreground border-border'
+                  : 'bg-background text-muted-foreground border-border hover:bg-muted'
+              )}
+            >
+              <Strikethrough size={14} />
+            </button>
+          )}
         </div>
-      )}
 
-      {/* Font Styles (B/I/U/S) */}
-      <div className="flex gap-1">
-        {props.showBold !== false && (
-          <button
-            type="button"
-            onClick={() => toggleStyle('fontWeight', textNode.fontWeight, 700, 400)}
-            className={cn(
-              'p-1.5 rounded border',
-              textNode.fontWeight === 700
-                ? 'bg-accent text-accent-foreground border-border'
-                : 'bg-background text-muted-foreground border-border hover:bg-muted'
-            )}
-          >
-            <Bold size={14} />
-          </button>
-        )}
-        {props.showItalic !== false && (
-          <button
-            type="button"
-            onClick={() => toggleStyle('italic', textNode.italic, true, false)}
-            className={cn(
-              'p-1.5 rounded border',
-              textNode.italic
-                ? 'bg-accent text-accent-foreground border-border'
-                : 'bg-background text-muted-foreground border-border hover:bg-muted'
-            )}
-          >
-            <Italic size={14} />
-          </button>
-        )}
-        {props.showUnderline !== false && (
-          <button
-            type="button"
-            onClick={() => toggleStyle('underline', textNode.underline, true, false)}
-            className={cn(
-              'p-1.5 rounded border',
-              textNode.underline
-                ? 'bg-accent text-accent-foreground border-border'
-                : 'bg-background text-muted-foreground border-border hover:bg-muted'
-            )}
-          >
-            <Underline size={14} />
-          </button>
-        )}
-        {props.showStrikethrough && (
-          <button
-            type="button"
-            onClick={() => toggleStyle('lineThrough', textNode.lineThrough, true, false)}
-            className={cn(
-              'p-1.5 rounded border',
-              textNode.lineThrough
-                ? 'bg-accent text-accent-foreground border-border'
-                : 'bg-background text-muted-foreground border-border hover:bg-muted'
-            )}
-          >
-            <Strikethrough size={14} />
-          </button>
+        {/* Color Picker (Left of styles or Right? User said "Next to". I'll put it right) */}
+        {props.showColor !== false && (
+          <div className="flex-1">
+            {/* Remove Label to make it compact? Or keep? User said "Square like buttons" */}
+            {/* To make it look like buttons, maybe hide the label or make it very subtle? */}
+            {/* User asked for "Wide rectangle" */}
+            <ColorInput
+              value={textNode.fill ?? '#000000'}
+              onChange={(e, options) => onChange({ fill: e } as Partial<TextNode>, options)}
+              className="h-8 w-full p-0.5 cursor-pointer" // This relies on ColorInput accepting className
+            />
+          </div>
         )}
       </div>
     </div>
@@ -417,7 +422,7 @@ export const StrokeWidget: React.FC<WidgetProps<StrokeWidgetConfig>> = ({
           <WidgetLabel>{resolveText('properties_stroke_color', 'Stroke Color')}</WidgetLabel>
           <ColorInput
             value={strokeNode.stroke ?? '#000000'}
-            onChange={(color) => onChange({ stroke: color })}
+            onChange={(color, options) => onChange({ stroke: color }, options)}
           />
         </div>
       )}
@@ -457,7 +462,7 @@ export const FillWidget: React.FC<WidgetProps<FillWidgetConfig>> = ({
       <WidgetLabel>{resolveText(config.labelKey ?? 'properties_fill_color', 'Fill')}</WidgetLabel>
       <ColorInput
         value={fillNode.fill ?? '#000000'}
-        onChange={(color) => onChange({ fill: color })}
+        onChange={(color, options) => onChange({ fill: color }, options)}
       />
     </div>
   )
@@ -485,7 +490,7 @@ export const BorderWidget: React.FC<WidgetProps<BorderWidgetConfig>> = ({
           </WidgetLabel>
           <ColorInput
             value={shapeNode.stroke ?? '#000000'}
-            onChange={(color) => onChange({ stroke: color })}
+            onChange={(color, options) => onChange({ stroke: color }, options)}
           />
         </div>
       )}
@@ -543,7 +548,7 @@ export const ColorPickerWidget: React.FC<WidgetProps<ColorPickerWidgetConfig>> =
               (updates as unknown as Record<string, number>)['borderWidth'] = 0.1
             }
           }
-          onChange(updates)
+          onChange(updates, options)
         }}
       />
     </div>
@@ -1060,23 +1065,47 @@ export const CheckboxWidget: React.FC<WidgetProps<CheckboxWidgetConfig>> = ({
           onChange({ routing: 'straight' } as any)
         }
       }
+    } else if (fieldKey === 'hasFrame' && checked) {
+      // Special handling for 'hasFrame' -> Apply defaults if checked
+      const textNode = node as TextNode
+      const updates: Partial<TextNode> = { hasFrame: true }
+
+      // Apply defaults if not present or cleared
+      // User requested: Width 0.2mm, Border #000000, Bg #FFFFFF
+      if (!textNode.borderWidth || textNode.borderWidth === 0) {
+        updates.borderWidth = 0.2
+      }
+      if (!textNode.borderColor) {
+        updates.borderColor = '#000000'
+      }
+      if (!textNode.backgroundColor) {
+        updates.backgroundColor = '#FFFFFF'
+      }
+      if (textNode.padding === undefined) {
+        updates.padding = 0.5
+      }
+      onChange(updates)
     } else {
       onChange({ [fieldKey]: checked } as unknown as Partial<UnifiedNode>)
     }
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <input
-        type="checkbox"
-        id={`checkbox-${fieldKey}`}
-        checked={value}
-        onChange={(e) => handleChange(e.target.checked)}
-        className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
-      />
-      <label htmlFor={`checkbox-${fieldKey}`} className="text-xs text-muted-foreground cursor-pointer select-none">
-        {resolveText(config.labelKey ?? fieldKey, fieldKey)}
-      </label>
+    <div>
+      {/* Spacer to align with labeled widgets in a grid */}
+      <WidgetLabel className="opacity-0 select-none">&nbsp;</WidgetLabel>
+      <div className="flex items-center gap-2 h-8">
+        <input
+          type="checkbox"
+          id={`checkbox-${fieldKey}`}
+          checked={value}
+          onChange={(e) => handleChange(e.target.checked)}
+          className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+        />
+        <label htmlFor={`checkbox-${fieldKey}`} className="text-xs text-muted-foreground cursor-pointer select-none">
+          {resolveText(config.labelKey ?? fieldKey, fieldKey)}
+        </label>
+      </div>
     </div>
   )
 }

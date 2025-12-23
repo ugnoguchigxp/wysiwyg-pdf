@@ -4,7 +4,7 @@ import type { Doc, Operation, UnifiedNode } from '@/features/konva-editor/types'
 const MAX_HISTORY_SIZE = 50
 
 interface UseEditorHistoryReturn {
-  execute: (operation: Operation) => void
+  execute: (operation: Operation, options?: { saveToHistory?: boolean }) => void
   undo: () => void
   redo: () => void
   canUndo: boolean
@@ -36,9 +36,14 @@ export function useEditorHistoryDoc(
   }, [document, setDocument])
 
   const execute = useCallback(
-    (operation: Operation) => {
+    (operation: Operation, options?: { saveToHistory?: boolean }) => {
       const newDoc = applyOperationDoc(document, operation)
       setDocument(newDoc)
+
+      if (options?.saveToHistory === false) {
+        // Don't modify history stack
+        return
+      }
 
       setPast((prev) => {
         const newPast = [...prev, operation]

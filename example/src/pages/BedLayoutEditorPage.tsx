@@ -309,7 +309,7 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                                     ? (bedDoc.nodes.find((n: Doc['nodes'][number]) => n.id === selectedElementId) ?? null)
                                     : null
                             }
-                            onChange={(id, attrs) => {
+                            onChange={(id, attrs, options) => {
                                 const element = bedDoc.nodes.find((n: Doc['nodes'][number]) => n.id === id)
                                 if (!element) return
                                 executeBedOp({
@@ -317,7 +317,7 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                                     id,
                                     prev: element,
                                     next: attrs,
-                                })
+                                }, options)
                             }}
                             onDelete={(id) => {
                                 const element = bedDoc.nodes.find((n: Doc['nodes'][number]) => n.id === id)

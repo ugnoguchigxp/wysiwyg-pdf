@@ -118,6 +118,7 @@ export interface TextNode extends BaseNode {
   fill?: Color // Text color
 
   // Box Style
+  hasFrame?: boolean // Whether to show box styling (bg, border, etc.)
   borderColor?: Color
   borderWidth?: number
   backgroundColor?: Color
