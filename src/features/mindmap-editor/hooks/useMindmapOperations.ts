@@ -30,15 +30,17 @@ export const useMindmapOperations = ({
                 id: newId,
                 t: 'text',
                 s: parent.s,
-                x: (parent.x || 0) + 120, // Initial placement
+                x: (parent.x || 0) + 40, // Initial placement (adjusted for smaller size)
                 y: (parent.y || 0),
-                w: 120, h: 36,
+                w: 30, h: 10,
                 text: 'New Topic',
                 align: 'c',
                 backgroundColor: '#ffffff',
                 borderColor: '#64748b',
-                borderWidth: 1,
-                padding: 6,
+                borderWidth: 0.5,
+                padding: 2,
+                fontSize: 4.23,
+                locked: true,
             }
 
             const newLink: LineNode = {
@@ -47,7 +49,7 @@ export const useMindmapOperations = ({
                 s: parent.s,
                 pts: [0, 0, 0, 0],
                 stroke: '#94a3b8',
-                strokeW: 2,
+                strokeW: 1,
                 routing: 'orthogonal',
                 startConn: { nodeId: selectedNodeId, anchor: 'auto' },
                 endConn: { nodeId: newId, anchor: 'auto' }
@@ -80,15 +82,17 @@ export const useMindmapOperations = ({
                 id: newId,
                 t: 'text',
                 s: parent.s,
-                x: (parent.x || 0) + 100,
-                y: (parent.y || 0) + 50,
-                w: 120, h: 40,
+                x: (parent.x || 0) + 40,
+                y: (parent.y || 0) + 20,
+                w: 30, h: 10,
                 text: 'New Topic',
                 align: 'c',
                 backgroundColor: '#ffffff',
                 borderColor: '#334155',
-                borderWidth: 1,
-                padding: 8,
+                borderWidth: 0.5,
+                padding: 2,
+                fontSize: 4.23,
+                locked: true,
             }
 
             const newLink: LineNode = {
@@ -97,9 +101,9 @@ export const useMindmapOperations = ({
                 s: parent.s,
                 pts: [0, 0, 0, 0],
                 stroke: '#94a3b8',
-                strokeW: 2,
+                strokeW: 1,
                 routing: 'orthogonal',
-                startConn: { nodeId: selectedNodeId, anchor: 'auto' },
+                startConn: { nodeId: parentId, anchor: 'auto' },
                 endConn: { nodeId: newId, anchor: 'auto' }
             }
 

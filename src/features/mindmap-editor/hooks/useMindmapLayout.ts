@@ -25,8 +25,8 @@ export const useMindmapLayout = ({
 
         // Run layout calculation
         const result = calculateMindmapLayout(graph, collapsedNodes, {
-            horizontalSpacing: 80,
-            verticalSpacing: 20,
+            horizontalSpacing: 30, // Reduced from 80 (~1/3)
+            verticalSpacing: 10,
             rootX: rootX ?? 0,
             rootY: rootY ?? 0
         })

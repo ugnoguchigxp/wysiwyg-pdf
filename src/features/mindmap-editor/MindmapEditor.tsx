@@ -4,8 +4,6 @@ import { KonvaCanvasEditor } from '@/components/canvas/KonvaCanvasEditor'
 import { useMindmapGraph } from './hooks/useMindmapGraph'
 import { useMindmapLayout } from './hooks/useMindmapLayout'
 import { useMindmapOperations } from './hooks/useMindmapOperations'
-import { UnifiedPropertyPanel } from '@/features/konva-editor/components/PropertyPanel/UnifiedPropertyPanel'
-import { MINDMAP_PANEL_CONFIG } from '@/features/konva-editor/constants/propertyPanelConfig'
 
 // Initial Doc with standard TextNode
 const INITIAL_DOC: Doc = {
@@ -20,19 +18,20 @@ const INITIAL_DOC: Doc = {
             id: 'root',
             t: 'text',
             s: 's1',
-            x: 0, y: 0, w: 200, h: 50, // 200mm width for large text
+            x: 280, y: 192.5, w: 40, h: 15, // Centered on 600x400 paper (rootX=300, rootY=200)
             text: 'Central Topic',
             align: 'c',
             vAlign: 'm',
             backgroundColor: '#ffffff',
             borderColor: '#0000FF',
-            borderWidth: 2,
+            borderWidth: 0.5,
             cornerRadius: 1, // Pill shape
             hasFrame: true,
-            padding: 8,
+            padding: 2, // Reduced padding for smaller size
             fontWeight: 700,
             fill: '#1e3a8a',
-            fontSize: 16 // Explicit font size
+            fontSize: 4.23, // 12pt
+            locked: true,
         }
     ],
 }
@@ -63,7 +62,9 @@ export const MindmapEditor: React.FC = () => {
         graph,
         collapsedNodes,
         onChange: handleLayoutChange,
-        isLayoutActive: true
+        isLayoutActive: true,
+        rootX: 300, // Center of 600mm canvas
+        rootY: 200  // Center of 400mm canvas
     })
 
     // Operations (pure data)
@@ -113,31 +114,48 @@ export const MindmapEditor: React.FC = () => {
         selectedNodeId ? doc.nodes.find(n => n.id === selectedNodeId) || null : null
         , [doc.nodes, selectedNodeId])
 
+    // Keyboard Shortcuts
+    React.useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Ignore if editing text
+            const target = e.target as HTMLElement
+            if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+                return
+            }
+
+            if (e.key === 'Tab') {
+                e.preventDefault()
+                operations.addChildNode()
+            } else if (e.key === 'Enter') {
+                e.preventDefault()
+                operations.addSiblingNode()
+            } else if (e.key === 'Backspace' || e.key === 'Delete') {
+                // Optional: Delete node
+                operations.deleteNode()
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [operations])
+
     return (
-        <div className="flex flex-col w-full h-screen">
+        <div className="flex flex-col w-full h-full">
             <div className="h-12 border-b bg-white flex items-center px-4 shadow-sm z-10">
                 <h1 className="font-bold text-slate-700">Mindmap Editor</h1>
             </div>
-            <div className="flex-1 relative flex overflow-hidden">
-                <div className="flex-1 relative bg-slate-50">
+            <div className="flex-1 overflow-hidden">
+                <div className="w-full h-full content-container">
                     <KonvaCanvasEditor
                         elements={visibleNodes}
                         selectedIds={selectedNodeId ? [selectedNodeId] : []}
                         onSelect={handleSelect}
                         onChange={handleChangeNodes}
                         zoom={1}
-                        paperWidth={2000}
-                        paperHeight={1500}
+                        paperWidth={600}
+                        paperHeight={400}
                         readOnly={false}
-                    />
-                </div>
-
-                {/* Property Panel */}
-                <div className="w-[320px] border-l bg-white h-full flex flex-col">
-                    <UnifiedPropertyPanel
-                        config={MINDMAP_PANEL_CONFIG}
-                        selectedNode={selectedNode}
-                        onChange={(id, updates) => handleChangeNodes({ id, ...updates })}
+                        initialScrollCenter={{ x: 300, y: 200 }}
                     />
                 </div>
             </div>

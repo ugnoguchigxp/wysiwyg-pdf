@@ -1,7 +1,6 @@
 import type Konva from 'konva'
-import type React from 'react'
-import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
-import { Layer, Stage } from 'react-konva'
+import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react'
+import { Layer, Stage, Rect } from 'react-konva'
 import type { TextNode, UnifiedNode } from '../../types/canvas'
 import { mmToPx } from '@/utils/units'
 // import { measureText } from '@/features/konva-editor/utils/textUtils'
@@ -50,6 +49,7 @@ interface KonvaCanvasEditorProps {
   snapStrength?: number
   gridSize?: number
   onCreateElements?: (elements: UnifiedNode[]) => void
+  initialScrollCenter?: { x: number; y: number }
 }
 
 export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvasEditorProps>(
@@ -76,6 +76,7 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       snapStrength = 5,
       gridSize = 5,
       onCreateElements,
+      initialScrollCenter,
     },
     ref
   ) => {
@@ -83,8 +84,7 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
     const stageRef = useRef<Konva.Stage>(null)
     const [editingElementId, setEditingElementId] = useState<string | null>(null)
 
-
-
+    // Initial Scroll Centering
     useImperativeHandle(ref, () => ({
       getStage: () => stageRef.current,
       copy: handleCopy,
@@ -96,6 +96,29 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
 
     const stageWidth = paperWidth * displayScale
     const stageHeight = paperHeight * displayScale
+
+    // Handle Initial Scrolling
+    const initialScrollDone = useRef(false)
+    React.useEffect(() => {
+      if (initialScrollCenter && containerRef.current && !initialScrollDone.current) {
+        requestAnimationFrame(() => {
+          if (!containerRef.current) return
+
+          const { clientWidth, clientHeight } = containerRef.current
+          // If container is not yet sized, retry later (don't set done = true)
+          if (clientWidth === 0 || clientHeight === 0) return
+
+          const targetX = initialScrollCenter.x * displayScale
+          const targetY = initialScrollCenter.y * displayScale
+
+          const scrollLeft = Math.max(0, targetX - clientWidth / 2)
+          const scrollTop = Math.max(0, targetY - clientHeight / 2)
+
+          containerRef.current.scrollTo(scrollLeft, scrollTop)
+          initialScrollDone.current = true
+        })
+      }
+    }, [initialScrollCenter, displayScale])
 
     const handleSelect = (
       id: string | null,
@@ -159,23 +182,6 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       setEditingElementId(null)
     }
 
-    const handleMove = (dx: number, dy: number) => {
-      if (readOnly) return
-      selectedIds.forEach((id) => {
-        const element = elements.find((el) => el.id === id)
-        if (element && element.t !== 'line') {
-          // Assuming elements with x/y
-          if ('x' in element && 'y' in element) {
-            onChange({
-              id,
-              x: (element.x ?? 0) + dx,
-              y: (element.y ?? 0) + dy,
-            })
-          }
-        }
-      })
-    }
-
     const handleSelectAll = () => {
       if (readOnly) return
       onSelect(elements.map((el) => el.id))
@@ -237,6 +243,10 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       }
     }
 
+    // Panning State
+    const isPanning = useRef(false)
+    const lastMousePos = useRef({ x: 0, y: 0 })
+
     const shortcutsHandlers = {
       onUndo,
       onRedo,
@@ -244,10 +254,10 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       onCopy: handleCopy,
       onPaste: handlePaste,
       onSelectAll: handleSelectAll,
-      onMoveUp: (step: number) => handleMove(0, -step),
-      onMoveDown: (step: number) => handleMove(0, step),
-      onMoveLeft: (step: number) => handleMove(-step, 0),
-      onMoveRight: (step: number) => handleMove(step, 0),
+      onMoveUp: () => { }, // Disabled
+      onMoveDown: () => { }, // Disabled
+      onMoveLeft: () => { }, // Disabled
+      onMoveRight: () => { }, // Disabled
     }
 
     useKeyboardShortcuts(shortcutsHandlers)
@@ -259,9 +269,17 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
     return (
       <div
         ref={containerRef}
-        className="w-full h-full bg-gray-100 dark:bg-gray-900 overflow-auto scrollbar-thin flex justify-start items-start p-2"
+        className="w-full h-full bg-gray-100 dark:bg-gray-900 overflow-scroll scrollbar-thin p-2"
+        style={{
+          cursor: isPanning.current ? 'grabbing' : 'default',
+          minWidth: 0,
+          minHeight: 0
+        }}
       >
-        <div className="relative shadow-lg border-2 border-gray-500 bg-white dark:bg-gray-800 w-fit h-fit">
+        <div
+          className="relative shadow-lg border-2 border-gray-500 bg-white dark:bg-gray-800"
+          style={{ width: stageWidth, height: stageHeight }}
+        >
           <Stage
             width={stageWidth}
             height={stageHeight}
@@ -272,18 +290,47 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
               if (onStageMouseDown) {
                 onStageMouseDown(e)
               }
-              if (
-                !onStageMouseDown &&
-                (e.target === e.target.getStage() || e.target.name() === 'paper-background')
-              ) {
-                handleSelect(null, e)
-                setEditingElementId(null)
-              } else if (!onStageMouseDown && e.target === e.target.getStage()) {
-                handleSelect(null, e)
+              const isBackground = e.target === e.target.getStage() || e.target.name() === 'paper-background'
+
+              if (isBackground) {
+                if (!onStageMouseDown) {
+                  handleSelect(null, e)
+                  setEditingElementId(null)
+                }
+
+                // Start Panning
+                isPanning.current = true
+                lastMousePos.current = { x: e.evt.clientX, y: e.evt.clientY }
+                if (containerRef.current) containerRef.current.style.cursor = 'grabbing'
               }
             }}
-            onMouseMove={(e) => onStageMouseMove?.(e)}
-            onMouseUp={(e) => onStageMouseUp?.(e)}
+            onMouseMove={(e) => {
+              onStageMouseMove?.(e)
+
+              if (isPanning.current && containerRef.current) {
+                e.evt.preventDefault() // Prevent selection
+                const dx = e.evt.clientX - lastMousePos.current.x
+                const dy = e.evt.clientY - lastMousePos.current.y
+
+                containerRef.current.scrollLeft -= dx
+                containerRef.current.scrollTop -= dy
+
+                lastMousePos.current = { x: e.evt.clientX, y: e.evt.clientY }
+              }
+            }}
+            onMouseUp={(e) => {
+              onStageMouseUp?.(e)
+              if (isPanning.current) {
+                isPanning.current = false
+                if (containerRef.current) containerRef.current.style.cursor = 'default'
+              }
+            }}
+            onMouseLeave={() => {
+              if (isPanning.current) {
+                isPanning.current = false
+                if (containerRef.current) containerRef.current.style.cursor = 'default'
+              }
+            }}
             onTouchStart={(e) => {
               onStageMouseDown?.(e)
               if (
@@ -297,8 +344,18 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
             onTouchMove={(e) => onStageMouseMove?.(e)}
             onTouchEnd={(e) => onStageMouseUp?.(e)}
           >
-            <Layer name="paper-layer" listening={false}>
-              {background}
+            <Layer name="paper-layer">
+              {background || (
+                <Rect
+                  name="paper-background"
+                  x={0}
+                  y={0}
+                  width={paperWidth}
+                  height={paperHeight}
+                  fill="#ffffff"
+                  listening={true}
+                />
+              )}
             </Layer>
             <GridLayer
               width={paperWidth}

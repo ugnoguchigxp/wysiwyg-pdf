@@ -45,7 +45,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
   onCellDblClick,
   onCellClick,
   onContextMenu,
-  isEditing: _isEditing,
+  isEditing,
   editingCell: _editingCell,
   selectedCell: _selectedCell,
   renderCustom,
@@ -351,6 +351,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
                 verticalAlign={vAlign === 'm' ? 'middle' : vAlign === 'b' ? 'bottom' : 'top'}
                 lineHeight={1.2}
                 listening={false} // Let the group handle events
+                visible={!isEditing} // Hide underlying text while editing to prevent visual mismatch
               />
             </Group>
           )
@@ -385,6 +386,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
             verticalAlign={vAlign === 'm' ? 'middle' : vAlign === 'b' ? 'bottom' : 'top'}
             lineHeight={1.2}
             width={element.w}
+            visible={!isEditing} // Hide underlying text while editing
           />
         )
       }
