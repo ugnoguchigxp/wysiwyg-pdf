@@ -3,6 +3,7 @@ import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import type { TextNode } from '@/types/canvas'
 import { ptToMm } from '@/utils/units'
+import { calculateTextDimensions } from '@/features/konva-editor/utils/textUtils'
 
 interface TextEditOverlayProps {
   element: TextNode
@@ -36,18 +37,39 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
     }
 
     // Calculate style
-    const vAlign = element.vAlign || 't' // Match Renderer new default (top)
-    let paddingTop = 0
+    const vAlign = element.vAlign || 'm'
 
-    const textNode = node as Konva.Text
-    // textHeight is the calculated height of the text block
-    const textHeight = textNode.textHeight || 0
+    // Padding logic
+    const paddingMm = element.padding || 0
+    const padding = paddingMm * scale
+
+    // Text Dimensions for alignment
+    // We need the ACTUAL content height for vertical alignment
+    // Use calculateTextDimensions with explicit 'Arial' fallback to match Overlay rendering default
+    const dim = calculateTextDimensions(element.text, {
+      family: element.font || 'Arial',
+      size: element.fontSize,
+      weight: element.fontWeight,
+      padding: 0 // We want pure text height
+    })
+
+    // Vertical Align Offset Calculation
+    // We calculate the space available *inside* the padding
+    const scaledH = element.h * scale // Element Height in Screen Px
+    const scaledPadding = padding
+    const innerH = Math.max(0, scaledH - (scaledPadding * 2))
+
+    const scaledTextContentHeight = dim.h * scale
+
+    let extraTop = 0
 
     if (vAlign === 'm') {
-      paddingTop = (element.h - textHeight) / 2
+      extraTop = (innerH - scaledTextContentHeight) / 2
     } else if (vAlign === 'b') {
-      paddingTop = element.h - textHeight
+      extraTop = innerH - scaledTextContentHeight
     }
+
+    const paddingTopVal = scaledPadding + Math.max(0, extraTop)
 
     const newStyle: React.CSSProperties = {
       position: 'absolute',
@@ -79,12 +101,14 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
       border: 'none',
       outline: 'none',
       resize: 'none',
-      padding: 0,
-      paddingTop: `${Math.max(0, paddingTop * scale)}px`,
+      paddingTop: `${paddingTopVal}px`,
+      paddingBottom: `${scaledPadding}px`,
+      paddingLeft: `${scaledPadding}px`,
+      paddingRight: `${scaledPadding}px`,
       boxSizing: 'border-box',
       margin: 0,
       overflow: 'hidden',
-      zIndex: 1000, // Ensure it's on top
+      zIndex: 1000,
       transformOrigin: 'top left',
       transform: `rotate(${element.r || 0}deg)`,
     }

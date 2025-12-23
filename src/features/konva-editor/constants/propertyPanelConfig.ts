@@ -778,6 +778,18 @@ export const BED_LAYOUT_PANEL_CONFIG: PropertyPanelConfig = {
   ],
 }
 
+export const MINDMAP_PANEL_CONFIG: PropertyPanelConfig = {
+  editorType: 'report', // Re-use report type for now as schema is similar
+  layout: DEFAULT_PANEL_LAYOUT,
+  defaultSections: ['sec:posSize'],
+  objects: [
+    TEXT_OBJECT_CONFIG,
+    SHAPE_OBJECT_CONFIG,
+    LINE_OBJECT_CONFIG,
+    IMAGE_OBJECT_CONFIG,
+  ],
+}
+
 // ========================================
 // Helper Functions
 // ========================================

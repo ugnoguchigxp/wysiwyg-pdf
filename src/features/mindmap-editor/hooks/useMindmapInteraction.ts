@@ -25,12 +25,8 @@ export const useMindmapInteraction = ({
         const handleKeyDown = (e: KeyboardEvent) => {
             if (isEditing) return
             // Ignore if typing in an input
-            if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') {
-                if ((e.target as HTMLElement).closest('.canvas-editor') === null) {
-                    // But if it's our own internal text editor, we might need logic.
-                    // For now, assume standard global check.
-                    return
-                }
+            if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable) {
+                return
             }
 
             if (!selectedNodeId) return
@@ -104,5 +100,5 @@ export const useMindmapInteraction = ({
 
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [selectedNodeId, graph, ops])
+    }, [selectedNodeId, graph, ops, isEditing])
 }
