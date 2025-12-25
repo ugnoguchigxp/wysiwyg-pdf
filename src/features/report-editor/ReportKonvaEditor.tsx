@@ -15,11 +15,19 @@ import { useKeyboardShortcuts } from '@/components/canvas/hooks/useKeyboardShort
 import { TextEditOverlay } from '@/components/canvas/TextEditOverlay'
 import { PEN_CURSOR_URL } from '@/features/konva-editor/cursors'
 import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
-import { simplifyPoints } from '@/utils/geometry'
 import type { Doc, SignatureNode, Surface, TableNode, TextNode, UnifiedNode } from '@/types/canvas' // Direct import
 import { createContextLogger } from '@/utils/logger'
 import { mmToPx, ptToMm } from '@/utils/units'
 import { useTextDimensions } from '@/features/konva-editor/hooks/useTextDimensions'
+import {
+  deleteCol,
+  deleteRow,
+  insertCol,
+  insertRow,
+  mergeCells,
+  unmergeCells,
+} from './utils/tableOperations'
+import { getStrokesBox, normalizeStrokes, processStrokes } from './utils/signatureUtils'
 import { TableContextMenu } from './components/ContextMenu/TableContextMenu'
 
 const log = createContextLogger('ReportKonvaEditor')
@@ -82,10 +90,6 @@ const getColWidth = (cols: number[], colIndex: number, span: number = 1) => {
   }
   return w
 }
-
-const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0)
-
-const clamp = (v: number, min: number, max: number) => (v < min ? min : v > max ? max : v)
 
 const PageBackground = ({
   width,
@@ -486,370 +490,30 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
         const { elementId, row, col, type } = contextMenu
 
         if (type !== 'table' || row === undefined || col === undefined) return
-        // proceed with table logic...
 
         applyTableUpdate(elementId, (table) => {
-          // ... strict check for row/col existence?
-          // The `applyTableUpdate` callback uses `row` and `col` from closure context (the consts above).
-          // So they are now guarded (number).
-
-          const rowCount = table.table.rows.length
-          const colCount = table.table.cols.length
-          const cells = [...table.table.cells]
-
-          const findCell = (r: number, c: number) => cells.find((cc) => cc.r === r && cc.c === c)
-
-          const base = findCell(row, col) || { r: row, c: col, v: '' }
-
-          const materializeCellAt = (
-            targetCells: typeof cells,
-            r: number,
-            c: number,
-            inheritFrom?: typeof base
-          ) => {
-            if (targetCells.find((cc) => cc.r === r && cc.c === c)) return
-            const { rs: _rs, cs: _cs, v: _v, ...style } = inheritFrom || base
-            targetCells.push({ ...style, r, c, v: '' })
+          switch (action) {
+            case 'insertRowAbove':
+              return insertRow(table, row, 'above')
+            case 'insertRowBelow':
+              return insertRow(table, row, 'below')
+            case 'insertColLeft':
+              return insertCol(table, col, row, 'left')
+            case 'insertColRight':
+              return insertCol(table, col, row, 'right')
+            case 'deleteRow':
+              return deleteRow(table, row)
+            case 'deleteCol':
+              return deleteCol(table, col)
+            case 'mergeRight':
+              return mergeCells(table, row, col, 'right')
+            case 'mergeDown':
+              return mergeCells(table, row, col, 'down')
+            case 'unmerge':
+              return unmergeCells(table, row, col)
+            default:
+              return table
           }
-
-          const ensureBaseExists = () => {
-            if (!findCell(row, col)) cells.push({ ...base })
-          }
-
-          const cellRect = (c: { r: number; c: number; rs?: number; cs?: number }) => {
-            const rs = c.rs || 1
-            const cs = c.cs || 1
-            return { r1: c.r, c1: c.c, r2: c.r + rs - 1, c2: c.c + cs - 1 }
-          }
-
-          const rectIntersects = (
-            a: { r1: number; c1: number; r2: number; c2: number },
-            b: { r1: number; c1: number; r2: number; c2: number }
-          ) => {
-            return !(a.r2 < b.r1 || a.r1 > b.r2 || a.c2 < b.c1 || a.c1 > b.c2)
-          }
-
-          if (action === 'insertRowAbove' || action === 'insertRowBelow') {
-            const insertIndex = action === 'insertRowAbove' ? row : row + 1
-            const newRows = [...table.table.rows]
-            newRows.splice(insertIndex, 0, 50)
-
-            const nextCells = cells.map((c) => {
-              // Shift cells below
-              if (c.r >= insertIndex) return { ...c, r: c.r + 1 }
-              // Expand spans that cross insertion boundary
-              const rs = c.rs || 1
-              if (rs > 1 && c.r < insertIndex && insertIndex <= c.r + rs - 1) {
-                return { ...c, rs: rs + 1 }
-              }
-              return c
-            })
-
-            // Generate new cells for the inserted row
-            for (let c = 0; c < table.table.cols.length; c++) {
-              // Find template cell from the row where interaction happened (or closest neighbor)
-              // We clicked on 'row'.
-              // If invalid/missing, fallback to base (clicked cell) or defaults.
-              const template =
-                cells.find((cell) => cell.r === row && cell.c === c) || findCell(row, col)
-              if (template) {
-                const { r: _r, c: _c, v: _v, rs: _rs, cs: _cs, ...styles } = template
-                nextCells.push({
-                  r: insertIndex,
-                  c,
-                  v: '',
-                  ...styles,
-                  // Reset spans for new cells
-                  rs: 1,
-                  cs: 1,
-                })
-              } else {
-                // Fallback if sparse and no template found (create default)
-                nextCells.push({
-                  r: insertIndex,
-                  c,
-                  v: '',
-                  rs: 1,
-                  cs: 1,
-                  borderW: 2,
-                  borderColor: '#000000',
-                })
-              }
-            }
-
-            return {
-              ...table,
-              h: sum(newRows),
-              table: {
-                ...table.table,
-                rows: newRows,
-                cells: nextCells,
-              },
-            }
-          }
-
-          if (action === 'insertColLeft' || action === 'insertColRight') {
-            const insertIndex = action === 'insertColLeft' ? col : col + 1
-            const newCols = [...table.table.cols]
-            newCols.splice(insertIndex, 0, 100)
-
-            const nextCells = cells.map((c) => {
-              if (c.c >= insertIndex) return { ...c, c: c.c + 1 }
-              const cs = c.cs || 1
-              if (cs > 1 && c.c < insertIndex && insertIndex <= c.c + cs - 1) {
-                return { ...c, cs: cs + 1 }
-              }
-              return c
-            })
-
-            // Generate new cells for the inserted column
-            for (let r = 0; r < table.table.rows.length; r++) {
-              // Find template cell from the column where interaction happened
-              const template =
-                cells.find((cell) => cell.r === r && cell.c === col) || findCell(row, col)
-              if (template) {
-                const { r: _r, c: _c, v: _v, rs: _rs, cs: _cs, ...styles } = template
-                nextCells.push({
-                  r,
-                  c: insertIndex,
-                  v: '',
-                  ...styles,
-                  rs: 1,
-                  cs: 1,
-                })
-              } else {
-                nextCells.push({
-                  r,
-                  c: insertIndex,
-                  v: '',
-                  rs: 1,
-                  cs: 1,
-                  borderW: 2,
-                  borderColor: '#000000',
-                })
-              }
-            }
-
-            return {
-              ...table,
-              w: sum(newCols),
-              table: {
-                ...table.table,
-                cols: newCols,
-                cells: nextCells,
-              },
-            }
-          }
-
-          if (action === 'deleteRow') {
-            if (rowCount <= 1) return table
-            const deleteIndex = clamp(row, 0, rowCount - 1)
-            const newRows = table.table.rows.filter((_, i) => i !== deleteIndex)
-
-            const nextCells: typeof cells = []
-            for (const c of cells) {
-              // If cell starts on deleted row
-              if (c.r === deleteIndex) {
-                const rs = c.rs || 1
-                if (rs > 1) {
-                  // Promote the cell to the next row (which shifts up to deleteIndex) and shrink span
-                  nextCells.push({ ...c, rs: rs - 1 })
-                }
-                continue
-              }
-
-              // If cell is below deleted row, shift up
-              if (c.r > deleteIndex) {
-                nextCells.push({ ...c, r: c.r - 1 })
-                continue
-              }
-
-              // If cell spans across deleted row, shrink span
-              const rs = c.rs || 1
-              if (rs > 1 && c.r < deleteIndex && deleteIndex <= c.r + rs - 1) {
-                nextCells.push({ ...c, rs: rs - 1 })
-                continue
-              }
-
-              nextCells.push(c)
-            }
-
-            return {
-              ...table,
-              h: sum(newRows),
-              table: {
-                ...table.table,
-                rows: newRows,
-                cells: nextCells,
-              },
-            }
-          }
-
-          if (action === 'deleteCol') {
-            if (colCount <= 1) return table
-            const deleteIndex = clamp(col, 0, colCount - 1)
-            const newCols = table.table.cols.filter((_, i) => i !== deleteIndex)
-
-            const nextCells: typeof cells = []
-            for (const c of cells) {
-              if (c.c === deleteIndex) {
-                const cs = c.cs || 1
-                if (cs > 1) {
-                  nextCells.push({ ...c, cs: cs - 1 })
-                }
-                continue
-              }
-
-              if (c.c > deleteIndex) {
-                nextCells.push({ ...c, c: c.c - 1 })
-                continue
-              }
-
-              const cs = c.cs || 1
-              if (cs > 1 && c.c < deleteIndex && deleteIndex <= c.c + cs - 1) {
-                nextCells.push({ ...c, cs: cs - 1 })
-                continue
-              }
-
-              nextCells.push(c)
-            }
-
-            return {
-              ...table,
-              w: sum(newCols),
-              table: {
-                ...table.table,
-                cols: newCols,
-                cells: nextCells,
-              },
-            }
-          }
-
-          if (action === 'mergeRight') {
-            ensureBaseExists()
-            const current = findCell(row, col) || base
-            const rs = current.rs || 1
-            const cs = current.cs || 1
-            const targetCol = col + cs
-            if (targetCol >= colCount) return table
-
-            const baseRect = cellRect({ r: row, c: col, rs, cs: cs + 1 })
-
-            // Allow merge only if the added strip is not covered by any other cell (including spanned cells).
-            // The only allowed overlapping cell is the immediate neighbor top-left at (row, targetCol) with matching rowSpan and cs=1.
-            const neighbor = findCell(row, targetCol)
-            if (!neighbor) return table
-            const neighborRs = neighbor.rs || 1
-            const neighborCs = neighbor.cs || 1
-            if (neighborRs !== rs || neighborCs !== 1) return table
-
-            for (const other of cells) {
-              if (other.r === row && other.c === col) continue
-              if (other.r === row && other.c === targetCol) continue
-              const oRect = cellRect(other)
-              if (rectIntersects(oRect, baseRect)) {
-                return table
-              }
-            }
-
-            // Remove cells that would become covered by the new merged span (the added strip)
-            const nextCells = cells.filter((c) => {
-              if (c.r === row && c.c === col) return true
-              if (c.r === row && c.c === targetCol) return false
-              // Any cell starting inside the added strip is removed
-              return !(c.c === targetCol && c.r >= row && c.r < row + rs)
-            })
-
-            const idx = nextCells.findIndex((c) => c.r === row && c.c === col)
-            if (idx >= 0) nextCells[idx] = { ...nextCells[idx], cs: cs + 1 }
-
-            return {
-              ...table,
-              table: {
-                ...table.table,
-                cells: nextCells,
-              },
-            }
-          }
-
-          if (action === 'mergeDown') {
-            ensureBaseExists()
-            const current = findCell(row, col) || base
-            const rs = current.rs || 1
-            const cs = current.cs || 1
-            const targetRow = row + rs
-            if (targetRow >= rowCount) return table
-
-            const baseRect = cellRect({ r: row, c: col, rs: rs + 1, cs })
-
-            const neighbor = findCell(targetRow, col)
-            if (!neighbor) return table
-            const neighborRs = neighbor.rs || 1
-            const neighborCs = neighbor.cs || 1
-            if (neighborCs !== cs || neighborRs !== 1) return table
-
-            for (const other of cells) {
-              if (other.r === row && other.c === col) continue
-              if (other.r === targetRow && other.c === col) continue
-              const oRect = cellRect(other)
-              if (rectIntersects(oRect, baseRect)) {
-                return table
-              }
-            }
-
-            const nextCells = cells.filter((c) => {
-              if (c.r === row && c.c === col) return true
-              if (c.r === targetRow && c.c === col) return false
-              // Any cell starting inside the added strip is removed
-              return !(c.r === targetRow && c.c >= col && c.c < col + cs)
-            })
-
-            const idx = nextCells.findIndex((c) => c.r === row && c.c === col)
-            if (idx >= 0) nextCells[idx] = { ...nextCells[idx], rs: rs + 1 }
-
-            return {
-              ...table,
-              table: {
-                ...table.table,
-                cells: nextCells,
-              },
-            }
-          }
-
-          if (action === 'unmerge') {
-            const current = findCell(row, col)
-            if (!current) return table
-            const rs = current.rs || 1
-            const cs = current.cs || 1
-            if (rs <= 1 && cs <= 1) return table
-
-            const nextCells = cells.filter((c) => !(c.r === row && c.c === col))
-
-            // Recreate base cell without spans
-            const { rs: _rs, cs: _cs, ...rest } = current
-            nextCells.push({ ...rest, r: row, c: col, v: current.v })
-
-            // Materialize all newly uncovered cells inheriting style
-            for (let rr = 0; rr < rs; rr++) {
-              for (let cc = 0; cc < cs; cc++) {
-                if (rr === 0 && cc === 0) continue
-                const r = row + rr
-                const c = col + cc
-                if (r < 0 || r >= rowCount || c < 0 || c >= colCount) continue
-                materializeCellAt(nextCells, r, c, current)
-              }
-            }
-
-            return {
-              ...table,
-              table: {
-                ...table.table,
-                cells: nextCells,
-              },
-            }
-          }
-
-          return table
         })
 
         setContextMenu(null)
@@ -857,65 +521,20 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       [applyTableUpdate, contextMenu]
     )
 
-    // Signature Box Calculation
-    const getStrokesBox = useCallback((strokes: number[][]) => {
-      let minX = Infinity,
-        minY = Infinity,
-        maxX = -Infinity,
-        maxY = -Infinity
-      strokes.forEach((stroke) => {
-        for (let i = 0; i < stroke.length; i += 2) {
-          const x = stroke[i]
-          const y = stroke[i + 1]
-          if (x < minX) minX = x
-          if (y < minY) minY = y
-          if (x > maxX) maxX = x
-          if (y > maxY) maxY = y
-        }
-      })
-      if (minX === Infinity) return { x: 0, y: 0, w: 100, h: 50 }
-      return { x: minX, y: minY, w: maxX - minX, h: maxY - minY }
-    }, [])
-
     const previewStrokes = useMemo(() => {
-      return currentStrokes.map((s) => {
-        const tol = drawingSettings.simplification ?? 0
-        if (s.length > 4 && tol > 0) {
-          return simplifyPoints(s, tol)
-        }
-        if (s.length === 2) return [...s, ...s]
-        return s
-      })
+      return processStrokes(currentStrokes, { simplification: drawingSettings.simplification })
     }, [currentStrokes, drawingSettings.simplification])
 
     const commitSignature = useCallback((): Doc | null => {
       if (currentStrokes.length === 0) return null
 
-      // Use the already calculated previewStrokes or recalculate if needed (but here we are committing)
-      // Actually we can just re-use logic or use the memoized if valid.
-      // But commitSignature is a callback, it might rely on latest state.
-      // Let's keep commitSignature logic independent to be safe, but consistent.
-      
-      const simplifiedStrokes = currentStrokes.map((stroke) => {
-        const tol = drawingSettings.simplification ?? 0
-        if (stroke.length > 4 && tol > 0) {
-          return simplifyPoints(stroke, tol)
-        }
-        if (stroke.length === 2) return [...stroke, ...stroke]
-        return stroke
+      const simplifiedStrokes = processStrokes(currentStrokes, {
+        simplification: drawingSettings.simplification,
       })
 
       const box = getStrokesBox(simplifiedStrokes)
 
-      const normalizedStrokes = simplifiedStrokes.map((stroke) => {
-        const newStroke: number[] = []
-        for (let i = 0; i < stroke.length; i += 2) {
-          const x = stroke[i] - box.x
-          const y = stroke[i + 1] - box.y
-          newStroke.push(Math.round(x * 100) / 100, Math.round(y * 100) / 100)
-        }
-        return newStroke
-      })
+      const normalizedStrokes = normalizeStrokes(simplifiedStrokes, box)
 
       const hasPressureData = allPressureData.some((pressure) => pressure.length > 0)
       const element: SignatureNode = {

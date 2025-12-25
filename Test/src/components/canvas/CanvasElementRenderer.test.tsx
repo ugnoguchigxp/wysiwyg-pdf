@@ -154,7 +154,7 @@ describe('components/canvas/CanvasElementRenderer', () => {
       />
     )
 
-    expect(screen.getByTestId('Shape')).toBeInTheDocument()
+    expect(screen.getAllByTestId('Path').length).toBeGreaterThan(0)
   })
   it('renders shapes (rect, circle)', () => {
     // Rect

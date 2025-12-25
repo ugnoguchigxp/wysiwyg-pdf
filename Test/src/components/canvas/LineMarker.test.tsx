@@ -8,6 +8,7 @@ vi.mock('react-konva', () => ({
   RegularPolygon: (props: any) => (
     <div data-testid="RegularPolygon" data-props={JSON.stringify(props)} />
   ),
+  Rect: (props: any) => <div data-testid="Rect" data-props={JSON.stringify(props)} />,
 }))
 
 import { LineMarker } from '@/components/canvas/LineMarker'
@@ -38,5 +39,20 @@ describe('components/canvas/LineMarker', () => {
       <LineMarker x={0} y={0} angle={0} type={'unknown' as any} color="red" />
     )
     expect(container).toBeEmptyDOMElement()
+  })
+
+  it('renders triangle marker', () => {
+    render(<LineMarker x={0} y={0} angle={0} type="triangle" color="black" />)
+    expect(screen.getByTestId('Line')).toBeInTheDocument()
+  })
+
+  it('renders filled marker', () => {
+    render(<LineMarker x={0} y={0} angle={0} type="filled" color="black" />)
+    expect(screen.getByTestId('Line')).toBeInTheDocument()
+  })
+
+  it('renders square marker', () => {
+    render(<LineMarker x={0} y={0} angle={0} type="square" color="black" />)
+    expect(screen.getByTestId('Rect')).toBeInTheDocument()
   })
 })
