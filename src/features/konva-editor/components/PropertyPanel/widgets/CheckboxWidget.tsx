@@ -22,16 +22,19 @@ export const CheckboxWidget: React.FC<WidgetProps<CheckboxWidgetConfig>> = ({
     if (isRouting) {
       if (checked) {
         // Enable Orthogonal
-        onChange({ routing: 'orthogonal' } as any)
+        const updates: Partial<LineNode> = { routing: 'orthogonal' }
+        onChange(updates)
       } else {
         // Disable Orthogonal -> Reset to Straight Line (Start -> End)
         const lineNode = node as LineNode
         const pts = lineNode.pts || []
         if (pts.length >= 4) {
           const newPts = [pts[0], pts[1], pts[pts.length - 2], pts[pts.length - 1]]
-          onChange({ routing: 'straight', pts: newPts } as any)
+          const updates: Partial<LineNode> = { routing: 'straight', pts: newPts }
+          onChange(updates)
         } else {
-          onChange({ routing: 'straight' } as any)
+          const updates: Partial<LineNode> = { routing: 'straight' }
+          onChange(updates)
         }
       }
     } else if (fieldKey === 'hasFrame' && checked) {

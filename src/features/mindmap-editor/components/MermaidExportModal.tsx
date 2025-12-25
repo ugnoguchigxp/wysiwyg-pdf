@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import type React from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Modal, ModalFooter } from '@/components/ui/Modal'
-import { Doc } from '@/types/canvas'
-import { MindmapGraph } from '../types'
+import type { Doc } from '@/types/canvas'
+import type { MindmapGraph } from '../types'
 import { exportToMermaid } from '../utils/mermaidUtils'
 
 interface MermaidExportModalProps {

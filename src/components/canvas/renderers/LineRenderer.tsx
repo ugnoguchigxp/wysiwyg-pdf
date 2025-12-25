@@ -1,8 +1,10 @@
 import type Konva from 'konva'
-import React, { useRef } from 'react'
+import type React from 'react'
+import { useRef } from 'react'
 import { Circle, Group, Line } from 'react-konva'
 import { LineMarker } from '../LineMarker'
 import { getAnchorPointAndDirection, getOrthogonalPath } from '../utils/connectionRouting'
+import { isWHElement } from '../utils/elementUtils'
 import type { Anchor, LineNode, UnifiedNode } from '@/types/canvas'
 import type { CanvasElementCommonProps } from '../types'
 
@@ -317,8 +319,9 @@ export const LineRenderer: React.FC<LineRendererProps> = ({
         if (!conn) return null
         const node = nodesForSnap.find((n) => n.id === conn.nodeId)
         if (!node) return null
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const info = getAnchorPointAndDirection(node as any, conn.anchor)
+        if (!isWHElement(node)) return null
+        const geo = { x: node.x, y: node.y, w: node.w, h: node.h, r: node.r }
+        const info = getAnchorPointAndDirection(geo, conn.anchor)
         return { x: info.nx, y: info.ny }
       }
 
@@ -362,12 +365,10 @@ export const LineRenderer: React.FC<LineRendererProps> = ({
       }
       // Only update connection properties if they were modified (not undefined)
       if (startConnDraftRef.current !== undefined) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        updated.startConn = startConnDraftRef.current as any
+        updated.startConn = startConnDraftRef.current ?? undefined
       }
       if (endConnDraftRef.current !== undefined) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        updated.endConn = endConnDraftRef.current as any
+        updated.endConn = endConnDraftRef.current ?? undefined
       }
 
       onChange(updated as unknown as Partial<UnifiedNode>)

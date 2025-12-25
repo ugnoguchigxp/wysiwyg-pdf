@@ -4,9 +4,48 @@ import { describe, expect, it, vi } from 'vitest'
 import { ElementRenderer } from '@/features/bed-layout-dashboard/components/ElementRenderer'
 
 // Mock Konva components
+const recorded = {
+    Transformer: [] as any[],
+    Group: [] as any[],
+}
+
+let groupNode: any = null
+
+const createGroupNode = () => {
+    let scaleX = 2
+    let scaleY = 3
+    return {
+        scaleX: (value?: number) => {
+            if (value === undefined) return scaleX
+            scaleX = value
+            return undefined
+        },
+        scaleY: (value?: number) => {
+            if (value === undefined) return scaleY
+            scaleY = value
+            return undefined
+        },
+        width: () => 10,
+        height: () => 20,
+        x: () => 5,
+        y: () => 6,
+        rotation: () => 15,
+        getLayer: () => ({ batchDraw: vi.fn() }),
+    }
+}
+
 vi.mock('react-konva', () => ({
-    Transformer: () => <div data-testid="Transformer" />,
-    Group: ({ children, ...props }: any) => <div data-testid="Group" data-props={JSON.stringify(props)}>{children}</div>,
+    Transformer: (props: any) => {
+        recorded.Transformer.push(props)
+        return <div data-testid="Transformer" />
+    },
+    Group: ({ children, ...props }: any) => {
+        groupNode = createGroupNode()
+        if (typeof props.ref === 'function') props.ref(groupNode)
+        else if (props.ref) props.ref.current = groupNode
+        recorded.Group.push(props)
+        return <div data-testid="Group" data-props={JSON.stringify(props)}>{children}</div>
+    },
     Rect: (props: any) => <div data-testid="Rect" data-props={JSON.stringify(props)} />,
     Circle: (props: any) => <div data-testid="Circle" ref={(node) => { if (node) (node as any).__props = props }} />,
     Ellipse: (props: any) => <div data-testid="Ellipse" data-props={JSON.stringify(props)} />,
@@ -81,5 +120,53 @@ describe('features/bed-layout-dashboard/ElementRenderer', () => {
         )
         // LineElement -> Group + Line (body) + Circles (handles if selected/editable?)
         expect(screen.getByTestId('Line')).toBeInTheDocument()
+    })
+
+    it('invokes bed click handlers in readOnly mode', () => {
+        const onBedClick = vi.fn()
+        render(
+            <ElementRenderer
+                element={{ id: 'b2', t: 'widget', s: 'surface', widget: 'bed', x: 0, y: 0, w: 100, h: 200 } as any}
+                {...commonProps}
+                readOnly
+                onBedClick={onBedClick}
+            />
+        )
+
+        const groupProps = recorded.Group.find((p) => p.id === 'b2')
+        expect(groupProps).toBeTruthy()
+        const event = { target: { getStage: () => ({ container: () => ({ style: {} }) }) } } as any
+        groupProps.onClick?.(event)
+        groupProps.onTap?.(event)
+        expect(onBedClick).toHaveBeenCalledWith('b2', undefined)
+    })
+
+    it('emits transform updates for selected elements', () => {
+        const onChange = vi.fn()
+        render(
+            <ElementRenderer
+                element={{ id: 's2', t: 'shape', s: 'surface', shape: 'rect', x: 0, y: 0, w: 10, h: 20 } as any}
+                isSelected
+                onSelect={vi.fn()}
+                onChange={onChange}
+                readOnly={false}
+            />
+        )
+
+        const transformer = recorded.Transformer[recorded.Transformer.length - 1]
+        transformer.onTransformEnd()
+
+        expect(onChange).toHaveBeenCalledWith(
+            expect.objectContaining({
+                id: 's2',
+                x: 5,
+                y: 6,
+                w: 20,
+                h: 60,
+                r: 15,
+            })
+        )
+        expect(groupNode.scaleX()).toBe(1)
+        expect(groupNode.scaleY()).toBe(1)
     })
 })

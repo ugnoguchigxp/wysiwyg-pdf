@@ -1,8 +1,10 @@
 import { useCallback } from 'react'
 import { nanoid } from 'nanoid'
-import { Doc, TextNode, LineNode } from '@/types/canvas'
-import { MindmapGraph } from '../types'
+import type { Doc, LineNode, TextNode, UnifiedNode } from '@/types/canvas'
+import type { MindmapGraph } from '../types'
 import { getSubtreeIds } from '../utils/treeUtils'
+
+type NodeUpdate = Partial<UnifiedNode> & { id: string }
 
 
 
@@ -30,7 +32,7 @@ export const useMindmapOperations = ({
       if (!parent) return prev
 
       // Balancing logic for Root children
-      let layoutDir: 'left' | 'right' | undefined = undefined
+      let layoutDir: 'left' | 'right' | undefined 
       if (selectedNodeId === graph.rootId) {
         const children = graph.childrenMap.get(selectedNodeId) || []
         let leftCount = 0
@@ -109,7 +111,7 @@ export const useMindmapOperations = ({
       if (!parent) return prev
 
       // Determine Layout Dir (Inherit from sibling)
-      let layoutDir: 'left' | 'right' | undefined = undefined
+      let layoutDir: 'left' | 'right' | undefined 
       if (parentId === graph.rootId) {
         const sibling = prev.nodes.find((n) => n.id === selectedNodeId)
         if (sibling) {
@@ -188,7 +190,7 @@ export const useMindmapOperations = ({
   }, [selectedNodeId, graph, onSelect])
 
   const updateNodes = useCallback(
-    (updates: { id: string;[key: string]: any }[]) => {
+    (updates: NodeUpdate[]) => {
       setDoc((prev) => {
         if (updates.length === 0) return prev
         const updateMap = new Map(updates.map((u) => [u.id, u]))
@@ -350,7 +352,7 @@ export const useMindmapOperations = ({
 
         // 1. Remove existing parent connection (Line)
         // Find line where endConn is sourceId
-        let newNodes = prev.nodes.filter((n) => {
+        const newNodes = prev.nodes.filter((n) => {
           if (n.t === 'line') {
             const line = n as LineNode
             if (line.endConn?.nodeId === sourceId) return false
@@ -365,7 +367,7 @@ export const useMindmapOperations = ({
         if (position !== 'child') {
           // If 'before' or 'after', we attach to target's parent
           const targetLine = prev.nodes.find(n => n.t === 'line' && (n as LineNode).endConn?.nodeId === targetId) as LineNode
-          if (targetLine && targetLine.startConn?.nodeId) {
+          if (targetLine?.startConn?.nodeId) {
             parentId = targetLine.startConn.nodeId
           } else {
             // Fallback: if target is root or detached, can't be sibling. Fallback to child? or Abort?

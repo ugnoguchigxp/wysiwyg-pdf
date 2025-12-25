@@ -60,6 +60,13 @@ if (!HTMLElement.prototype.scrollIntoView) {
       return {
         font: '',
         measureText: (text: string) => ({ width: (text?.length ?? 0) * 10 }),
+        scale: () => {},
+        setTransform: () => {},
+        save: () => {},
+        restore: () => {},
+        clearRect: () => {},
+        fillRect: () => {},
+        getImageData: () => ({ data: [0, 0, 0, 0] }),
       }
     }
 

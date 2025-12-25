@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react'
+import type React from 'react'
+import { useMemo } from 'react'
 import { Group, Path, Rect } from 'react-konva'
 import { createHandwritingPath } from '@/utils/handwriting'
 import type { SignatureNode } from '@/types/canvas'

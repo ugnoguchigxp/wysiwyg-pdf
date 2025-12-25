@@ -119,4 +119,89 @@ describe('WysiwygPropertiesPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'properties_finish_drawing' }))
     expect(onToolSelect).toHaveBeenCalledWith('select')
   })
+
+  it('updates canvas background and grid settings when no selection', () => {
+    const onTemplateChange = vi.fn()
+    const onShowGridChange = vi.fn()
+    const onGridSizeChange = vi.fn()
+    const onSnapStrengthChange = vi.fn()
+
+    const doc: Doc = {
+      v: 1,
+      id: 'd',
+      title: 't',
+      unit: 'mm',
+      surfaces: [{ id: 'p1', type: 'page', w: 100, h: 100, bg: '#ffffff' }],
+      nodes: [],
+    }
+
+    render(
+      <WysiwygPropertiesPanel
+        templateDoc={doc}
+        selectedElementId={null}
+        onTemplateChange={onTemplateChange}
+        currentPageId="p1"
+        showGrid={true}
+        onShowGridChange={onShowGridChange}
+        gridSize={13}
+        onGridSizeChange={onGridSizeChange}
+        snapStrength={0}
+        onSnapStrengthChange={onSnapStrengthChange}
+      />
+    )
+
+    const colorInput = screen.getByDisplayValue('#ffffff')
+    fireEvent.change(colorInput, { target: { value: '#ff0000' } })
+    expect(onTemplateChange).toHaveBeenCalled()
+
+    const imageInput = screen.getByPlaceholderText('properties_image_url_placeholder')
+    fireEvent.change(imageInput, { target: { value: 'http://example.com/bg.png' } })
+    expect(onTemplateChange).toHaveBeenCalled()
+
+    const [gridToggle, snapToggle] = screen.getAllByRole('checkbox')
+    fireEvent.click(gridToggle)
+    expect(onShowGridChange).toHaveBeenCalledWith(false)
+
+    const gridSelect = screen.getByRole('combobox')
+    fireEvent.change(gridSelect, { target: { value: '21' } })
+    expect(onGridSizeChange).toHaveBeenCalledWith(21)
+
+    fireEvent.click(snapToggle)
+    expect(onSnapStrengthChange).toHaveBeenCalledWith(13)
+  })
+
+  it('updates signature drawing settings', () => {
+    const onToolSelect = vi.fn()
+    const onDrawingSettingsChange = vi.fn()
+    render(
+      <WysiwygPropertiesPanel
+        templateDoc={{
+          v: 1,
+          id: 'd',
+          title: 't',
+          unit: 'mm',
+          surfaces: [{ id: 'p1', type: 'page', w: 100, h: 100 }],
+          nodes: [],
+        } as Doc}
+        selectedElementId={null}
+        onTemplateChange={() => {}}
+        currentPageId="p1"
+        activeTool="signature"
+        onToolSelect={onToolSelect}
+        drawingSettings={{ stroke: '#000000', strokeWidth: 2, simplification: 0 }}
+        onDrawingSettingsChange={onDrawingSettingsChange}
+      />
+    )
+
+    const colorInput = screen.getByDisplayValue('#000000')
+    fireEvent.change(colorInput, { target: { value: '#123456' } })
+
+    const thicknessInput = screen.getByDisplayValue('2')
+    fireEvent.change(thicknessInput, { target: { value: '2.2' } })
+
+    const simplificationSlider = screen.getByRole('slider')
+    fireEvent.change(simplificationSlider, { target: { value: '1.5' } })
+
+    expect(onDrawingSettingsChange).toHaveBeenCalled()
+  })
 })

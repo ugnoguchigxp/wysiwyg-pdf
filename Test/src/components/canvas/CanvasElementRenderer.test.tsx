@@ -1,18 +1,38 @@
 import React from 'react'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, act } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 const findImageWithExtensionSpy = vi.fn()
+const recordedProps = {
+  Group: [] as any[],
+  Text: [] as any[],
+  Transformer: [] as any[],
+}
+
+let mockTextHeight: number | null = null
+
+const recordProps = (key: keyof typeof recordedProps, props: any) => {
+  recordedProps[key].push(props)
+}
+
+const resetRecordedProps = () => {
+  recordedProps.Group.length = 0
+  recordedProps.Text.length = 0
+  recordedProps.Transformer.length = 0
+}
 
 vi.mock('react-konva', () => ({
   Arrow: (props: any) => <div data-testid="Arrow" data-props={JSON.stringify(props)} />,
   Circle: (props: any) => <div data-testid="Circle" data-props={JSON.stringify(props)} />,
   Ellipse: (props: any) => <div data-testid="Ellipse" data-props={JSON.stringify(props)} />,
-  Group: ({ children, ...props }: any) => (
-    <div data-testid="Group" data-props={JSON.stringify(props)}>
-      {children}
-    </div>
-  ),
+  Group: ({ children, ...props }: any) => {
+    recordProps('Group', props)
+    return (
+      <div data-testid="Group" data-props={JSON.stringify(props)}>
+        {children}
+      </div>
+    )
+  },
   Image: (props: any) => <div data-testid="KonvaImage" data-props={JSON.stringify(props)} />,
   Line: (props: any) => <div data-testid="Line" data-props={JSON.stringify(props)} />,
   Path: (props: any) => <div data-testid="Path" data-props={JSON.stringify(props)} />,
@@ -20,7 +40,18 @@ vi.mock('react-konva', () => ({
   RegularPolygon: (props: any) => <div data-testid="RegularPolygon" data-props={JSON.stringify(props)} />,
   Shape: (props: any) => <div data-testid="Shape" data-props={JSON.stringify(props)} />,
   Star: (props: any) => <div data-testid="Star" data-props={JSON.stringify(props)} />,
-  Text: (props: any) => <div data-testid="Text" data-props={JSON.stringify(props)} />,
+  Text: (props: any) => {
+    recordProps('Text', props)
+    if (props.ref) {
+      const height = mockTextHeight ?? props.height ?? 0
+      props.ref({ height: () => height })
+    }
+    return <div data-testid="Text" data-props={JSON.stringify(props)} />
+  },
+  Transformer: (props: any) => {
+    recordProps('Transformer', props)
+    return <div data-testid="Transformer" data-props={JSON.stringify(props)} />
+  },
 }))
 
 vi.mock('@/features/report-editor/components/WysiwygCanvas/canvasImageUtils', () => ({
@@ -31,6 +62,7 @@ import { CanvasElementRenderer } from '@/components/canvas/CanvasElementRenderer
 
 describe('components/canvas/CanvasElementRenderer', () => {
   it('returns custom renderer result when provided', () => {
+    mockTextHeight = null
     render(
       <CanvasElementRenderer
         element={{ id: 'n', t: 'text', s: 's', x: 0, y: 0, w: 1, h: 1, text: 'x' } as any}
@@ -45,6 +77,7 @@ describe('components/canvas/CanvasElementRenderer', () => {
   })
 
   it('maps text alignment props correctly', () => {
+    mockTextHeight = null
     render(
       <CanvasElementRenderer
         element={{
@@ -79,6 +112,7 @@ describe('components/canvas/CanvasElementRenderer', () => {
   })
 
   it('renders image placeholder when src is empty', () => {
+    mockTextHeight = null
     render(
       <CanvasElementRenderer
         element={{ id: 'img', t: 'image', s: 's', x: 0, y: 0, w: 10, h: 10, src: '' } as any}
@@ -93,6 +127,7 @@ describe('components/canvas/CanvasElementRenderer', () => {
   })
 
   it('renders KonvaImage after loading a data url', async () => {
+    mockTextHeight = null
     const OriginalImage = window.Image
 
     class MockImage {
@@ -131,6 +166,7 @@ describe('components/canvas/CanvasElementRenderer', () => {
   })
 
   it('renders signature strokes as shape fill', () => {
+    mockTextHeight = null
     render(
       <CanvasElementRenderer
         element={{
@@ -157,6 +193,7 @@ describe('components/canvas/CanvasElementRenderer', () => {
     expect(screen.getAllByTestId('Path').length).toBeGreaterThan(0)
   })
   it('renders shapes (rect, circle)', () => {
+    mockTextHeight = null
     // Rect
     render(
       <CanvasElementRenderer
@@ -184,6 +221,7 @@ describe('components/canvas/CanvasElementRenderer', () => {
   })
 
   it('renders lines (Arrow/Line)', () => {
+    mockTextHeight = null
     render(
       <CanvasElementRenderer
         element={{
@@ -208,6 +246,7 @@ describe('components/canvas/CanvasElementRenderer', () => {
   })
 
   it('renders table', () => {
+    mockTextHeight = null
     // Setup minimal table
     const tableNode = {
       id: 'tbl1',
@@ -256,6 +295,7 @@ describe('components/canvas/CanvasElementRenderer', () => {
   })
 
   it('renders groups (returns null/empty as default fallback handled by parent)', () => {
+    mockTextHeight = null
     const { container } = render(
       <CanvasElementRenderer
         element={{
@@ -275,4 +315,144 @@ describe('components/canvas/CanvasElementRenderer', () => {
     )
     expect(container).toBeEmptyDOMElement()
   })
+
+  it('snaps drag positions to grid when enabled', () => {
+    mockTextHeight = null
+    resetRecordedProps()
+
+    render(
+      <CanvasElementRenderer
+        element={{ id: 't2', t: 'text', s: 's', x: 0, y: 0, w: 50, h: 20, text: 'snap' } as any}
+        isSelected={false}
+        onSelect={() => { }}
+        onChange={() => { }}
+        showGrid
+        gridSize={10}
+      />
+    )
+
+    const textProps = recordedProps.Text[recordedProps.Text.length - 1]
+    const stage = {
+      getAbsoluteTransform: vi.fn(() => ({
+        copy: () => ({
+          invert: vi.fn(),
+          point: (pos: { x: number; y: number }) => pos,
+        }),
+        point: (pos: { x: number; y: number }) => pos,
+      })),
+    }
+
+    const snapped = textProps.dragBoundFunc.call({ getStage: () => stage }, { x: 12, y: 26 })
+    expect(snapped).toEqual({ x: 10, y: 30 })
+  })
+
+  it('snaps drag positions to snap strength when grid is disabled', () => {
+    mockTextHeight = null
+    resetRecordedProps()
+
+    render(
+      <CanvasElementRenderer
+        element={{ id: 't3', t: 'text', s: 's', x: 0, y: 0, w: 50, h: 20, text: 'snap' } as any}
+        isSelected={false}
+        onSelect={() => { }}
+        onChange={() => { }}
+        showGrid={false}
+        snapStrength={5}
+      />
+    )
+
+    const textProps = recordedProps.Text[recordedProps.Text.length - 1]
+    const stage = {
+      getAbsoluteTransform: vi.fn(() => ({
+        copy: () => ({
+          invert: vi.fn(),
+          point: (pos: { x: number; y: number }) => pos,
+        }),
+        point: (pos: { x: number; y: number }) => pos,
+      })),
+    }
+
+    const snapped = textProps.dragBoundFunc.call({ getStage: () => stage }, { x: 13, y: 17 })
+    expect(snapped).toEqual({ x: 15, y: 15 })
+  })
+
+  it('updates rotation snaps when Shift is held', async () => {
+    mockTextHeight = null
+    resetRecordedProps()
+
+    render(
+      <CanvasElementRenderer
+        element={{ id: 't4', t: 'text', s: 's', x: 0, y: 0, w: 50, h: 20, text: 'rot' } as any}
+        isSelected
+        readOnly={false}
+        onSelect={() => { }}
+        onChange={() => { }}
+      />
+    )
+
+    let transformerProps = recordedProps.Transformer[recordedProps.Transformer.length - 1]
+    expect(transformerProps.rotationSnaps).toBeUndefined()
+
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Shift' }))
+    })
+
+    await waitFor(() => {
+      transformerProps = recordedProps.Transformer[recordedProps.Transformer.length - 1]
+      expect(transformerProps.rotationSnaps).toEqual([0, 45, 90, 135, 180, 225, 270, 315])
+      expect(transformerProps.rotationSnapTolerance).toBe(23)
+    })
+
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Shift' }))
+    })
+
+    await waitFor(() => {
+      transformerProps = recordedProps.Transformer[recordedProps.Transformer.length - 1]
+      expect(transformerProps.rotationSnaps).toBeUndefined()
+      expect(transformerProps.rotationSnapTolerance).toBe(0)
+    })
+  })
 })
+  it('auto-resizes text height when text node size changes', async () => {
+    resetRecordedProps()
+    const onChange = vi.fn()
+    mockTextHeight = 42
+
+    render(
+      <CanvasElementRenderer
+        element={{ id: 't5', t: 'text', s: 's', x: 0, y: 0, w: 50, h: 10, text: 'auto' } as any}
+        isSelected={false}
+        onSelect={() => { }}
+        onChange={onChange}
+      />
+    )
+
+    await waitFor(() => {
+      expect(onChange).toHaveBeenCalledWith({ id: 't5', h: 42 })
+    })
+  })
+
+  it('triggers mindmap drag start when provided', () => {
+    resetRecordedProps()
+    const onSelect = vi.fn()
+    const onDragStart = vi.fn()
+    mockTextHeight = null
+
+    render(
+      <CanvasElementRenderer
+        element={{ id: 't6', t: 'text', s: 's', x: 0, y: 0, w: 50, h: 20, text: 'drag' } as any}
+        isSelected={false}
+        onSelect={onSelect}
+        onChange={() => { }}
+        onDragStart={onDragStart}
+      />
+    )
+
+    const textProps = recordedProps.Text[recordedProps.Text.length - 1]
+    const event = { cancelBubble: false } as any
+    textProps.onMouseDown(event)
+
+    expect(onDragStart).toHaveBeenCalledWith('t6', event)
+    expect(onSelect).toHaveBeenCalled()
+  })

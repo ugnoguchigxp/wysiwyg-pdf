@@ -1,5 +1,6 @@
 import type Konva from 'konva'
-import React, { forwardRef, useEffect, useState } from 'react'
+import type React from 'react'
+import { forwardRef, useEffect, useState } from 'react'
 import { Group, Image as KonvaImage, Rect, Text } from 'react-konva'
 import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
 import { useI18n } from '@/i18n/I18nContext'

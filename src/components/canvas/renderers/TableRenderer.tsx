@@ -1,5 +1,5 @@
 import type Konva from 'konva'
-import React from 'react'
+import type React from 'react'
 import { Group, Rect, Text } from 'react-konva'
 import { ptToMm } from '@/utils/units'
 import type { TableNode, UnifiedNode } from '@/types/canvas'

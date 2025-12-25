@@ -278,6 +278,28 @@ const PrintElement = ({ element }: { element: UnifiedNode }) => {
 
   if (element.t === 'text') {
     const textEl = element as TextNode
+
+    const shouldShowBox =
+      textEl.hasFrame !== undefined
+        ? textEl.hasFrame
+        : textEl.borderColor ||
+          (textEl.borderWidth && textEl.borderWidth > 0) ||
+          textEl.backgroundColor
+
+    const borderStyle =
+      shouldShowBox && textEl.borderWidth && textEl.borderWidth > 0
+        ? `${mmToPtValue(textEl.borderWidth)}pt solid ${textEl.borderColor || '#000'}`
+        : 'none'
+
+    const backgroundColor =
+      shouldShowBox && textEl.backgroundColor ? textEl.backgroundColor : 'transparent'
+
+    const radiusRatio = Math.max(0, Math.min(1, Number(textEl.cornerRadius || 0)))
+    const minDim = Math.min(textEl.w, textEl.h)
+    const actualRadius = minDim * radiusRatio * 0.5
+    const borderRadius =
+      shouldShowBox && actualRadius > 0 ? `${mmToPtValue(actualRadius)}pt` : undefined
+
     return (
       <div
         style={{
@@ -300,6 +322,11 @@ const PrintElement = ({ element }: { element: UnifiedNode }) => {
           justifyContent:
             textEl.align === 'c' ? 'center' : textEl.align === 'r' ? 'flex-end' : 'flex-start',
           whiteSpace: 'pre-wrap',
+          border: borderStyle,
+          backgroundColor,
+          borderRadius,
+          padding: textEl.padding ? `${mmToPtValue(textEl.padding)}pt` : undefined,
+          boxSizing: 'border-box',
         }}
       >
         {textEl.text}

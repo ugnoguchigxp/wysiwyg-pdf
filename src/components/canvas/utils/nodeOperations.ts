@@ -1,4 +1,4 @@
-import { UnifiedNode } from '../../../types/canvas'
+import type { UnifiedNode } from '../../../types/canvas'
 import { isWHElement } from './elementUtils'
 import { getUpdateForConnectedLines } from './lineUtils'
 
@@ -22,8 +22,8 @@ export const calculateNodeMoveUpdates = (
     const updates: (Partial<UnifiedNode> & { id: string })[] = []
 
     // 1. Update the target node itself
-    let finalX = newPos.x
-    let finalY = newPos.y
+    const finalX = newPos.x
+    const finalY = newPos.y
 
     // Special handling for centered shapes if needed (replicating logic from useCanvasDrag)
     // Note: useCanvasDrag handled offset adjustment based on drag event relative to center.

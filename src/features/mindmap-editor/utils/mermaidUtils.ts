@@ -1,5 +1,5 @@
-import { Doc, TextNode, LineNode } from '@/types/canvas'
-import { MindmapGraph } from '../types'
+import type { Doc, TextNode, LineNode } from '@/types/canvas'
+import type { MindmapGraph } from '../types'
 import { nanoid } from 'nanoid'
 
 interface ParsedNode {
@@ -189,7 +189,7 @@ const buildDoc = (rootText: string, tree: ParsedNode[], surfaceId: string): Doc 
 
   return {
     v: 1,
-    id: 'mindmap-' + nanoid(),
+    id: `mindmap-${nanoid()}`,
     title: 'Imported Mindmap',
     unit: 'mm',
     surfaces: [{ id: surfaceId, type: 'canvas', w: 4000, h: 4000, bg: '#f8fafc' }],

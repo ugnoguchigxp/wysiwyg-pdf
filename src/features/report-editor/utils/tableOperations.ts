@@ -1,4 +1,4 @@
-import { TableNode, Cell } from '@/types/canvas'
+import type { TableNode, Cell } from '@/types/canvas'
 
 const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0)
 const clamp = (v: number, min: number, max: number) => (v < min ? min : v > max ? max : v)
@@ -242,7 +242,7 @@ export const mergeCells = (table: TableNode, targetRow: number, targetCol: numbe
   // If the cell wasn't in the list, we should effectively "add" it to our consideration, 
   // but if we are about to merge it, we need it in the final list.
   // The original code `ensureBaseExists` pushed it to `cells` so that subsequent logic would see it.
-  let workingCells = [...cells]
+  const workingCells = [...cells]
   if (!findCell(workingCells, targetRow, targetCol)) {
       workingCells.push({ ...current })
   }

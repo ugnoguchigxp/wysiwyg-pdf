@@ -1,7 +1,7 @@
 import type Konva from 'konva'
 import React, { useState, useCallback, useMemo, useRef } from 'react'
-import { Doc, UnifiedNode } from '@/types/canvas'
-import { KonvaCanvasEditor, KonvaCanvasEditorHandle } from '@/components/canvas/KonvaCanvasEditor'
+import type { Doc, LineNode, UnifiedNode } from '@/types/canvas'
+import { KonvaCanvasEditor, type KonvaCanvasEditorHandle } from '@/components/canvas/KonvaCanvasEditor'
 import { Button } from '@/components/ui/Button'
 import { ChevronsDown, ChevronsUp, Download, Upload, Keyboard, ImageIcon, FileDown } from 'lucide-react'
 import { useI18n } from '@/i18n/I18nContext'
@@ -161,7 +161,9 @@ export const MindmapEditor: React.FC = () => {
 
     try {
       gridLayer?.hide()
-      transformers.forEach((tr) => tr.hide())
+      transformers.forEach((tr) => {
+        tr.hide()
+      })
 
       const dataURL = stage.toDataURL({ pixelRatio: 2 })
 
@@ -328,8 +330,9 @@ export const MindmapEditor: React.FC = () => {
         // In our graph, lines map Parent -> Child via startConn -> endConn
         // If Child is hidden, line should be hidden.
         // If Parent is hidden, Child is hidden too (handled by logic above).
-        const childId = (node as any).endConn?.nodeId
-        const parentId = (node as any).startConn?.nodeId
+        const lineNode = node as LineNode
+        const childId = lineNode.endConn?.nodeId
+        const parentId = lineNode.startConn?.nodeId
         return childId && visibleNodeIds.has(childId) && parentId && visibleNodeIds.has(parentId)
       }
       return visibleNodeIds.has(node.id)
@@ -352,8 +355,10 @@ export const MindmapEditor: React.FC = () => {
     })
   }, [doc.nodes, graph, collapsedNodes])
 
+  type NodeUpdate = Partial<UnifiedNode> & { id: string }
+
   const handleLayoutChange = useCallback(
-    (updates: { id: string;[key: string]: any }[]) => {
+    (updates: NodeUpdate[]) => {
       if (updates.length === 0) return
 
       // Layout updates should NOT be saved to history

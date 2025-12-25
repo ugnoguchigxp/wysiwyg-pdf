@@ -1,4 +1,4 @@
-import React from 'react'
+import type React from 'react'
 import { Ellipse, Line, Path, Rect, Star } from 'react-konva'
 import type { ShapeNode } from '@/types/canvas'
 import type { CanvasElementCommonProps } from '../types'

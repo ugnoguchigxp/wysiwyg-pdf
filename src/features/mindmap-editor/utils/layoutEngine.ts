@@ -1,5 +1,5 @@
-import { MindmapGraph, MindmapLayoutConfig } from '../types'
-import { Anchor } from '@/types/canvas'
+import type { MindmapGraph, MindmapLayoutConfig } from '../types'
+import type { Anchor } from '@/types/canvas'
 
 interface LayoutResult {
     updates: Map<string, { x: number; y: number }>
@@ -87,7 +87,9 @@ export const calculateMindmapLayout = (
     }
 
     // Pre-calculate heights for all relevant nodes
-    rootChildren.forEach(childId => calculateHeight(childId))
+    rootChildren.forEach((childId) => {
+        calculateHeight(childId)
+    })
 
     // 2. Assign positions recursive
     const layoutBranch = (
@@ -169,7 +171,9 @@ export const calculateMindmapLayout = (
 
         // Calculate vertical start based on children block height
         let childrenBlockHeight = 0
-        children.forEach(c => childrenBlockHeight += subtreeHeights.get(c) || 0)
+        for (const c of children) {
+            childrenBlockHeight += subtreeHeights.get(c) || 0
+        }
         childrenBlockHeight += (children.length - 1) * config.verticalSpacing
 
         const parentCenterY = y + h / 2
@@ -211,7 +215,9 @@ export const calculateMindmapLayout = (
     // Layout Right Subtrees
     // We need to stack them vertically on the right side
     let rightBlockHeight = 0
-    rightChildren.forEach(c => rightBlockHeight += subtreeHeights.get(c) || 0)
+    for (const c of rightChildren) {
+        rightBlockHeight += subtreeHeights.get(c) || 0
+    }
     rightBlockHeight += (Math.max(0, rightChildren.length - 1)) * config.verticalSpacing
 
     let currentRightY = rootCenterY - rightBlockHeight / 2
@@ -230,7 +236,9 @@ export const calculateMindmapLayout = (
 
     // Layout Left Subtrees
     let leftBlockHeight = 0
-    leftChildren.forEach(c => leftBlockHeight += subtreeHeights.get(c) || 0)
+    for (const c of leftChildren) {
+        leftBlockHeight += subtreeHeights.get(c) || 0
+    }
     leftBlockHeight += (Math.max(0, leftChildren.length - 1)) * config.verticalSpacing
 
     let currentLeftY = rootCenterY - leftBlockHeight / 2

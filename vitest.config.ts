@@ -34,6 +34,13 @@ export default defineConfig({
         'src/modules/**/types.ts',
         'src/modules/**/types/**',
         'src/modules/**/pdf-editor/types/**',
+        'src/components/canvas/types.ts',
+        'src/features/bed-layout-dashboard/types.ts',
+        'src/features/konva-editor/types.ts',
+        'src/features/konva-editor/components/PropertyPanel/index.ts',
+        'src/features/konva-editor/components/PropertyPanel/widgets/types.ts',
+        'src/features/mindmap-editor/index.ts',
+        'src/features/mindmap-editor/types.ts',
       ],
       thresholds: {
         lines: 70,

@@ -36,9 +36,9 @@ export const ColorPickerWidget: React.FC<WidgetProps<ColorPickerWidgetConfig>> =
             [fieldKey]: newColor,
           } as unknown as Partial<UnifiedNode>
           if (fieldKey === 'borderColor') {
-            const currentWidth = (node as unknown as Record<string, number>)['borderWidth']
+            const currentWidth = (node as unknown as Record<string, number>).borderWidth
             if (!currentWidth || currentWidth === 0) {
-              ;(updates as unknown as Record<string, number>)['borderWidth'] = 0.1
+              ;(updates as unknown as Record<string, number>).borderWidth = 0.1
             }
           }
           onChange(updates, undefined)

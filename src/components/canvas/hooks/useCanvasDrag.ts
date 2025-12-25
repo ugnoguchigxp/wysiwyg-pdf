@@ -113,17 +113,20 @@ export const useCanvasDrag = ({ element, allElements, onChange }: UseCanvasDragP
 
                 if (!sNode || !eNode || !isWHElement(sNode) || !isWHElement(eNode)) return
 
+                const sGeo = { x: sNode.x, y: sNode.y, w: sNode.w, h: sNode.h, r: sNode.r }
+                const eGeo = { x: eNode.x, y: eNode.y, w: eNode.w, h: eNode.h, r: eNode.r }
+
                 let nextPts: number[] = []
                 if (ln.routing === 'orthogonal') {
                     nextPts = getOrthogonalConnectionPath(
-                        sNode as any,
+                        sGeo,
                         ln.startConn?.anchor || 'auto',
-                        eNode as any,
+                        eGeo,
                         ln.endConn?.anchor || 'auto'
                     )
                 } else {
-                    const sP = getAnchorPointAndDirection(sNode as any, ln.startConn?.anchor || 'auto')
-                    const eP = getAnchorPointAndDirection(eNode as any, ln.endConn?.anchor || 'auto')
+                    const sP = getAnchorPointAndDirection(sGeo, ln.startConn?.anchor || 'auto')
+                    const eP = getAnchorPointAndDirection(eGeo, ln.endConn?.anchor || 'auto')
                     nextPts = [sP.x, sP.y, eP.x, eP.y]
                 }
 

@@ -634,7 +634,7 @@ export const TEXT_OBJECT_CONFIG: ObjectPanelConfig = {
           type: 'colorPicker',
           labelKey: 'properties_background_color',
           props: { fieldKey: 'backgroundColor' },
-          condition: (node) => (node as any).hasFrame === true
+          condition: (node) => (node as { hasFrame?: boolean }).hasFrame === true
           // Default colSpan is 1
         },
         // Row 2: Border Color & Border Width
@@ -642,14 +642,14 @@ export const TEXT_OBJECT_CONFIG: ObjectPanelConfig = {
           type: 'colorPicker',
           labelKey: 'properties_border_color_box',
           props: { fieldKey: 'borderColor' },
-          condition: (node) => (node as any).hasFrame === true
+          condition: (node) => (node as { hasFrame?: boolean }).hasFrame === true
           // Default colSpan is 1
         },
         {
           type: 'numberInput',
           labelKey: 'properties_border_width_box',
           props: { fieldKey: 'borderWidth', min: 0, step: 0.1, unit: 'mm' },
-          condition: (node) => (node as any).hasFrame === true
+          condition: (node) => (node as { hasFrame?: boolean }).hasFrame === true
           // Default colSpan is 1
         },
         // Row 3: Padding & Corner Radius
@@ -657,7 +657,7 @@ export const TEXT_OBJECT_CONFIG: ObjectPanelConfig = {
           type: 'numberInput',
           labelKey: 'properties_padding',
           props: { fieldKey: 'padding', min: 0, step: 0.5, unit: 'mm' },
-          condition: (node) => (node as any).hasFrame === true
+          condition: (node) => (node as { hasFrame?: boolean }).hasFrame === true
           // Default colSpan is 1
         },
         {
@@ -673,7 +673,7 @@ export const TEXT_OBJECT_CONFIG: ObjectPanelConfig = {
               { value: '1', labelKey: '100%' },
             ]
           },
-          condition: (node) => (node as any).hasFrame === true
+          condition: (node) => (node as { hasFrame?: boolean }).hasFrame === true
           // Default colSpan is 1
         }
       ]

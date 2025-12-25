@@ -1,3 +1,5 @@
+// @ts-nocheck
+import '@testing-library/jest-dom/vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { ptToMm } from '@/utils/units'
@@ -116,6 +118,24 @@ describe('bedLayout PropertyPanel', () => {
       undefined
     )
 
+    const italicButton = container.querySelector('svg.lucide-italic')?.closest('button')
+    expect(italicButton).toBeTruthy()
+    fireEvent.click(italicButton as HTMLButtonElement)
+    expect(onChange).toHaveBeenCalledWith(
+      't1',
+      expect.objectContaining({ italic: true }),
+      undefined
+    )
+
+    const underlineButton = container.querySelector('svg.lucide-underline')?.closest('button')
+    expect(underlineButton).toBeTruthy()
+    fireEvent.click(underlineButton as HTMLButtonElement)
+    expect(onChange).toHaveBeenCalledWith(
+      't1',
+      expect.objectContaining({ underline: true }),
+      undefined
+    )
+
     // Check for Size select in the parent div of 'Size' label
     const sizeLabel = screen.getByText(/properties_font_size/)
     const sizeSelect = sizeLabel.parentElement?.querySelector('select')
@@ -157,6 +177,18 @@ describe('bedLayout PropertyPanel', () => {
       undefined
     )
 
+    // change stroke width
+    const strokeWidthInput = screen
+      .getAllByRole('spinbutton')
+      .map((el) => el as HTMLInputElement)
+      .find((el) => el.value === '2') as HTMLInputElement
+    fireEvent.change(strokeWidthInput, { target: { value: '5' } })
+    expect(onChange).toHaveBeenCalledWith(
+      'l1',
+      expect.objectContaining({ strokeW: 5 }),
+      undefined
+    )
+
     onChange.mockClear()
     lineRender.unmount()
 
@@ -188,5 +220,62 @@ describe('bedLayout PropertyPanel', () => {
     // )
     // fireEvent.change(screen.getByDisplayValue('A'), { target: { value: 'B' } })
     // expect(onChange).toHaveBeenCalledWith('bed1', expect.objectContaining({ name: 'B' }))
+  })
+
+  it('handles canvas grid and snap settings when nothing selected', () => {
+    const onDocumentChange = vi.fn()
+    const onShowGridChange = vi.fn()
+    const onGridSizeChange = vi.fn()
+    const onSnapStrengthChange = vi.fn()
+    const doc = {
+      v: 1,
+      id: 'doc1',
+      title: 'Test Doc',
+      unit: 'mm',
+      surfaces: [{ id: 'layout', type: 'canvas', w: 100, h: 200, margin: { t: 0, r: 0, b: 0, l: 0 } }],
+      nodes: [],
+    } as any
+
+    render(
+      <PropertyPanel
+        selectedElement={null}
+        onChange={() => {}}
+        onDelete={() => {}}
+        document={doc}
+        onDocumentChange={onDocumentChange}
+        showGrid
+        onShowGridChange={onShowGridChange}
+        gridSize={13}
+        onGridSizeChange={onGridSizeChange}
+        snapStrength={5}
+        onSnapStrengthChange={onSnapStrengthChange}
+      />
+    )
+
+    const checkboxes = screen.getAllByRole('checkbox')
+    fireEvent.click(checkboxes[0])
+    expect(onShowGridChange).toHaveBeenCalledWith(false)
+
+    fireEvent.click(checkboxes[checkboxes.length - 1])
+    expect(onSnapStrengthChange).toHaveBeenCalledWith(0)
+
+    const gridSelect = screen.getByRole('combobox') as HTMLSelectElement
+    fireEvent.change(gridSelect, { target: { value: '21' } })
+    expect(onGridSizeChange).toHaveBeenCalledWith(21)
+  })
+
+  it('does not render delete button with current bed layout config', () => {
+    const onChange = vi.fn()
+    const onDelete = vi.fn()
+
+    render(
+      <PropertyPanel
+        selectedElement={{ id: 'shape1', t: 'shape', shape: 'rect', fill: '#fff' } as any}
+        onChange={onChange}
+        onDelete={onDelete}
+      />
+    )
+
+    expect(screen.queryByText(/Delete/i)).toBeNull()
   })
 })

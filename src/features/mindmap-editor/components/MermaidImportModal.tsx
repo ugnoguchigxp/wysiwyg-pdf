@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
+import type React from 'react'
+import { useState } from 'react'
 import { Modal, ModalFooter } from '@/components/ui/Modal'
-import { Doc } from '@/types/canvas'
+import type { Doc } from '@/types/canvas'
 import { importFromMermaid } from '../utils/mermaidUtils'
 
 interface MermaidImportModalProps {

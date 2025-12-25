@@ -1,12 +1,14 @@
 import { useEffect } from 'react'
-import { MindmapGraph } from '../types'
+import type { UnifiedNode } from '@/types/canvas'
+import type { MindmapGraph } from '../types'
 import { calculateMindmapLayout } from '../utils/layoutEngine'
 
+type NodeUpdate = Partial<UnifiedNode> & { id: string }
 
 interface UseMindmapLayoutParams {
     graph: MindmapGraph
     collapsedNodes: Set<string>
-    onChange: (updates: { id: string;[key: string]: any }[]) => void
+    onChange: (updates: NodeUpdate[]) => void
     isLayoutActive: boolean
     rootX?: number
     rootY?: number
@@ -32,7 +34,7 @@ export const useMindmapLayout = ({
         })
 
         // Updates List
-        const updatesToApply: { id: string;[key: string]: any }[] = []
+        const updatesToApply: NodeUpdate[] = []
 
         // 1. Check Node Position Diffs
         result.updates.forEach((pos, id) => {

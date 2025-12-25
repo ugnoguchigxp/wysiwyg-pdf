@@ -31,7 +31,14 @@
   },
   "overrides": [
     {
-      "includes": ["Test/**", "coverage/**", "example/**", "dist/**"],
+      "includes": [
+        "Test/**",
+        "**/*.test.*",
+        "**/*.spec.*",
+        "coverage/**",
+        "example/**",
+        "dist/**"
+      ],
       "linter": {
         "enabled": false
       },
@@ -40,6 +47,16 @@
       },
       "assist": {
         "enabled": false
+      }
+    },
+    {
+      "includes": ["src/features/mindmap-editor/mindmap-print.css"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noImportantStyles": "off"
+          }
+        }
       }
     }
   ],

@@ -1,5 +1,5 @@
 import React from 'react'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const keyboard = vi.hoisted(() => ({ last: null as any }))
@@ -12,21 +12,74 @@ vi.mock('@/components/canvas/hooks/useKeyboardShortcuts', () => ({
 
 vi.mock('@/components/canvas/CanvasElementRenderer', () => ({
   CanvasElementRenderer: (props: any) => (
-    <button
-      type="button"
-      data-testid={`el-${props.element.id}`}
-      onClick={() => props.onSelect?.()}
-      onDoubleClick={() => props.onDblClick?.()}
-    >
-      {props.element.id}
-    </button>
+    <div>
+      <button
+        type="button"
+        data-testid={`el-${props.element.id}`}
+        onClick={() => props.onSelect?.()}
+        onDoubleClick={() => props.onDblClick?.()}
+      >
+        {props.element.id}
+      </button>
+      {props.element.t === 'table' && (
+        <>
+          <button
+            type="button"
+            data-testid={`cell-${props.element.id}-0-0`}
+            onClick={() => props.onCellClick?.(props.element.id, 0, 0)}
+            onDoubleClick={() => props.onCellDblClick?.(props.element.id, 0, 0)}
+          >
+            cell
+          </button>
+          <button
+            type="button"
+            data-testid={`ctx-${props.element.id}-0-0`}
+            onClick={() =>
+              props.onContextMenu?.({
+                evt: { preventDefault: () => {}, clientX: 12, clientY: 34 },
+                target: {
+                  id: () => `${props.element.id}_cell_0_0`,
+                  getParent: () => null,
+                },
+              })
+            }
+          >
+            ctx
+          </button>
+        </>
+      )}
+    </div>
   ),
+}))
+
+vi.mock('@/components/canvas/TextEditOverlay', () => ({
+  TextEditOverlay: (props: any) => {
+    const didRun = React.useRef(false)
+    React.useEffect(() => {
+      if (didRun.current) return
+      didRun.current = true
+      props.onUpdate?.('Updated')
+      props.onFinish?.()
+    }, [props.onFinish, props.onUpdate])
+    return <div data-testid="text-edit-overlay" />
+  },
+}))
+
+vi.mock('@/features/konva-editor/utils/canvasImageUtils', () => ({
+  findImageWithExtension: vi.fn(async () => ({ url: 'x', img: {} })),
+}))
+
+vi.mock('@/features/konva-editor/hooks/useTextDimensions', () => ({
+  useTextDimensions: () => ({
+    calculateDimensions: () => ({ w: 123, h: 45 }),
+  }),
 }))
 
 const stageState = vi.hoisted(() => ({
   pointer: { x: 20, y: 40 },
   toDataURL: vi.fn(() => 'data:image/png;base64,xxx'),
   gridVisible: true,
+  transformers: [] as any[],
 }))
 
 vi.mock('react-konva', async () => {
@@ -54,7 +107,7 @@ vi.mock('react-konva', async () => {
         }),
       }),
       getStage: () => stageObj,
-      find: (_selector: string) => [],
+      find: (_selector: string) => stageState.transformers,
       findOne: (selector: string) => {
         if (selector === '.grid-layer') return gridNode
         return null
@@ -220,8 +273,18 @@ describe('ReportKonvaEditor', () => {
 
     expect(onElementSelect).toHaveBeenCalledWith(expect.objectContaining({ t: 'text', bind: 'cat.f1' }))
 
+    const transformer = {
+      getClassName: () => 'Transformer',
+      visible: () => true,
+      hide: vi.fn(),
+      show: vi.fn(),
+    }
+    stageState.transformers = [transformer]
+
     ref.current?.downloadImage()
     expect(stageState.toDataURL).toHaveBeenCalled()
+    expect(transformer.hide).toHaveBeenCalled()
+    expect(transformer.show).toHaveBeenCalled()
     expect(clickSpy).toHaveBeenCalled()
   })
 
@@ -279,5 +342,293 @@ describe('ReportKonvaEditor', () => {
         }),
       ])
     )
+  })
+
+  it('renders background image when surface background is an asset path', async () => {
+    const onTemplateChange = vi.fn()
+    const onElementSelect = vi.fn()
+
+    const doc = {
+      surfaces: [{ id: 'p1', type: 'page', w: 100, h: 100, bg: 'assets/page-bg' }],
+      nodes: [],
+    } as any
+
+    render(
+      <ReportKonvaEditor
+        templateDoc={doc}
+        zoom={1}
+        selectedElementId={undefined}
+        onElementSelect={onElementSelect}
+        onTemplateChange={onTemplateChange}
+        currentPageId="p1"
+      />
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('image-_background')).toBeInTheDocument()
+    })
+  })
+
+  it('copies and pastes the selected element with offset', () => {
+    const onTemplateChange = vi.fn()
+    const onElementSelect = vi.fn()
+    const doc = {
+      surfaces: [{ id: 'p1', type: 'page', w: 100, h: 100, bg: '#fff' }],
+      nodes: [{ id: 't1', t: 'text', s: 'p1', x: 10, y: 20, w: 10, h: 10, text: 'hi' }],
+    } as any
+
+    localStorage.clear()
+    ;(globalThis.crypto as any).randomUUID = () => 'pasted-id'
+
+    render(
+      <ReportKonvaEditor
+        templateDoc={doc}
+        zoom={1}
+        selectedElementId="t1"
+        onElementSelect={onElementSelect}
+        onTemplateChange={onTemplateChange}
+        currentPageId="p1"
+      />
+    )
+
+    act(() => {
+      keyboard.last?.onCopy?.()
+      keyboard.last?.onPaste?.()
+    })
+
+    const updated = onTemplateChange.mock.calls.at(-1)?.[0] as Doc
+    const pasted = updated.nodes.find((n: any) => n.id === 'pasted-id')
+    expect(pasted).toBeTruthy()
+    expect(pasted.x).toBe(11)
+    expect(pasted.y).toBe(21)
+  })
+
+  it('ignores move shortcuts for line elements', () => {
+    const onTemplateChange = vi.fn()
+    const onElementSelect = vi.fn()
+    const doc = {
+      surfaces: [{ id: 'p1', type: 'page', w: 100, h: 100, bg: '#fff' }],
+      nodes: [{ id: 'l1', t: 'line', s: 'p1', pts: [0, 0, 10, 10] }],
+    } as any
+
+    render(
+      <ReportKonvaEditor
+        templateDoc={doc}
+        zoom={1}
+        selectedElementId="l1"
+        onElementSelect={onElementSelect}
+        onTemplateChange={onTemplateChange}
+        currentPageId="p1"
+      />
+    )
+
+    keyboard.last?.onMoveRight?.(1)
+    expect(onTemplateChange).not.toHaveBeenCalled()
+  })
+
+  it('updates text dimensions and commits on edit finish', async () => {
+    const onTemplateChange = vi.fn()
+    const onElementSelect = vi.fn()
+    const doc = {
+      surfaces: [{ id: 'p1', type: 'page', w: 100, h: 100, bg: '#fff' }],
+      nodes: [
+        {
+          id: 't1',
+          t: 'text',
+          s: 'p1',
+          x: 10,
+          y: 10,
+          w: 20,
+          h: 5,
+          text: 'hello',
+          font: 'Helvetica',
+          fontSize: 3,
+          fontWeight: 400,
+          padding: 0,
+        },
+      ],
+    } as any
+
+    render(
+      <ReportKonvaEditor
+        templateDoc={doc}
+        zoom={1}
+        selectedElementId="t1"
+        onElementSelect={onElementSelect}
+        onTemplateChange={onTemplateChange}
+        currentPageId="p1"
+      />
+    )
+
+    fireEvent.doubleClick(screen.getByTestId('el-t1'))
+
+    await waitFor(() => {
+      expect(onTemplateChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          nodes: expect.arrayContaining([
+            expect.objectContaining({ id: 't1', text: 'Updated', w: 123, h: 45 }),
+          ]),
+        }),
+        expect.objectContaining({ saveToHistory: false })
+      )
+    })
+  })
+
+  it('edits table cell values on double click and blur', () => {
+    const onTemplateChange = vi.fn()
+    const onElementSelect = vi.fn()
+    const doc = {
+      surfaces: [{ id: 'p1', type: 'page', w: 200, h: 100, bg: '#fff' }],
+      nodes: [
+        {
+          id: 'tbl1',
+          t: 'table',
+          s: 'p1',
+          x: 0,
+          y: 0,
+          w: 200,
+          h: 100,
+          table: {
+            rows: [50, 50],
+            cols: [100, 100],
+            cells: [{ r: 0, c: 0, v: 'A' }],
+          },
+        },
+      ],
+    } as any
+
+    render(
+      <ReportKonvaEditor
+        templateDoc={doc}
+        zoom={1}
+        selectedElementId="tbl1"
+        onElementSelect={onElementSelect}
+        onTemplateChange={onTemplateChange}
+        currentPageId="p1"
+      />
+    )
+
+    fireEvent.doubleClick(screen.getByTestId('cell-tbl1-0-0'))
+    expect(onElementSelect).toHaveBeenCalledWith(expect.objectContaining({ id: 'tbl1' }))
+
+    const input = screen.getByDisplayValue('A')
+    fireEvent.change(input, { target: { value: 'B' } })
+    fireEvent.blur(input)
+
+    const updated = onTemplateChange.mock.calls.at(-1)?.[0] as Doc
+    const table = updated.nodes.find((n: any) => n.id === 'tbl1')
+    const cell = table.table.cells.find((c: any) => c.r === 0 && c.c === 0)
+    expect(cell.v).toBe('B')
+  })
+
+  it('commits table cell edit on Enter and cancels on Escape', () => {
+    const onTemplateChange = vi.fn()
+    const onElementSelect = vi.fn()
+    const doc = {
+      surfaces: [{ id: 'p1', type: 'page', w: 200, h: 100, bg: '#fff' }],
+      nodes: [
+        {
+          id: 'tbl1',
+          t: 'table',
+          s: 'p1',
+          x: 0,
+          y: 0,
+          w: 200,
+          h: 100,
+          table: {
+            rows: [50, 50],
+            cols: [100, 100],
+            cells: [{ r: 0, c: 0, v: 'A' }],
+          },
+        },
+      ],
+    } as any
+
+    const { rerender } = render(
+      <ReportKonvaEditor
+        templateDoc={doc}
+        zoom={1}
+        selectedElementId="tbl1"
+        onElementSelect={onElementSelect}
+        onTemplateChange={onTemplateChange}
+        currentPageId="p1"
+      />
+    )
+
+    fireEvent.doubleClick(screen.getByTestId('cell-tbl1-0-0'))
+    const input = screen.getByDisplayValue('A')
+    fireEvent.change(input, { target: { value: 'B' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+
+    const updated = onTemplateChange.mock.calls.at(-1)?.[0] as Doc
+    const table = updated.nodes.find((n: any) => n.id === 'tbl1')
+    const cell = table.table.cells.find((c: any) => c.r === 0 && c.c === 0)
+    expect(cell.v).toBe('B')
+
+    onTemplateChange.mockClear()
+
+    rerender(
+      <ReportKonvaEditor
+        templateDoc={doc}
+        zoom={1}
+        selectedElementId="tbl1"
+        onElementSelect={onElementSelect}
+        onTemplateChange={onTemplateChange}
+        currentPageId="p1"
+      />
+    )
+
+    fireEvent.doubleClick(screen.getByTestId('cell-tbl1-0-0'))
+    const input2 = screen.getByDisplayValue('A')
+    fireEvent.keyDown(input2, { key: 'Escape' })
+
+    expect(screen.queryByDisplayValue('A')).not.toBeInTheDocument()
+    expect(onTemplateChange).not.toHaveBeenCalled()
+  })
+
+  it('applies table context menu actions', () => {
+    const onTemplateChange = vi.fn()
+    const onElementSelect = vi.fn()
+    const doc = {
+      surfaces: [{ id: 'p1', type: 'page', w: 200, h: 100, bg: '#fff' }],
+      nodes: [
+        {
+          id: 'tbl1',
+          t: 'table',
+          s: 'p1',
+          x: 0,
+          y: 0,
+          w: 200,
+          h: 100,
+          table: {
+            rows: [50, 50],
+            cols: [100, 100],
+            cells: [
+              { r: 0, c: 0, v: 'A' },
+              { r: 0, c: 1, v: 'B' },
+              { r: 1, c: 0, v: 'C' },
+              { r: 1, c: 1, v: 'D' },
+            ],
+          },
+        },
+      ],
+    } as any
+
+    render(
+      <ReportKonvaEditor
+        templateDoc={doc}
+        zoom={1}
+        onElementSelect={onElementSelect}
+        onTemplateChange={onTemplateChange}
+        currentPageId="p1"
+      />
+    )
+
+    fireEvent.click(screen.getByTestId('ctx-tbl1-0-0'))
+    fireEvent.click(screen.getByRole('button', { name: 'table_ctx_insert_row_below' }))
+
+    const updated = onTemplateChange.mock.calls.at(-1)?.[0] as Doc
+    const table = updated.nodes.find((n: any) => n.id === 'tbl1')
+    expect(table.table.rows.length).toBe(3)
   })
 })

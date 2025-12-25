@@ -1,5 +1,4 @@
-import type Konva from 'konva'
-import React from 'react'
+import type React from 'react'
 import { Circle, Group, Line, Path, Rect, Text } from 'react-konva'
 import type { TextNode } from '@/types/canvas'
 import type { CanvasElementCommonProps, CanvasElementRendererProps } from '../types'
@@ -13,7 +12,7 @@ interface TextRendererProps {
   onToggleCollapse?: (id: string) => void
 }
 
-export const TextRenderer: React.FC<TextRendererProps> =({
+export const TextRenderer: React.FC<TextRendererProps> = ({
   element,
   commonProps,
   isEditing,
@@ -63,9 +62,7 @@ export const TextRenderer: React.FC<TextRendererProps> =({
     const actualCornerRadius = minDim * percent
 
     return (
-      <Group
-        {...commonProps}
-      >
+      <Group {...commonProps}>
         {/* Drop Indicator - Insertion Line */}
         {dragState?.dropTargetId === element.id &&
           dragState.canDrop &&
@@ -100,8 +97,8 @@ export const TextRenderer: React.FC<TextRendererProps> =({
             dragState?.dropTargetId === element.id && dragState.canDrop
               ? dragState.dropPosition === 'child'
                 ? 3 * invScale
-                : borderWidth * invScale
-              : borderWidth * invScale
+                : borderWidth
+              : borderWidth
           }
           cornerRadius={actualCornerRadius}
         />
@@ -137,13 +134,7 @@ export const TextRenderer: React.FC<TextRendererProps> =({
           stroke={stroke}
           strokeWidth={strokeW}
           align={
-            align === 'l'
-              ? 'left'
-              : align === 'r'
-                ? 'right'
-                : align === 'c'
-                  ? 'center'
-                  : 'justify'
+            align === 'l' ? 'left' : align === 'r' ? 'right' : align === 'c' ? 'center' : 'justify'
           }
           verticalAlign={vAlign === 'm' ? 'middle' : vAlign === 'b' ? 'bottom' : 'top'}
           lineHeight={1.2}
@@ -224,13 +215,7 @@ export const TextRenderer: React.FC<TextRendererProps> =({
       stroke={stroke}
       strokeWidth={strokeW}
       align={
-        align === 'l'
-          ? 'left'
-          : align === 'r'
-            ? 'right'
-            : align === 'c'
-              ? 'center'
-              : 'justify'
+        align === 'l' ? 'left' : align === 'r' ? 'right' : align === 'c' ? 'center' : 'justify'
       }
       verticalAlign={vAlign === 'm' ? 'middle' : vAlign === 'b' ? 'bottom' : 'top'}
       lineHeight={1.2}

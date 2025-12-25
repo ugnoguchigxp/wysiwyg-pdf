@@ -415,11 +415,11 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
       const intermediateCount = Math.max(0, (line.pts.length - 4) / 2)
 
       const updateCount = (newCount: number) => {
-        if (isNaN(newCount) || newCount < 0) return
+        if (Number.isNaN(newCount) || newCount < 0) return
         const currentCount = (line.pts.length - 4) / 2
         if (newCount === currentCount) return
 
-        let newPts = [...line.pts]
+        const newPts = [...line.pts]
 
         if (newCount > currentCount) {
           // Add points
@@ -456,7 +456,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
             type="number"
             min="0"
             value={intermediateCount}
-            onChange={e => updateCount(parseInt(e.target.value))}
+            onChange={e => updateCount(parseInt(e.target.value, 10))}
             className={inputClass}
           />
         </div>

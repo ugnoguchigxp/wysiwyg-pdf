@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { MindmapGraph } from '../types'
+import type { MindmapGraph } from '../types'
 
 interface UseMindmapInteractionParams {
     selectedNodeId: string | null
