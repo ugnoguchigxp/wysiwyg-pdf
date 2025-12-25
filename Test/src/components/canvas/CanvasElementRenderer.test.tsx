@@ -18,6 +18,7 @@ vi.mock('react-konva', () => ({
   Path: (props: any) => <div data-testid="Path" data-props={JSON.stringify(props)} />,
   Rect: (props: any) => <div data-testid="Rect" data-props={JSON.stringify(props)} />,
   RegularPolygon: (props: any) => <div data-testid="RegularPolygon" data-props={JSON.stringify(props)} />,
+  Shape: (props: any) => <div data-testid="Shape" data-props={JSON.stringify(props)} />,
   Star: (props: any) => <div data-testid="Star" data-props={JSON.stringify(props)} />,
   Text: (props: any) => <div data-testid="Text" data-props={JSON.stringify(props)} />,
 }))
@@ -129,7 +130,7 @@ describe('components/canvas/CanvasElementRenderer', () => {
     window.Image = OriginalImage
   })
 
-  it('renders signature strokes as lines', () => {
+  it('renders signature strokes as shape fill', () => {
     render(
       <CanvasElementRenderer
         element={{
@@ -153,9 +154,7 @@ describe('components/canvas/CanvasElementRenderer', () => {
       />
     )
 
-    // 1 transparent Rect + 2 stroke lines
-    expect(screen.getAllByTestId('Line')).toHaveLength(2)
-    expect(screen.getByTestId('Rect')).toBeInTheDocument()
+    expect(screen.getByTestId('Shape')).toBeInTheDocument()
   })
   it('renders shapes (rect, circle)', () => {
     // Rect

@@ -33,12 +33,12 @@ export interface WysiwygPropertiesPanelProps {
   i18nOverrides?: Record<string, string>
   activeTool?: string
   onToolSelect?: (tool: string) => void
-  drawingSettings?: { stroke: string; strokeWidth: number; useOffset?: boolean; tolerance?: number }
+  drawingSettings?: { stroke: string; strokeWidth: number; useOffset?: boolean; simplification?: number }
   onDrawingSettingsChange?: (settings: {
     stroke: string
     strokeWidth: number
     useOffset?: boolean
-    tolerance?: number
+    simplification?: number
   }) => void
   // Canvas Settings (Grid & Snap)
   showGrid?: boolean
@@ -185,11 +185,11 @@ const CanvasSettingsPanel: React.FC<{
 // ========================================
 
 const SignatureDrawingPanel: React.FC<{
-  drawingSettings: { stroke: string; strokeWidth: number; tolerance?: number }
+  drawingSettings: { stroke: string; strokeWidth: number; simplification?: number }
   onDrawingSettingsChange: (settings: {
     stroke: string
     strokeWidth: number
-    tolerance?: number
+    simplification?: number
   }) => void
   onToolSelect: (tool: string) => void
   resolveText: (key: string, fallback?: string) => string
@@ -211,36 +211,39 @@ const SignatureDrawingPanel: React.FC<{
 
     <div>
       <label className={labelClass}>{resolveText('properties_stroke_width', 'Thickness')}</label>
-      <input
-        type="number"
-        min="1"
-        value={drawingSettings.strokeWidth}
-        onChange={(e) => {
-          const val = Number(e.target.value)
-          if (val > 0) onDrawingSettingsChange({ ...drawingSettings, strokeWidth: val })
-        }}
-        className={inputClass}
-      />
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          min="0.2"
+          step="0.2"
+          value={drawingSettings.strokeWidth}
+          onChange={(e) => {
+            const val = Number(e.target.value)
+            if (val >= 0.2) onDrawingSettingsChange({ ...drawingSettings, strokeWidth: val })
+          }}
+          className={inputClass}
+        />
+        <span className="text-[11px] text-muted-foreground">mm</span>
+      </div>
     </div>
 
-    <div>
+    <div className="mb-3">
       <label className={labelClass}>
-        {resolveText('properties_signature_optimization', 'Vertex Count')}:{' '}
-        {drawingSettings.tolerance ?? 2.0}
+        {resolveText('properties_data_simplification', 'Data Simplification')}:{' '}
+        {drawingSettings.simplification ?? 0}
       </label>
       <input
         type="range"
-        min="1.0"
+        min="0"
         max="3.0"
         step="0.1"
-        value={drawingSettings.tolerance ?? 2.5}
+        value={drawingSettings.simplification ?? 0}
         onChange={(e) =>
-          onDrawingSettingsChange({ ...drawingSettings, tolerance: parseFloat(e.target.value) })
+          onDrawingSettingsChange({ ...drawingSettings, simplification: parseFloat(e.target.value) })
         }
         className="w-full accent-accent"
       />
     </div>
-
     <div className="mt-4 pt-4 border-t border-border">
       <p className="text-xs text-muted-foreground mb-3">
         {resolveText('signature_instruction', 'Drag on canvas to draw.')}

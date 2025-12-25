@@ -1,6 +1,6 @@
 import type Konva from 'konva'
 import { useCallback } from 'react'
-import type { TableNode, UnifiedNode } from '../../../types/canvas'
+import type { SignatureNode, TableNode, UnifiedNode } from '../../../types/canvas'
 import { isWHElement } from '../utils/elementUtils'
 
 type TransformableNode = Konva.Node & {
@@ -75,6 +75,30 @@ export const useCanvasTransform = ({ element, allElements, shapeRef, onChange }:
                     cols: newCols,
                     rows: newRows,
                 },
+            } as unknown as Partial<UnifiedNode>
+        } else if (element.t === 'signature') {
+            const signatureElement = element as SignatureNode
+            const scaleX = newWidth / (signatureElement.w || 1)
+            const scaleY = newHeight / (signatureElement.h || 1)
+
+            const scaledStrokes = signatureElement.strokes.map((stroke: number[]) => {
+                const scaled: number[] = []
+                for (let i = 0; i < stroke.length; i += 2) {
+                    const x = stroke[i] * scaleX
+                    const y = stroke[i + 1] * scaleY
+                    scaled.push(x, y)
+                }
+                return scaled
+            })
+
+            elementUpdate = {
+                id: element.id,
+                x: newX,
+                y: newY,
+                w: newWidth,
+                h: newHeight,
+                r: node.rotation(),
+                strokes: scaledStrokes,
             } as unknown as Partial<UnifiedNode>
         } else {
             elementUpdate = {

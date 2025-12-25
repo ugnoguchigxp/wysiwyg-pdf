@@ -15,6 +15,7 @@ vi.mock('react-konva', () => ({
     )
   },
   Layer: ({ children }: any) => <div data-testid="Layer">{children}</div>,
+  Rect: (props: any) => <div data-testid="Rect" data-props={JSON.stringify(props)} />,
 }))
 
 const rendererPropsById = new Map<string, any>()
@@ -116,7 +117,7 @@ describe('components/canvas/KonvaCanvasEditor', () => {
 
     // Update text and finish
     fireEvent.click(screen.getByRole('button', { name: 'update' }))
-    expect(onChange).toHaveBeenLastCalledWith('t1', expect.objectContaining({ text: 'updated' }))
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ id: 't1', text: 'updated' }))
     fireEvent.click(screen.getByRole('button', { name: 'finish' }))
   })
 
@@ -141,6 +142,7 @@ describe('components/canvas/KonvaCanvasEditor', () => {
         getStage: () => lastStageProps.__stage,
         name: () => 'paper-background',
       },
+      evt: { clientX: 0, clientY: 0, preventDefault: () => {} },
     }
     lastStageProps.__stage = stageTestEvent.target
     fireEvent.mouseDown(screen.getByTestId('Stage'))

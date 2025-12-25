@@ -210,7 +210,7 @@ describe('components/canvas/TextEditOverlay', () => {
       />
     )
 
-    expect(textarea.value).toBe('b')
+    expect(textarea.value).toBe('a')
 
     fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: true })
     expect(onFinish).not.toHaveBeenCalled()

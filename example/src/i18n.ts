@@ -87,6 +87,7 @@ const resources = {
       properties_start_arrow: '始点矢印',
       properties_stroke_color: '線の色',
       properties_stroke_width: '線の太さ',
+      properties_data_simplification: '抽象強度（データ圧縮）',
       properties_text_align: 'テキスト配置',
       properties_vertical_align: '縦揃え',
       properties_text_content: '内容',

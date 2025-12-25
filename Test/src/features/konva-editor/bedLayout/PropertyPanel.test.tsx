@@ -44,6 +44,16 @@ vi.mock(
   })
 )
 
+vi.mock('@/features/konva-editor/components/PropertyPanel/ColorInput', () => ({
+  ColorInput: ({ value, onChange }: any) => (
+    <input
+      aria-label="ColorInput"
+      value={value}
+      onChange={(e) => onChange((e.target as HTMLInputElement).value)}
+    />
+  ),
+}))
+
 import { PropertyPanel } from '@/features/bed-layout-editor/components/PropertyPanel/PropertyPanel'
 
 describe('bedLayout PropertyPanel', () => {
@@ -100,13 +110,21 @@ describe('bedLayout PropertyPanel', () => {
     const boldButton = container.querySelector('svg.lucide-bold')?.closest('button')
     expect(boldButton).toBeTruthy()
     fireEvent.click(boldButton as HTMLButtonElement)
-    expect(onChange).toHaveBeenCalledWith('t1', expect.objectContaining({ fontWeight: 700 }))
+    expect(onChange).toHaveBeenCalledWith(
+      't1',
+      expect.objectContaining({ fontWeight: 700 }),
+      undefined
+    )
 
     // Check for Size select in the parent div of 'Size' label
     const sizeLabel = screen.getByText(/properties_font_size/)
     const sizeSelect = sizeLabel.parentElement?.querySelector('select')
     fireEvent.change(sizeSelect!, { target: { value: '18' } })
-    expect(onChange).toHaveBeenCalledWith('t1', expect.objectContaining({ fontSize: ptToMm(18) }))
+    expect(onChange).toHaveBeenCalledWith(
+      't1',
+      expect.objectContaining({ fontSize: ptToMm(18) }),
+      undefined
+    )
   })
 
   it('renders image preview via asset resolver', async () => {
@@ -119,7 +137,7 @@ describe('bedLayout PropertyPanel', () => {
   it('updates line/shape/bed properties via controls', () => {
     const onChange = vi.fn()
 
-    render(
+    const lineRender = render(
       <PropertyPanel
         selectedElement={{ id: 'l1', t: 'line', stroke: '#000000', strokeW: 2, dash: [] } as any}
         onChange={onChange}
@@ -133,30 +151,32 @@ describe('bedLayout PropertyPanel', () => {
     if (buttons && buttons[2]) {
       fireEvent.click(buttons[2])
     }
-    expect(onChange).toHaveBeenCalledWith('l1', expect.objectContaining({ dash: [0.001, 2] }))
+    expect(onChange).toHaveBeenCalledWith(
+      'l1',
+      expect.objectContaining({ dash: [0.001, 2] }),
+      undefined
+    )
+
+    onChange.mockClear()
+    lineRender.unmount()
 
     // Use rerender or explicit render, but 'shape' might be 'rect' now.
     // Also use 'Color' if 'Fill Color' is not found, assuming Fill is the primary Color.
-    const { container: shapeContainer } = render(
+    render(
       <PropertyPanel
         selectedElement={{ id: 's1', t: 'shape', shape: 'rect', fill: '#ffffff', stroke: '#000000', strokeW: 1 } as any}
         onChange={onChange}
         onDelete={() => { }}
       />
     )
-    // Find color input. Try 'Fill' or 'Color'. If multiple, assumption is Fill might be distinguished. 
-    // If not found by label, grab all color inputs and try the first one (often Fill or primary).
-    const fillLabel = screen.queryByText('Fill') || screen.queryByText('Fill Color')
-    let colorInput = fillLabel?.parentElement?.querySelector('input[type="color"]')
-    if (!colorInput) {
-      // Fallback: use first color input in the container
-      colorInput = shapeContainer.querySelector('input[type="color"]')
-    }
-
-    if (colorInput) {
-      fireEvent.change(colorInput, { target: { value: '#ff0000' } })
-    }
-    expect(onChange).toHaveBeenCalledWith('s1', expect.objectContaining({ fill: '#ff0000' }))
+    const colorInputs = screen.getAllByLabelText('ColorInput') as HTMLInputElement[]
+    const fillInput = colorInputs.find((input) => input.value === '#ffffff') ?? colorInputs[0]
+    fireEvent.change(fillInput, { target: { value: '#ff0000' } })
+    expect(onChange).toHaveBeenCalledWith(
+      's1',
+      expect.objectContaining({ fill: '#ff0000' }),
+      undefined
+    )
 
     // Bed widget test removed due to missing property rendering in current config
     // render(

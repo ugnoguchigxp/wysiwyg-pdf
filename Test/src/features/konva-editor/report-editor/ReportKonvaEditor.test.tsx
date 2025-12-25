@@ -84,9 +84,10 @@ vi.mock('react-konva', async () => {
   return { Stage, Layer, Rect, Image }
 })
 
-import { ReportKonvaEditor } from '@/features/report-editor/ReportKonvaEditor'
-import type { Doc } from '@/types/canvas'
-import { ptToMm, pxToMm } from '@/utils/units'
+import { ReportKonvaEditor } from '../../../../../src/features/report-editor/ReportKonvaEditor'
+import type { Doc } from '../../../../../src/types/canvas'
+import { ptToMm, pxToMm } from '../../../../../src/utils/units'
+import { useCanvasTransform } from '../../../../../src/components/canvas/hooks/useCanvasTransform'
 
 beforeEach(() => {
   if (!globalThis.crypto || !('randomUUID' in globalThis.crypto)) {
@@ -222,5 +223,61 @@ describe('ReportKonvaEditor', () => {
     ref.current?.downloadImage()
     expect(stageState.toDataURL).toHaveBeenCalled()
     expect(clickSpy).toHaveBeenCalled()
+  })
+
+  it('scales signature strokes when transformer resizes the element', () => {
+    const shapeRef: React.MutableRefObject<any> = { current: null }
+    const node = {
+      width: () => 10,
+      height: () => 5,
+      scaleX: vi.fn((value?: number) => (value === undefined ? 2 : undefined)),
+      scaleY: vi.fn((value?: number) => (value === undefined ? 3 : undefined)),
+      x: () => 0,
+      y: () => 0,
+      rotation: () => 0,
+    }
+    shapeRef.current = node
+
+    const signatureElement: any = {
+      id: 'sig-1',
+      t: 'signature',
+      s: 'p1',
+      w: 10,
+      h: 5,
+      strokes: [[0, 0, 1, 1]],
+      x: 0,
+      y: 0,
+      stroke: '#000000',
+      strokeW: 0.2,
+    }
+
+    const onChange = vi.fn()
+
+    const TransformHarness = () => {
+      const { handleTransformEnd } = useCanvasTransform({
+        element: signatureElement,
+        shapeRef,
+        onChange,
+      })
+      React.useEffect(() => {
+        handleTransformEnd()
+      }, [handleTransformEnd])
+      return null
+    }
+
+    render(<TransformHarness />)
+
+    expect(onChange).toHaveBeenCalled()
+    const updates = onChange.mock.calls[0]?.[0]
+    expect(updates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'sig-1',
+          w: 20,
+          h: 15,
+          strokes: [[0, 0, 2, 3]],
+        }),
+      ])
+    )
   })
 })

@@ -213,6 +213,8 @@ export interface SignatureNode extends BaseNode {
   strokes: number[][] // Array of stroke paths: [[x1,y1,x2,y2,...], ...]
   stroke: Color // Stroke color
   strokeW: number // Stroke width
+  pressureData?: number[][] // Pressure data for each stroke (optional)
+  usePressureSim?: boolean // Use pressure simulation (default: true)
 }
 
 // ========================================

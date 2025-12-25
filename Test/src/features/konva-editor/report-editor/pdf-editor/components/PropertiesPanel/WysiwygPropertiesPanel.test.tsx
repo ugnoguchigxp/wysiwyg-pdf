@@ -6,6 +6,7 @@ import { ptToMm } from '@/utils/units'
 
 vi.mock('@/features/konva-editor/utils/textUtils', () => ({
   measureText: () => ({ width: 50, height: 10 }),
+  calculateTextDimensions: () => ({ w: 12, h: 8 }),
 }))
 
 vi.mock('@/features/konva-editor/utils/canvasImageUtils', () => ({

@@ -33,6 +33,16 @@ export const ReportEditor: React.FC<ReportEditorProps> = ({
     col: number
   } | null>(null)
 
+  const [drawingSettings, setDrawingSettings] = useState<{
+    stroke: string
+    strokeWidth: number
+    simplification?: number
+  }>({
+    stroke: '#000000',
+    strokeWidth: 0.2,
+    simplification: 0,
+  })
+
   // Focus ref for canvas
   const editorRef = useRef<React.ElementRef<typeof ReportKonvaEditor> | null>(null)
 
@@ -86,6 +96,7 @@ export const ReportEditor: React.FC<ReportEditorProps> = ({
           currentPageId={currentPageId}
           onSelectedCellChange={setSelectedCell}
           activeTool={activeTool}
+          drawingSettings={drawingSettings}
           showGrid={showGrid}
           snapStrength={snapStrength}
           gridSize={gridSize}
@@ -101,6 +112,10 @@ export const ReportEditor: React.FC<ReportEditorProps> = ({
           currentPageId={currentPageId}
           selectedCell={selectedCell}
           schema={schema}
+          activeTool={activeTool}
+          onToolSelect={handleToolSelect}
+          drawingSettings={drawingSettings}
+          onDrawingSettingsChange={setDrawingSettings}
         />
       </div>
     </div>

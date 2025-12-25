@@ -16,6 +16,7 @@ vi.mock('react-konva', () => ({
     </div>
   ),
   Layer: ({ children }: any) => <div data-testid="Layer">{children}</div>,
+  Rect: (props: any) => <div data-testid="Rect" data-props={JSON.stringify(props)} />,
 }))
 
 vi.mock('@/components/canvas/CanvasElementRenderer', () => ({

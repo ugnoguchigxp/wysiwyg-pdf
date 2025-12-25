@@ -74,7 +74,7 @@ describe('PrintLayout', () => {
     const { container: c1 } = render(
       <RenderSignature element={{ strokes: [[0, 0, 1, 1]], stroke: '#000', strokeW: 2 } as any} />
     )
-    expect(c1.querySelector('polyline')).toBeTruthy()
+    expect(c1.querySelector('path')).toBeTruthy()
 
     const { container: c2 } = render(<RenderShape element={{ w: 10, h: 10, shape: 'triangle' } as any} />)
     expect(c2.querySelector('polygon')).toBeTruthy()

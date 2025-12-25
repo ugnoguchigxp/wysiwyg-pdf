@@ -80,7 +80,7 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
     } | null>(null)
     const [showShortcuts, setShowShortcuts] = useState(false)
     const [activeTool, setActiveTool] = useState<string>('select')
-    const [drawingSettings, setDrawingSettings] = useState<{ stroke: string; strokeWidth: number; tolerance?: number }>({ stroke: '#000000', strokeWidth: 2, tolerance: 2.0 })
+    const [drawingSettings, setDrawingSettings] = useState<{ stroke: string; strokeWidth: number; tolerance?: number }>({ stroke: '#000000', strokeWidth: 0.2, tolerance: 2.0 })
 
     const [showGrid, setShowGrid] = useState(false)
     const [gridSize, setGridSize] = useState(15)

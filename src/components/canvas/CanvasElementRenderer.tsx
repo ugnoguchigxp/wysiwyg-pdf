@@ -1,8 +1,19 @@
 import type Konva from 'konva'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Circle, Ellipse, Group, Line, Path, Rect, Star, Text, Transformer } from 'react-konva'
+import {
+  Circle,
+  Ellipse,
+  Group,
+  Line,
+  Path,
+  Rect,
+  Star,
+  Text,
+  Transformer,
+} from 'react-konva'
 import { ptToMm } from '@/utils/units'
+import { createHandwritingPath } from '@/utils/handwriting'
 import { getAnchorPointAndDirection, getOrthogonalPath } from './utils/connectionRouting'
 import type {
   Anchor,
@@ -21,6 +32,37 @@ import { CanvasImage } from './CanvasImage'
 import { useCanvasDrag } from './hooks/useCanvasDrag'
 import { useCanvasTransform } from './hooks/useCanvasTransform'
 import type { CanvasElementCommonProps, CanvasElementRendererProps } from './types'
+
+const SignatureShape = ({ element }: { element: SignatureNode }) => {
+  const sig = element
+  const pathDataList = useMemo(
+    () =>
+      sig.strokes
+        .map((stroke, i) =>
+          createHandwritingPath(
+            stroke,
+            sig.strokeW,
+            sig.pressureData?.[i],
+            (sig.usePressureSim ?? true) || !(sig.pressureData?.[i]?.length ?? 0)
+          )
+        )
+        .filter(Boolean),
+    [sig.strokes, sig.strokeW, sig.pressureData, sig.usePressureSim]
+  )
+
+  return (
+    <>
+      {pathDataList.map((pathData, index) => (
+        <Path
+          key={index}
+          data={pathData}
+          fill={sig.stroke}
+          listening={false}
+        />
+      ))}
+    </>
+  )
+}
 
 export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
   element,
@@ -349,22 +391,24 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           return (
             <Group
               {...commonProps}
-            // Ensure we don't pass Text-specific props to Group if they conflict, but commonProps are mostly transform/events
+              // Ensure we don't pass Text-specific props to Group if they conflict, but commonProps are mostly transform/events
             >
               {/* Drop Indicator - Insertion Line */}
-              {dragState?.dropTargetId === element.id && dragState.canDrop && dragState.dropPosition !== 'child' && (
-                <Line
-                  points={
-                    dragState.dropPosition === 'before'
-                      ? [0, -4, element.w, -4] // Top
-                      : [0, element.h + 4, element.w, element.h + 4] // Bottom
-                  }
-                  stroke="hsl(217, 91%, 60%)"
-                  strokeWidth={4 * invScale}
-                  strokeCap="round"
-                  listening={false}
-                />
-              )}
+              {dragState?.dropTargetId === element.id &&
+                dragState.canDrop &&
+                dragState.dropPosition !== 'child' && (
+                  <Line
+                    points={
+                      dragState.dropPosition === 'before'
+                        ? [0, -4, element.w, -4] // Top
+                        : [0, element.h + 4, element.w, element.h + 4] // Bottom
+                    }
+                    stroke="hsl(217, 91%, 60%)"
+                    strokeWidth={4 * invScale}
+                    strokeCap="round"
+                    listening={false}
+                  />
+                )}
 
               <Rect
                 width={element.w}
@@ -1571,21 +1615,20 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
       }
 
       case 'signature': {
-        const sig = element as SignatureNode
+        const signature = element as SignatureNode
+        const hitStrokeWidth = Math.max(10, ((signature.strokeW ?? 0.2) * stageScale) / 0.2)
         return (
           <Group {...commonProps}>
-            {/* Transparent hit box */}
-            <Rect width={sig.w} height={sig.h} fill="transparent" />
-            {sig.strokes.map((stroke, i) => (
-              <Line
-                key={i}
-                points={stroke}
-                stroke={sig.stroke}
-                strokeWidth={sig.strokeW}
-                lineCap="round"
-                lineJoin="round"
-              />
-            ))}
+            <SignatureShape element={signature} />
+            <Rect
+              x={0}
+              y={0}
+              width={signature.w}
+              height={signature.h}
+              fill="transparent"
+              listening={true}
+              hitStrokeWidth={hitStrokeWidth}
+            />
           </Group>
         )
       }
@@ -1634,15 +1677,15 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           enabledAnchors={
             !element.locked
               ? [
-                'top-left',
-                'top-right',
-                'bottom-left',
-                'bottom-right',
-                'middle-left',
-                'middle-right',
-                'top-center',
-                'bottom-center',
-              ]
+                  'top-left',
+                  'top-right',
+                  'bottom-left',
+                  'bottom-right',
+                  'middle-left',
+                  'middle-right',
+                  'top-center',
+                  'bottom-center',
+                ]
               : []
           }
           boundBoxFunc={(oldBox, newBox) => {

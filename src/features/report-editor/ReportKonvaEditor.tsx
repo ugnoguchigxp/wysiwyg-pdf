@@ -15,8 +15,8 @@ import { useKeyboardShortcuts } from '@/components/canvas/hooks/useKeyboardShort
 import { TextEditOverlay } from '@/components/canvas/TextEditOverlay'
 import { PEN_CURSOR_URL } from '@/features/konva-editor/cursors'
 import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
-import type { Doc, SignatureNode, Surface, TableNode, TextNode, UnifiedNode } from '@/types/canvas' // Direct import
 import { simplifyPoints } from '@/utils/geometry'
+import type { Doc, SignatureNode, Surface, TableNode, TextNode, UnifiedNode } from '@/types/canvas' // Direct import
 import { createContextLogger } from '@/utils/logger'
 import { mmToPx, ptToMm } from '@/utils/units'
 import { useTextDimensions } from '@/features/konva-editor/hooks/useTextDimensions'
@@ -43,7 +43,7 @@ interface ReportKonvaEditorProps {
   orientation?: 'portrait' | 'landscape'
   onSelectedCellChange?: (cell: { elementId: string; row: number; col: number } | null) => void
   activeTool?: string
-  drawingSettings?: { stroke: string; strokeWidth: number; tolerance?: number }
+  drawingSettings?: { stroke: string; strokeWidth: number; simplification?: number }
   showGrid?: boolean
   snapStrength?: number
   gridSize?: number
@@ -160,7 +160,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       // orientation = 'portrait', // unused
       onSelectedCellChange,
       activeTool,
-      drawingSettings = { stroke: '#000000', strokeWidth: 2, tolerance: 2.0 },
+      drawingSettings = { stroke: '#000000', strokeWidth: 0.2, simplification: 0 },
       showGrid = false,
       snapStrength = 0,
       gridSize = 50,
@@ -205,6 +205,8 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
     const [isDrawing, setIsDrawing] = useState(false)
     const [currentStrokes, setCurrentStrokes] = useState<number[][]>([])
     const [currentPoints, setCurrentPoints] = useState<number[]>([])
+    const [currentPressure, setCurrentPressure] = useState<number[]>([])
+    const [allPressureData, setAllPressureData] = useState<number[][]>([])
 
     // const [contextMenu, setContextMenu] = useState<any>(null)
 
@@ -314,16 +316,20 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
 
     const handleElementChange = useCallback(
       (
-        updates: (Partial<UnifiedNode> & { id?: string }) | (Partial<UnifiedNode> & { id?: string })[],
+        updates:
+          | (Partial<UnifiedNode> & { id?: string })
+          | (Partial<UnifiedNode> & { id?: string })[],
         options?: { saveToHistory?: boolean; force?: boolean }
       ) => {
         const updateList = Array.isArray(updates) ? updates : [updates]
 
         // Optimize: Create a map of updates by ID for O(1) lookup
-        const updateMap = new Map(updateList.map(u => {
-          const id = u.id || selectedElementId
-          return [id, u]
-        }))
+        const updateMap = new Map(
+          updateList.map((u) => {
+            const id = u.id || selectedElementId
+            return [id, u]
+          })
+        )
 
         // Iterate once over all nodes
         const nextNodes = templateDoc.nodes.map((el) => {
@@ -360,7 +366,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
           family: textNode.font,
           size: textNode.fontSize,
           weight: textNode.fontWeight,
-          padding: textNode.padding
+          padding: textNode.padding,
         })
 
         // Note: fontSize in textNode is usually in 'pt' or 'px'?
@@ -409,7 +415,6 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
     const handleContextMenu = (e: Konva.KonvaEventObject<PointerEvent>, element: UnifiedNode) => {
       e.evt.preventDefault()
 
-
       if (element.t !== 'table') return
 
       // Prefer parsing the actual clicked cell from target id.
@@ -453,7 +458,6 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       })
     }
 
-
     const applyTableUpdate = useCallback(
       (elementId: string, updater: (t: TableNode) => TableNode) => {
         const nextNodes = templateDoc.nodes.map((n) => {
@@ -480,7 +484,6 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       ) => {
         if (!contextMenu) return
         const { elementId, row, col, type } = contextMenu
-
 
         if (type !== 'table' || row === undefined || col === undefined) return
         // proceed with table logic...
@@ -874,13 +877,32 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       return { x: minX, y: minY, w: maxX - minX, h: maxY - minY }
     }, [])
 
+    const previewStrokes = useMemo(() => {
+      return currentStrokes.map((s) => {
+        const tol = drawingSettings.simplification ?? 0
+        if (s.length > 4 && tol > 0) {
+          return simplifyPoints(s, tol)
+        }
+        if (s.length === 2) return [...s, ...s]
+        return s
+      })
+    }, [currentStrokes, drawingSettings.simplification])
+
     const commitSignature = useCallback((): Doc | null => {
       if (currentStrokes.length === 0) return null
 
+      // Use the already calculated previewStrokes or recalculate if needed (but here we are committing)
+      // Actually we can just re-use logic or use the memoized if valid.
+      // But commitSignature is a callback, it might rely on latest state.
+      // Let's keep commitSignature logic independent to be safe, but consistent.
+      
       const simplifiedStrokes = currentStrokes.map((stroke) => {
-        const simplified = simplifyPoints(stroke, drawingSettings.tolerance ?? 2.5)
-        if (simplified.length === 2) return [...simplified, ...simplified]
-        return simplified
+        const tol = drawingSettings.simplification ?? 0
+        if (stroke.length > 4 && tol > 0) {
+          return simplifyPoints(stroke, tol)
+        }
+        if (stroke.length === 2) return [...stroke, ...stroke]
+        return stroke
       })
 
       const box = getStrokesBox(simplifiedStrokes)
@@ -888,15 +910,14 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       const normalizedStrokes = simplifiedStrokes.map((stroke) => {
         const newStroke: number[] = []
         for (let i = 0; i < stroke.length; i += 2) {
-          let x = stroke[i] - box.x
-          let y = stroke[i + 1] - box.y
-          x = Math.round(x * 1000) / 1000
-          y = Math.round(y * 1000) / 1000
-          newStroke.push(x, y)
+          const x = stroke[i] - box.x
+          const y = stroke[i + 1] - box.y
+          newStroke.push(Math.round(x * 100) / 100, Math.round(y * 100) / 100)
         }
         return newStroke
       })
 
+      const hasPressureData = allPressureData.some((pressure) => pressure.length > 0)
       const element: SignatureNode = {
         id: `sig-${crypto.randomUUID()}`,
         t: 'signature',
@@ -909,6 +930,8 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
         strokes: normalizedStrokes,
         stroke: drawingSettings.stroke,
         strokeW: drawingSettings.strokeWidth,
+        pressureData: hasPressureData ? allPressureData : undefined,
+        usePressureSim: !hasPressureData,
         r: 0,
         locked: false,
         hidden: false,
@@ -922,6 +945,8 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
 
       setCurrentStrokes([])
       setCurrentPoints([])
+      setCurrentPressure([])
+      setAllPressureData([])
       setIsDrawing(false)
       onElementSelect(element)
 
@@ -935,7 +960,8 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       onElementSelect,
       drawingSettings.stroke,
       drawingSettings.strokeWidth,
-      drawingSettings.tolerance,
+      drawingSettings.simplification,
+      allPressureData,
     ])
 
     useEffect(() => {
@@ -945,10 +971,16 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
     }, [activeTool, commitSignature, currentStrokes.length])
 
     const handleStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
-      // Signature Drawing
-      if (activeTool === 'signature') {
+      const stage = e.target.getStage()
+      const interestedInBackground =
+        e.target === stage || e.target.name() === '_background'
+
+      if (activeTool === 'signature' && interestedInBackground) {
         setIsDrawing(true)
-        const stage = e.target.getStage()
+        const nativeEvent = e.evt as PointerEvent | undefined
+        const pressure =
+          nativeEvent && 'pressure' in nativeEvent ? nativeEvent.pressure : undefined
+        const isPressureDevice = typeof pressure === 'number' && pressure !== 0.5 && pressure !== 0
         const point = stage?.getPointerPosition()
         if (point) {
           const transform = stage?.getAbsoluteTransform().copy()
@@ -956,13 +988,15 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
           const pos = transform?.point(point)
           if (pos) {
             setCurrentPoints([pos.x, pos.y])
+            if (isPressureDevice && typeof pressure === 'number') {
+              setCurrentPressure([pressure])
+            }
           }
         }
         return
       }
 
-      // Deselect
-      if (e.target === e.target.getStage() || e.target.name() === '_background') {
+      if (interestedInBackground) {
         handleElementSelect(null)
         setSelectedCell(null)
         setEditingCell(null)
@@ -973,6 +1007,10 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       // Signature Drawing
       if (activeTool === 'signature' && isDrawing) {
         const stage = e.target.getStage()
+        const nativeEvent = e.evt as PointerEvent | undefined
+        const pressure =
+          nativeEvent && 'pressure' in nativeEvent ? nativeEvent.pressure : undefined
+        const isPressureDevice = typeof pressure === 'number' && pressure !== 0.5 && pressure !== 0
         const point = stage?.getPointerPosition()
         if (point) {
           const transform = stage?.getAbsoluteTransform().copy()
@@ -980,6 +1018,9 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
           const pos = transform?.point(point)
           if (pos) {
             setCurrentPoints((prev) => [...prev, pos.x, pos.y])
+            if (isPressureDevice) {
+              setCurrentPressure((prev) => [...prev, pressure])
+            }
           }
         }
       }
@@ -991,6 +1032,11 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
         if (currentPoints.length > 0) {
           setCurrentStrokes((prev) => [...prev, currentPoints])
           setCurrentPoints([])
+          setAllPressureData((prev) => [
+            ...prev,
+            currentPressure.length > 0 ? currentPressure : [],
+          ])
+          setCurrentPressure([])
         }
       }
     }
@@ -1045,13 +1091,18 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
           const newId = crypto.randomUUID()
           const newEl = { ...el, id: newId, s: currentSurface.id }
 
-          if ('x' in newEl && 'y' in newEl && typeof newEl.x === 'number' && typeof newEl.y === 'number') {
+          if (
+            'x' in newEl &&
+            'y' in newEl &&
+            typeof newEl.x === 'number' &&
+            typeof newEl.y === 'number'
+          ) {
             newEl.x += offset
             newEl.y += offset
           }
           // Ensure unique cell IDs for table if copied
           if (newEl.t === 'table' && 'table' in newEl) {
-            // Deep copy could be needed if table structure has IDs? 
+            // Deep copy could be needed if table structure has IDs?
             // Currently table cells don't have unique IDs in this model, just r/c.
           }
           newNodes.push(newEl)
@@ -1211,7 +1262,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
               visible={showGrid}
               gridSize={gridSize}
             />
-            <Layer name="content-layer" listening={activeTool !== 'signature'}>
+            <Layer name="content-layer" listening={activeTool !== 'signature' || !isDrawing}>
               {nodes.map((element) => (
                 <CanvasElementRenderer
                   key={element.id}
@@ -1254,17 +1305,24 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
                       w: 0,
                       h: 0,
                       strokes: [
-                        ...currentStrokes,
+                        ...previewStrokes,
                         ...(currentPoints.length > 0 ? [currentPoints] : []),
                       ].map((s) => (s.length === 2 ? [...s, ...s] : s)),
                       stroke: drawingSettings.stroke,
                       strokeW: drawingSettings.strokeWidth,
+                      pressureData: [
+                        ...allPressureData,
+                        ...(currentPoints.length > 0 ? [currentPressure] : []),
+                      ],
+                      usePressureSim: ![...allPressureData, currentPressure].some(
+                        (pressure) => pressure.length > 0
+                      ),
                     } as SignatureNode
                   }
                   isSelected={false}
                   stageScale={displayScale}
-                  onSelect={() => { }}
-                  onChange={() => { }}
+                  onSelect={() => {}}
+                  onChange={() => {}}
                 />
               )}
             </Layer>
@@ -1287,7 +1345,6 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
             onClose={() => setContextMenu(null)}
             onAction={handleContextMenuAction}
           />
-
 
           {editingCell && selectedCellBox && selectedTable && (
             <textarea

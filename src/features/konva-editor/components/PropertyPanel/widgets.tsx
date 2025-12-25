@@ -541,14 +541,16 @@ export const ColorPickerWidget: React.FC<WidgetProps<ColorPickerWidgetConfig>> =
       <ColorInput
         value={value}
         onChange={(newColor) => {
-          const updates: Partial<UnifiedNode> = { [fieldKey]: newColor } as unknown as Partial<UnifiedNode>
+          const updates: Partial<UnifiedNode> = {
+            [fieldKey]: newColor,
+          } as unknown as Partial<UnifiedNode>
           if (fieldKey === 'borderColor') {
             const currentWidth = (node as unknown as Record<string, number>)['borderWidth']
             if (!currentWidth || currentWidth === 0) {
-              (updates as unknown as Record<string, number>)['borderWidth'] = 0.1
+              ;(updates as unknown as Record<string, number>)['borderWidth'] = 0.1
             }
           }
-          onChange(updates, options)
+          onChange(updates, undefined)
         }}
       />
     </div>
@@ -1102,7 +1104,10 @@ export const CheckboxWidget: React.FC<WidgetProps<CheckboxWidgetConfig>> = ({
           onChange={(e) => handleChange(e.target.checked)}
           className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
         />
-        <label htmlFor={`checkbox-${fieldKey}`} className="text-xs text-muted-foreground cursor-pointer select-none">
+        <label
+          htmlFor={`checkbox-${fieldKey}`}
+          className="text-xs text-muted-foreground cursor-pointer select-none"
+        >
           {resolveText(config.labelKey ?? fieldKey, fieldKey)}
         </label>
       </div>

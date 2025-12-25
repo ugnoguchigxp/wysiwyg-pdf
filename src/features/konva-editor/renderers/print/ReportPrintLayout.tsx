@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import '@/features/konva-editor/styles/print.css'
 import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
 import { mmToPt, ptToMm } from '@/utils/units'
+import { createHandwritingPath } from '@/utils/handwriting'
 import type {
   Doc,
   ImageNode,
@@ -19,6 +20,18 @@ const mmPt = (mm: number | undefined) => `${mmToPtValue(mm)}pt`
 
 export const RenderSignature = ({ element }: { element: SignatureNode }) => {
   const { strokes, stroke, strokeW } = element
+
+  const pathDataList = useMemo(() => {
+    return strokes.map((strokePoints, i) =>
+      createHandwritingPath(
+        strokePoints.map((value) => mmToPt(value)),
+        mmToPtValue(strokeW),
+        element.pressureData?.[i],
+        (element.usePressureSim ?? true) || !(element.pressureData?.[i]?.length ?? 0)
+      )
+    )
+  }, [strokes, strokeW, element.pressureData, element.usePressureSim])
+
   return (
     <svg
       width="100%"
@@ -26,23 +39,9 @@ export const RenderSignature = ({ element }: { element: SignatureNode }) => {
       viewBox={`0 0 ${mmToPtValue(element.w)} ${mmToPtValue(element.h)}`}
       style={{ overflow: 'visible' }}
     >
-      {strokes.map((points, i) => {
-        const ptPoints: string[] = []
-        for (let j = 0; j < points.length; j += 2) {
-          ptPoints.push(`${mmToPt(points[j])},${mmToPt(points[j + 1])}`)
-        }
-        return (
-          <polyline
-            key={i}
-            points={ptPoints.join(' ')}
-            fill="none"
-            stroke={stroke || '#000'}
-            strokeWidth={mmToPtValue(strokeW || 2)}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        )
-      })}
+      {pathDataList.map(
+        (pathData, i) => pathData && <path key={i} d={pathData} fill={stroke || '#000'} />
+      )}
     </svg>
   )
 }

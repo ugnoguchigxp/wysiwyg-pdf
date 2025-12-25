@@ -9,6 +9,7 @@ import { PEN_CURSOR_URL } from '../cursors'
 interface SignatureKonvaEditorProps {
   width?: number
   height?: number
+  simplification?: number
   onSave?: (dataUrl: string) => void
   onCancel?: () => void
 }
@@ -22,16 +23,17 @@ interface SignatureLine {
 export const SignatureKonvaEditor: React.FC<SignatureKonvaEditorProps> = ({
   width = 600,
   height = 300,
+  simplification = 0,
   onSave,
   onCancel,
 }) => {
   const { t } = useI18n()
   const [lines, setLines] = useState<SignatureLine[]>([])
-  const isDrawing = useRef(false)
+  const [isDrawing, setIsDrawing] = useState(false)
   const stageRef = useRef<Konva.Stage>(null)
 
   const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
-    isDrawing.current = true
+    setIsDrawing(true)
     const pos = e.target.getStage()?.getPointerPosition()
     if (!pos) return
 
@@ -40,7 +42,7 @@ export const SignatureKonvaEditor: React.FC<SignatureKonvaEditorProps> = ({
 
   const handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
     // no drawing - skipping
-    if (!isDrawing.current) {
+    if (!isDrawing) {
       return
     }
     const stage = e.target.getStage()
@@ -59,7 +61,7 @@ export const SignatureKonvaEditor: React.FC<SignatureKonvaEditorProps> = ({
   }
 
   const handleMouseUp = () => {
-    isDrawing.current = false
+    setIsDrawing(false)
   }
 
   const handleSave = () => {
@@ -69,11 +71,11 @@ export const SignatureKonvaEditor: React.FC<SignatureKonvaEditorProps> = ({
 
       // Apply optimization logic (DRY principle with ReportKonvaEditor)
       const optimizedLines = lines.map((line) => {
-        // 1. Simplify points with tolerance 2.0
-        const simplified = simplifyPoints(line.points, 2.0)
-
-        // 2. Round to 3 decimal places
-        const rounded = simplified.map((val) => Math.round(val * 1000) / 1000)
+        let points = line.points
+        if (simplification && simplification > 0) {
+          points = simplifyPoints(line.points, simplification)
+        }
+        const rounded = points.map((val) => Math.round(val * 100) / 100)
 
         return {
           ...line,
@@ -124,18 +126,30 @@ export const SignatureKonvaEditor: React.FC<SignatureKonvaEditorProps> = ({
           ref={stageRef}
         >
           <Layer>
-            {lines.map((line, i) => (
-              <Line
-                key={i}
-                points={line.points}
-                stroke={line.color}
-                strokeWidth={line.strokeWidth}
-                tension={0.5}
-                lineCap="round"
-                lineJoin="round"
-                globalCompositeOperation={'source-over'}
-              />
-            ))}
+            {lines.map((line, i) => {
+              let points = line.points
+              // Apply simplification if simplification > 0
+              // Skip simplification for the LAST line IF we are currently drawing (isDrawing=true)
+              // to avoid jitter while drawing.
+              const isLastLine = i === lines.length - 1
+              const shouldSimplify = simplification && simplification > 0 && points.length > 4 && (!isLastLine || !isDrawing)
+
+              if (shouldSimplify) {
+                points = simplifyPoints(points, simplification!)
+              }
+              return (
+                <Line
+                  key={i}
+                  points={points}
+                  stroke={line.color}
+                  strokeWidth={line.strokeWidth}
+                  tension={0.5}
+                  lineCap="round"
+                  lineJoin="round"
+                  globalCompositeOperation={'source-over'}
+                />
+              )
+            })}
           </Layer>
         </Stage>
       </div>
