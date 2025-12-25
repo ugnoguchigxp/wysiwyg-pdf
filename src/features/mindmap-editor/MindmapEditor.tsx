@@ -370,7 +370,7 @@ export const MindmapEditor: React.FC = () => {
             if (updateMap.has(node.id)) {
               const update = updateMap.get(node.id)!
               const { id, ...rest } = update
-              return { ...node, ...rest }
+              return { ...node, ...rest } as typeof node
             }
             return node
           })
