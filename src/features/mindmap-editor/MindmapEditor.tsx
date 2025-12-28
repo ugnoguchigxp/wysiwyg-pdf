@@ -69,7 +69,11 @@ const initialDragState: DragState = {
   canDrop: false,
 }
 
-export const MindmapEditor: React.FC = () => {
+interface MindmapEditorProps {
+  readOnly?: boolean
+}
+
+export const MindmapEditor: React.FC<MindmapEditorProps> = ({ readOnly = false }) => {
   const canvasRef = useRef<KonvaCanvasEditorHandle>(null)
   const { doc, setDoc, undo, redo } = useMindmapHistory(INITIAL_DOC)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
@@ -437,28 +441,31 @@ export const MindmapEditor: React.FC = () => {
           <Button
             variant="circle-help"
             size="circle"
-            onClick={() => setShowShortcuts(true)}
             title="ショートカット"
           >
             ?
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExpandAll}>
-            <ChevronsDown className="h-4 w-4 mr-1" />
-            全て展開
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleCollapseAll}>
-            <ChevronsUp className="h-4 w-4 mr-1" />
-            全て折りたたみ
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowMermaidExport(true)}>
-            <Download className="h-4 w-4 mr-1" />
-            {t('export_mermaid', 'エクスポート')}
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowMermaidImport(true)}>
-            <Upload className="h-4 w-4 mr-1" />
-            {t('import_mermaid', 'インポート')}
-          </Button>
-          <div className="h-6 w-px bg-border" />
+          {!readOnly && (
+            <>
+              <Button variant="outline" size="sm" onClick={handleExpandAll}>
+                <ChevronsDown className="h-4 w-4 mr-1" />
+                全て展開
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleCollapseAll}>
+                <ChevronsUp className="h-4 w-4 mr-1" />
+                全て折りたたみ
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setShowMermaidExport(true)}>
+                <Download className="h-4 w-4 mr-1" />
+                {t('export_mermaid', 'エクスポート')}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setShowMermaidImport(true)}>
+                <Upload className="h-4 w-4 mr-1" />
+                {t('import_mermaid', 'インポート')}
+              </Button>
+              <div className="h-6 w-px bg-border" />
+            </>
+          )}
           <Button variant="outline" size="sm" onClick={handleDownloadImage}>
             <ImageIcon className="h-4 w-4 mr-1" />
             {t('download_image', 'Image')}
@@ -480,7 +487,7 @@ export const MindmapEditor: React.FC = () => {
             zoom={1}
             paperWidth={600}
             paperHeight={400}
-            readOnly={false}
+            readOnly={readOnly}
             initialScrollCenter={{ x: 300, y: 200 }}
             onToggleCollapse={handleToggleCollapse}
             onDragStart={handleDragStart}

@@ -44,6 +44,7 @@ const createText = (
     vAlign: 't',
     fill: '#333333',
     fontWeight,
+    isPlaceholder: true, // Mark as placeholder
 })
 
 // Helper to create placeholder shape (for images)
@@ -65,6 +66,7 @@ const createPlaceholder = (
     fill: '#f0f0f0',
     stroke: '#cccccc',
     strokeW: 1,
+    isPlaceholder: true, // Mark as placeholder
 })
 
 // Icons

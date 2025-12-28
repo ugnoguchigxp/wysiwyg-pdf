@@ -48,6 +48,7 @@ export interface Surface {
   // Page specific details
   margin?: Margin // For 'page' type
   bg?: string // Color hex or image URL (data:image/...)
+  masterId?: string // 参照するマスタースライドID (undefinedならマスター)
 }
 
 export interface Margin {
@@ -97,6 +98,9 @@ export interface BaseNode {
   // Metadata
   name?: string
   data?: Record<string, unknown> // Flexible data for specific features handling
+
+  // Slide Master
+  isPlaceholder?: boolean // If true, this node is a placeholder on the master
 }
 
 export interface TextNode extends BaseNode {
@@ -129,6 +133,9 @@ export interface TextNode extends BaseNode {
   // Border (for connector/label use cases)
   stroke?: Color
   strokeW?: number
+
+  // Dynamic Content (for Slide Master)
+  dynamicContent?: 'slide-number' | string
 }
 
 export interface ShapeNode extends BaseNode {

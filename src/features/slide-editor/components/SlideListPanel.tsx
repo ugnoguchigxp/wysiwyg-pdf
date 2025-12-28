@@ -21,6 +21,7 @@ interface SlideListPanelProps {
     onChange: (doc: Doc) => void
     thumbnails?: Record<string, string>
     onAddSlide: (layoutId: string) => void
+    isMasterEditMode?: boolean
 }
 
 export const SlideListPanel: React.FC<SlideListPanelProps> = ({
@@ -30,8 +31,18 @@ export const SlideListPanel: React.FC<SlideListPanelProps> = ({
     onChange,
     thumbnails = {},
     onAddSlide,
+    isMasterEditMode = false,
 }) => {
-    const surfaces = useMemo(() => doc.surfaces.filter(s => s.type === 'slide'), [doc.surfaces])
+    const surfaces = useMemo(() => {
+        if (isMasterEditMode) {
+            // Show Masters
+            // Exclude 'master-blank' if we don't want users editing the "empty" concept?
+            // Or maybe show it. For now show all masters.
+            return doc.surfaces.filter(s => s.masterId === undefined && s.id !== 'master-blank')
+        }
+        // Show Slides
+        return doc.surfaces.filter(s => s.masterId !== undefined)
+    }, [doc.surfaces, isMasterEditMode])
 
     // Simple HTML5 Drag & Drop
     const [draggedSlideId, setDraggedSlideId] = React.useState<string | null>(null)
@@ -131,7 +142,9 @@ export const SlideListPanel: React.FC<SlideListPanelProps> = ({
     return (
         <div className="flex flex-col w-full h-full bg-muted/30 border-r border-border overflow-hidden">
             <div className="p-2 border-b border-border bg-background/50">
-                <span className="text-xs font-semibold text-muted-foreground uppercase">Slides</span>
+                <span className="text-xs font-semibold text-muted-foreground uppercase">
+                    {isMasterEditMode ? 'Slide Layouts' : 'Slides'}
+                </span>
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-4">
                 {surfaces.map((slide, index) => {
@@ -152,6 +165,8 @@ export const SlideListPanel: React.FC<SlideListPanelProps> = ({
                             onAddSlide={onAddSlide}
                             surfacesCount={surfaces.length}
                             thumbnailUrl={thumbnails[slide.id]}
+                            doc={doc}
+                            isMasterEditMode={isMasterEditMode}
                         />
                     )
                 })}
@@ -160,7 +175,12 @@ export const SlideListPanel: React.FC<SlideListPanelProps> = ({
     )
 }
 
-// Sub-component for individual thumbnail to handle sizing independently
+// Import SlidePreview
+import { SlidePreview } from './SlidePreview'
+
+// ... existing imports
+
+// Update SlideThumbnailProps
 interface SlideThumbnailProps {
     slide: any // UnifiedNode/Surface
     isSelected: boolean
@@ -175,7 +195,8 @@ interface SlideThumbnailProps {
     onAddSlide: (layoutId: string) => void
     surfacesCount: number
     thumbnailUrl?: string
-    doc?: Doc // Optional now
+    doc: Doc
+    isMasterEditMode: boolean
 }
 
 const SlideThumbnail: React.FC<SlideThumbnailProps> = ({
@@ -191,8 +212,32 @@ const SlideThumbnail: React.FC<SlideThumbnailProps> = ({
     onDelete,
     onAddSlide,
     surfacesCount,
-    thumbnailUrl
+    thumbnailUrl,
+    doc,
+    isMasterEditMode
 }) => {
+    const containerRef = React.useRef<HTMLDivElement>(null)
+    const [dimensions, setDimensions] = React.useState({ width: 0, height: 0 })
+
+    React.useEffect(() => {
+        if (!containerRef.current) return
+        const updateDims = () => {
+            if (containerRef.current) {
+                const { clientWidth, clientHeight } = containerRef.current
+                setDimensions({ width: clientWidth, height: clientHeight })
+            }
+        }
+
+        // Initial
+        updateDims()
+
+        // Resize Observer
+        const ro = new ResizeObserver(updateDims)
+        ro.observe(containerRef.current)
+
+        return () => ro.disconnect()
+    }, [])
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
             e.preventDefault()
@@ -205,6 +250,12 @@ const SlideThumbnail: React.FC<SlideThumbnailProps> = ({
             onDelete(e, slide.id)
         }
     }
+
+    // Get nodes for preview (only if needed)
+    const previewNodes = React.useMemo(() => {
+        if (!isMasterEditMode) return []
+        return doc.nodes.filter(n => n.s === slide.id)
+    }, [doc.nodes, slide.id, isMasterEditMode])
 
     return (
         <div
@@ -224,17 +275,29 @@ const SlideThumbnail: React.FC<SlideThumbnailProps> = ({
             )}
         >
             <div
+                ref={containerRef}
                 className="relative w-full shadow-sm overflow-hidden rounded-sm ring-1 ring-border/20 pointer-events-none select-none flex items-center justify-center bg-white"
                 style={{ aspectRatio: `${slide.w || 297}/${slide.h || 210}` }}
             >
-                {thumbnailUrl ? (
-                    <img
-                        src={thumbnailUrl}
-                        alt={`Slide ${index + 1}`}
-                        className="w-full h-full object-contain"
-                    />
+                {isMasterEditMode ? (
+                    dimensions.width > 0 && (
+                        <SlidePreview
+                            width={dimensions.width}
+                            height={dimensions.height}
+                            surface={slide}
+                            nodes={previewNodes}
+                        />
+                    )
                 ) : (
-                    <div className="text-xs text-muted-foreground">...</div>
+                    thumbnailUrl ? (
+                        <img
+                            src={thumbnailUrl}
+                            alt={`Slide ${index + 1}`}
+                            className="w-full h-full object-contain"
+                        />
+                    ) : (
+                        <div className="text-xs text-muted-foreground">...</div>
+                    )
                 )}
 
                 {/* Floating Number */}

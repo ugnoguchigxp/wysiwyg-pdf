@@ -8,10 +8,14 @@ import {
     Download,
     Undo2,
     Redo2,
-    ZoomIn,
+    ZoomIn, // Re-added
     ZoomOut,
     LayoutTemplate,
+    Layers,
+    Save, // Added
+    Palette, // For Templates
 } from 'lucide-react'
+import { SLIDE_TEMPLATES } from '../constants/templates'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -42,6 +46,10 @@ interface TopToolbarProps {
     activeTool: string
     onToolSelect: (tool: string) => void
     onAddSlide: (layout: LayoutType) => void
+    isMasterEditMode: boolean
+    onToggleMasterEdit: () => void
+    onSaveMaster?: () => void
+    onSelectTemplate?: (templateId: string) => void
 }
 
 export const TopToolbar: React.FC<TopToolbarProps> = ({
@@ -60,6 +68,11 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
     activeTool: _activeTool, // Reserved but unused
     onToolSelect,
     onAddSlide,
+    // Removed duplicate onAddSlide
+    isMasterEditMode,
+    onToggleMasterEdit,
+    onSaveMaster,
+    onSelectTemplate,
 }) => {
     const [pptxEnabled, setPptxEnabled] = useState(false)
 
@@ -148,6 +161,19 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
 
             <div className="h-6 w-px bg-border" />
 
+            {/* Master Edit Toggle */}
+            <Button
+                variant={isMasterEditMode ? "secondary" : "ghost"}
+                size="sm"
+                onClick={onToggleMasterEdit}
+                className={isMasterEditMode ? "bg-accent text-accent-foreground border-accent" : ""}
+            >
+                <Layers className="h-4 w-4 mr-2" />
+                {isMasterEditMode ? 'マスター編集中' : 'マスター編集'}
+            </Button>
+
+            <div className="h-6 w-px bg-border" />
+
             {/* Zoom */}
             <div className="flex items-center gap-1">
                 <Button variant="ghost" size="icon" onClick={() => onZoomChange(zoom - 10)}>
@@ -174,18 +200,46 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
             <div className="h-6 w-px bg-border" />
 
             {/* Play & Export */}
-            <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={onPlay}>
-                    <Play className="h-4 w-4 mr-1 map-fill" fill="currentColor" />
-                    Play
-                </Button>
-                {pptxEnabled && (
-                    <Button variant="outline" size="sm" onClick={onExport}>
-                        <Download className="h-4 w-4 mr-1" />
-                        Export PPTX
+            {/* Play/Export vs Master Controls */}
+            {isMasterEditMode ? (
+                <div className="flex items-center gap-2">
+                    {/* Template Selector */}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm" className="gap-2">
+                                <Palette className="h-4 w-4" />
+                                テンプレート切替
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            {SLIDE_TEMPLATES.map(t => (
+                                <DropdownMenuItem key={t.id} onClick={() => onSelectTemplate?.(t.id)}>
+                                    {t.name}
+                                </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    {/* Save Master */}
+                    <Button variant="default" size="sm" onClick={onSaveMaster}>
+                        <Save className="h-4 w-4 mr-2" />
+                        マスター保存
                     </Button>
-                )}
-            </div>
+                </div>
+            ) : (
+                <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="sm" onClick={onPlay}>
+                        <Play className="h-4 w-4 mr-1 map-fill" fill="currentColor" />
+                        Play
+                    </Button>
+                    {pptxEnabled && (
+                        <Button variant="outline" size="sm" onClick={onExport}>
+                            <Download className="h-4 w-4 mr-1" />
+                            Export PPTX
+                        </Button>
+                    )}
+                </div>
+            )}
         </div>
     )
 }
