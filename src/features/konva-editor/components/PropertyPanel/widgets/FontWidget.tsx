@@ -11,7 +11,7 @@ import {
   DEFAULT_FONT_SIZES,
 } from '@/features/konva-editor/constants/propertyPanelConfig'
 import type { TextNode } from '@/types/canvas'
-import { mmToPt, ptToMm } from '@/utils/units'
+import { mmToPt, ptToMm, roundTo } from '@/utils/units'
 import { cn } from '@/utils/utils'
 import { ColorInput } from '../ColorInput'
 import { GridContainer, WidgetLabel, WidgetSelect } from '../shared'
@@ -61,7 +61,7 @@ export const FontWidget: React.FC<WidgetProps<FontWidgetConfig>> = ({
           <div>
             <WidgetLabel>{resolveText('properties_font_size', 'Size')}(pt)</WidgetLabel>
             <WidgetSelect
-              value={String(mmToPt(textNode.fontSize ?? ptToMm(12)))}
+              value={String(roundTo(mmToPt(textNode.fontSize ?? ptToMm(12)), 1))}
               onChange={(e) =>
                 onChange({ fontSize: ptToMm(Number(e.target.value)) } as Partial<TextNode>)
               }

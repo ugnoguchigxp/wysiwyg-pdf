@@ -260,14 +260,18 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                             zoom={zoom / 100}
                             selection={selectedElementId ? [selectedElementId] : []}
                             onSelect={(ids) => setSelectedElementId(ids[0] || null)}
-                            onChangeElement={(id, newAttrs) => {
-                                const element = bedDoc.nodes.find((n: Doc['nodes'][number]) => n.id === id)
-                                if (!element) return
-                                executeBedOp({
-                                    kind: 'update-element',
-                                    id,
-                                    prev: element,
-                                    next: newAttrs,
+                            onChangeElement={(updates) => {
+                                const list = Array.isArray(updates) ? updates : [updates]
+                                list.forEach(u => {
+                                    if (!u.id) return
+                                    const element = bedDoc.nodes.find((n: Doc['nodes'][number]) => n.id === u.id)
+                                    if (!element) return
+                                    executeBedOp({
+                                        kind: 'update-element',
+                                        id: u.id,
+                                        prev: element,
+                                        next: u,
+                                    })
                                 })
                             }}
                             onDelete={(id) => {

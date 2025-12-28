@@ -6,6 +6,8 @@ import { BedLayoutEditorPage } from './pages/BedLayoutEditorPage'
 import { ViewerPage } from './pages/ViewerPage'
 import { SignatureDemoPage } from './pages/SignatureDemoPage'
 import { MindmapDemoPage } from './pages/MindmapDemoPage'
+import { SlideEditorPage } from './pages/SlideEditorPage'
+
 
 // Simple Hash Router Hook
 const useHashLocation = () => {
@@ -50,6 +52,11 @@ function App() {
   if (location === '/mindmap') {
     return <MindmapDemoPage onBack={() => navigate('/')} />
   }
+
+  if (location === '/slide') {
+    return <SlideEditorPage onBack={() => navigate('/')} />
+  }
+
 
   return <DashboardPage onNavigate={(page) => navigate(`/${page}`)} />
 }

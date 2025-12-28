@@ -10,6 +10,7 @@ import type { CanvasElementCommonProps, CanvasShapeRefCallback } from './types'
 import { GridLayer } from './GridLayer'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { TextEditOverlay } from './TextEditOverlay'
+import { cn } from '@/lib/utils'
 
 export interface KonvaCanvasEditorHandle {
   getStage: () => Konva.Stage | null
@@ -64,6 +65,8 @@ interface KonvaCanvasEditorProps {
     dropPosition: 'child' | 'before' | 'after' | null
     canDrop: boolean
   }
+  className?: string
+  showPaperBorder?: boolean
 }
 
 export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvasEditorProps>(
@@ -98,6 +101,8 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       onDragLeave,
       onDragEnd,
       dragState,
+      className,
+      showPaperBorder = true,
     },
     ref
   ) => {
@@ -194,8 +199,8 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       onChange({
         id: editingElementId,
         text,
-        w: dimensions.w,
-        h: dimensions.h,
+        w: Math.max(textNode.w, dimensions.w),
+        h: Math.max(textNode.h, dimensions.h),
       } as Partial<UnifiedNode> & { id: string })
     }
 
@@ -279,10 +284,10 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       onCopy: handleCopy,
       onPaste: handlePaste,
       onSelectAll: handleSelectAll,
-      onMoveUp: () => {}, // Disabled
-      onMoveDown: () => {}, // Disabled
-      onMoveLeft: () => {}, // Disabled
-      onMoveRight: () => {}, // Disabled
+      onMoveUp: () => { }, // Disabled
+      onMoveDown: () => { }, // Disabled
+      onMoveLeft: () => { }, // Disabled
+      onMoveRight: () => { }, // Disabled
     }
 
     useKeyboardShortcuts(shortcutsHandlers)
@@ -317,7 +322,10 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
     return (
       <div
         ref={containerRef}
-        className="w-full h-full bg-gray-100 dark:bg-gray-900 overflow-scroll scrollbar-thin p-2"
+        className={cn(
+          "w-full h-full bg-gray-100 dark:bg-gray-900 overflow-auto flex scrollbar-thin p-2",
+          className
+        )}
         style={{
           cursor: isPanning.current ? 'grabbing' : 'default',
           minWidth: 0,
@@ -325,8 +333,10 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
         }}
       >
         <div
-          className="relative shadow-lg border-2 border-gray-500 bg-white dark:bg-gray-800"
-          style={{ width: stageWidth, height: stageHeight }}
+          className={cn(
+            "relative bg-white dark:bg-gray-800 w-fit h-fit",
+            showPaperBorder && "shadow-lg border-2 border-gray-500"
+          )}
         >
           <Stage
             width={stageWidth}

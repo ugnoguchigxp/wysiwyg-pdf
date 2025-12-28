@@ -86,7 +86,13 @@
   },
   "peerDependencies": {
     "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "react-dom": "^19.2.3",
+    "pptxgenjs": "^3.12.0"
+  },
+  "peerDependenciesMeta": {
+    "pptxgenjs": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.8",
@@ -109,6 +115,7 @@
     "tsup": "^8.5.0",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.49.0",
-    "vitest": "^3.0.0"
+    "vitest": "^3.0.0",
+    "pptxgenjs": "^3.12.0"
   }
 }

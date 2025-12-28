@@ -3,7 +3,7 @@ import { FileText, LayoutTemplate, Moon, Sun, Monitor, GitBranch } from 'lucide-
 
 
 interface DashboardPageProps {
-    onNavigate: (page: 'report' | 'bed' | 'viewer' | 'signature' | 'mindmap') => void
+    onNavigate: (page: 'report' | 'bed' | 'viewer' | 'signature' | 'mindmap' | 'slide') => void
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
@@ -91,6 +91,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                         <h2 className="text-2xl font-bold mb-2 text-foreground">Mindmap Editor</h2>
                         <p className="text-muted-foreground text-center">
                             FreeMind-like keyboard centric mind mapping.
+                        </p>
+                    </button>
+
+                    <button
+                        onClick={() => onNavigate('slide')}
+                        className="flex flex-col items-center justify-center p-12 rounded-xl border-2 border-border bg-card hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200 group h-80"
+                    >
+                        <div className="w-24 h-24 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
+                            <Monitor className="w-12 h-12 text-red-600 dark:text-red-400" />
+                        </div>
+                        <h2 className="text-2xl font-bold mb-2 text-foreground">Slide Editor</h2>
+                        <p className="text-muted-foreground text-center">
+                            PowerPoint-like slide editor with PPTX export.
                         </p>
                     </button>
                 </div>

@@ -32,7 +32,7 @@ export const useMindmapOperations = ({
       if (!parent) return prev
 
       // Balancing logic for Root children
-      let layoutDir: 'left' | 'right' | undefined 
+      let layoutDir: 'left' | 'right' | undefined
       if (selectedNodeId === graph.rootId) {
         const children = graph.childrenMap.get(selectedNodeId) || []
         let leftCount = 0
@@ -95,7 +95,7 @@ export const useMindmapOperations = ({
 
       return {
         ...prev,
-        nodes: [...prev.nodes, newNode, newLink],
+        nodes: [...prev.nodes, newNode, newLink] as UnifiedNode[],
       }
     })
   }, [selectedNodeId, graph, onSelect])
@@ -111,7 +111,7 @@ export const useMindmapOperations = ({
       if (!parent) return prev
 
       // Determine Layout Dir (Inherit from sibling)
-      let layoutDir: 'left' | 'right' | undefined 
+      let layoutDir: 'left' | 'right' | undefined
       if (parentId === graph.rootId) {
         const sibling = prev.nodes.find((n) => n.id === selectedNodeId)
         if (sibling) {
@@ -207,7 +207,7 @@ export const useMindmapOperations = ({
 
         return {
           ...prev,
-          nodes: newNodes,
+          nodes: newNodes as UnifiedNode[],
         }
       })
     },

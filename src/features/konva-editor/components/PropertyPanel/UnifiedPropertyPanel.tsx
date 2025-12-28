@@ -246,7 +246,11 @@ export const UnifiedPropertyPanel: React.FC<UnifiedPropertyPanelProps> = ({
           const wMm = pxToMm(newWidthPx, { dpi })
           const hMm = pxToMm(newHeightPx, { dpi })
 
-          onChange(selectedNode.id, { ...updates, w: wMm, h: hMm }, options)
+          // Only expand, never shrink (User Requirement)
+          const finalW = Math.max(selectedNode.w || 0, wMm)
+          const finalH = Math.max(selectedNode.h || 0, hMm)
+
+          onChange(selectedNode.id, { ...updates, w: finalW, h: finalH }, options)
           return
         }
       }

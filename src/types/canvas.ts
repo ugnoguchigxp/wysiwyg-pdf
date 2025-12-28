@@ -41,7 +41,7 @@ export interface Doc {
 
 export interface Surface {
   id: SurfaceId
-  type: 'page' | 'canvas' // page=A4等, canvas=無限キャンバス
+  type: 'page' | 'canvas' | 'slide' // page=A4等, canvas=無限キャンバス, slide=新スライドエディタ
   w: number
   h: number
 
