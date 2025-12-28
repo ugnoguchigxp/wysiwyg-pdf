@@ -1,6 +1,6 @@
 import type Konva from 'konva'
-import React, { useState, useCallback, useMemo, useRef } from 'react'
-import type { Doc, LineNode, UnifiedNode } from '@/types/canvas'
+import React, { useState, useCallback, useRef } from 'react'
+import type { Doc, UnifiedNode } from '@/types/canvas'
 import { KonvaCanvasEditor, type KonvaCanvasEditorHandle } from '@/components/canvas/KonvaCanvasEditor'
 import { Button } from '@/components/ui/Button'
 import { ChevronsDown, ChevronsUp, Download, Upload, Keyboard, ImageIcon, FileDown } from 'lucide-react'
@@ -11,6 +11,8 @@ import { useMindmapLayout } from './hooks/useMindmapLayout'
 import { useMindmapOperations } from './hooks/useMindmapOperations'
 import { useMindmapHistory } from './hooks/useMindmapHistory'
 import { useMindmapInteraction } from './hooks/useMindmapInteraction'
+import { useMindmapVisibility } from './hooks/useMindmapVisibility'
+import { useMindmapDrag } from './hooks/useMindmapDrag'
 import { MermaidExportModal } from './components/MermaidExportModal'
 import { MermaidImportModal } from './components/MermaidImportModal'
 import './mindmap-print.css'
@@ -49,25 +51,7 @@ const INITIAL_DOC: Doc = {
   ],
 }
 
-interface DragState {
-  isDragging: boolean
-  draggedNodeId: string | null
-  dragStartPosition: { x: number; y: number } | null
-  dragPosition: { x: number; y: number } | null
-  dropTargetId: string | null
-  dropPosition: 'child' | 'before' | 'after' | null
-  canDrop: boolean
-}
 
-const initialDragState: DragState = {
-  isDragging: false,
-  draggedNodeId: null,
-  dragStartPosition: null,
-  dragPosition: null,
-  dropTargetId: null,
-  dropPosition: null,
-  canDrop: false,
-}
 
 interface MindmapEditorProps {
   readOnly?: boolean
@@ -81,7 +65,6 @@ export const MindmapEditor: React.FC<MindmapEditorProps> = ({ readOnly = false }
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [showMermaidExport, setShowMermaidExport] = useState(false)
   const [showMermaidImport, setShowMermaidImport] = useState(false)
-  const [dragState, setDragState] = useState<DragState>(initialDragState)
   const { t } = useI18n()
 
   // Core Graph Logic (pure data)
@@ -218,146 +201,27 @@ export const MindmapEditor: React.FC<MindmapEditorProps> = ({ readOnly = false }
     [graph, operations]
   )
 
-  const handleDragStart = useCallback(
-    (nodeId: string, startPosition: { x: number; y: number }) => {
-      if (nodeId === graph.rootId) return
+  // Visibility Logic
+  const visibleNodes = useMindmapVisibility(doc, graph, collapsedNodes)
 
-      setDragState({
-        isDragging: false,
-        draggedNodeId: nodeId,
-        dragStartPosition: startPosition,
-        dragPosition: startPosition,
-        dropTargetId: null,
-        dropPosition: null,
-        canDrop: false,
-      })
+  const handleNodeReplaceWrapper = useCallback(
+    (sourceId: string, targetId: string, position: 'child' | 'before' | 'after') => {
+      handleNodeReplace(sourceId, targetId, position)
     },
-    [graph.rootId]
+    [handleNodeReplace]
   )
 
-  const handleDragMove = useCallback(
-    (position: { x: number; y: number }) => {
-      if (!dragState.draggedNodeId || !dragState.dragStartPosition) return
-
-      const currentPos = position
-      const distance = Math.hypot(
-        currentPos.x - dragState.dragStartPosition.x,
-        currentPos.y - dragState.dragStartPosition.y
-      )
-
-      if (distance > 5 && !dragState.isDragging) {
-        setDragState((prev) => ({ ...prev, isDragging: true }))
-      }
-
-      if (dragState.isDragging) {
-        setDragState((prev) => ({ ...prev, dragPosition: currentPos }))
-      }
-    },
-    [dragState.draggedNodeId, dragState.dragStartPosition, dragState.isDragging]
-  )
-
-  const handleDragEnter = useCallback(
-    (targetNodeId: string, relativeY: number) => {
-      if (!dragState.isDragging) return
-
-      const isAncestor = graph.isAncestor(dragState.draggedNodeId!, targetNodeId)
-      const isSelf = targetNodeId === dragState.draggedNodeId
-      const canDrop = !isAncestor && !isSelf
-
-      let dropPosition: 'child' | 'before' | 'after' = 'child'
-      if (relativeY < 0.2) {
-        dropPosition = 'before'
-      } else if (relativeY > 0.8) {
-        dropPosition = 'after'
-      }
-
-      setDragState((prev) => ({
-        ...prev,
-        dropTargetId: targetNodeId,
-        dropPosition,
-        canDrop,
-      }))
-    },
-    [dragState.isDragging, dragState.draggedNodeId, graph]
-  )
-
-  const handleDragLeave = useCallback(() => {
-    if (!dragState.isDragging) return
-
-    setDragState((prev) => ({
-      ...prev,
-      dropTargetId: null,
-      dropPosition: null,
-      canDrop: false,
-    }))
-  }, [dragState.isDragging])
-
-  const handleDragEnd = useCallback(() => {
-    if (
-      dragState.canDrop &&
-      dragState.dropTargetId &&
-      dragState.draggedNodeId &&
-      dragState.dropPosition
-    ) {
-      handleNodeReplace(dragState.draggedNodeId, dragState.dropTargetId, dragState.dropPosition)
-    }
-    setDragState(initialDragState)
-  }, [dragState, handleNodeReplace])
-
-  // Filter visible nodes based on collapsed state
-  const visibleNodes = useMemo(() => {
-    // 1. Identify visible node IDs
-    const visibleNodeIds = new Set<string>()
-    doc.nodes.forEach((node) => {
-      if (node.t === 'line') return
-
-      // Check visibility
-      let isVisible = true
-      let curr = graph.parentIdMap.get(node.id)
-      while (curr) {
-        if (collapsedNodes.has(curr)) {
-          isVisible = false
-          break
-        }
-        curr = graph.parentIdMap.get(curr)
-      }
-
-      if (isVisible) {
-        visibleNodeIds.add(node.id)
-      }
-    })
-
-    // 2. Filter nodes and lines
-    const filtered = doc.nodes.filter((node) => {
-      if (node.t === 'line') {
-        // Line is visible if BOTH ends are visible (or at least the child/target is visible)
-        // In our graph, lines map Parent -> Child via startConn -> endConn
-        // If Child is hidden, line should be hidden.
-        // If Parent is hidden, Child is hidden too (handled by logic above).
-        const lineNode = node as LineNode
-        const childId = lineNode.endConn?.nodeId
-        const parentId = lineNode.startConn?.nodeId
-        return childId && visibleNodeIds.has(childId) && parentId && visibleNodeIds.has(parentId)
-      }
-      return visibleNodeIds.has(node.id)
-    })
-
-    // 3. Inject metadata
-    return filtered.map((node) => {
-      // ... same metadata injection
-      if (graph.childrenMap.has(node.id)) {
-        return {
-          ...node,
-          data: {
-            ...node.data,
-            hasChildren: true,
-            isCollapsed: collapsedNodes.has(node.id),
-          },
-        }
-      }
-      return node
-    })
-  }, [doc.nodes, graph, collapsedNodes])
+  const {
+    dragState,
+    handleDragStart,
+    handleDragMove,
+    handleDragEnter,
+    handleDragLeave,
+    handleDragEnd,
+  } = useMindmapDrag({
+    graph,
+    onNodeDrop: handleNodeReplaceWrapper,
+  })
 
   type NodeUpdate = Partial<UnifiedNode> & { id: string }
 

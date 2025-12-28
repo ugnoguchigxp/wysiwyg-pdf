@@ -20,7 +20,11 @@ export const exportToMermaid = (_doc: Doc, graph: MindmapGraph): string => {
   const rootNode = graph.nodeMap.get(graph.rootId)
   if (!rootNode || rootNode.t !== 'text') return ''
 
-  lines.push(`  root((${(rootNode as TextNode).text}))`)
+  const rootText = (rootNode as TextNode).text
+  const sanitizedRootText = /[\(\)\[\]\{\}\n]/.test(rootText)
+    ? `"${rootText.replace(/"/g, "'")}"`
+    : rootText
+  lines.push(`  root((${sanitizedRootText}))`)
 
   const buildTree = (nodeId: string, depth: number) => {
     const children = graph.childrenMap.get(nodeId) || []
@@ -28,7 +32,10 @@ export const exportToMermaid = (_doc: Doc, graph: MindmapGraph): string => {
       const child = graph.nodeMap.get(childId)
       if (child && child.t === 'text') {
         const indent = '  '.repeat(depth + 1)
-        lines.push(`${indent}${(child as TextNode).text}`)
+        const text = (child as TextNode).text
+        // Sanitize: Wrap in quotes if it contains special chars or newlines
+        const sanitizedText = /[\(\)\[\]\{\}\n]/.test(text) ? `"${text.replace(/"/g, "'")}"` : text
+        lines.push(`${indent}${sanitizedText}`)
         buildTree(childId, depth + 1)
       }
     })

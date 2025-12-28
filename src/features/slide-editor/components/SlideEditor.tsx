@@ -1,79 +1,24 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { Rect } from 'react-konva' // Added Rect
-import type { Doc, UnifiedNode } from '@/types/canvas'
-import { PAGE_SIZES } from '@/constants/pageSizes'
+import type { UnifiedNode } from '@/types/canvas'
+
 
 import { KonvaCanvasEditor, type KonvaCanvasEditorHandle } from '@/components/canvas/KonvaCanvasEditor'
 import { WysiwygPropertiesPanel } from '@/features/report-editor/components/PropertyPanel/WysiwygPropertiesPanel'
 import { SlideListPanel } from './SlideListPanel'
 import { TopToolbar } from './TopToolbar'
 import { PresentationMode } from './PresentationMode'
+
 import { useSlideHistory } from '../hooks/useSlideHistory'
 import { useFitToScreen } from '../hooks/useFitToScreen'
 import { exportToPptx } from '../utils/pptxExport'
-import { SLIDE_LAYOUTS, type LayoutDefinition } from '@/features/slide-editor/constants/layouts'
-import { SLIDE_TEMPLATES } from '@/features/slide-editor/constants/templates'
-import { ptToMm } from '@/utils/units'
+import { PAGE_SIZES } from '@/constants/pageSizes' // Keeping PAGE_SIZES
 
-// Helper to generate default master nodes (e.g. page number)
-const generateMasterNodes = (surfaceId: string, w: number, h: number): UnifiedNode[] => {
-    return [{
-        id: `master-pagenum-${surfaceId}`,
-        t: 'text',
-        s: surfaceId,
-        x: w - 20, // Bottom right
-        y: h - 15,
-        w: 15,
-        h: 10,
-        text: '#',
-        dynamicContent: 'slide-number',
-        fontSize: ptToMm(12), // 12pt
-        align: 'r',
-        fill: '#94a3b8',
-        locked: true
-    }]
-}
 
-// Generate Initial Masters for every layout type
-const INITIAL_MASTERS = SLIDE_LAYOUTS.map((layout: LayoutDefinition) => ({
-    surface: {
-        id: `master-${layout.id}`,
-        type: 'slide',
-        w: PAGE_SIZES.A4_LANDSCAPE.w,
-        h: PAGE_SIZES.A4_LANDSCAPE.h,
-        bg: '#ffffff',
-        // masterId undefined -> This IS a master
-    } as const,
-    nodes: [
-        ...generateMasterNodes(`master-${layout.id}`, PAGE_SIZES.A4_LANDSCAPE.w, PAGE_SIZES.A4_LANDSCAPE.h),
-        ...layout.generateNodes(`master-${layout.id}`, PAGE_SIZES.A4_LANDSCAPE.w, PAGE_SIZES.A4_LANDSCAPE.h)
-    ]
-}))
+import { INITIAL_DOC } from '../utils/slideFactories'
+import { useSlideOperations } from '../hooks/useSlideOperations'
 
-const INITIAL_DOC: Doc = {
-    v: 1,
-    id: 'slide-doc-1',
-    title: 'New Presentation',
-    unit: 'mm',
-    surfaces: [
-        // 1. All Layout Masters
-        ...INITIAL_MASTERS.map((m: any) => m.surface),
-        // 2. Initial Slide (Title Layout)
-        {
-            id: 'slide-1',
-            type: 'slide',
-            w: PAGE_SIZES.A4_LANDSCAPE.w,
-            h: PAGE_SIZES.A4_LANDSCAPE.h,
-            bg: undefined, // Transparent bg, uses master's
-            masterId: 'master-title' // Linked to Title Master
-        }
-    ],
-    // Initial nodes: Master Nodes + Slide Nodes (Title Layout)
-    nodes: [
-        ...INITIAL_MASTERS.flatMap((m: any) => m.nodes),
-        ...(SLIDE_LAYOUTS.find((l: any) => l.id === 'title')?.generateNodes('slide-1', PAGE_SIZES.A4_LANDSCAPE.w, PAGE_SIZES.A4_LANDSCAPE.h) || [])
-    ],
-}
+
 
 export const SlideEditor: React.FC = () => {
     const { doc, setDoc, undo, redo, canUndo, canRedo } = useSlideHistory(INITIAL_DOC)
@@ -267,104 +212,13 @@ export const SlideEditor: React.FC = () => {
         // to avoid heavy work during drag (onChange)
     }, [setDoc])
 
-    // Add Slide with Layout
-    const handleAddSlide = useCallback((layoutId: any) => {
-        // layoutId is LayoutType
-        const layout = SLIDE_LAYOUTS.find(l => l.id === layoutId) || SLIDE_LAYOUTS[0] // fallback
-
-        // Helper to generate nodes for a surface
-        const generateLayoutNodes = (surfaceId: string, w: number, h: number) => {
-            return layout.generateNodes(surfaceId, w, h) || []
-        }
-
-        if (isMasterEditMode) {
-            // Create a NEW MASTER
-            const newMasterId = `master-${crypto.randomUUID()}`
-            const newSurface = {
-                id: newMasterId,
-                type: 'slide',
-                w: currentSlide?.w || PAGE_SIZES.A4_LANDSCAPE.w,
-                h: currentSlide?.h || PAGE_SIZES.A4_LANDSCAPE.h,
-                bg: '#ffffff',
-                // masterId: undefined (It is a master)
-            } as const
-
-            // For master, maybe we don't add title/body placeholders? 
-            // Or we do, but they will be static content on all slides.
-            // For now, let's add them so the user has something to edit/turn into background.
-            const newNodes = generateLayoutNodes(newMasterId, newSurface.w, newSurface.h)
-
-            setDoc(prev => ({
-                ...prev,
-                surfaces: [newSurface, ...prev.surfaces], // Add to top? Or after current? 
-                // Masters usually stored at logical start, but order in surfaces array doesn't strictly matter for rendering priority (we filter).
-                // Let's Add to top (start of array) so it's consistent.
-                nodes: [...prev.nodes, ...newNodes]
-            }))
-            setCurrentSlideId(newMasterId)
-
-        } else {
-            // Create a Normal Slide
-            const newSlideId = `slide-${crypto.randomUUID()}`
-            // Inherit master based on selected layout
-            const targetMasterId = `master-${layoutId}`
-            // Check if it exists?
-            const masterSurface = doc.surfaces.find(s => s.id === targetMasterId)
-            // Fallback to 'master-blank' if not found
-            const safeMasterId = masterSurface ? targetMasterId : 'master-blank'
-
-            const newSurface = {
-                id: newSlideId,
-                type: 'slide',
-                w: currentSlide?.w || PAGE_SIZES.A4_LANDSCAPE.w,
-                h: currentSlide?.h || PAGE_SIZES.A4_LANDSCAPE.h,
-                bg: undefined, // Transparent, use master
-                masterId: safeMasterId
-            } as const
-
-            // Generate Nodes: Clone Placeholders from Master
-            let newNodes: UnifiedNode[] = []
-            if (masterSurface) {
-                const masterPlaceholders = doc.nodes.filter(n => n.s === masterSurface.id && n.isPlaceholder)
-                newNodes = masterPlaceholders.map(n => ({
-                    ...n,
-                    id: `${n.t}-${crypto.randomUUID()}`, // new ID
-                    s: newSlideId, // retarget to new slide
-                    // keep isPlaceholder? Or remove?
-                    // If we keep it, it helps identify them. But usually they become "content".
-                    // Let's keep strict "isPlaceholder" for Master defs.
-                    // But if we ever want to "Reset Slide", we need to know linked placeholders.
-                    // For now, let's remove isPlaceholder or treat them as normal nodes.
-                    isPlaceholder: undefined,
-                    locked: false // Ensure editable
-                }))
-            }
-
-            // Fallback: If no placeholders found (or master not found), use factory?
-            // But if master is 'blank', empty nodes is correct.
-            // If master HAS placeholders, we copied them.
-            // If master was just created via factory, it HAS placeholders.
-            // So this logic covers everything.
-
-            setDoc(prev => {
-                // Insert after current slide
-                const currentIndex = prev.surfaces.findIndex(s => s.id === currentSlideId)
-                const insertIndex = currentIndex >= 0 ? currentIndex + 1 : prev.surfaces.length
-
-                const newSurfaces = [...prev.surfaces]
-                newSurfaces.splice(insertIndex, 0, newSurface)
-
-                return {
-                    ...prev,
-                    surfaces: newSurfaces,
-                    nodes: [...prev.nodes, ...newNodes]
-                }
-            }, { saveToHistory: true })
-
-            setCurrentSlideId(newSlideId)
-        }
-
-    }, [currentSlideId, currentSlide, isMasterEditMode, setDoc])
+    const { handleAddSlide, handleSelectTemplate } = useSlideOperations({
+        setDoc,
+        currentSlideId,
+        doc,
+        setCurrentSlideId,
+        isMasterEditMode
+    })
 
     // Export
     const handleExport = useCallback(async () => {
@@ -393,61 +247,7 @@ export const SlideEditor: React.FC = () => {
         alert('Master saved (logged to console)')
     }, [doc])
 
-    const handleSelectTemplate = useCallback((templateId: string) => {
-        const template = SLIDE_TEMPLATES.find(t => t.id === templateId)
-        if (!template) return
 
-        setDoc(prev => {
-            const masterSurfaces = prev.surfaces.filter(s => s.masterId === undefined && s.type === 'slide')
-
-            // 1. Update Surfaces (Background)
-            const newSurfaces = prev.surfaces.map(s => {
-                if (masterSurfaces.find(m => m.id === s.id)) {
-                    return { ...s, bg: template.master.bg }
-                }
-                return s
-            })
-
-            // 2. Update Nodes
-            // For each master, we want to:
-            //   - Keep Placeholders (Title, Content boxes)
-            //   - Remove existing Background decorations
-            //   - Add new Template nodes (cloned for each master)
-
-            let newNodes = prev.nodes.filter(n => {
-                // Keep nodes that are NOT on a master surface
-                if (!masterSurfaces.find(m => m.id === n.s)) return true
-                // Keep nodes on master if they are placeholders
-                if (n.isPlaceholder) return true
-                // Also keep slide numbers? They are dynamic content, but template might provide its own styling for them.
-                // Our template definition includes 'master-text-page-num'.
-                // So we should remove existing slide numbers to avoid duplicate/clashing styles.
-                return false
-            }).map(n => {
-                // Apply Template Text Color to Placeholders
-                if (n.isPlaceholder && n.t === 'text' && template.master.textColor) {
-                    return { ...n, fill: template.master.textColor }
-                }
-                return n
-            })
-
-            // Add Template Nodes for each Master
-            masterSurfaces.forEach(master => {
-                const templateNodesForMaster = template.master.nodes.map(n => ({
-                    ...n,
-                    id: `${n.t}-${crypto.randomUUID()}`, // New ID
-                    s: master.id, // Retarget to this master
-                }))
-                newNodes = [...newNodes, ...templateNodesForMaster]
-            })
-
-            return {
-                ...prev,
-                surfaces: newSurfaces,
-                nodes: newNodes
-            }
-        })
-    }, [setDoc])
 
     return (
         <div className="flex flex-col w-full h-full bg-background overflow-hidden">
