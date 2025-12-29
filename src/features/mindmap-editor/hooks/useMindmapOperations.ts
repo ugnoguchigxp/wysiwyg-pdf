@@ -1,8 +1,8 @@
 import { useCallback } from 'react'
-import { nanoid } from 'nanoid'
 import type { Doc, LineNode, TextNode, UnifiedNode } from '@/types/canvas'
 import type { MindmapGraph } from '../types'
 import { getSubtreeIds } from '../utils/treeUtils'
+import { generateNodeId } from '@/utils/id'
 
 type NodeUpdate = Partial<UnifiedNode> & { id: string }
 
@@ -49,8 +49,8 @@ export const useMindmapOperations = ({
         layoutDir = rightCount <= leftCount ? 'right' : 'left'
       }
 
-      const newId = nanoid()
-      const linkId = nanoid()
+      const newId = generateNodeId(prev, 'text')
+      const linkId = generateNodeId({ ...prev, nodes: [...prev.nodes, { id: newId } as UnifiedNode] }, 'line')
 
       const newNode: TextNode = {
         id: newId,
@@ -124,8 +124,8 @@ export const useMindmapOperations = ({
         }
       }
 
-      const newId = nanoid()
-      const linkId = nanoid()
+      const newId = generateNodeId(prev, 'text')
+      const linkId = generateNodeId({ ...prev, nodes: [...prev.nodes, { id: newId } as UnifiedNode] }, 'line')
 
       const newNode: TextNode = {
         id: newId,
@@ -283,7 +283,7 @@ export const useMindmapOperations = ({
       const child = prev.nodes.find((n) => n.id === childId)
       if (!child) return prev
 
-      const linkId = nanoid()
+      const linkId = generateNodeId(prev, 'line')
 
       const newLink: LineNode = {
         id: linkId,
@@ -320,7 +320,7 @@ export const useMindmapOperations = ({
         const child = prev.nodes.find((n) => n.id === childId)
         if (!child) return prev
 
-        const linkId = nanoid()
+        const linkId = generateNodeId(prev, 'line')
 
         const newLink: LineNode = {
           id: linkId,
@@ -361,7 +361,7 @@ export const useMindmapOperations = ({
         })
 
         // 2. Add new connection
-        const linkId = nanoid()
+        const linkId = generateNodeId({ ...prev, nodes: newNodes }, 'line')
         let parentId = targetId
 
         if (position !== 'child') {

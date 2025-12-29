@@ -3,6 +3,7 @@ import type { Doc, UnifiedNode, TextNode, ShapeNode, LineNode, ImageNode, TableN
 import { mmToPx, ptToMm, pxToMm } from '@/utils/units'
 import { measureText } from '@/features/konva-editor/utils/textUtils'
 import { createContextLogger } from '@/utils/logger'
+import { generateNodeId } from '@/utils/id'
 
 const log = createContextLogger('useCanvasOperations')
 
@@ -66,7 +67,7 @@ export function useCanvasOperations({
     const addText = useCallback((currentPageId?: string) => {
         const s = getTargetSurfaceId(currentPageId)
         const { x, y } = calculateInitialPosition(s)
-        const id = `text-${crypto.randomUUID()}`
+        const id = generateNodeId(templateDoc, 'text')
         const textContent = resolveText('toolbar_default_text', 'Text')
         const fontSizePt = 24
         const fontSizeMm = ptToMm(fontSizePt)
@@ -102,7 +103,7 @@ export function useCanvasOperations({
     const addShape = useCallback((shapeType: string, currentPageId?: string) => {
         const s = getTargetSurfaceId(currentPageId)
         const { x, y } = calculateInitialPosition(s)
-        const id = `${shapeType.toLowerCase()}-${crypto.randomUUID()}`
+        const id = generateNodeId(templateDoc, 'shape')
 
         let width = 30
         let height = 30
@@ -143,7 +144,7 @@ export function useCanvasOperations({
     const addLine = useCallback((currentPageId?: string) => {
         const s = getTargetSurfaceId(currentPageId)
         const { x, y } = calculateInitialPosition(s)
-        const id = `line-${crypto.randomUUID()}`
+        const id = generateNodeId(templateDoc, 'line')
 
         const line: LineNode = {
             id,
@@ -162,7 +163,7 @@ export function useCanvasOperations({
     const addImage = useCallback((currentPageId?: string) => {
         const s = getTargetSurfaceId(currentPageId)
         const { x, y } = calculateInitialPosition(s)
-        const id = `image-${crypto.randomUUID()}`
+        const id = generateNodeId(templateDoc, 'image')
         const image: ImageNode = {
             id,
             t: 'image',
@@ -182,7 +183,7 @@ export function useCanvasOperations({
     const addTable = useCallback((currentPageId?: string) => {
         const s = getTargetSurfaceId(currentPageId)
         const { x, y } = calculateInitialPosition(s)
-        const id = `table-${crypto.randomUUID()}`
+        const id = generateNodeId(templateDoc, 'table')
         const table: TableNode = {
             id,
             t: 'table',

@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import type { Doc } from '@/features/konva-editor/types'
+import { validateDoc } from '@/types/doc.schema'
 
 interface UseHistoryReturn {
   document: Doc
@@ -103,6 +104,11 @@ export function useReportHistory(initialDocument: Doc): UseHistoryReturn {
       console.warn(
         '[useReportHistory.reset] Doc.unit is not mm. Please convert the document before passing it in.'
       )
+    }
+    // Validate doc on load
+    const validation = validateDoc(doc)
+    if (!validation.success) {
+      console.warn('[useReportHistory] Doc validation failed:', validation.errors)
     }
     setHistory({
       past: [],

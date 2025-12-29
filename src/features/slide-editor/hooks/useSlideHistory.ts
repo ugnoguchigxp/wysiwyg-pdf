@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import type { Doc } from '@/types/canvas'
+import { validateDoc } from '@/types/doc.schema'
 
 interface UseSlideHistoryReturn {
     doc: Doc
@@ -91,6 +92,11 @@ export function useSlideHistory(initialDoc: Doc): UseSlideHistoryReturn {
     }, [])
 
     const reset = useCallback((doc: Doc) => {
+        // Validate doc on load
+        const validation = validateDoc(doc)
+        if (!validation.success) {
+            console.warn('[useSlideHistory] Doc validation failed:', validation.errors)
+        }
         setHistory({
             past: [],
             present: doc,

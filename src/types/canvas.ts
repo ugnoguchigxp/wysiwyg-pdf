@@ -17,6 +17,15 @@ export type Unit = 'mm'
 // Document Root
 // ========================================
 
+export interface Asset {
+  id: string
+  type: 'image' | 'font' | 'video'
+  uri: string
+  mime?: string
+  size?: number
+  metadata?: Record<string, unknown>
+}
+
 export interface Doc {
   v: 1 // Schema version (number for compactness)
   id: string
@@ -34,6 +43,7 @@ export interface Doc {
   // links property removed as part of schema cleanup
 
   // Optional features (omit if unused)
+  assets?: Asset[]
   binding?: BindingConfig
   animation?: AnimationConfig
   snap?: SnapConfig
@@ -180,7 +190,8 @@ export interface ImageNode extends BaseNode {
   y: number
   w: number
   h: number // Required
-  src: string // URL or base64
+  src?: string // URL or base64 (legacy)
+  assetId?: string // Asset reference (recommended)
 }
 
 export interface GroupNode extends BaseNode {

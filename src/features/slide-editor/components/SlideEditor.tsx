@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { Rect } from 'react-konva' // Added Rect
 import type { Doc, UnifiedNode } from '@/types/canvas'
+// Note: getMergedNodes from '@/utils/master' handles basic master/placeholder merging
+// but this component has additional processing (dynamicContent, locking), so direct use is deferred
 
 
 import { KonvaCanvasEditor, type KonvaCanvasEditorHandle } from '@/components/canvas/KonvaCanvasEditor'

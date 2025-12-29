@@ -3,14 +3,15 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { useMindmapOperations } from '@/features/mindmap-editor/hooks/useMindmapOperations'
 import type { Doc } from '@/types/canvas'
 import type { MindmapGraph } from '@/features/mindmap-editor/types'
-import { nanoid } from 'nanoid'
+import * as idUtils from '@/utils/id'
 
 vi.mock('@/features/mindmap-editor/utils/treeUtils', () => ({
   getSubtreeIds: vi.fn(() => ['child1', 'child2']),
 }))
 
-vi.mock('nanoid', () => ({
-  nanoid: vi.fn(),
+vi.mock('@/utils/id', () => ({
+  generateNodeId: vi.fn(),
+  generateSurfaceId: vi.fn(),
 }))
 
 describe('features/mindmap-editor/hooks/useMindmapOperations', () => {
@@ -41,7 +42,7 @@ describe('features/mindmap-editor/hooks/useMindmapOperations', () => {
   })
 
   beforeEach(() => {
-    vi.mocked(nanoid).mockReset()
+    vi.mocked(idUtils.generateNodeId).mockReset()
   })
 
   it('returns operations object', () => {
@@ -68,7 +69,7 @@ describe('features/mindmap-editor/hooks/useMindmapOperations', () => {
   it('adds child node when selectedNodeId is root', () => {
     const mockDoc = createMockDoc()
     const setDoc = vi.fn()
-    vi.mocked(nanoid).mockImplementation(() => 'new-id')
+    vi.mocked(idUtils.generateNodeId).mockImplementation(() => 'new-id')
 
     const { result } = renderHook(() =>
       useMindmapOperations({
@@ -111,7 +112,7 @@ describe('features/mindmap-editor/hooks/useMindmapOperations', () => {
   it('adds sibling node when selectedNodeId is child', () => {
     const mockDoc = createMockDoc()
     const setDoc = vi.fn()
-    vi.mocked(nanoid).mockImplementation(() => 'new-id')
+    vi.mocked(idUtils.generateNodeId).mockImplementation(() => 'new-id')
 
     const { result } = renderHook(() =>
       useMindmapOperations({
@@ -211,7 +212,7 @@ describe('features/mindmap-editor/hooks/useMindmapOperations', () => {
     const setDoc = vi.fn()
     const docUpdates: Doc[] = []
 
-    vi.mocked(nanoid).mockImplementationOnce(() => 'new-node').mockImplementationOnce(() => 'new-link')
+    vi.mocked(idUtils.generateNodeId).mockImplementationOnce(() => 'new-node').mockImplementationOnce(() => 'new-link')
     const originalRaf = global.requestAnimationFrame
     global.requestAnimationFrame = ((cb: FrameRequestCallback) => {
       cb(0)
@@ -264,7 +265,7 @@ describe('features/mindmap-editor/hooks/useMindmapOperations', () => {
     const graph = createMockGraph()
     const updatedDocs: Doc[] = []
 
-    vi.mocked(nanoid).mockImplementationOnce(() => 'new-node').mockImplementationOnce(() => 'new-link')
+    vi.mocked(idUtils.generateNodeId).mockImplementationOnce(() => 'new-node').mockImplementationOnce(() => 'new-link')
 
     const { result } = renderHook(() =>
       useMindmapOperations({
@@ -368,7 +369,7 @@ describe('features/mindmap-editor/hooks/useMindmapOperations', () => {
       ],
     }
     const updatedDocs: Doc[] = []
-    vi.mocked(nanoid).mockImplementationOnce(() => 'link-1').mockImplementationOnce(() => 'link-2')
+    vi.mocked(idUtils.generateNodeId).mockImplementationOnce(() => 'link-1').mockImplementationOnce(() => 'link-2')
 
     const { result } = renderHook(() =>
       useMindmapOperations({
@@ -416,7 +417,7 @@ describe('features/mindmap-editor/hooks/useMindmapOperations', () => {
       ],
     }
     const updatedDocs: Doc[] = []
-    vi.mocked(nanoid).mockImplementationOnce(() => 'move-link')
+    vi.mocked(idUtils.generateNodeId).mockImplementationOnce(() => 'move-link')
 
     const { result } = renderHook(() =>
       useMindmapOperations({

@@ -1,6 +1,6 @@
-import type { Doc, TextNode, LineNode } from '@/types/canvas'
+import type { Doc, TextNode, LineNode, UnifiedNode } from '@/types/canvas'
 import type { MindmapGraph } from '../types'
-import { nanoid } from 'nanoid'
+import { generateNodeId, generateSurfaceId } from '@/utils/id'
 
 interface ParsedNode {
   text: string
@@ -96,7 +96,19 @@ const parseTree = (lines: string[]): ParsedNode[] => {
 
 const buildDoc = (rootText: string, tree: ParsedNode[], surfaceId: string): Doc => {
   const nodes: (TextNode | LineNode)[] = []
-  const rootId = nanoid()
+
+  // Create a temporary doc to track IDs
+  const tempDoc: Doc = {
+    v: 1,
+    id: 'temp',
+    title: 'temp',
+    unit: 'mm',
+    surfaces: [{ id: surfaceId, type: 'canvas', w: 4000, h: 4000, bg: '#f8fafc' }],
+    nodes: [],
+  }
+
+  const rootId = generateNodeId(tempDoc, 'text')
+  tempDoc.nodes.push({ id: rootId, t: 'text' } as UnifiedNode)
 
   const rootNode: TextNode = {
     id: rootId,
@@ -134,8 +146,10 @@ const buildDoc = (rootText: string, tree: ParsedNode[], surfaceId: string): Doc 
     isRight: boolean
   ) => {
     children.forEach((child) => {
-      const childId = nanoid()
-      const linkId = nanoid()
+      const childId = generateNodeId(tempDoc, 'text')
+      tempDoc.nodes.push({ id: childId, t: 'text' } as UnifiedNode)
+      const linkId = generateNodeId(tempDoc, 'line')
+      tempDoc.nodes.push({ id: linkId, t: 'line' } as UnifiedNode)
 
       // layoutDir を data に設定（レイアウトエンジンが参照）
       const layoutDir = isRight ? 'right' : 'left'
@@ -194,9 +208,12 @@ const buildDoc = (rootText: string, tree: ParsedNode[], surfaceId: string): Doc 
     buildNodes(rootId, [child], isRight)
   })
 
+  // Generate a unique doc ID
+  const docId = `mindmap-${generateSurfaceId(tempDoc, 'canvas').replace('canvas-', '')}`
+
   return {
     v: 1,
-    id: `mindmap-${nanoid()}`,
+    id: docId,
     title: 'Imported Mindmap',
     unit: 'mm',
     surfaces: [{ id: surfaceId, type: 'canvas', w: 4000, h: 4000, bg: '#f8fafc' }],

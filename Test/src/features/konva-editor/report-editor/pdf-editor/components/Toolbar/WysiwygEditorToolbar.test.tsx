@@ -49,9 +49,9 @@ describe('WysiwygEditorToolbar', () => {
 
     beforeEach(() => {
         if (!globalThis.crypto || !('randomUUID' in globalThis.crypto)) {
-            ;(globalThis as any).crypto = { randomUUID: () => 'uuid' }
+            ; (globalThis as any).crypto = { randomUUID: () => 'uuid' }
         } else {
-            ;(globalThis.crypto as any).randomUUID = () => 'uuid'
+            ; (globalThis.crypto as any).randomUUID = () => 'uuid'
         }
     })
 
@@ -116,7 +116,7 @@ describe('WysiwygEditorToolbar', () => {
         fireEvent.click(screen.getByLabelText('toolbar_add_text'))
         let doc = onTemplateChange.mock.calls.at(-1)?.[0] as Doc
         expect(doc.nodes.some((n) => n.t === 'text')).toBe(true)
-        expect(onSelectElement).toHaveBeenCalledWith('text-uuid')
+        expect(onSelectElement).toHaveBeenCalledWith('txt-1')
         expect(onToolSelect).toHaveBeenCalledWith('select')
 
         rerender(

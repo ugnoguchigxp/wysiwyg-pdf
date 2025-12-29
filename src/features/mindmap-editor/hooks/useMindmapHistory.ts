@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import type { Doc } from '@/types/canvas'
+import { validateDoc } from '@/types/doc.schema'
 
 interface UseHistoryReturn {
     doc: Doc
@@ -91,6 +92,11 @@ export function useMindmapHistory(initialDoc: Doc): UseHistoryReturn {
     }, [])
 
     const reset = useCallback((doc: Doc) => {
+        // Validate doc on load
+        const validation = validateDoc(doc)
+        if (!validation.success) {
+            console.warn('[useMindmapHistory] Doc validation failed:', validation.errors)
+        }
         setHistory({
             past: [],
             present: doc,

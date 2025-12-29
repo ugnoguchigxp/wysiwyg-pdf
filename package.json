@@ -82,12 +82,13 @@
     "react-colorful": "^5.6.1",
     "react-konva": "^19.2.1",
     "tailwind-merge": "^2.6.0",
-    "use-image": "^1.1.4"
+    "use-image": "^1.1.4",
+    "zod": "^3.25.76"
   },
   "peerDependencies": {
+    "pptxgenjs": "^3.12.0",
     "react": "^19.2.3",
-    "react-dom": "^19.2.3",
-    "pptxgenjs": "^3.12.0"
+    "react-dom": "^19.2.3"
   },
   "peerDependenciesMeta": {
     "pptxgenjs": {
@@ -109,13 +110,13 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "globals": "^16.5.0",
     "jsdom": "^26.0.0",
+    "pptxgenjs": "^3.12.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "rimraf": "^6.0.1",
     "tsup": "^8.5.0",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.49.0",
-    "vitest": "^3.0.0",
-    "pptxgenjs": "^3.12.0"
+    "vitest": "^3.0.0"
   }
 }
