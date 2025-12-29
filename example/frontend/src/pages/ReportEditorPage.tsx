@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef, useState, useEffect, useCallback } from 'react'
 import {
     ReportKonvaEditor,
     WysiwygEditorToolbar,
@@ -10,13 +10,13 @@ import {
     type Doc,
     EditorHeader,
     ShortcutHelpModal,
+    DocumentLoadMenu,
 } from 'wysiwyg-pdf'
 import { useReactToPrint, type UseReactToPrintOptions } from 'react-to-print'
 import { useTranslation } from 'react-i18next'
 import { Moon, Sun } from 'lucide-react'
 import { EDITOR_TRANSLATIONS } from '../constants/translations'
-import { DocumentLoadMenu } from '../components/DocumentLoadMenu'
-import { saveDocument } from '../api/documents'
+import { saveDocument, listDocuments, getDocument } from '../api/documents'
 
 // Local Mock Data (Moved from App.tsx)
 const MOCK_SCHEMA: IDataSchema = {
@@ -118,6 +118,35 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
         editorRef.current?.downloadImage()
     }
 
+    const fetchRecent = useCallback(async () => {
+        const response = await listDocuments({ user: 'anonymous', type: 'report', limit: 5 })
+        return response.items
+    }, [])
+
+    const fetchBrowse = useCallback(
+        async (query: string, offset: number) => {
+            const response = await listDocuments({
+                user: 'anonymous',
+                type: 'report',
+                q: query || undefined,
+                limit: 20,
+                offset,
+            })
+            return {
+                items: response.items,
+                hasMore: response.items.length === 20,
+            }
+        },
+        []
+    )
+
+    const handleLoad = useCallback(async (id: string) => {
+        const detail = await getDocument(id, 'anonymous')
+        setDocument(detail.payload as Doc)
+        setTemplateName(detail.title)
+        setSelectedElementId(null)
+    }, [setDocument])
+
     const handleSave = () => {
         const save = async () => {
             try {
@@ -183,13 +212,9 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
                 i18nOverrides={EDITOR_TRANSLATIONS}
             >
                 <DocumentLoadMenu
-                    user="anonymous"
-                    type="report"
-                    onLoad={({ payload, title }) => {
-                        setDocument(payload as Doc)
-                        setTemplateName(title)
-                        setSelectedElementId(null)
-                    }}
+                    fetchRecent={fetchRecent}
+                    fetchBrowse={fetchBrowse}
+                    onLoad={handleLoad}
                 />
                 <button
                     onClick={() => setDarkMode(!darkMode)}

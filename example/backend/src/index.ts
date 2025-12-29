@@ -3,8 +3,12 @@ import { cors } from "hono/cors";
 import { and, desc, eq, like } from "drizzle-orm";
 import { db } from "./db";
 import { documents } from "./schema";
+import { seed } from "./seed";
 
 const app = new Hono();
+
+// Run seed on startup
+seed();
 
 app.use(
   "*",

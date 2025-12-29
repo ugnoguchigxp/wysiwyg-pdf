@@ -27,8 +27,8 @@ vi.mock('@/components/ui/DropdownMenu', () => ({
 }))
 
 vi.mock('@/components/ui/Button', () => ({
-    Button: ({ children, onClick, disabled, variant }: any) => (
-        <button onClick={onClick} disabled={disabled} data-variant={variant}>
+    Button: ({ children, onClick, disabled, variant, ...props }: any) => (
+        <button onClick={onClick} disabled={disabled} data-variant={variant} {...props}>
             {children}
         </button>
     ),
@@ -61,17 +61,17 @@ describe('TopToolbar', () => {
 
     it('renders basic controls', () => {
         render(<TopToolbar {...defaultProps} />)
-        expect(screen.getByText('スライドレイアウト')).toBeDefined()
+        expect(screen.getByTitle('スライドレイアウト')).toBeDefined()
         expect(screen.getByText('Play')).toBeDefined()
         expect(screen.getByText('100%')).toBeDefined()
-        expect(screen.getByText('マスター編集')).toBeDefined()
+        expect(screen.getByTitle('マスター編集')).toBeDefined()
     })
 
     it('calls onAddSlide when layout selected', () => {
         render(<TopToolbar {...defaultProps} />)
         // Click layout dropdown (trigger)
-        // In our mock, trigger renders children. Content is also rendered (simplified mock)
-        // We can just find the layout button
+        const layoutTrigger = screen.getByTitle('スライドレイアウト')
+        fireEvent.click(layoutTrigger)
 
         // SLIDE_LAYOUTS[0] is 'blank' usually?
         const layoutId = SLIDE_LAYOUTS[0].id
@@ -85,17 +85,17 @@ describe('TopToolbar', () => {
 
     it('toggles master edit mode', () => {
         render(<TopToolbar {...defaultProps} />)
-        const toggleBtn = screen.getByText('マスター編集').closest('button')
-        fireEvent.click(toggleBtn!)
+        const toggleBtn = screen.getByTitle('マスター編集')
+        fireEvent.click(toggleBtn)
         expect(defaultProps.onToggleMasterEdit).toHaveBeenCalled()
     })
 
     it('renders master controls in master edit mode', () => {
         render(<TopToolbar {...defaultProps} isMasterEditMode={true} />)
-        expect(screen.getByText('マスター編集中')).toBeDefined()
+        expect(screen.getByTitle('マスター編集中')).toBeDefined()
         // Should show "Save Master" instead of Play
         expect(screen.queryByText('Play')).toBeNull()
-        expect(screen.getByText('マスター保存')).toBeDefined()
+        expect(screen.getByText('テンプレートをロード')).toBeDefined()
     })
 
     it('handles zoom changes', () => {

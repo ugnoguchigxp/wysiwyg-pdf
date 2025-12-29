@@ -1,8 +1,7 @@
-import React, { useRef, useState } from 'react'
-import { MindmapEditor, type Doc } from 'wysiwyg-pdf'
+import React, { useRef, useState, useCallback } from 'react'
+import { MindmapEditor, type Doc, DocumentLoadMenu } from 'wysiwyg-pdf'
 import { ArrowLeft, Save } from 'lucide-react'
-import { DocumentLoadMenu } from '../components/DocumentLoadMenu'
-import { saveDocument } from '../api/documents'
+import { saveDocument, listDocuments, getDocument } from '../api/documents'
 
 interface MindmapDemoPageProps {
     onBack: () => void
@@ -13,6 +12,35 @@ export const MindmapDemoPage: React.FC<MindmapDemoPageProps> = ({ onBack }) => {
     const [loadDoc, setLoadDoc] = useState<Doc | null>(null)
     const [loadNonce, setLoadNonce] = useState(0)
     const latestDocRef = useRef<Doc | null>(null)
+
+    const fetchRecent = useCallback(async () => {
+        const response = await listDocuments({ user: 'anonymous', type: 'mindmap', limit: 5 })
+        return response.items
+    }, [])
+
+    const fetchBrowse = useCallback(
+        async (query: string, offset: number) => {
+            const response = await listDocuments({
+                user: 'anonymous',
+                type: 'mindmap',
+                q: query || undefined,
+                limit: 20,
+                offset,
+            })
+            return {
+                items: response.items,
+                hasMore: response.items.length === 20,
+            }
+        },
+        []
+    )
+
+    const handleLoad = useCallback(async (id: string) => {
+        const detail = await getDocument(id, 'anonymous')
+        setLoadDoc(detail.payload as Doc)
+        setLoadNonce((prev) => prev + 1)
+        setTemplateName(detail.title)
+    }, [])
 
     const handleSave = () => {
         const save = async () => {
@@ -75,13 +103,9 @@ export const MindmapDemoPage: React.FC<MindmapDemoPageProps> = ({ onBack }) => {
                 />
                 <div className="ml-auto flex items-center gap-2">
                     <DocumentLoadMenu
-                        user="anonymous"
-                        type="mindmap"
-                        onLoad={({ payload, title }) => {
-                            setLoadDoc(payload as Doc)
-                            setLoadNonce((prev) => prev + 1)
-                            setTemplateName(title)
-                        }}
+                        fetchRecent={fetchRecent}
+                        fetchBrowse={fetchBrowse}
+                        onLoad={handleLoad}
                     />
                     <button
                         onClick={handleSave}

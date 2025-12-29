@@ -1,7 +1,6 @@
-import React, { useState } from 'react'
-import { SignatureKonvaEditor } from 'wysiwyg-pdf'
-import { DocumentLoadMenu } from '../components/DocumentLoadMenu'
-import { saveDocument } from '../api/documents'
+import React, { useState, useCallback } from 'react'
+import { SignatureKonvaEditor, DocumentLoadMenu } from 'wysiwyg-pdf'
+import { saveDocument, listDocuments, getDocument } from '../api/documents'
 
 interface SignatureDemoPageProps {
     onBack: () => void;
@@ -10,6 +9,34 @@ interface SignatureDemoPageProps {
 export const SignatureDemoPage: React.FC<SignatureDemoPageProps> = ({ onBack }) => {
     const [savedSignature, setSavedSignature] = useState<string | null>(null)
     const [templateName, setTemplateName] = useState('New Signature')
+
+    const fetchRecent = useCallback(async () => {
+        const response = await listDocuments({ user: 'anonymous', type: 'signature', limit: 5 })
+        return response.items
+    }, [])
+
+    const fetchBrowse = useCallback(
+        async (query: string, offset: number) => {
+            const response = await listDocuments({
+                user: 'anonymous',
+                type: 'signature',
+                q: query || undefined,
+                limit: 20,
+                offset,
+            })
+            return {
+                items: response.items,
+                hasMore: response.items.length === 20,
+            }
+        },
+        []
+    )
+
+    const handleLoad = useCallback(async (id: string) => {
+        const detail = await getDocument(id, 'anonymous')
+        setSavedSignature(detail.payload as string)
+        setTemplateName(detail.title)
+    }, [])
 
     const handleSave = (dataUrl: string) => {
         const save = async () => {
@@ -67,12 +94,9 @@ export const SignatureDemoPage: React.FC<SignatureDemoPageProps> = ({ onBack }) 
                 </div>
                 <div className="flex items-center gap-3">
                     <DocumentLoadMenu
-                        user="anonymous"
-                        type="signature"
-                        onLoad={({ payload, title }) => {
-                            setSavedSignature(payload as string)
-                            setTemplateName(title)
-                        }}
+                        fetchRecent={fetchRecent}
+                        fetchBrowse={fetchBrowse}
+                        onLoad={handleLoad}
                     />
                 </div>
             </header>

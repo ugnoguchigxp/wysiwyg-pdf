@@ -1,15 +1,14 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import {
     BedLayoutViewer,
     KonvaViewer,
     MindmapEditor,
     PresentationMode
 } from 'wysiwyg-pdf'
-import type { Doc } from 'wysiwyg-pdf'
-import { dummyBedLayout, dummyDashboardData } from '../data/dummyBedLayout'
-import { INVOICE_TEMPLATE, SIGNATURE_TEMPLATE } from '../data/dummyReportTemplates'
-import { ArrowLeft, Moon, Sun, X } from 'lucide-react'
+import type { Doc, BedStatusData } from 'wysiwyg-pdf'
+import { ArrowLeft, Moon, Sun, X, Loader2 } from 'lucide-react'
 import { Rect } from 'react-konva'
+import { listDocuments, getDocument } from '../api/documents'
 
 interface ViewerPageProps {
     onBack: () => void
@@ -70,29 +69,14 @@ const TemplateViewer: React.FC<{ doc: Doc; zoom: number }> = ({ doc, zoom }) => 
     )
 }
 
-// Dummy Slide Doc
-const DUMMY_SLIDES: Doc = {
-    v: 1,
-    id: 'slide-demo',
-    title: 'Presentation Demo',
-    unit: 'mm',
-    surfaces: [
-        { id: 's1', type: 'slide', w: 297, h: 210, bg: '#ffffff' },
-        { id: 's2', type: 'slide', w: 297, h: 210, bg: '#f0f9ff' },
-    ],
-    nodes: [
-        // Slide 1
-        { id: 't1', t: 'text', s: 's1', x: 20, y: 80, w: 257, h: 30, text: 'Welcome to Slide Viewer', fontSize: 16, align: 'c', fill: '#000000' },
-        { id: 't2', t: 'text', s: 's1', x: 20, y: 120, w: 257, h: 20, text: 'Click next to see more', fontSize: 10, align: 'c', fill: '#666666' },
-        // Slide 2
-        { id: 't3', t: 'text', s: 's2', x: 20, y: 90, w: 257, h: 30, text: 'Slide 2: Features', fontSize: 14, align: 'c', fill: '#0369a1' },
-    ]
-}
-
 export const ViewerPage: React.FC<ViewerPageProps> = ({ onBack }) => {
     const [darkMode, setDarkMode] = useState(false)
     const [selectedDemo, setSelectedDemo] = useState<DemoType | null>(null)
     const [zoom, setZoom] = useState(100)
+
+    // Loaded Documents State
+    const [docs, setDocs] = useState<Record<string, Doc>>({})
+    const [loading, setLoading] = useState(true)
 
     React.useEffect(() => {
         const theme = darkMode ? 'dark' : 'light'
@@ -100,21 +84,120 @@ export const ViewerPage: React.FC<ViewerPageProps> = ({ onBack }) => {
         document.documentElement.classList.toggle('dark', darkMode)
     }, [darkMode])
 
+    // Fetch Demos
+    useEffect(() => {
+        const fetchDemos = async () => {
+            try {
+                // Fetch list
+                const list = await listDocuments({ user: 'anonymous', limit: 100 })
+
+                // Map titles to keys
+                const map: Record<string, string> = {
+                    'ICU Ward A': 'bedlayout',
+                    'Invoice Template': 'invoice',
+                    'Signature Document': 'signature',
+                    'Presentation Demo': 'slide'
+                }
+
+                const promises: Promise<void>[] = []
+                const newDocs: Record<string, Doc> = {}
+
+                for (const item of list.items) {
+                    const key = map[item.title]
+                    if (key) {
+                        promises.push(
+                            getDocument(item.id, 'anonymous').then(detail => {
+                                newDocs[key] = detail.payload as Doc
+                            })
+                        )
+                    }
+                }
+
+                await Promise.all(promises)
+                setDocs(newDocs)
+            } catch (err) {
+                console.error("Failed to load demos", err)
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchDemos()
+    }, [])
+
     const handleClose = () => {
         setSelectedDemo(null)
         setZoom(100)
     }
 
+    // Dynamic Dashboard Data for Bed Layout
+    const dashboardData = useMemo(() => {
+        const bedDoc = docs.bedlayout
+        if (!bedDoc) return {}
+
+        const data: Record<string, BedStatusData> = {}
+        const resolvedSurfaceId = bedDoc.surfaces.find((s) => s.type === 'canvas')?.id || bedDoc.surfaces[0]?.id || 'layout'
+        const bedNodes = bedDoc.nodes
+            .filter((n) => n.s === resolvedSurfaceId)
+            .filter((n) => n.t === 'widget' && (n as any).widget === 'bed')
+
+        const patientNames = ['T. Yamada', 'H. Suzuki', 'K. Sato', 'M. Tanaka', 'Y. Kobayashi', 'J. Doe', 'A. Smith']
+
+        bedNodes.forEach((node, index) => {
+            // Generate consistent mock status based on index
+            // index 0: Critical
+            // index 1: Stable
+            // index 2: Free
+            // index 3: Warning
+            // others: Free/Stable
+            let status: BedStatusData['status'] = 'free'
+            const alerts: string[] = []
+            let name: string | undefined
+            let vitals: any | undefined
+
+            if (index === 0) {
+                status = 'occupied'
+                alerts.push('High BP', 'Tachycardia')
+                name = patientNames[0]
+                vitals = { bp: { systolic: 180, diastolic: 110 }, hr: 120 }
+            } else if (index === 1) {
+                status = 'occupied'
+                name = patientNames[1]
+                vitals = { bp: { systolic: 118, diastolic: 76 }, hr: 72 }
+            } else if (index === 3) {
+                status = 'occupied'
+                alerts.push('Check IV')
+                name = patientNames[3]
+                vitals = { bp: { systolic: 135, diastolic: 88 }, hr: 95 }
+            } else if (index === 4) {
+                status = 'occupied'
+                name = patientNames[4]
+                vitals = { bp: { systolic: 122, diastolic: 80 }, hr: 68 }
+            }
+
+            data[node.id] = {
+                bedId: node.name || `b${index + 1}`,
+                status,
+                alerts,
+                patientName: name,
+                vitals,
+                isOccupied: status === 'occupied'
+            }
+        })
+        return data
+    }, [docs.bedlayout])
+
+
     const renderViewerContent = () => {
         if (!selectedDemo) return null
 
         if (selectedDemo === 'bedlayout') {
+            if (!docs.bedlayout) return <div>Loading...</div>
             return (
                 <div className="relative w-full h-full bg-gray-100 dark:bg-gray-900 overflow-hidden">
                     <StatusLegend />
                     <BedLayoutViewer
-                        document={dummyBedLayout}
-                        dashboardData={dummyDashboardData}
+                        document={docs.bedlayout}
+                        dashboardData={dashboardData}
                         zoom={zoom / 100}
                     />
                 </div>
@@ -130,19 +213,22 @@ export const ViewerPage: React.FC<ViewerPageProps> = ({ onBack }) => {
         }
 
         if (selectedDemo === 'slide') {
+            if (!docs.slide) return <div>Loading...</div>
             // PresentationMode handles its own layout, but we are inside a Modal body.
             // It is `fixed inset-0 z-[9999]`. It will render ON TOP of everything.
             // We can just render it here.
             return (
                 <PresentationMode
-                    doc={DUMMY_SLIDES}
+                    doc={docs.slide}
                     initialSlideId="s1"
                     onExit={handleClose}
                 />
             )
         }
 
-        const template: Doc = selectedDemo === 'invoice' ? INVOICE_TEMPLATE : SIGNATURE_TEMPLATE
+        const template = selectedDemo === 'invoice' ? docs.invoice : docs.signature
+        if (!template) return <div>Loading...</div>
+
         return (
             <div className="w-full h-full bg-gray-50 dark:bg-gray-900 flex justify-center overflow-auto p-4">
                 <TemplateViewer doc={template} zoom={zoom / 100} />
@@ -191,34 +277,40 @@ export const ViewerPage: React.FC<ViewerPageProps> = ({ onBack }) => {
                         >
                             {/* Live Thumbnail */}
                             <div className="h-48 relative bg-gray-100 overflow-hidden pointer-events-none border-b border-border">
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    {/* Wrapper to scale down the content. Assuming A4 width ~600px, 0.25 scale = 150px which fits in 192px height container */}
-                                    <div className="transform scale-[0.25] flex items-center justify-center">
-                                        {demo.id === 'bedlayout' ? (
-                                            <div className="w-[800px] h-[600px] bg-white border border-gray-200 shadow-md">
-                                                <BedLayoutViewer
-                                                    document={dummyBedLayout}
-                                                    dashboardData={dummyDashboardData}
+                                {loading ? (
+                                    <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+                                        <Loader2 className="w-8 h-8 animate-spin" />
+                                    </div>
+                                ) : (
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        {/* Wrapper to scale down the content. Assuming A4 width ~600px, 0.25 scale = 150px which fits in 192px height container */}
+                                        <div className="transform scale-[0.25] flex items-center justify-center">
+                                            {demo.id === 'bedlayout' && docs.bedlayout ? (
+                                                <div className="w-[800px] h-[600px] bg-white border border-gray-200 shadow-md">
+                                                    <BedLayoutViewer
+                                                        document={docs.bedlayout}
+                                                        dashboardData={dashboardData}
+                                                        zoom={1}
+                                                    />
+                                                </div>
+                                            ) : demo.id === 'mindmap' ? (
+                                                <div className="w-[800px] h-[600px] bg-white border border-gray-200 shadow-md overflow-hidden">
+                                                    <MindmapEditor readOnly />
+                                                </div>
+                                            ) : demo.id === 'slide' && docs.slide ? (
+                                                <TemplateViewer
+                                                    doc={docs.slide}
                                                     zoom={1}
                                                 />
-                                            </div>
-                                        ) : demo.id === 'mindmap' ? (
-                                            <div className="w-[800px] h-[600px] bg-white border border-gray-200 shadow-md overflow-hidden">
-                                                <MindmapEditor readOnly />
-                                            </div>
-                                        ) : demo.id === 'slide' ? (
-                                            <TemplateViewer
-                                                doc={DUMMY_SLIDES}
-                                                zoom={1}
-                                            />
-                                        ) : (
-                                            <TemplateViewer
-                                                doc={demo.id === 'invoice' ? INVOICE_TEMPLATE : SIGNATURE_TEMPLATE}
-                                                zoom={1} // Zoom 1 inside the scaled container
-                                            />
-                                        )}
+                                            ) : (demo.id === 'invoice' || demo.id === 'signature') && docs[demo.id] ? (
+                                                <TemplateViewer
+                                                    doc={docs[demo.id]}
+                                                    zoom={1} // Zoom 1 inside the scaled container
+                                                />
+                                            ) : null}
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                                 <div className="absolute inset-0 bg-transparent group-hover:bg-primary/5 transition-colors duration-300" />
                             </div>
 
@@ -288,3 +380,4 @@ export const ViewerPage: React.FC<ViewerPageProps> = ({ onBack }) => {
         </div>
     )
 }
+

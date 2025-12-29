@@ -1,8 +1,94 @@
-import type { Doc } from 'wysiwyg-pdf'
+import { db } from "./db";
+import { documents } from "./schema";
+import { eq, and } from "drizzle-orm";
 
-const ptToMm = (pt: number) => (pt * 25.4) / 72
+// --- Helpers ---
+const pxToMm = (px: number) => (px * 25.4) / 96;
+const ptToMm = (pt: number) => (pt * 25.4) / 72;
+const id = (prefix: string) => `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
 
-export const INVOICE_TEMPLATE: Doc = {
+// --- Data: Bed Layout ---
+const createBed = (x: number, y: number, label: string, rotation = 0) => ({
+    id: id('bed'),
+    t: 'widget',
+    widget: 'bed',
+    s: 'layout',
+    x: pxToMm(x),
+    y: pxToMm(y),
+    w: pxToMm(60),
+    h: pxToMm(120),
+    r: rotation,
+    name: label,
+    opacity: 1,
+    locked: true,
+    data: { bedType: 'standard' }
+});
+
+const createWall = (x1: number, y1: number, x2: number, y2: number) => ({
+    id: id('wall'),
+    t: 'line',
+    s: 'layout',
+    pts: [pxToMm(x1), pxToMm(y1), pxToMm(x2), pxToMm(y2)],
+    stroke: '#334155',
+    strokeW: pxToMm(4),
+    arrows: ['none', 'none'],
+    locked: true
+});
+
+const createText = (x: number, y: number, text: string, fontSize = 14) => ({
+    id: id('text'),
+    t: 'text',
+    s: 'layout',
+    text,
+    font: 'Meiryo',
+    fontSize: pxToMm(fontSize),
+    fontWeight: 700,
+    fill: '#0f172a',
+    x: pxToMm(x),
+    y: pxToMm(y),
+    w: pxToMm(200),
+    h: pxToMm(30),
+    align: 'c',
+    r: 0,
+    locked: true
+});
+
+const beds = [
+    createBed(50, 100, 'b1'),
+    createBed(150, 100, 'b2'),
+    createBed(250, 100, 'b3'),
+    createBed(50, 400, 'b4'),
+    createBed(150, 400, 'b5'),
+    createBed(250, 400, 'b6'),
+];
+
+const walls = [
+    createWall(20, 20, 780, 20),
+    createWall(20, 20, 20, 580),
+    createWall(780, 20, 780, 580),
+    createWall(20, 580, 780, 580),
+    createWall(350, 20, 350, 200),
+    createWall(350, 400, 350, 580),
+];
+
+const labels = [
+    createText(300, 30, 'ICU Ward A', 24),
+    createText(400, 250, 'Nurse Station', 16),
+];
+
+const BED_LAYOUT_DOC = {
+    v: 1,
+    id: 'demo-icu-ward',
+    title: 'ICU Ward A',
+    unit: 'mm',
+    surfaces: [
+        { id: 'layout', type: 'canvas', w: pxToMm(800), h: pxToMm(600) },
+    ],
+    nodes: [...walls, ...beds, ...labels],
+};
+
+// --- Data: Invoice ---
+const INVOICE_DOC = {
     v: 1,
     id: 'invoice-template',
     title: 'Invoice Template',
@@ -62,7 +148,7 @@ export const INVOICE_TEMPLATE: Doc = {
             s: 'page-1',
             t: 'line',
             name: 'Line 1',
-            pts: [ptToMm(40), ptToMm(140), ptToMm(555), ptToMm(140)], // Adjusted to be below headers based on context (guesswork allowed for dummy data)
+            pts: [ptToMm(40), ptToMm(140), ptToMm(555), ptToMm(140)],
             stroke: '#dddddd',
             strokeW: ptToMm(1),
             arrows: ['none', 'none'],
@@ -133,12 +219,13 @@ export const INVOICE_TEMPLATE: Doc = {
             x: ptToMm(455), y: ptToMm(250), w: ptToMm(100), h: ptToMm(20),
         }
     ],
-}
+};
 
-export const SIGNATURE_TEMPLATE: Doc = {
+// --- Data: Signature ---
+const SIGNATURE_DOC = {
     v: 1,
-    id: 'doc-1',
-    title: 'New Template',
+    id: 'doc-1', // Consider changing to unique ID like signature-demo
+    title: 'Signature Document',
     unit: 'mm',
     surfaces: [
         {
@@ -181,4 +268,63 @@ export const SIGNATURE_TEMPLATE: Doc = {
             ]
         }
     ]
-}
+};
+
+// --- Data: Slides ---
+const SLIDE_DOC = {
+    v: 1,
+    id: 'slide-demo',
+    title: 'Presentation Demo',
+    unit: 'mm',
+    surfaces: [
+        { id: 's1', type: 'slide', w: 297, h: 210, bg: '#ffffff' },
+        { id: 's2', type: 'slide', w: 297, h: 210, bg: '#f0f9ff' },
+    ],
+    nodes: [
+        { id: 't1', t: 'text', s: 's1', x: 20, y: 80, w: 257, h: 30, text: 'Welcome to Slide Viewer', fontSize: 16, align: 'c', fill: '#000000' },
+        { id: 't2', t: 'text', s: 's1', x: 20, y: 120, w: 257, h: 20, text: 'Click next to see more', fontSize: 10, align: 'c', fill: '#666666' },
+        { id: 't3', t: 'text', s: 's2', x: 20, y: 90, w: 257, h: 30, text: 'Slide 2: Features', fontSize: 14, align: 'c', fill: '#0369a1' },
+    ]
+};
+
+// --- Seed Function ---
+export const seed = () => {
+    const user = "anonymous";
+    const now = Date.now();
+
+    const items = [
+        { type: 'bed-layout', title: BED_LAYOUT_DOC.title, payload: BED_LAYOUT_DOC },
+        { type: 'report', title: INVOICE_DOC.title, payload: INVOICE_DOC },
+        { type: 'signature', title: SIGNATURE_DOC.title, payload: SIGNATURE_DOC },
+        { type: 'slide', title: SLIDE_DOC.title, payload: SLIDE_DOC },
+    ];
+
+    console.log("Seeding database...");
+
+    for (const item of items) {
+        const existing = db
+            .select()
+            .from(documents)
+            .where(and(eq(documents.user, user), eq(documents.title, item.title)))
+            .get();
+
+        if (!existing) {
+            console.log(`Inserting ${item.title}...`);
+            db.insert(documents).values({
+                id: crypto.randomUUID(),
+                user,
+                type: item.type,
+                title: item.title,
+                payload: JSON.stringify(item.payload),
+                createdAt: now,
+                updatedAt: now,
+            }).run();
+        } else {
+            // Optional: Update if exists to ensure dummy data is fresh?
+            // For now, let's just skip if exists to respect user changes
+            console.log(`Skipping ${item.title} (already exists)`);
+        }
+    }
+
+    console.log("Seeding complete.");
+};

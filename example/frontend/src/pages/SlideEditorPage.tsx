@@ -1,8 +1,7 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, useCallback } from 'react'
 import { ArrowLeft, Save } from 'lucide-react'
-import { SlideEditor, type Doc } from 'wysiwyg-pdf'
-import { DocumentLoadMenu } from '../components/DocumentLoadMenu'
-import { saveDocument } from '../api/documents'
+import { SlideEditor, type Doc, DocumentLoadMenu } from 'wysiwyg-pdf'
+import { saveDocument, listDocuments, getDocument } from '../api/documents'
 
 interface SlideEditorPageProps {
     onBack: () => void
@@ -13,6 +12,35 @@ export const SlideEditorPage: React.FC<SlideEditorPageProps> = ({ onBack }) => {
     const [loadDoc, setLoadDoc] = useState<Doc | null>(null)
     const [loadNonce, setLoadNonce] = useState(0)
     const latestDocRef = useRef<Doc | null>(null)
+
+    const fetchRecent = useCallback(async () => {
+        const response = await listDocuments({ user: 'anonymous', type: 'slide', limit: 5 })
+        return response.items
+    }, [])
+
+    const fetchBrowse = useCallback(
+        async (query: string, offset: number) => {
+            const response = await listDocuments({
+                user: 'anonymous',
+                type: 'slide',
+                q: query || undefined,
+                limit: 20,
+                offset,
+            })
+            return {
+                items: response.items,
+                hasMore: response.items.length === 20,
+            }
+        },
+        []
+    )
+
+    const handleLoad = useCallback(async (id: string) => {
+        const detail = await getDocument(id, 'anonymous')
+        setLoadDoc(detail.payload as Doc)
+        setLoadNonce((prev) => prev + 1)
+        setTemplateName(detail.title)
+    }, [])
 
     const handleSave = () => {
         const save = async () => {
@@ -91,15 +119,11 @@ export const SlideEditorPage: React.FC<SlideEditorPageProps> = ({ onBack }) => {
                     toolbarActions={
                         <>
                             <DocumentLoadMenu
-                                user="anonymous"
-                                type="slide"
+                                fetchRecent={fetchRecent}
+                                fetchBrowse={fetchBrowse}
+                                onLoad={handleLoad}
                                 triggerClassName="px-2 py-1 text-xs"
                                 triggerTooltip="ロード"
-                                onLoad={({ payload, title }) => {
-                                    setLoadDoc(payload as Doc)
-                                    setLoadNonce((prev) => prev + 1)
-                                    setTemplateName(title)
-                                }}
                             />
                             <button
                                 onClick={handleSave}

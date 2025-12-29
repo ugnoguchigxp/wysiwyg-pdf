@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef, useState, useEffect, useCallback } from 'react'
 import {
     BedLayoutHeader,
     ShortcutHelpModal,
@@ -10,13 +10,13 @@ import {
     type BedLayoutEditorHandle,
     type BedStatusData,
     useEditorHistoryDoc as useBedEditorHistoryDoc,
+    DocumentLoadMenu,
 } from 'wysiwyg-pdf'
 import { EDITOR_TRANSLATIONS } from '../constants/translations'
 import { useReactToPrint, type UseReactToPrintOptions } from 'react-to-print'
 import { useTranslation } from 'react-i18next'
 import { Moon, Sun, LayoutDashboard, Edit } from 'lucide-react'
-import { DocumentLoadMenu } from '../components/DocumentLoadMenu'
-import { saveDocument } from '../api/documents'
+import { saveDocument, listDocuments, getDocument } from '../api/documents'
 
 // Initial State (Unified Doc)
 const INITIAL_BED_DOC: Doc = {
@@ -82,8 +82,8 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                         s: node.s || surfaceId,
                         pts: Array.isArray(node.pts)
                             ? node.pts
-                                  .map((pt) => normalizeNumber(pt))
-                                  .filter((pt): pt is number => typeof pt === 'number')
+                                .map((pt) => normalizeNumber(pt))
+                                .filter((pt): pt is number => typeof pt === 'number')
                             : node.pts,
                     }
                 }
@@ -237,6 +237,35 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
         void save()
     }
 
+    const fetchRecent = useCallback(async () => {
+        const response = await listDocuments({ user: 'anonymous', type: 'bed-layout', limit: 5 })
+        return response.items
+    }, [])
+
+    const fetchBrowse = useCallback(
+        async (query: string, offset: number) => {
+            const response = await listDocuments({
+                user: 'anonymous',
+                type: 'bed-layout',
+                q: query || undefined,
+                limit: 20,
+                offset,
+            })
+            return {
+                items: response.items,
+                hasMore: response.items.length === 20,
+            }
+        },
+        []
+    )
+
+    const handleLoad = useCallback(async (id: string) => {
+        const detail = await getDocument(id, 'anonymous')
+        setBedDocument(normalizeDoc(detail.payload as Doc))
+        setTemplateName(detail.title)
+        setSelectedElementId(null)
+    }, [])
+
     // Print Logic (stubbed for now or reuse existing hidden print layout if compatible)
     const reactToPrintFn = useReactToPrint({
         contentRef: printRef, // We might need a BedPrintLayout later
@@ -264,13 +293,9 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                 i18nOverrides={EDITOR_TRANSLATIONS}
             >
                 <DocumentLoadMenu
-                    user="anonymous"
-                    type="bed-layout"
-                    onLoad={({ payload, title }) => {
-                        setBedDocument(normalizeDoc(payload as Doc))
-                        setTemplateName(title)
-                        setSelectedElementId(null)
-                    }}
+                    fetchRecent={fetchRecent}
+                    fetchBrowse={fetchBrowse}
+                    onLoad={handleLoad}
                 />
                 <button
                     onClick={() => setIsDashboardMode(!isDashboardMode)}

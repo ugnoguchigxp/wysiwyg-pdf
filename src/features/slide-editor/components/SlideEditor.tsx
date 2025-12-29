@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { Rect } from 'react-konva' // Added Rect
-import type { UnifiedNode } from '@/types/canvas'
+import type { Doc, UnifiedNode } from '@/types/canvas'
 
 
 import { KonvaCanvasEditor, type KonvaCanvasEditorHandle } from '@/components/canvas/KonvaCanvasEditor'
