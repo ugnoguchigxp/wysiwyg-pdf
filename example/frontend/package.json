@@ -4,12 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "pnpm exec tsc -b && pnpm exec vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "dev": "bunx vite",
+    "build": "bunx tsc -b && bunx vite build",
+    "lint": "bunx eslint .",
+    "preview": "bunx vite preview"
   },
   "dependencies": {
+    "@radix-ui/react-tooltip": "^1.2.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-popover": "^1.1.15",
@@ -29,7 +30,7 @@
     "react-to-print": "^3.2.0",
     "tailwind-merge": "^3.4.0",
     "use-image": "^1.1.4",
-    "wysiwyg-pdf": "file:.."
+    "wysiwyg-pdf": "file:../.."
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

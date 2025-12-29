@@ -20,9 +20,27 @@ import { useSlideOperations } from '../hooks/useSlideOperations'
 
 
 
-export const SlideEditor: React.FC = () => {
-    const { doc, setDoc, undo, redo, canUndo, canRedo } = useSlideHistory(INITIAL_DOC)
-    const [currentSlideId, setCurrentSlideId] = useState<string>(doc.surfaces[0]?.id || '')
+interface SlideEditorProps {
+    loadDoc?: Doc
+    loadNonce?: number
+    onDocChange?: (doc: Doc) => void
+    toolbarActions?: React.ReactNode
+}
+
+export const SlideEditor: React.FC<SlideEditorProps> = ({
+    loadDoc,
+    loadNonce,
+    onDocChange,
+    toolbarActions,
+}) => {
+    const { doc, setDoc, undo, redo, canUndo, canRedo, reset } = useSlideHistory(INITIAL_DOC)
+    const [currentSlideId, setCurrentSlideId] = useState<string>(() => {
+        return (
+            doc.surfaces.find((s) => s.masterId !== undefined)?.id ||
+            doc.surfaces[0]?.id ||
+            ''
+        )
+    })
     const [selectedIds, setSelectedIds] = useState<string[]>([])
     const [activeTool, setActiveTool] = useState('select')
     const [isPresentationMode, setIsPresentationMode] = useState(false)
@@ -34,6 +52,34 @@ export const SlideEditor: React.FC = () => {
     const editorContainerRef = useRef<HTMLDivElement>(null)
     const canvasRef = useRef<KonvaCanvasEditorHandle>(null)
     const lastSlideIdRef = useRef<string | null>(null) // To restore slide after master edit
+    const lastLoadNonceRef = useRef<number | undefined>(undefined)
+
+    useEffect(() => {
+        onDocChange?.(doc)
+    }, [doc, onDocChange])
+
+    useEffect(() => {
+        if (!loadDoc) return
+        if (loadNonce === undefined) return
+        if (lastLoadNonceRef.current === loadNonce) return
+
+        reset(loadDoc)
+        setSelectedIds([])
+        setActiveTool('select')
+        setIsPresentationMode(false)
+        setShowGrid(false)
+        setThumbnails({})
+
+        const nextSlideId =
+            loadDoc.surfaces.find((s) => s.masterId !== undefined)?.id ||
+            loadDoc.surfaces[0]?.id ||
+            ''
+        setCurrentSlideId(nextSlideId)
+        requestAnimationFrame(() => {
+            setCurrentSlideId(nextSlideId)
+        })
+        lastLoadNonceRef.current = loadNonce
+    }, [loadDoc, loadNonce, reset])
 
     // Ensure currentSlideId is valid
     useEffect(() => {
@@ -230,6 +276,19 @@ export const SlideEditor: React.FC = () => {
         }
     }, [doc])
 
+    const handleExportImage = useCallback(() => {
+        const stage = canvasRef.current?.getStage()
+        if (!stage) return
+
+        const dataURL = stage.toDataURL({ pixelRatio: 2 })
+        const link = document.createElement('a')
+        link.download = `${doc.title || 'presentation'}.png`
+        link.href = dataURL
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+    }, [doc.title])
+
     if (isPresentationMode) {
         return (
             <PresentationMode
@@ -240,20 +299,18 @@ export const SlideEditor: React.FC = () => {
         )
     }
 
-    // Master Actions
-    const handleSaveMaster = useCallback(() => {
-        // In a real app, this might start a download or save to backend
-        console.log('Saving Master...', doc)
-        alert('Master saved (logged to console)')
-    }, [doc])
-
-
-
     return (
         <div className="flex flex-col w-full h-full bg-background overflow-hidden">
             {/* Top Toolbar */}
             <TopToolbar
                 doc={doc}
+                presentationTitle={doc.title ?? ''}
+                onPresentationTitleChange={(title) => {
+                    setDoc((prev) => ({
+                        ...prev,
+                        title,
+                    }))
+                }}
                 currentSlideId={currentSlideId}
                 onDocChange={setDoc}
                 onSelectElement={(id) => setSelectedIds([id])}
@@ -261,6 +318,7 @@ export const SlideEditor: React.FC = () => {
                 onZoomChange={handleZoomChange}
                 onPlay={() => setIsPresentationMode(true)}
                 onExport={handleExport}
+                onExportImage={handleExportImage}
                 canUndo={canUndo}
                 canRedo={canRedo}
                 onUndo={undo}
@@ -270,8 +328,8 @@ export const SlideEditor: React.FC = () => {
                 onAddSlide={handleAddSlide}
                 isMasterEditMode={isMasterEditMode}
                 onToggleMasterEdit={handleToggleMasterEdit}
-                onSaveMaster={handleSaveMaster}
                 onSelectTemplate={handleSelectTemplate}
+                extraActions={toolbarActions}
             />
 
             <div className="flex-1 flex overflow-hidden">

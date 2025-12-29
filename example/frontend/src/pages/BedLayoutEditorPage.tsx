@@ -15,6 +15,8 @@ import { EDITOR_TRANSLATIONS } from '../constants/translations'
 import { useReactToPrint, type UseReactToPrintOptions } from 'react-to-print'
 import { useTranslation } from 'react-i18next'
 import { Moon, Sun, LayoutDashboard, Edit } from 'lucide-react'
+import { DocumentLoadMenu } from '../components/DocumentLoadMenu'
+import { saveDocument } from '../api/documents'
 
 // Initial State (Unified Doc)
 const INITIAL_BED_DOC: Doc = {
@@ -50,6 +52,54 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
 
     // State for Bed Layout Document (Unified)
     const [bedDoc, setBedDocument] = useState<Doc>(INITIAL_BED_DOC)
+
+    const normalizeNumber = (value: unknown) => {
+        if (typeof value === 'number') return value
+        if (typeof value === 'string') {
+            const parsed = Number(value)
+            return Number.isFinite(parsed) ? parsed : undefined
+        }
+        return undefined
+    }
+
+    const normalizeDoc = (raw: Doc) => {
+        const surfaceId =
+            raw.surfaces.find((s: Doc['surfaces'][number]) => s.type === 'canvas')?.id ||
+            raw.surfaces[0]?.id ||
+            'layout'
+
+        return {
+            ...raw,
+            surfaces: raw.surfaces.map((surface) => ({
+                ...surface,
+                w: normalizeNumber(surface.w) ?? surface.w,
+                h: normalizeNumber(surface.h) ?? surface.h,
+            })),
+            nodes: raw.nodes.map((node) => {
+                if (node.t === 'line') {
+                    return {
+                        ...node,
+                        s: node.s || surfaceId,
+                        pts: Array.isArray(node.pts)
+                            ? node.pts
+                                  .map((pt) => normalizeNumber(pt))
+                                  .filter((pt): pt is number => typeof pt === 'number')
+                            : node.pts,
+                    }
+                }
+                return {
+                    ...node,
+                    s: node.s || surfaceId,
+                    x: normalizeNumber(node.x) ?? node.x,
+                    y: normalizeNumber(node.y) ?? node.y,
+                    w: normalizeNumber(node.w) ?? node.w,
+                    h: normalizeNumber(node.h) ?? node.h,
+                    r: normalizeNumber(node.r) ?? node.r,
+                    opacity: normalizeNumber(node.opacity) ?? node.opacity,
+                }
+            }),
+        }
+    }
 
     // History Management
     const {
@@ -151,8 +201,40 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
     }
 
     const handleSave = () => {
-        console.log(bedDoc)
-        alert(t('editor_save_success') || 'Saved! (Check Console)')
+        const save = async () => {
+            try {
+                const trimmedTitle = templateName.trim() || 'Untitled'
+                if (trimmedTitle !== templateName) {
+                    setTemplateName(trimmedTitle)
+                }
+
+                const result = await saveDocument({
+                    user: 'anonymous',
+                    type: 'bed-layout',
+                    title: trimmedTitle,
+                    payload: bedDoc,
+                })
+
+                if (result.status === 'exists') {
+                    const confirmed = window.confirm('同名の保存データがあります。上書きしますか？')
+                    if (!confirmed) return
+                    await saveDocument({
+                        user: 'anonymous',
+                        type: 'bed-layout',
+                        title: trimmedTitle,
+                        payload: bedDoc,
+                        force: true,
+                    })
+                }
+
+                alert(t('editor_save_success') || 'Saved!')
+            } catch (error) {
+                console.error('[BedLayoutEditorPage] Error during save:', error)
+                alert('Error during save. See console.')
+            }
+        }
+
+        void save()
     }
 
     // Print Logic (stubbed for now or reuse existing hidden print layout if compatible)
@@ -181,6 +263,15 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                 onBack={onBack}
                 i18nOverrides={EDITOR_TRANSLATIONS}
             >
+                <DocumentLoadMenu
+                    user="anonymous"
+                    type="bed-layout"
+                    onLoad={({ payload, title }) => {
+                        setBedDocument(normalizeDoc(payload as Doc))
+                        setTemplateName(title)
+                        setSelectedElementId(null)
+                    }}
+                />
                 <button
                     onClick={() => setIsDashboardMode(!isDashboardMode)}
                     className={`p-2 rounded-md hover:bg-accent transition-colors flex items-center gap-2 ${isDashboardMode ? 'text-blue-500 bg-blue-100 dark:bg-blue-900' : 'text-muted-foreground'}`}

@@ -257,6 +257,43 @@ const SlideThumbnail: React.FC<SlideThumbnailProps> = ({
         return doc.nodes.filter(n => n.s === slide.id)
     }, [doc.nodes, slide.id, isMasterEditMode])
 
+    const slidePreview = React.useMemo(() => {
+        if (isMasterEditMode) {
+            return {
+                surface: slide,
+                nodes: previewNodes,
+            }
+        }
+
+        const masterSurface = slide.masterId
+            ? doc.surfaces.find((s) => s.id === slide.masterId)
+            : null
+        const masterNodes = masterSurface
+            ? doc.nodes.filter((n) => n.s === masterSurface.id)
+            : []
+
+        const slideNodes = doc.nodes.filter((n) => n.s === slide.id)
+
+        const pageNumber = index + 1
+        const processedMasterNodes = masterNodes
+            .filter((n) => !n.isPlaceholder)
+            .map((n) => {
+                const node = { ...n, locked: true }
+                if (node.t === 'text' && node.dynamicContent === 'slide-number') {
+                    return { ...node, text: String(pageNumber) }
+                }
+                return node
+            })
+
+        return {
+            surface: {
+                ...slide,
+                bg: slide.bg || masterSurface?.bg || '#ffffff',
+            },
+            nodes: [...processedMasterNodes, ...slideNodes],
+        }
+    }, [doc.nodes, doc.surfaces, index, isMasterEditMode, previewNodes, slide])
+
     return (
         <div
             draggable
@@ -296,7 +333,14 @@ const SlideThumbnail: React.FC<SlideThumbnailProps> = ({
                             className="w-full h-full object-contain"
                         />
                     ) : (
-                        <div className="text-xs text-muted-foreground">...</div>
+                        dimensions.width > 0 && (
+                            <SlidePreview
+                                width={dimensions.width}
+                                height={dimensions.height}
+                                surface={slidePreview.surface}
+                                nodes={slidePreview.nodes}
+                            />
+                        )
                     )
                 )}
 

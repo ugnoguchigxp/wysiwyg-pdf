@@ -1,7 +1,8 @@
 import type Konva from 'konva'
 import type React from 'react'
-import { useRef, useState } from 'react'
-import { Layer, Line, Stage } from 'react-konva'
+import { useEffect, useRef, useState } from 'react'
+import { Image, Layer, Line, Stage } from 'react-konva'
+import useImage from 'use-image'
 import { useI18n } from '@/i18n/I18nContext'
 import { simplifyPoints } from '@/utils/geometry'
 import { PEN_CURSOR_URL } from '../cursors'
@@ -10,6 +11,7 @@ interface SignatureKonvaEditorProps {
   width?: number
   height?: number
   simplification?: number
+  initialDataUrl?: string
   onSave?: (dataUrl: string) => void
   onCancel?: () => void
 }
@@ -24,13 +26,20 @@ export const SignatureKonvaEditor: React.FC<SignatureKonvaEditorProps> = ({
   width = 600,
   height = 300,
   simplification = 0,
+  initialDataUrl,
   onSave,
   onCancel,
 }) => {
   const { t } = useI18n()
   const [lines, setLines] = useState<SignatureLine[]>([])
   const [isDrawing, setIsDrawing] = useState(false)
+  const [backgroundUrl, setBackgroundUrl] = useState<string | null>(initialDataUrl ?? null)
+  const [backgroundImage] = useImage(backgroundUrl ?? '')
   const stageRef = useRef<Konva.Stage>(null)
+
+  useEffect(() => {
+    setBackgroundUrl(initialDataUrl ?? null)
+  }, [initialDataUrl])
 
   const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
     setIsDrawing(true)
@@ -92,6 +101,7 @@ export const SignatureKonvaEditor: React.FC<SignatureKonvaEditorProps> = ({
 
   const handleClear = () => {
     setLines([])
+    setBackgroundUrl(null)
   }
 
   const handleDownload = () => {
@@ -126,6 +136,16 @@ export const SignatureKonvaEditor: React.FC<SignatureKonvaEditorProps> = ({
           ref={stageRef}
         >
           <Layer>
+            {backgroundImage && (
+              <Image
+                image={backgroundImage}
+                x={0}
+                y={0}
+                width={width}
+                height={height}
+                listening={false}
+              />
+            )}
             {lines.map((line, i) => {
               let points = line.points
               // Apply simplification if simplification > 0

@@ -1,7 +1,7 @@
 import { StrictMode, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { useTranslation } from 'react-i18next'
-import { I18nProvider, type Translator } from 'wysiwyg-pdf'
+import { I18nProvider, TooltipProvider, type Translator } from 'wysiwyg-pdf'
 import './index.css'
 import './i18n'
 import App from './App.tsx'
@@ -22,8 +22,10 @@ function WysiwygPdfI18nBridge({ children }: { children: ReactNode }) {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <WysiwygPdfI18nBridge>
-      <App />
-    </WysiwygPdfI18nBridge>
+    <TooltipProvider>
+      <WysiwygPdfI18nBridge>
+        <App />
+      </WysiwygPdfI18nBridge>
+    </TooltipProvider>
   </StrictMode>
 )

@@ -14,16 +14,18 @@ export const TooltipContent = React.memo(
       align?: 'start' | 'center' | 'end'
     }
   >(({ className, sideOffset = 4, side = 'bottom', ...props }, ref) => (
-    <TooltipPrimitive.Content
-      ref={ref}
-      sideOffset={sideOffset}
-      side={side}
-      className={cn(
-        'z-50 overflow-hidden rounded-md border border-white bg-black text-white px-3 py-1.5 text-xs shadow-md animate-in fade-in-0 zoom-in-95',
-        className
-      )}
-      {...props}
-    />
+    <TooltipPrimitive.Portal>
+      <TooltipPrimitive.Content
+        ref={ref}
+        sideOffset={sideOffset}
+        side={side}
+        className={cn(
+          'z-50 overflow-hidden rounded-md border border-white bg-black text-white px-3 py-1.5 text-xs shadow-md animate-in fade-in-0 zoom-in-95',
+          className
+        )}
+        {...props}
+      />
+    </TooltipPrimitive.Portal>
   ))
 )
 TooltipContent.displayName = TooltipPrimitive.Content.displayName

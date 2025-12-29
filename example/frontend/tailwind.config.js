@@ -6,7 +6,7 @@ export default {
   content: [
     './index.html',
     './src/**/*.{js,ts,jsx,tsx}',
-    '../src/**/*.{js,ts,jsx,tsx}', // Important: Include package source
+    '../../src/**/*.{js,ts,jsx,tsx}', // Important: Include package source
   ],
   theme: {
     extend: {

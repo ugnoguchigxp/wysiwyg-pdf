@@ -1,5 +1,5 @@
 import type Konva from 'konva'
-import React, { useState, useCallback, useRef } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import type { Doc, UnifiedNode } from '@/types/canvas'
 import { KonvaCanvasEditor, type KonvaCanvasEditorHandle } from '@/components/canvas/KonvaCanvasEditor'
 import { Button } from '@/components/ui/Button'
@@ -55,17 +55,46 @@ const INITIAL_DOC: Doc = {
 
 interface MindmapEditorProps {
   readOnly?: boolean
+  loadDoc?: Doc
+  loadNonce?: number
+  onDocChange?: (doc: Doc) => void
+  showHeader?: boolean
 }
 
-export const MindmapEditor: React.FC<MindmapEditorProps> = ({ readOnly = false }) => {
+export const MindmapEditor: React.FC<MindmapEditorProps> = ({
+  readOnly = false,
+  loadDoc,
+  loadNonce,
+  onDocChange,
+  showHeader = true,
+}) => {
   const canvasRef = useRef<KonvaCanvasEditorHandle>(null)
-  const { doc, setDoc, undo, redo } = useMindmapHistory(INITIAL_DOC)
+  const { doc, setDoc, undo, redo, reset } = useMindmapHistory(INITIAL_DOC)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [collapsedNodes, setCollapsedNodes] = useState<Set<string>>(new Set())
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [showMermaidExport, setShowMermaidExport] = useState(false)
   const [showMermaidImport, setShowMermaidImport] = useState(false)
   const { t } = useI18n()
+  const lastLoadNonceRef = useRef<number | undefined>(undefined)
+
+  useEffect(() => {
+    onDocChange?.(doc)
+  }, [doc, onDocChange])
+
+  useEffect(() => {
+    if (!loadDoc) return
+    if (loadNonce === undefined) return
+    if (lastLoadNonceRef.current === loadNonce) return
+
+    reset(loadDoc)
+    setCollapsedNodes(new Set())
+    setSelectedNodeId(null)
+    setShowMermaidExport(false)
+    setShowMermaidImport(false)
+    setShowShortcuts(false)
+    lastLoadNonceRef.current = loadNonce
+  }, [loadDoc, loadNonce, reset])
 
   // Core Graph Logic (pure data)
   const graph = useMindmapGraph(doc)
@@ -299,47 +328,49 @@ export const MindmapEditor: React.FC<MindmapEditorProps> = ({ readOnly = false }
 
   return (
     <div className="flex flex-col w-full h-full mindmap-root">
-      <div className="h-12 border-b bg-white flex items-center justify-between px-4 shadow-sm z-10 mindmap-header">
-        <h1 className="font-bold text-slate-700">Mindmap Editor</h1>
-        <div className="flex gap-2">
-          <Button
-            variant="circle-help"
-            size="circle"
-            title="ショートカット"
-          >
-            ?
-          </Button>
-          {!readOnly && (
-            <>
-              <Button variant="outline" size="sm" onClick={handleExpandAll}>
-                <ChevronsDown className="h-4 w-4 mr-1" />
-                全て展開
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleCollapseAll}>
-                <ChevronsUp className="h-4 w-4 mr-1" />
-                全て折りたたみ
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setShowMermaidExport(true)}>
-                <Download className="h-4 w-4 mr-1" />
-                {t('export_mermaid', 'エクスポート')}
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setShowMermaidImport(true)}>
-                <Upload className="h-4 w-4 mr-1" />
-                {t('import_mermaid', 'インポート')}
-              </Button>
-              <div className="h-6 w-px bg-border" />
-            </>
-          )}
-          <Button variant="outline" size="sm" onClick={handleDownloadImage}>
-            <ImageIcon className="h-4 w-4 mr-1" />
-            {t('download_image', 'Image')}
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
-            <FileDown className="h-4 w-4 mr-1" />
-            {t('download_pdf', 'PDF')}
-          </Button>
+      {showHeader && (
+        <div className="h-12 border-b bg-white flex items-center justify-between px-4 shadow-sm z-10 mindmap-header">
+          <h1 className="font-bold text-slate-700">Mindmap Editor</h1>
+          <div className="flex gap-2">
+            <Button
+              variant="circle-help"
+              size="circle"
+              title="ショートカット"
+            >
+              ?
+            </Button>
+            {!readOnly && (
+              <>
+                <Button variant="outline" size="sm" onClick={handleExpandAll}>
+                  <ChevronsDown className="h-4 w-4 mr-1" />
+                  全て展開
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleCollapseAll}>
+                  <ChevronsUp className="h-4 w-4 mr-1" />
+                  全て折りたたみ
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowMermaidExport(true)}>
+                  <Download className="h-4 w-4 mr-1" />
+                  {t('export_mermaid', 'エクスポート')}
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowMermaidImport(true)}>
+                  <Upload className="h-4 w-4 mr-1" />
+                  {t('import_mermaid', 'インポート')}
+                </Button>
+                <div className="h-6 w-px bg-border" />
+              </>
+            )}
+            <Button variant="outline" size="sm" onClick={handleDownloadImage}>
+              <ImageIcon className="h-4 w-4 mr-1" />
+              {t('download_image', 'Image')}
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
+              <FileDown className="h-4 w-4 mr-1" />
+              {t('download_pdf', 'PDF')}
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
       <div className="flex-1 overflow-hidden mindmap-canvas-container">
         <div className="w-full h-full content-container">
           <KonvaCanvasEditor

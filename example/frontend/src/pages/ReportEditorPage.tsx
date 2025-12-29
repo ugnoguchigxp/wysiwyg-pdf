@@ -15,6 +15,8 @@ import { useReactToPrint, type UseReactToPrintOptions } from 'react-to-print'
 import { useTranslation } from 'react-i18next'
 import { Moon, Sun } from 'lucide-react'
 import { EDITOR_TRANSLATIONS } from '../constants/translations'
+import { DocumentLoadMenu } from '../components/DocumentLoadMenu'
+import { saveDocument } from '../api/documents'
 
 // Local Mock Data (Moved from App.tsx)
 const MOCK_SCHEMA: IDataSchema = {
@@ -117,26 +119,48 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
     }
 
     const handleSave = () => {
-        try {
-            // Attempt to flush any active signature drawing
-            let updatedDoc = null
-            if (editorRef.current) {
-                updatedDoc = editorRef.current.flushSignature()
-            } else {
-                console.error('[ReportEditorPage] editorRef is null!')
+        const save = async () => {
+            try {
+                let updatedDoc = null
+                if (editorRef.current) {
+                    updatedDoc = editorRef.current.flushSignature()
+                } else {
+                    console.error('[ReportEditorPage] editorRef is null!')
+                }
+
+                const docToSave = updatedDoc || doc
+                const trimmedTitle = templateName.trim() || 'Untitled'
+                if (trimmedTitle !== templateName) {
+                    setTemplateName(trimmedTitle)
+                }
+
+                const result = await saveDocument({
+                    user: 'anonymous',
+                    type: 'report',
+                    title: trimmedTitle,
+                    payload: docToSave,
+                })
+
+                if (result.status === 'exists') {
+                    const confirmed = window.confirm('同名の保存データがあります。上書きしますか？')
+                    if (!confirmed) return
+                    await saveDocument({
+                        user: 'anonymous',
+                        type: 'report',
+                        title: trimmedTitle,
+                        payload: docToSave,
+                        force: true,
+                    })
+                }
+
+                alert(t('editor_save_success') || 'Saved!')
+            } catch (error) {
+                console.error('[ReportEditorPage] Error during save:', error)
+                alert('Error during save. See console.')
             }
-
-            // Use updated doc if available, otherwise current state doc
-            const docToSave = updatedDoc || doc
-
-            // Log Object directly as requested
-            console.log(docToSave)
-
-            alert(t('editor_save_success') || 'Saved! (Check Console)')
-        } catch (error) {
-            console.error('[ReportEditorPage] Error during save:', error)
-            alert('Error during save. See console.')
         }
+
+        void save()
     }
 
     return (
@@ -158,6 +182,15 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
                 onBack={onBack}
                 i18nOverrides={EDITOR_TRANSLATIONS}
             >
+                <DocumentLoadMenu
+                    user="anonymous"
+                    type="report"
+                    onLoad={({ payload, title }) => {
+                        setDocument(payload as Doc)
+                        setTemplateName(title)
+                        setSelectedElementId(null)
+                    }}
+                />
                 <button
                     onClick={() => setDarkMode(!darkMode)}
                     className="p-2 rounded-md hover:bg-accent text-muted-foreground transition-colors"

@@ -12,7 +12,6 @@ import {
     ZoomOut,
     LayoutTemplate,
     Layers,
-    Save, // Added
     Palette, // For Templates
 } from 'lucide-react'
 import { SLIDE_TEMPLATES } from '../constants/templates'
@@ -32,6 +31,8 @@ import { SLIDE_LAYOUTS, type LayoutType } from '../constants/layouts'
 
 interface TopToolbarProps {
     doc: Doc
+    presentationTitle: string
+    onPresentationTitleChange: (title: string) => void
     currentSlideId: string
     onDocChange: (doc: Doc) => void
     onSelectElement: (id: string) => void
@@ -39,6 +40,7 @@ interface TopToolbarProps {
     onZoomChange: (z: number) => void
     onPlay: () => void
     onExport: () => void
+    onExportImage: () => void
     canUndo: boolean
     canRedo: boolean
     onUndo: () => void
@@ -48,12 +50,14 @@ interface TopToolbarProps {
     onAddSlide: (layout: LayoutType) => void
     isMasterEditMode: boolean
     onToggleMasterEdit: () => void
-    onSaveMaster?: () => void
     onSelectTemplate?: (templateId: string) => void
+    extraActions?: React.ReactNode
 }
 
 export const TopToolbar: React.FC<TopToolbarProps> = ({
     doc,
+    presentationTitle,
+    onPresentationTitleChange,
     currentSlideId,
     onDocChange,
     onSelectElement,
@@ -61,6 +65,7 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
     onZoomChange,
     onPlay,
     onExport,
+    onExportImage,
     canUndo,
     canRedo,
     onUndo,
@@ -71,8 +76,8 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
     // Removed duplicate onAddSlide
     isMasterEditMode,
     onToggleMasterEdit,
-    onSaveMaster,
     onSelectTemplate,
+    extraActions,
 }) => {
     const [pptxEnabled, setPptxEnabled] = useState(false)
 
@@ -99,13 +104,12 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
 
 
     return (
-        <div className="h-12 border-b border-border bg-background flex items-center px-4 gap-4 overflow-x-auto">
+        <div className="h-12 border-b border-border bg-background flex items-center px-2 gap-1 overflow-x-auto">
             {/* Slide Layouts */}
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="gap-2">
+                    <Button variant="ghost" size="icon" title="スライドレイアウト">
                         <LayoutTemplate className="h-4 w-4" />
-                        スライドレイアウト
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-[360px] p-2" align="start">
@@ -124,17 +128,24 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
                 </DropdownMenuContent>
             </DropdownMenu>
 
+            <input
+                value={presentationTitle}
+                onChange={(event) => onPresentationTitleChange(event.target.value)}
+                placeholder="プレゼンテーション名"
+                className="border border-border rounded-md px-2 py-1 text-xs w-48 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+
 
             <div className="h-6 w-px bg-border" />
 
             {/* Insert Tools */}
-            <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" onClick={handleAddText}>
+            <div className="flex items-center gap-0.5">
+                <Button variant="ghost" size="icon" onClick={handleAddText} title="テキスト">
                     <Type className="h-4 w-4" />
                 </Button>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" title="図形">
                             <Square className="h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
@@ -151,10 +162,10 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
                         ))}
                     </DropdownMenuContent>
                 </DropdownMenu>
-                <Button variant="ghost" size="icon" onClick={handleAddImage}>
+                <Button variant="ghost" size="icon" onClick={handleAddImage} title="画像">
                     <ImageIcon className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={handleAddLine}>
+                <Button variant="ghost" size="icon" onClick={handleAddLine} title="線">
                     <Minus className="h-4 w-4" />
                 </Button>
             </div>
@@ -164,35 +175,43 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
             {/* Master Edit Toggle */}
             <Button
                 variant={isMasterEditMode ? "secondary" : "ghost"}
-                size="sm"
+                size="icon"
                 onClick={onToggleMasterEdit}
                 className={isMasterEditMode ? "bg-accent text-accent-foreground border-accent" : ""}
+                title={isMasterEditMode ? "マスター編集中" : "マスター編集"}
             >
-                <Layers className="h-4 w-4 mr-2" />
-                {isMasterEditMode ? 'マスター編集中' : 'マスター編集'}
+                <Layers className="h-4 w-4" />
             </Button>
 
             <div className="h-6 w-px bg-border" />
 
             {/* Zoom */}
-            <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" onClick={() => onZoomChange(zoom - 10)}>
+            <div className="flex items-center gap-0.5">
+                <Button variant="ghost" size="icon" onClick={() => onZoomChange(zoom - 10)} title="ズームアウト">
                     <ZoomOut className="h-4 w-4" />
                 </Button>
                 <span className="text-xs w-8 text-center">{zoom}%</span>
-                <Button variant="ghost" size="icon" onClick={() => onZoomChange(zoom + 10)}>
+                <Button variant="ghost" size="icon" onClick={() => onZoomChange(zoom + 10)} title="ズームイン">
                     <ZoomIn className="h-4 w-4" />
                 </Button>
             </div>
 
             <div className="flex-1" />
 
+            {extraActions && (
+                <div className="flex items-center gap-0.5">
+                    {extraActions}
+                </div>
+            )}
+
+            {extraActions && <div className="h-6 w-px bg-border" />}
+
             {/* History */}
-            <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" onClick={onUndo} disabled={!canUndo}>
+            <div className="flex items-center gap-0.5">
+                <Button variant="ghost" size="icon" onClick={onUndo} disabled={!canUndo} title="元に戻す">
                     <Undo2 className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={onRedo} disabled={!canRedo}>
+                <Button variant="ghost" size="icon" onClick={onRedo} disabled={!canRedo} title="やり直し">
                     <Redo2 className="h-4 w-4" />
                 </Button>
             </div>
@@ -202,13 +221,17 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
             {/* Play & Export */}
             {/* Play/Export vs Master Controls */}
             {isMasterEditMode ? (
-                <div className="flex items-center gap-2">
-                    {/* Template Selector */}
+                <div className="flex items-center gap-1">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-1 px-2 py-1 text-xs"
+                                title="テンプレートをロード"
+                            >
                                 <Palette className="h-4 w-4" />
-                                テンプレート切替
+                                テンプレートをロード
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
@@ -219,25 +242,42 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
                             ))}
                         </DropdownMenuContent>
                     </DropdownMenu>
-
-                    {/* Save Master */}
-                    <Button variant="default" size="sm" onClick={onSaveMaster}>
-                        <Save className="h-4 w-4 mr-2" />
-                        マスター保存
-                    </Button>
                 </div>
             ) : (
-                <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" onClick={onPlay}>
+                <div className="flex items-center gap-1">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="px-2 py-1 text-xs"
+                        onClick={onPlay}
+                        title="プレゼン再生"
+                    >
                         <Play className="h-4 w-4 mr-1 map-fill" fill="currentColor" />
                         Play
                     </Button>
-                    {pptxEnabled && (
-                        <Button variant="outline" size="sm" onClick={onExport}>
-                            <Download className="h-4 w-4 mr-1" />
-                            Export PPTX
-                        </Button>
-                    )}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-1 px-2 py-1 text-xs"
+                                title="エクスポート"
+                            >
+                                <Download className="h-4 w-4" />
+                                Export
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={onExportImage}>
+                                <ImageIcon className="h-4 w-4 mr-2" />
+                                Image
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={onExport} disabled={!pptxEnabled}>
+                                <Download className="h-4 w-4 mr-2" />
+                                PPTX
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             )}
         </div>
