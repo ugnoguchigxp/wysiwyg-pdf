@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react'
 import type { ImageWidgetConfig } from '@/features/konva-editor/constants/propertyPanelConfig'
 import type { ImageNode } from '@/types/canvas'
 import { pxToMm } from '@/utils/units'
-import { WidgetLabel } from '../shared'
 import type { WidgetProps } from './types'
 
 export const ImageWidget: React.FC<WidgetProps<ImageWidgetConfig>> = ({
@@ -68,46 +67,52 @@ export const ImageWidget: React.FC<WidgetProps<ImageWidgetConfig>> = ({
         </div>
       )}
 
-      {config.props?.showUploader && (
-        <div>
-          <WidgetLabel>{resolveText('source', 'Source')}</WidgetLabel>
-          <label className="flex flex-col items-center justify-center w-full h-8 border border-border border-dashed rounded cursor-pointer hover:bg-muted transition-colors">
-            <span className="text-xs text-muted-foreground">
-              {resolveText('browse', 'Browse...')}
-            </span>
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (file) {
-                  const reader = new FileReader()
-                  reader.onload = (ev) => {
-                    const result = ev.target?.result as string
-                    if (result) {
-                      const img = new Image()
-                      img.onload = () => {
-                        const dpi = 96
-                        const naturalW = pxToMm(img.width, { dpi })
-                        const naturalH = pxToMm(img.height, { dpi })
+      <div className="flex gap-1">
+        <label className="flex flex-col items-center justify-center flex-1 h-8 border border-border border-dashed rounded cursor-pointer hover:bg-muted transition-colors">
+          <span className="text-xs text-muted-foreground">
+            {resolveText('browse', 'Browse...')}
+          </span>
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) {
+                const reader = new FileReader()
+                reader.onload = (ev) => {
+                  const result = ev.target?.result as string
+                  if (result) {
+                    const img = new Image()
+                    img.onload = () => {
+                      const dpi = 96
+                      const naturalW = pxToMm(img.width, { dpi })
+                      const naturalH = pxToMm(img.height, { dpi })
 
-                        onChange({
-                          src: result,
-                          w: naturalW,
-                          h: naturalH,
-                        } as Partial<ImageNode>)
-                      }
-                      img.src = result
+                      onChange({
+                        src: result,
+                        w: naturalW,
+                        h: naturalH,
+                      } as Partial<ImageNode>)
                     }
+                    img.src = result
                   }
-                  reader.readAsDataURL(file)
                 }
-              }}
-            />
-          </label>
-        </div>
-      )}
+                reader.readAsDataURL(file)
+              }
+            }}
+          />
+        </label>
+        {node.t === 'image' && (node as ImageNode).src && (
+          <button
+            onClick={() => onChange({ src: '' } as Partial<ImageNode>)}
+            className="px-2 py-1 text-xs bg-destructive text-destructive-foreground rounded hover:bg-destructive/90 transition-colors"
+            title={resolveText('remove', 'Remove')}
+          >
+            ×
+          </button>
+        )}
+      </div>
     </div>
   )
 }

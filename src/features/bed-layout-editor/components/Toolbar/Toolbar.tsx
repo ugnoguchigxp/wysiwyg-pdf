@@ -17,7 +17,6 @@ import {
   Shapes,
   Square,
   Star,
-  Trees,
   Triangle,
   Type,
   ZoomIn,
@@ -131,7 +130,24 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     { type: 'ArrowDown', icon: <ArrowDown size={20} /> },
     { type: 'ArrowLeft', icon: <ArrowLeft size={20} /> },
     { type: 'ArrowRight', icon: <ArrowRight size={20} /> },
-    { type: 'Tree', icon: <Trees size={20} /> },
+    {
+      type: 'Cone',
+      icon: (
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M12 2L4 18a4 2 0 0 0 8 2 4 2 0 0 0 8-2L12 2z" />
+          <ellipse cx="12" cy="18" rx="8" ry="2" />
+        </svg>
+      ),
+    },
     { type: 'House', icon: <Home size={20} /> },
   ] as const
 
@@ -272,7 +288,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       w: width,
       h: height,
       stroke: '#000000',
-      strokeW: 1,
+      strokeW: 0.2,
       fill: '#ffffff',
     }
     withNewElement(shape)

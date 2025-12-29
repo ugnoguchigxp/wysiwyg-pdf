@@ -14,7 +14,7 @@ interface UseEditorHistoryReturn {
 
 export function useEditorHistoryDoc(
   document: Doc,
-  setDocument: (doc: Doc) => void
+  setDocument: (doc: Doc | ((prev: Doc) => Doc)) => void
 ): UseEditorHistoryReturn {
   const [past, setPast] = useState<Operation[]>([])
   const [future, setFuture] = useState<Operation[]>([])
@@ -37,24 +37,25 @@ export function useEditorHistoryDoc(
 
   const execute = useCallback(
     (operation: Operation, options?: { saveToHistory?: boolean }) => {
-      const newDoc = applyOperationDoc(document, operation)
-      setDocument(newDoc)
-
-      if (options?.saveToHistory === false) {
-        // Don't modify history stack
-        return
-      }
-
-      setPast((prev) => {
-        const newPast = [...prev, operation]
-        if (newPast.length > MAX_HISTORY_SIZE) {
-          return newPast.slice(newPast.length - MAX_HISTORY_SIZE)
-        }
-        return newPast
+      // Functional update to avoid race conditions
+      setDocument((prevDoc) => {
+        const nextDoc = applyOperationDoc(prevDoc, operation)
+        return nextDoc
       })
-      setFuture([])
+
+      // Update history stacks outside of setDocument to avoid side-effects in render/updater
+      if (options?.saveToHistory !== false) {
+        setPast((prevPast) => {
+          const newPast = [...prevPast, operation]
+          if (newPast.length > MAX_HISTORY_SIZE) {
+            return newPast.slice(newPast.length - MAX_HISTORY_SIZE)
+          }
+          return newPast
+        })
+        setFuture([])
+      }
     },
-    [document, setDocument]
+    [setDocument]
   )
 
   const undo = useCallback(() => {
@@ -100,7 +101,7 @@ export function useEditorHistoryDoc(
 
 export function useEditorHistory(
   document: Doc,
-  setDocument: (doc: Doc) => void
+  setDocument: (doc: Doc | ((prev: Doc) => Doc)) => void
 ): UseEditorHistoryReturn {
   return useEditorHistoryDoc(document, setDocument)
 }
@@ -114,11 +115,25 @@ function applyOperationDoc(doc: Doc, op: Operation): Doc {
       }
 
     case 'update-element': {
+      const { id, next } = op
+      const update = next as Partial<UnifiedNode>
+
+      // Debug logging for bed position updates
+      if ('x' in update || 'y' in update) {
+        const target = doc.nodes.find(n => n.id === id)
+        if (target && target.t === 'widget' && (target as any).widget === 'bed') {
+          console.log(`[applyOperationDoc] Updating bed ${id} position:`, {
+            from: { x: target.x, y: target.y },
+            to: { x: update.x ?? target.x, y: update.y ?? target.y }
+          })
+        }
+      }
+
       return {
         ...doc,
         nodes: doc.nodes.map((n) =>
-          n.id === op.id
-            ? ({ ...n, ...(op.next as Partial<UnifiedNode>), id: op.id } as UnifiedNode)
+          n.id === id
+            ? ({ ...n, ...update, id } as UnifiedNode)
             : n
         ),
       }

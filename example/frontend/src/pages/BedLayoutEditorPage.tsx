@@ -53,6 +53,12 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
     // State for Bed Layout Document (Unified)
     const [bedDoc, setBedDocument] = useState<Doc>(INITIAL_BED_DOC)
 
+    // Use a ref to always have the latest state for handleSave (avoid stale closures)
+    const bedDocRef = useRef(bedDoc)
+    useEffect(() => {
+        bedDocRef.current = bedDoc
+    }, [bedDoc])
+
     const normalizeNumber = (value: unknown) => {
         if (typeof value === 'number') return value
         if (typeof value === 'string') {
@@ -110,8 +116,26 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
         canRedo: canRedoBed,
     } = useBedEditorHistoryDoc(bedDoc, setBedDocument)
 
-    // Sync layout dimensions when orientation changes
+    // Derived orientation from document
     useEffect(() => {
+        const surface = bedDoc.surfaces.find((s: Doc['surfaces'][number]) => s.type === 'canvas') ?? bedDoc.surfaces[0]
+        if (!surface) return
+
+        if (surface.w > surface.h) {
+            if (orientation !== 'landscape') setOrientation('landscape')
+        } else if (surface.w === surface.h) {
+            if (orientation !== 'square') setOrientation('square')
+        } else {
+            if (orientation !== 'portrait') setOrientation('portrait')
+        }
+    }, [bedDoc.surfaces])
+
+    // Handle manual orientation change
+    const prevOrientation = useRef(orientation)
+    useEffect(() => {
+        if (prevOrientation.current === orientation) return
+        prevOrientation.current = orientation
+
         setBedDocument((prev: Doc) => {
             const surface = prev.surfaces.find((s: Doc['surfaces'][number]) => s.type === 'canvas') ?? prev.surfaces[0]
             if (!surface) return prev
@@ -201,7 +225,14 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
     }
 
     const handleSave = () => {
-        const save = async () => {
+        const save = async (force = false) => {
+            const currentDoc = bedDocRef.current
+            console.log('[BedLayoutEditorPage] handleSave called. Latest bedDocRef:', {
+                title: templateName,
+                nodesCount: currentDoc.nodes.length,
+                beds: currentDoc.nodes.filter(n => n.t === 'widget' && (n as any).widget === 'bed').map(n => ({ id: n.id, x: n.x, y: n.y })),
+                firstSurface: currentDoc.surfaces[0]
+            })
             try {
                 const trimmedTitle = templateName.trim() || 'Untitled'
                 if (trimmedTitle !== templateName) {
@@ -212,19 +243,15 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                     user: 'anonymous',
                     type: 'bed-layout',
                     title: trimmedTitle,
-                    payload: bedDoc,
+                    payload: currentDoc,
+                    force,
                 })
 
-                if (result.status === 'exists') {
+                if (result.status === 'exists' && !force) {
                     const confirmed = window.confirm('同名の保存データがあります。上書きしますか？')
                     if (!confirmed) return
-                    await saveDocument({
-                        user: 'anonymous',
-                        type: 'bed-layout',
-                        title: trimmedTitle,
-                        payload: bedDoc,
-                        force: true,
-                    })
+                    await save(true) // Call save again with force: true
+                    return
                 }
 
                 alert(t('editor_save_success') || 'Saved!')
@@ -261,8 +288,14 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
 
     const handleLoad = useCallback(async (id: string) => {
         const detail = await getDocument(id, 'anonymous')
-        setBedDocument(normalizeDoc(detail.payload as Doc))
-        setTemplateName(detail.title)
+        if (detail.payload) {
+            const loadedDoc = normalizeDoc(detail.payload as Doc)
+            console.log('[BedLayoutEditorPage] loadDocument success. Normalized doc beds:',
+                loadedDoc.nodes.filter(n => n.t === 'widget' && (n as any).widget === 'bed').map(n => ({ id: n.id, x: n.x, y: n.y }))
+            )
+            setBedDocument(loadedDoc)
+            setTemplateName(detail.title)
+        }
         setSelectedElementId(null)
     }, [])
 
@@ -378,9 +411,13 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                             onSelect={(ids) => setSelectedElementId(ids[0] || null)}
                             onChangeElement={(updates) => {
                                 const list = Array.isArray(updates) ? updates : [updates]
+                                if (list.length === 0) return
+
+                                // With the improved functional executeBedOp, we can now safely loop
+                                // and commit each update. Each update will be correctly batched.
                                 list.forEach(u => {
                                     if (!u.id) return
-                                    const element = bedDoc.nodes.find((n: Doc['nodes'][number]) => n.id === u.id)
+                                    const element = bedDoc.nodes.find((n: any) => n.id === u.id)
                                     if (!element) return
                                     executeBedOp({
                                         kind: 'update-element',

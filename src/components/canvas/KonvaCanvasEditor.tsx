@@ -452,9 +452,9 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
                   showGrid={showGrid}
                   gridSize={gridSize}
                   onToggleCollapse={onToggleCollapse}
-                  onDragStart={handleNodeDragStart}
-                  onDragEnter={handleNodeDragEnter}
-                  onDragLeave={onDragLeave}
+                  onDragStart={onDragStart ? handleNodeDragStart : undefined}
+                  onDragEnter={onDragStart ? handleNodeDragEnter : undefined}
+                  onDragLeave={onDragStart ? onDragLeave : undefined}
                   dragState={dragState}
                 />
               ))}

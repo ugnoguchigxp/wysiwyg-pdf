@@ -123,7 +123,7 @@ export interface VAlignmentWidgetConfig extends BaseWidgetConfig {
 
 export interface StrokeWidgetConfig extends BaseWidgetConfig {
   type: 'stroke'
-  props?: { showColor?: boolean; showWidth?: boolean; minWidth?: number; maxWidth?: number }
+  props?: { showColor?: boolean; showWidth?: boolean; minWidth?: number; maxWidth?: number; step?: number }
 }
 
 export interface FillWidgetConfig extends BaseWidgetConfig {
@@ -132,7 +132,7 @@ export interface FillWidgetConfig extends BaseWidgetConfig {
 }
 export interface BorderWidgetConfig extends BaseWidgetConfig {
   type: 'border'
-  props?: { showColor?: boolean; showWidth?: boolean }
+  props?: { showColor?: boolean; showWidth?: boolean; step?: number }
 }
 export interface PolygonWidgetConfig extends BaseWidgetConfig {
   type: 'polygon'
@@ -371,12 +371,12 @@ export const WIDGET_PRESETS: Record<string, WidgetConfig> = {
   'stroke:width': {
     type: 'stroke',
     labelKey: 'properties_line_width',
-    props: { showColor: false, showWidth: true, minWidth: 0, maxWidth: 20 },
+    props: { showColor: false, showWidth: true, minWidth: 0, maxWidth: 20, step: 0.2 },
   },
   'stroke:full': {
     type: 'stroke',
     labelKey: 'properties_stroke',
-    props: { showColor: true, showWidth: true, minWidth: 0, maxWidth: 20 },
+    props: { showColor: true, showWidth: true, minWidth: 0, maxWidth: 20, step: 0.2 },
   },
 
   // === Line Style ===
@@ -648,7 +648,7 @@ export const TEXT_OBJECT_CONFIG: ObjectPanelConfig = {
         {
           type: 'numberInput',
           labelKey: 'properties_border_width_box',
-          props: { fieldKey: 'borderWidth', min: 0, step: 0.1, unit: 'mm' },
+          props: { fieldKey: 'borderWidth', min: 0, step: 0.2, unit: 'mm' },
           condition: (node) => (node as { hasFrame?: boolean }).hasFrame === true
           // Default colSpan is 1
         },
@@ -737,7 +737,7 @@ export const SIGNATURE_OBJECT_CONFIG: ObjectPanelConfig = {
 export const WIDGET_BED_OBJECT_CONFIG: ObjectPanelConfig = {
   objectType: 'widget:bed',
   header: { iconName: 'Bed', labelKey: 'toolbar_bed' },
-  sections: ['sec:bed-label'],
+  sections: ['sec:posSize', 'sec:bed-label'],
 }
 
 // ========================================

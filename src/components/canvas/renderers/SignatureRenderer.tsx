@@ -1,34 +1,21 @@
 import type React from 'react'
-import { useMemo } from 'react'
-import { Group, Path, Rect } from 'react-konva'
-import { createHandwritingPath } from '@/utils/handwriting'
+import { Group, Line, Rect } from 'react-konva'
 import type { SignatureNode } from '@/types/canvas'
 import type { CanvasElementCommonProps } from '../types'
 
 const SignatureShape = ({ element }: { element: SignatureNode }) => {
   const sig = element
-  const pathDataList = useMemo(
-    () =>
-      sig.strokes
-        .map((stroke, i) =>
-          createHandwritingPath(
-            stroke,
-            sig.strokeW,
-            sig.pressureData?.[i],
-            (sig.usePressureSim ?? true) || !(sig.pressureData?.[i]?.length ?? 0)
-          )
-        )
-        .filter(Boolean),
-    [sig.strokes, sig.strokeW, sig.pressureData, sig.usePressureSim]
-  )
-
   return (
     <>
-      {pathDataList.map((pathData, index) => (
-        <Path
+      {sig.strokes.map((stroke, index) => (
+        <Line
           key={index}
-          data={pathData}
-          fill={sig.stroke}
+          points={stroke}
+          stroke={sig.stroke}
+          strokeWidth={sig.strokeW}
+          tension={0.5}
+          lineCap="round"
+          lineJoin="round"
           listening={false}
         />
       ))}

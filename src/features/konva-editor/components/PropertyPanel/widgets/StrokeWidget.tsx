@@ -34,7 +34,7 @@ export const StrokeWidget: React.FC<WidgetProps<StrokeWidgetConfig>> = ({
             type="number"
             min={0}
             max={props.maxWidth ?? 20}
-            step={0.2}
+            step={props.step ?? 0.2}
             value={strokeNode.strokeW ?? 0.2}
             onChange={(e) => onChange({ strokeW: Math.max(0, Number(e.target.value)) })}
           />

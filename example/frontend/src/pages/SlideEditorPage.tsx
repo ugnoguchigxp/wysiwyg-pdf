@@ -1,7 +1,8 @@
 import React, { useRef, useState, useCallback } from 'react'
 import { ArrowLeft, Save } from 'lucide-react'
-import { SlideEditor, type Doc, DocumentLoadMenu } from 'wysiwyg-pdf'
+import { SlideEditor, type Doc, DocumentLoadMenu, useQueue } from 'wysiwyg-pdf'
 import { saveDocument, listDocuments, getDocument } from '../api/documents'
+import { uploadDocAssets } from '../utils/upload-helper'
 
 interface SlideEditorPageProps {
     onBack: () => void
@@ -12,6 +13,7 @@ export const SlideEditorPage: React.FC<SlideEditorPageProps> = ({ onBack }) => {
     const [loadDoc, setLoadDoc] = useState<Doc | null>(null)
     const [loadNonce, setLoadNonce] = useState(0)
     const latestDocRef = useRef<Doc | null>(null)
+    const { addTask } = useQueue()
 
     const fetchRecent = useCallback(async () => {
         const response = await listDocuments({ user: 'anonymous', type: 'slide', limit: 5 })
@@ -52,16 +54,19 @@ export const SlideEditorPage: React.FC<SlideEditorPageProps> = ({ onBack }) => {
                     setTemplateName(trimmedTitle)
                 }
 
-                const docToSave: Doc = {
-                    ...latestDocRef.current,
-                    title: trimmedTitle,
-                }
+                const docWithAssets = await uploadDocAssets(
+                    {
+                        ...latestDocRef.current,
+                        title: trimmedTitle,
+                    },
+                    addTask
+                )
 
                 const result = await saveDocument({
                     user: 'anonymous',
                     type: 'slide',
                     title: trimmedTitle,
-                    payload: docToSave,
+                    payload: docWithAssets,
                 })
 
                 if (result.status === 'exists') {
@@ -71,7 +76,7 @@ export const SlideEditorPage: React.FC<SlideEditorPageProps> = ({ onBack }) => {
                         user: 'anonymous',
                         type: 'slide',
                         title: trimmedTitle,
-                        payload: docToSave,
+                        payload: docWithAssets,
                         force: true,
                     })
                 }

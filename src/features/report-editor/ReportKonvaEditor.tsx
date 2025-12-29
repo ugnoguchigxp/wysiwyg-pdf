@@ -521,9 +521,6 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       [applyTableUpdate, contextMenu]
     )
 
-    const previewStrokes = useMemo(() => {
-      return processStrokes(currentStrokes, { simplification: drawingSettings.simplification })
-    }, [currentStrokes, drawingSettings.simplification])
 
     const commitSignature = useCallback((): Doc | null => {
       if (currentStrokes.length === 0) return null
@@ -924,24 +921,22 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
                       w: 0,
                       h: 0,
                       strokes: [
-                        ...previewStrokes,
+                        ...processStrokes(currentStrokes, { simplification: drawingSettings.simplification }),
                         ...(currentPoints.length > 0 ? [currentPoints] : []),
-                      ].map((s) => (s.length === 2 ? [...s, ...s] : s)),
+                      ],
                       stroke: drawingSettings.stroke,
                       strokeW: drawingSettings.strokeWidth,
                       pressureData: [
                         ...allPressureData,
                         ...(currentPoints.length > 0 ? [currentPressure] : []),
                       ],
-                      usePressureSim: ![...allPressureData, currentPressure].some(
-                        (pressure) => pressure.length > 0
-                      ),
+                      usePressureSim: true,
                     } as SignatureNode
                   }
                   isSelected={false}
                   stageScale={displayScale}
-                  onSelect={() => {}}
-                  onChange={() => {}}
+                  onSelect={() => { }}
+                  onChange={() => { }}
                 />
               )}
             </Layer>

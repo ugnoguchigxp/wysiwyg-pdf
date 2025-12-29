@@ -1,4 +1,3 @@
-
 import {
     Square,
     Circle,
@@ -13,7 +12,6 @@ import {
     ArrowDown,
     ArrowLeft,
     ArrowRight,
-    Trees,
     Home,
 } from 'lucide-react'
 
@@ -35,6 +33,23 @@ const TrapezoidIcon = ({ size = 20, className = '', title = 'Trapezoid' }) => (
     </svg>
 )
 
+const ConeIcon = ({ size = 20, className = '' }) => (
+    <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+    >
+        <path d="M12 2L4 18a4 2 0 0 0 8 2 4 2 0 0 0 8-2L12 2z" />
+        <ellipse cx="12" cy="18" rx="8" ry="2" />
+    </svg>
+)
+
 export const EDITOR_SHAPES = [
     { type: 'rect', icon: <Square size={20} />, label: 'Rectangle' },
     { type: 'circle', icon: <Circle size={20} />, label: 'Circle' },
@@ -50,7 +65,7 @@ export const EDITOR_SHAPES = [
     { type: 'arrow-d', icon: <ArrowDown size={20} />, label: 'Arrow Down' },
     { type: 'arrow-l', icon: <ArrowLeft size={20} />, label: 'Arrow Left' },
     { type: 'arrow-r', icon: <ArrowRight size={20} />, label: 'Arrow Right' },
-    { type: 'tree', icon: <Trees size={20} />, label: 'Tree' },
+    { type: 'cone', icon: <ConeIcon size={20} />, label: 'Cone' },
     { type: 'house', icon: <Home size={20} />, label: 'House' },
 ] as const
 

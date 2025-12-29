@@ -33,7 +33,7 @@ export const BorderWidget: React.FC<WidgetProps<BorderWidgetConfig>> = ({
           <WidgetInput
             type="number"
             min={0}
-            step={0.2}
+            step={props.step ?? 0.2}
             value={shapeNode.strokeW ?? 0.2}
             onChange={(e) => onChange({ strokeW: Math.max(0, Number(e.target.value)) })}
           />

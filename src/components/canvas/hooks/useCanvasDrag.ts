@@ -20,11 +20,16 @@ export const useCanvasDrag = ({ element, allElements, onChange }: UseCanvasDragP
     const handleDragEnd = useCallback(
         (e: Konva.KonvaEventObject<DragEvent>) => {
             if (isWHElement(element)) {
-                let newX = e.target.x()
-                let newY = e.target.y()
+                // Ensure we are dragging the node itself, not some internal part that might have 0,0 relative x/y
+                // currentTarget is the node the listener is attached to (the draggable group/shape)
+                const node = e.currentTarget
+                let newX = node.x()
+                let newY = node.y()
+
+                console.log(`[useCanvasDrag] handleDragEnd for ${element.t}:${element.id}`, { x: newX, y: newY })
 
                 if (element.t === 'shape') {
-                    if (['circle', 'star', 'pentagon', 'hexagon'].includes(element.shape as string)) {
+                    if (['circle', 'star', 'pentagon', 'hexagon'].includes((element as ShapeNode).shape as string)) {
                         newX -= element.w / 2
                         newY -= element.h / 2
                     }
@@ -45,7 +50,7 @@ export const useCanvasDrag = ({ element, allElements, onChange }: UseCanvasDragP
                 // If it's connected, it might re-route on next node move? 
                 // Actually, if connected, dragging the line object itself might need to detach?
                 // For now preventing detachment logic, just standard move.
-                const node = e.target
+                const node = e.currentTarget
                 const dx = node.x()
                 const dy = node.y()
                 const line = element as LineNode
@@ -69,13 +74,13 @@ export const useCanvasDrag = ({ element, allElements, onChange }: UseCanvasDragP
             if (!isWHElement(element)) return
             if (!allElements || allElements.length === 0) return
 
-            const stage = e.target.getStage()
+            const stage = e.currentTarget.getStage()
             if (!stage) return
 
             const w = element.w ?? 0
             const h = element.h ?? 0
-            let topLeftX = e.target.x()
-            let topLeftY = e.target.y()
+            let topLeftX = e.currentTarget.x()
+            let topLeftY = e.currentTarget.y()
 
             if (element.t === 'shape') {
                 const shape = element as ShapeNode

@@ -7,6 +7,7 @@ import { ViewerPage } from './pages/ViewerPage'
 import { SignatureDemoPage } from './pages/SignatureDemoPage'
 import { MindmapDemoPage } from './pages/MindmapDemoPage'
 import { SlideEditorPage } from './pages/SlideEditorPage'
+import { QueueProvider, QueueViewer } from 'wysiwyg-pdf'
 
 
 // Simple Hash Router Hook
@@ -32,33 +33,18 @@ const useHashLocation = () => {
 function App() {
   const { location, navigate } = useHashLocation()
 
-  // Routing Logic
-  if (location === '/report') {
-    return <ReportEditorPage onBack={() => navigate('/')} />
-  }
-
-  if (location === '/bed') {
-    return <BedLayoutEditorPage onBack={() => navigate('/')} />
-  }
-
-  if (location === '/viewer') {
-    return <ViewerPage onBack={() => navigate('/')} />
-  }
-
-  if (location === '/signature') {
-    return <SignatureDemoPage onBack={() => navigate('/')} />
-  }
-
-  if (location === '/mindmap') {
-    return <MindmapDemoPage onBack={() => navigate('/')} />
-  }
-
-  if (location === '/slide') {
-    return <SlideEditorPage onBack={() => navigate('/')} />
-  }
-
-
-  return <DashboardPage onNavigate={(page) => navigate(`/${page}`)} />
+  return (
+    <QueueProvider>
+      {location === '/report' && <ReportEditorPage onBack={() => navigate('/')} />}
+      {location === '/bed' && <BedLayoutEditorPage onBack={() => navigate('/')} />}
+      {location === '/viewer' && <ViewerPage onBack={() => navigate('/')} />}
+      {location === '/signature' && <SignatureDemoPage onBack={() => navigate('/')} />}
+      {location === '/mindmap' && <MindmapDemoPage onBack={() => navigate('/')} />}
+      {location === '/slide' && <SlideEditorPage onBack={() => navigate('/')} />}
+      {location === '/' && <DashboardPage onNavigate={(page) => navigate(`/${page}`)} />}
+      <QueueViewer />
+    </QueueProvider>
+  )
 }
 
 export default App

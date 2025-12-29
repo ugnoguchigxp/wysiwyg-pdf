@@ -40,6 +40,9 @@ export { SettingsDrawer } from './features/konva-editor/components/SettingsDrawe
 export * from './features/konva-editor/signature/SignatureKonvaEditor'
 export * from './features/mindmap-editor'
 export * from './features/slide-editor'
+export * from './modules/queue/QueueContext'
+export * from './modules/queue/hooks'
+export * from './components/ui/queue'
 
 // Doc unit conversion helpers
 export * from './utils/docUnitConversion'

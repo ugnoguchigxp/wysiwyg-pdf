@@ -36,3 +36,10 @@ example/dist/
 
 # pack
 *.tgz
+
+.env
+
+example/data.sqlite
+
+example/backend/public/uploads/
+

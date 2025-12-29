@@ -254,7 +254,7 @@ export type ShapeType =
   | 'trapezoid'
   | 'cylinder'
   | 'heart'
-  | 'tree'
+  | 'cone'
   | 'house'
 
 export type ArrowType =

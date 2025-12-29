@@ -118,12 +118,46 @@ const CanvasSettingsPanel: React.FC<{
           </div>
           <div>
             <label className={labelClass}>{resolveText('properties_image_url', 'Image URL')}</label>
-            <input
-              value={!isColor ? bg : ''}
-              onChange={(e) => updateSurface({ bg: e.target.value })}
-              placeholder={resolveText('properties_image_url_placeholder', 'http://...')}
-              className={inputClass}
-            />
+            <div className="flex gap-1 mb-1">
+              <input
+                value={!isColor ? bg : ''}
+                onChange={(e) => updateSurface({ bg: e.target.value })}
+                placeholder={resolveText('properties_image_url_placeholder', 'http://...')}
+                className={`${inputClass} flex-1`}
+              />
+              {!isColor && (
+                <button
+                  onClick={() => updateSurface({ bg: '#ffffff' })}
+                  className="px-2 py-1 text-xs bg-destructive text-destructive-foreground rounded hover:bg-destructive/90 transition-colors"
+                  title={resolveText('remove', 'Remove')}
+                >
+                  ×
+                </button>
+              )}
+            </div>
+            <label className="flex flex-col items-center justify-center w-full h-8 border border-border border-dashed rounded cursor-pointer hover:bg-muted transition-colors">
+              <span className="text-xs text-muted-foreground">
+                {resolveText('browse', 'Browse...')}
+              </span>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    const reader = new FileReader()
+                    reader.onload = (ev) => {
+                      const result = ev.target?.result as string
+                      if (result) {
+                        updateSurface({ bg: result })
+                      }
+                    }
+                    reader.readAsDataURL(file)
+                  }
+                }}
+              />
+            </label>
           </div>
         </div>
 

@@ -11,12 +11,14 @@ import {
     EditorHeader,
     ShortcutHelpModal,
     DocumentLoadMenu,
+    useQueue,
 } from 'wysiwyg-pdf'
 import { useReactToPrint, type UseReactToPrintOptions } from 'react-to-print'
 import { useTranslation } from 'react-i18next'
 import { Moon, Sun } from 'lucide-react'
 import { EDITOR_TRANSLATIONS } from '../constants/translations'
 import { saveDocument, listDocuments, getDocument } from '../api/documents'
+import { uploadDocAssets } from '../utils/upload-helper'
 
 // Local Mock Data (Moved from App.tsx)
 const MOCK_SCHEMA: IDataSchema = {
@@ -87,6 +89,7 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
     const [showGrid, setShowGrid] = useState(false)
     const [gridSize, setGridSize] = useState(15)
     const [snapStrength, setSnapStrength] = useState(5)
+    const { addTask } = useQueue()
 
     // History Management
     const { document: doc, setDocument, undo, redo, canUndo, canRedo } = useReportHistory(INITIAL_DOC)
@@ -157,35 +160,65 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
                     console.error('[ReportEditorPage] editorRef is null!')
                 }
 
-                const docToSave = updatedDoc || doc
                 const trimmedTitle = templateName.trim() || 'Untitled'
                 if (trimmedTitle !== templateName) {
                     setTemplateName(trimmedTitle)
                 }
 
-                const result = await saveDocument({
-                    user: 'anonymous',
-                    type: 'report',
-                    title: trimmedTitle,
-                    payload: docToSave,
-                })
+                console.log('[ReportEditorPage] Uploading assets...', trimmedTitle)
+                let docWithAssets: Doc
+                try {
+                    docWithAssets = await uploadDocAssets(
+                        updatedDoc || doc,
+                        addTask
+                    )
+                } catch (e) {
+                    console.error('[ReportEditorPage] Asset upload failed:', e)
+                    alert('Failed to upload assets. Check console.')
+                    return
+                }
+                console.log('[ReportEditorPage] Assets uploaded. Saving document...', docWithAssets)
 
-                if (result.status === 'exists') {
-                    const confirmed = window.confirm('同名の保存データがあります。上書きしますか？')
-                    if (!confirmed) return
-                    await saveDocument({
+                let result
+                try {
+                    result = await saveDocument({
                         user: 'anonymous',
                         type: 'report',
                         title: trimmedTitle,
-                        payload: docToSave,
-                        force: true,
+                        payload: docWithAssets,
                     })
+                } catch (e) {
+                    console.error('[ReportEditorPage] saveDocument call failed:', e)
+                    alert('Save API call failed. Check console.')
+                    return
+                }
+                console.log('[ReportEditorPage] Save result:', result)
+
+                if (result.status === 'exists') {
+                    console.log('[ReportEditorPage] Title exists, asking for confirmation...')
+                    const confirmed = window.confirm('同名の保存データがあります。上書きしますか？')
+                    if (!confirmed) return
+                    try {
+                        const overwriteResult = await saveDocument({
+                            user: 'anonymous',
+                            type: 'report',
+                            title: trimmedTitle,
+                            payload: docWithAssets,
+                            force: true,
+                        })
+                        console.log('[ReportEditorPage] Overwrite result:', overwriteResult)
+                    } catch (e) {
+                        console.error('[ReportEditorPage] Overwrite save call failed:', e)
+                        alert('Overwrite save failed. Check console.')
+                        return
+                    }
                 }
 
                 alert(t('editor_save_success') || 'Saved!')
+                console.log('[ReportEditorPage] handleSave completed successfully.')
             } catch (error) {
-                console.error('[ReportEditorPage] Error during save:', error)
-                alert('Error during save. See console.')
+                console.error('[ReportEditorPage] Top-level error in handleSave:', error)
+                alert('Fatal error during save. See console.')
             }
         }
 

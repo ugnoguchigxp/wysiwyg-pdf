@@ -220,8 +220,10 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
       },
       onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => {
         if (onDragStart) {
+          console.log(`[CanvasElementRenderer] Mindmap onDragEnd for ${element.id}`)
           dragState && onDragEnd && onDragEnd()
         } else {
+          console.log(`[CanvasElementRenderer] Default handleDragEnd for ${element.id}`)
           handleDragEnd(e)
         }
       },
@@ -384,15 +386,15 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           enabledAnchors={
             !element.locked
               ? [
-                  'top-left',
-                  'top-right',
-                  'bottom-left',
-                  'bottom-right',
-                  'middle-left',
-                  'middle-right',
-                  'top-center',
-                  'bottom-center',
-                ]
+                'top-left',
+                'top-right',
+                'bottom-left',
+                'bottom-right',
+                'middle-left',
+                'middle-right',
+                'top-center',
+                'bottom-center',
+              ]
               : []
           }
           boundBoxFunc={(oldBox, newBox) => {

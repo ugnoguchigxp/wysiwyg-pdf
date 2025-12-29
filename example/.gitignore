@@ -1,7 +1,0 @@
-node_modules/
-.npm-cache/
-.env
-
-data.sqlite
-dist/
-
