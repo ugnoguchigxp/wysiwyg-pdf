@@ -12,8 +12,7 @@ import type { WidgetProps } from '@/features/konva-editor/components/PropertyPan
 import { REPORT_PANEL_CONFIG } from '@/features/konva-editor/constants/propertyPanelConfig'
 import type { Doc, LineNode, TableNode, UnifiedNode } from '@/types/canvas'
 import type { IDataSchema } from '@/types/schema'
-import { calculateTextDimensions } from '@/features/konva-editor/utils/textUtils'
-import { ptToMm } from '@/utils/units'
+import { applyTextLayoutUpdates } from '@/features/konva-editor/utils/textLayout'
 import { BindingSelector } from './BindingSelector'
 import { DataBindingModal } from './DataBindingModal'
 import { TableProperties } from './TableProperties'
@@ -334,55 +333,14 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
   const isDrawing = activeTool === 'signature'
 
   // Handle element change through templateDoc
-  const handleChange = (id: string, updates: Partial<UnifiedNode>, options?: { saveToHistory?: boolean }) => {
-    let finalUpdates = { ...updates }
-
-    // If TextNode and relevant properties changed, recalculate dimensions
-    const currentNode = templateDoc.nodes.find(n => n.id === id)
-    if (currentNode && currentNode.t === 'text') {
-      const textNode = { ...currentNode, ...updates } as import('@/types/canvas').TextNode // Cast to TextNode
-
-      const relevantKeys = ['text', 'font', 'fontSize', 'fontWeight', 'padding']
-      const hasRelevantChange = relevantKeys.some(key => key in updates)
-
-      if (hasRelevantChange) {
-        // verticalプロパティの現在値を安全に取得
-        // updatesに含まれていればそれを、なければ現在のノードの値を使用
-        const isVertical = 'vertical' in updates ? updates.vertical : textNode.vertical
-
-        const dims = calculateTextDimensions(textNode.text, {
-          family: textNode.font,
-          size: textNode.fontSize,
-          weight: textNode.fontWeight,
-          padding: textNode.padding,
-          isVertical: isVertical
-        })
-
-        // 縦書きの場合、Widthの自動更新は行わない（ユーザー要望: スライド防止）
-        // Heightのみを更新する。ReportKonvaEditorと同じロジックを使用。
-        if (isVertical) {
-          // ReportKonvaEditorと同一の計算ロジック
-          const fontSize = textNode.fontSize ?? ptToMm(12)
-          const padding = textNode.padding ?? 10
-
-          const lines = (textNode.text || '').split('\n')
-          const maxLineLength = Math.max(...lines.map(line => Array.from(line).length), 1)
-
-          // 高さ = 最長行の文字数 × フォントサイズ + padding × 2
-          const contentHeight = maxLineLength * fontSize
-          const newH = contentHeight + padding * 2
-
-          finalUpdates = { ...finalUpdates, h: newH }
-
-          // 万が一 updates に w が含まれていても削除して適用しない
-          if ('w' in finalUpdates) {
-            delete finalUpdates.w
-          }
-        } else {
-          finalUpdates = { ...finalUpdates, ...dims }
-        }
-      }
-    }
+  const handleChange = (
+    id: string,
+    updates: Partial<UnifiedNode>,
+    options?: { saveToHistory?: boolean }
+  ) => {
+    const currentNode = templateDoc.nodes.find((n) => n.id === id)
+    const finalUpdates =
+      currentNode && currentNode.t === 'text' ? applyTextLayoutUpdates(currentNode, updates) : updates
 
     const nextDoc: Doc = {
       ...templateDoc,

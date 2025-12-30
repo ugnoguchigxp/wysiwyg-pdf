@@ -19,10 +19,9 @@ import {
   SECTION_PRESETS,
   WIDGET_PRESETS,
 } from '@/features/konva-editor/constants/propertyPanelConfig'
-import { measureText } from '@/features/konva-editor/utils/textUtils'
 import type { UnifiedNode } from '@/types/canvas'
-import { mmToPx, pxToMm, ptToMm } from '@/utils/units'
 import { cn } from '@/utils/utils'
+import { applyTextLayoutUpdates } from '@/features/konva-editor/utils/textLayout'
 import type { WidgetProps } from './widgets'
 import { renderWidget } from './widgets'
 
@@ -197,65 +196,10 @@ export const UnifiedPropertyPanel: React.FC<UnifiedPropertyPanelProps> = ({
   // Handle element updates
   const handleChange = (updates: Partial<UnifiedNode>, options?: { saveToHistory?: boolean }) => {
     if (selectedNode) {
-      if (selectedNode.t === 'text') {
-        const shouldReflow =
-          'text' in updates || 'fontSize' in updates || 'font' in updates || 'fontWeight' in updates
+      const finalUpdates =
+        selectedNode.t === 'text' ? applyTextLayoutUpdates(selectedNode, updates) : updates
 
-        if (shouldReflow) {
-          // ... (existing logic)
-          const dpi = 96
-          const nextText =
-            'text' in updates
-              ? String((updates as Partial<{ text: string }>).text ?? '')
-              : selectedNode.text
-
-          const nextFont =
-            'font' in updates
-              ? String((updates as Partial<{ font: string }>).font ?? '')
-              : (selectedNode.font ?? 'Meiryo')
-
-          const nextWeight =
-            'fontWeight' in updates
-              ? (updates as Partial<{ fontWeight: number }>).fontWeight
-              : (selectedNode.fontWeight ?? 400)
-
-          const nextFontSizeMm =
-            'fontSize' in updates
-              ? Number((updates as Partial<{ fontSize: number }>).fontSize)
-              : (selectedNode.fontSize ?? ptToMm(12))
-
-          const fontSizeMm = Number.isFinite(nextFontSizeMm) ? nextFontSizeMm : ptToMm(12)
-          const sizePx = mmToPx(fontSizeMm, { dpi })
-
-          const lines = (nextText || '').split('\n')
-          let maxWidth = 0
-          for (const line of lines) {
-            const { width } = measureText(line || ' ', {
-              family: nextFont,
-              size: sizePx,
-              weight: nextWeight,
-            })
-            if (width > maxWidth) maxWidth = width
-          }
-
-          const lineHeight = sizePx * 1.2
-          const calculatedHeight = Math.max(1, lines.length) * lineHeight
-          const newWidthPx = maxWidth + 10
-          const newHeightPx = calculatedHeight + 4
-
-          const wMm = pxToMm(newWidthPx, { dpi })
-          const hMm = pxToMm(newHeightPx, { dpi })
-
-          // Only expand, never shrink (User Requirement)
-          const finalW = Math.max(selectedNode.w || 0, wMm)
-          const finalH = Math.max(selectedNode.h || 0, hMm)
-
-          onChange(selectedNode.id, { ...updates, w: finalW, h: finalH }, options)
-          return
-        }
-      }
-
-      onChange(selectedNode.id, updates, options)
+      onChange(selectedNode.id, finalUpdates, options)
     }
   }
 

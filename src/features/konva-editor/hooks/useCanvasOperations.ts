@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import type { Doc, UnifiedNode, TextNode, ShapeNode, LineNode, ImageNode, TableNode } from '@/types/canvas'
-import { mmToPx, ptToMm, pxToMm } from '@/utils/units'
-import { measureText } from '@/features/konva-editor/utils/textUtils'
+import { ptToMm } from '@/utils/units'
+import { calculateInitialTextBoxSize } from '@/features/konva-editor/utils/textLayout'
 import { createContextLogger } from '@/utils/logger'
 import { generateNodeId } from '@/utils/id'
 
@@ -73,10 +73,10 @@ export function useCanvasOperations({
         const fontSizeMm = ptToMm(fontSizePt)
         const font = {
             family: 'Meiryo',
-            size: mmToPx(fontSizeMm, { dpi }),
+            sizeMm: fontSizeMm,
             weight: 400,
         }
-        const { width, height } = measureText(textContent, font)
+        const { w, h } = calculateInitialTextBoxSize(textContent, font, { dpi })
 
         const text: TextNode = {
             id,
@@ -94,8 +94,8 @@ export function useCanvasOperations({
             vAlign: 't',
             x,
             y,
-            w: pxToMm(width + 10, { dpi }),
-            h: pxToMm(height + 4, { dpi }),
+            w,
+            h,
         }
         withNewElement(text)
     }, [getTargetSurfaceId, calculateInitialPosition, resolveText, dpi, withNewElement])

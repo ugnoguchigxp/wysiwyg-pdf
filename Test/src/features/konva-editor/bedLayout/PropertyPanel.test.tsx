@@ -25,6 +25,7 @@ vi.mock(
   '@/features/konva-editor/utils/textUtils',
   () => ({
     measureText: () => ({ width: 100, height: 20 }),
+    calculateTextDimensions: () => ({ w: 123, h: 45 }),
   })
 )
 

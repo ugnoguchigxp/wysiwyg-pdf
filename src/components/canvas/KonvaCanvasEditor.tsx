@@ -4,7 +4,7 @@ import { Layer, Stage, Rect } from 'react-konva'
 import type { TextNode, UnifiedNode } from '../../types/canvas'
 import { mmToPx } from '@/utils/units'
 // import { measureText } from '@/features/konva-editor/utils/textUtils'
-import { useTextDimensions } from '@/features/konva-editor/hooks/useTextDimensions'
+import { applyTextLayoutUpdates } from '@/features/konva-editor/utils/textLayout'
 import { CanvasElementRenderer } from './CanvasElementRenderer'
 import type { CanvasElementCommonProps, CanvasShapeRefCallback } from './types'
 import { GridLayer } from './GridLayer'
@@ -176,8 +176,6 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       }
     }
 
-    const { calculateDimensions } = useTextDimensions()
-
     const handleTextUpdate = (text: string, rect?: { x: number; y: number; w: number; h: number }) => {
       if (!editingElementId) return
 
@@ -202,19 +200,11 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
         return
       }
 
-      const dimensions = calculateDimensions(text, {
-        family: textNode.font,
-        size: textNode.fontSize,
-        weight: textNode.fontWeight,
-        padding: textNode.padding,
-        isVertical: textNode.vertical,
-      })
+      const updatePatch = applyTextLayoutUpdates(textNode, { text })
 
       onChange({
         id: editingElementId,
-        text,
-        w: Math.max(textNode.w, dimensions.w),
-        h: Math.max(textNode.h, dimensions.h),
+        ...updatePatch,
       } as Partial<UnifiedNode> & { id: string })
     }
 

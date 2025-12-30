@@ -69,10 +69,9 @@ vi.mock('@/features/konva-editor/utils/canvasImageUtils', () => ({
   findImageWithExtension: vi.fn(async () => ({ url: 'x', img: {} })),
 }))
 
-vi.mock('@/features/konva-editor/hooks/useTextDimensions', () => ({
-  useTextDimensions: () => ({
-    calculateDimensions: () => ({ w: 123, h: 45 }),
-  }),
+vi.mock('@/features/konva-editor/utils/textUtils', () => ({
+  calculateTextDimensions: () => ({ w: 123, h: 45 }),
+  measureText: () => ({ width: 100, height: 20 }),
 }))
 
 const stageState = vi.hoisted(() => ({

@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
 
 import { Stage, Layer } from 'react-konva';
-import { VerticalKonvaText } from '../components/VerticalKonvaText';
+import { VerticalKonvaText } from '@/features/vertical-text/components/VerticalKonvaText';
 import type { TextNode } from '@/types/canvas';
 
 

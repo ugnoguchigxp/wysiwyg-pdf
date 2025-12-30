@@ -14,6 +14,7 @@ vi.mock('@/i18n/I18nContext', () => ({
 
 vi.mock('@/features/konva-editor/utils/textUtils', () => ({
   measureText: vi.fn(() => ({ width: 50, height: 10 })),
+  calculateTextDimensions: vi.fn(() => ({ w: 123, h: 45 })),
 }))
 
 describe('UnifiedPropertyPanel', () => {

@@ -18,7 +18,7 @@ import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImag
 import type { Doc, SignatureNode, Surface, TableNode, TextNode, UnifiedNode } from '@/types/canvas' // Direct import
 import { createContextLogger } from '@/utils/logger'
 import { mmToPx, ptToMm } from '@/utils/units'
-import { useTextDimensions } from '@/features/konva-editor/hooks/useTextDimensions'
+import { applyTextLayoutUpdates, calculateVerticalTextHeight } from '@/features/konva-editor/utils/textLayout'
 import {
   deleteCol,
   deleteRow,
@@ -349,8 +349,6 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       [onTemplateChange, selectedElementId, templateDoc]
     )
 
-    const { calculateDimensions } = useTextDimensions()
-
     const handleTextUpdate = useCallback(
       (text: string) => {
         if (!editingElementId) return
@@ -367,51 +365,13 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
 
         const textNode = element as TextNode
 
-        // 縦書きと横書きでサイズ計算を分ける
-        if (textNode.vertical) {
-          // 縦書き: 縦書き用のサイズ計算
-          const fontSize = textNode.fontSize ?? ptToMm(12)
-          const padding = textNode.padding ?? 10
-
-          const lines = (text || '').split('\n')
-          const maxLineLength = Math.max(...lines.map(line => Array.from(line).length), 1)
-
-          // 高さ = 最長行の文字数 × フォントサイズ + padding × 2
-          const contentHeight = maxLineLength * fontSize
-          const newH = contentHeight + padding * 2
-
-          // 縦書き: 高さのみ自動更新する（幅とX座標は変更しない）
-          // これにより、「勝手に右/左にスライドする」問題を防ぐ
-          const updatePatch: Partial<UnifiedNode> = { id: editingElementId, text, h: newH }
-
-          handleElementChange(
-            updatePatch as Partial<UnifiedNode> & { id?: string },
-            { saveToHistory: false }
-          )
-        } else {
-          // 横書き: 従来のサイズ計算
-          const dimensions = calculateDimensions(text, {
-            family: textNode.font,
-            size: textNode.fontSize,
-            weight: textNode.fontWeight,
-            padding: textNode.padding,
-          })
-
-          console.log('[ReportKonvaEditor] handleTextUpdate:', { text, ...dimensions })
-
-          // Update text and dimensions together (Transient)
-          handleElementChange(
-            {
-              id: editingElementId,
-              text,
-              w: dimensions.w,
-              h: dimensions.h,
-            } as Partial<UnifiedNode> & { id?: string },
-            { saveToHistory: false }
-          )
-        }
+        const updatePatch = applyTextLayoutUpdates(textNode, { text })
+        handleElementChange(
+          { id: editingElementId, ...updatePatch } as Partial<UnifiedNode> & { id?: string },
+          { saveToHistory: false }
+        )
       },
-      [editingElementId, templateDoc.nodes, handleElementChange, calculateDimensions]
+      [editingElementId, templateDoc.nodes, handleElementChange]
     )
 
     const handleTextEditFinish = useCallback(() => {
@@ -422,18 +382,9 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
           const textNode = element as TextNode
 
           if (textNode.vertical) {
-            // 縦書きテキスト: 確定時にサイズを計算
             const fontSize = textNode.fontSize ?? ptToMm(12)
             const padding = textNode.padding ?? 10
-
-            const lines = (textNode.text || '').split('\n')
-            const maxLineLength = Math.max(...lines.map(line => Array.from(line).length), 1)
-
-            // 高さ = 最長行の文字数 × フォントサイズ + padding × 2
-            const contentHeight = maxLineLength * fontSize
-            const newH = contentHeight + padding * 2
-
-            // 縦書き: 高さのみ更新、WidthとX座標は変更しない
+            const newH = calculateVerticalTextHeight(textNode.text ?? '', fontSize, padding)
             const updatePatch: Partial<UnifiedNode> = { id: editingElementId, h: newH }
 
             handleElementChange(
@@ -441,7 +392,6 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
               { saveToHistory: true, force: true }
             )
           } else {
-            // 横書き: 従来通り
             handleElementChange({ id: editingElementId }, { saveToHistory: true, force: true })
           }
         }

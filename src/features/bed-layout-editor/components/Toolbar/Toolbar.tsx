@@ -33,7 +33,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/DropdownMenu'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/Tooltip'
-import { measureText } from '@/features/konva-editor/utils/textUtils'
+import { calculateInitialTextBoxSize } from '@/features/konva-editor/utils/textLayout'
 import type {
   Doc,
   ImageNode,
@@ -43,7 +43,7 @@ import type {
   UnifiedNode,
   WidgetNode,
 } from '@/types/canvas'
-import { mmToPx, ptToMm, pxToMm } from '@/utils/units'
+import { ptToMm } from '@/utils/units'
 
 export type ToolType = 'select' | 'text' | 'image' | 'bed' | 'shape' | 'line'
 
@@ -189,10 +189,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     const fontSizeMm = ptToMm(12)
     const font = {
       family: 'Meiryo',
-      size: mmToPx(fontSizeMm, { dpi }),
+      sizeMm: fontSizeMm,
       weight: 400,
     }
-    const { width, height } = measureText(textContent, font)
+    const { w, h } = calculateInitialTextBoxSize(textContent, font, { dpi })
 
     const text: TextNode = {
       id,
@@ -209,8 +209,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       align: 'l',
       x,
       y,
-      w: pxToMm(width + 10, { dpi }),
-      h: pxToMm(height + 4, { dpi }),
+      w,
+      h,
     }
     withNewElement(text)
   }

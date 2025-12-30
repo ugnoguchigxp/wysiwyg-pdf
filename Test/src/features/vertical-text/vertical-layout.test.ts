@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateVerticalLayout } from '../utils/vertical-layout';
+import { calculateVerticalLayout } from '@/features/vertical-text/utils/vertical-layout';
 
 describe('vertical-layout', () => {
     const fontSize = 20;

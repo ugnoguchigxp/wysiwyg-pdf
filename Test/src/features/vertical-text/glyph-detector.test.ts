@@ -5,7 +5,7 @@ import {
     isTopRightAlign,
     isRotatedChar,
     isBracket,
-} from '../utils/glyph-detector';
+} from '@/features/vertical-text/utils/glyph-detector';
 
 describe('glyph-detector', () => {
     describe('isSmallKana', () => {
