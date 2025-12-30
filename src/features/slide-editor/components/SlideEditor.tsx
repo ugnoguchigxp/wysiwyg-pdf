@@ -22,10 +22,18 @@ import { useSlideOperations } from '../hooks/useSlideOperations'
 
 
 
+interface SavedMasterSummary {
+    id: string
+    title: string
+}
+
 interface SlideEditorProps {
     loadDoc?: Doc
     loadNonce?: number
     onDocChange?: (doc: Doc) => void
+    onMasterModeChange?: (isMasterMode: boolean) => void
+    savedMasters?: SavedMasterSummary[]
+    onLoadSavedMaster?: (masterId: string) => void
     toolbarActions?: React.ReactNode
 }
 
@@ -33,12 +41,15 @@ export const SlideEditor: React.FC<SlideEditorProps> = ({
     loadDoc,
     loadNonce,
     onDocChange,
+    onMasterModeChange,
+    savedMasters,
+    onLoadSavedMaster,
     toolbarActions,
 }) => {
     const { doc, setDoc, undo, redo, canUndo, canRedo, reset } = useSlideHistory(INITIAL_DOC)
     const [currentSlideId, setCurrentSlideId] = useState<string>(() => {
         return (
-            doc.surfaces.find((s) => s.masterId !== undefined)?.id ||
+            doc.surfaces.find((s) => !!s.masterId)?.id ||
             doc.surfaces[0]?.id ||
             ''
         )
@@ -65,21 +76,30 @@ export const SlideEditor: React.FC<SlideEditorProps> = ({
         if (loadNonce === undefined) return
         if (lastLoadNonceRef.current === loadNonce) return
 
+        console.log('[SlideEditor] loadDoc starting...', loadNonce)
+
+        // Find target slide first
+        const nextSlideId =
+            loadDoc.surfaces.find((s) => !!s.masterId)?.id ||
+            loadDoc.surfaces[0]?.id ||
+            ''
+
+        console.log('[SlideEditor] loadDoc surfaces:', loadDoc.surfaces.map(s => ({ id: s.id, mid: s.masterId })))
+        console.log('[SlideEditor] loadDoc target slide detected:', nextSlideId)
+
+        // Reset history/doc
         reset(loadDoc)
+
+        // Reset state
         setSelectedIds([])
         setActiveTool('select')
         setIsPresentationMode(false)
         setShowGrid(false)
         setThumbnails({})
 
-        const nextSlideId =
-            loadDoc.surfaces.find((s) => s.masterId !== undefined)?.id ||
-            loadDoc.surfaces[0]?.id ||
-            ''
+        console.log('[SlideEditor] loadDoc target slide:', nextSlideId)
         setCurrentSlideId(nextSlideId)
-        requestAnimationFrame(() => {
-            setCurrentSlideId(nextSlideId)
-        })
+
         lastLoadNonceRef.current = loadNonce
     }, [loadDoc, loadNonce, reset])
 
@@ -87,15 +107,34 @@ export const SlideEditor: React.FC<SlideEditorProps> = ({
     useEffect(() => {
         if (!doc.surfaces.find(s => s.id === currentSlideId)) {
             if (doc.surfaces.length > 0) {
-                setCurrentSlideId(doc.surfaces[0].id)
+                // Default to first real slide, otherwise first master
+                const fallbackId = doc.surfaces.find(s => !!s.masterId)?.id || doc.surfaces[0].id
+                console.log('[SlideEditor] Missing currentSlideId fallback to:', fallbackId)
+                setCurrentSlideId(fallbackId)
             }
         }
     }, [doc.surfaces, currentSlideId])
 
     const currentSlide = doc.surfaces.find(s => s.id === currentSlideId)
     // Master vs Slide logic
-    // If masterId is undefined/missing -> It is a master surface (or blank master)
-    const isMasterEditMode = currentSlide?.masterId === undefined && currentSlide?.id !== 'master-blank'
+    // s.masterId == null (or undefined) means it is a master
+    const isMasterEditMode = !!currentSlide && !currentSlide.masterId && currentSlide.id !== 'master-blank'
+
+    useEffect(() => {
+        console.log('[SlideEditor] State Check:', {
+            currentSlideId,
+            isMasterEditMode,
+            surfaceCount: doc.surfaces.length,
+            currentSlideFound: !!currentSlide,
+            currentSlideMasterId: currentSlide?.masterId,
+            docId: doc.id
+        })
+    }, [currentSlideId, isMasterEditMode, doc.surfaces.length, currentSlide, doc.id])
+
+    // Notify parent of master mode changes
+    useEffect(() => {
+        onMasterModeChange?.(isMasterEditMode)
+    }, [isMasterEditMode, onMasterModeChange])
 
     // Resolve Master (for Slide View)
     const masterSurfaceForSlide = currentSlide?.masterId
@@ -112,7 +151,7 @@ export const SlideEditor: React.FC<SlideEditorProps> = ({
 
     // Calculate Slide Number
     // Filter only standard slides (not masters) to count index
-    const allSlides = doc.surfaces.filter(s => s.masterId !== undefined)
+    const allSlides = doc.surfaces.filter(s => !!s.masterId)
     const slideIndex = allSlides.findIndex(s => s.id === currentSlideId)
     const pageNumber = slideIndex >= 0 ? slideIndex + 1 : 1
 
@@ -143,26 +182,37 @@ export const SlideEditor: React.FC<SlideEditorProps> = ({
 
     const handleToggleMasterEdit = () => {
         if (isMasterEditMode) {
-            // Exit Master Mode
-            const targetId = lastSlideIdRef.current || doc.surfaces.find(s => s.masterId !== undefined)?.id || doc.surfaces[0].id
+            // Exit Master Mode: Return to previous slide or first normal slide
+            const targetId = lastSlideIdRef.current || doc.surfaces.find(s => !!s.masterId)?.id || doc.surfaces[0].id
+            console.log('[SlideEditor] Exiting Master Mode. Target ID:', targetId)
             setCurrentSlideId(targetId)
         } else {
             // Enter Master Mode
             lastSlideIdRef.current = currentSlideId
-            // Find master for this slide
-            const targetMasterId = currentSlide?.masterId || 'master-default' // Fallback
-            // Check if master exists
+
+            // 1. Try master associated with current slide
+            let targetMasterId = currentSlide?.masterId
+
+            // 2. Fallback: If no masterId (shouldn't happen for slides) or currentSlide is master-blank or similar
+            if (!targetMasterId || targetMasterId === 'master-blank') {
+                const anyMaster = doc.surfaces.find(s => !s.masterId && s.id !== 'master-blank')
+                targetMasterId = anyMaster?.id || 'master-default'
+            }
+
+            console.log('[SlideEditor] Entering Master Mode. Attempting Target Master ID:', targetMasterId)
+
+            // Check if that master exists
             const masterExists = doc.surfaces.find(s => s.id === targetMasterId)
 
             if (masterExists) {
                 setCurrentSlideId(targetMasterId)
             } else {
-                // If referenced master not found (e.g. 'blank' or missing), try finding ANY master
-                const anyMaster = doc.surfaces.find(s => s.masterId === undefined && s.id !== 'master-blank')
+                // Last ditch: ANY master that isn't blank
+                const anyMaster = doc.surfaces.find(s => !s.masterId && s.id !== 'master-blank')
                 if (anyMaster) {
+                    console.log('[SlideEditor] Referenced master not found. Falling back to any master:', anyMaster.id)
                     setCurrentSlideId(anyMaster.id)
                 } else {
-                    // No master found? Create default? For now just stay.
                     console.warn('No master slide found to edit.')
                 }
             }
@@ -331,6 +381,8 @@ export const SlideEditor: React.FC<SlideEditorProps> = ({
                 isMasterEditMode={isMasterEditMode}
                 onToggleMasterEdit={handleToggleMasterEdit}
                 onSelectTemplate={handleSelectTemplate}
+                savedMasters={savedMasters}
+                onLoadSavedMaster={onLoadSavedMaster}
                 extraActions={toolbarActions}
             />
 
@@ -388,6 +440,17 @@ export const SlideEditor: React.FC<SlideEditorProps> = ({
                                         nodes: prev.nodes.filter(n => !selectedIds.includes(n.id))
                                     }))
                                 }
+                            }}
+                            onCreateElements={(newNodes) => {
+                                // Paste creates new nodes on the current surface
+                                const nodesWithSurface = newNodes.map(n => ({
+                                    ...n,
+                                    s: currentSlideId
+                                }))
+                                setDoc(prev => ({
+                                    ...prev,
+                                    nodes: [...prev.nodes, ...nodesWithSurface]
+                                }))
                             }}
                             className="flex items-center justify-center"
                             onStageMouseUp={handleStageInteractionEnd}

@@ -34,7 +34,7 @@ describe('components/canvas/hooks/useCanvasDrag', () => {
   it('handles drag end for line element', () => {
     const onChange = vi.fn()
     const mockEvent = {
-      target: {
+      currentTarget: {
         x: vi.fn(() => 10),
         y: vi.fn(() => 20),
       },
@@ -53,8 +53,8 @@ describe('components/canvas/hooks/useCanvasDrag', () => {
     })
 
     expect(onChange).toHaveBeenCalled()
-    expect(mockEvent.target.x).toHaveBeenCalledWith(0)
-    expect(mockEvent.target.y).toHaveBeenCalledWith(0)
+    expect(mockEvent.currentTarget.x).toHaveBeenCalledWith(0)
+    expect(mockEvent.currentTarget.y).toHaveBeenCalledWith(0)
   })
 
   it('handles drag move without error when element is not WH element', () => {
@@ -83,7 +83,7 @@ describe('components/canvas/hooks/useCanvasDrag', () => {
     const onChange = vi.fn()
     const element = { id: 'shape1', t: 'shape', shape: 'circle', x: 0, y: 0, w: 20, h: 40, s: 'surface' } as any
     const mockEvent = {
-      target: {
+      currentTarget: {
         x: vi.fn(() => 100),
         y: vi.fn(() => 80),
       },
@@ -145,7 +145,7 @@ describe('components/canvas/hooks/useCanvasDrag', () => {
       batchDraw: vi.fn(),
     }
     const mockEvent = {
-      target: {
+      currentTarget: {
         x: vi.fn(() => 120),
         y: vi.fn(() => 140),
         getStage: vi.fn(() => stage),
@@ -208,7 +208,7 @@ describe('components/canvas/hooks/useCanvasDrag', () => {
       batchDraw: vi.fn(),
     }
     const mockEvent = {
-      target: {
+      currentTarget: {
         x: vi.fn(() => 120),
         y: vi.fn(() => 140),
         getStage: vi.fn(() => stage),

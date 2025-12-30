@@ -38,10 +38,10 @@ export const SlideListPanel: React.FC<SlideListPanelProps> = ({
             // Show Masters
             // Exclude 'master-blank' if we don't want users editing the "empty" concept?
             // Or maybe show it. For now show all masters.
-            return doc.surfaces.filter(s => s.masterId === undefined && s.id !== 'master-blank')
+            return doc.surfaces.filter(s => !s.masterId && s.id !== 'master-blank')
         }
         // Show Slides
-        return doc.surfaces.filter(s => s.masterId !== undefined)
+        return doc.surfaces.filter(s => !!s.masterId)
     }, [doc.surfaces, isMasterEditMode])
 
     // Simple HTML5 Drag & Drop

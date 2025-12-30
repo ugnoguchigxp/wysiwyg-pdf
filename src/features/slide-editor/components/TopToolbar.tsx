@@ -29,6 +29,11 @@ import { EDITOR_SHAPES } from '@/features/konva-editor/constants/shapes'
 import { SLIDE_LAYOUTS, type LayoutType } from '../constants/layouts'
 
 
+interface SavedMasterSummary {
+    id: string
+    title: string
+}
+
 interface TopToolbarProps {
     doc: Doc
     presentationTitle: string
@@ -51,6 +56,8 @@ interface TopToolbarProps {
     isMasterEditMode: boolean
     onToggleMasterEdit: () => void
     onSelectTemplate?: (templateId: string) => void
+    savedMasters?: SavedMasterSummary[]
+    onLoadSavedMaster?: (masterId: string) => void
     extraActions?: React.ReactNode
 }
 
@@ -77,6 +84,8 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
     isMasterEditMode,
     onToggleMasterEdit,
     onSelectTemplate,
+    savedMasters,
+    onLoadSavedMaster,
     extraActions,
 }) => {
     const [pptxEnabled, setPptxEnabled] = useState(false)
@@ -116,6 +125,7 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
                     <div className="grid grid-cols-2 gap-2">
                         {SLIDE_LAYOUTS.map((layout) => (
                             <button
+                                type="button"
                                 key={layout.id}
                                 className="flex flex-col items-center p-2 hover:bg-accent rounded-md group text-center border border-transparent hover:border-border transition-all"
                                 onClick={() => onAddSlide(layout.id)}
@@ -198,13 +208,13 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
 
             <div className="flex-1" />
 
-            {extraActions && (
+            {extraActions && !isMasterEditMode && (
                 <div className="flex items-center gap-0.5">
                     {extraActions}
                 </div>
             )}
 
-            {extraActions && <div className="h-6 w-px bg-border" />}
+            {extraActions && !isMasterEditMode && <div className="h-6 w-px bg-border" />}
 
             {/* History */}
             <div className="flex items-center gap-0.5">
@@ -235,13 +245,27 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
+                            {/* Built-in Templates */}
                             {SLIDE_TEMPLATES.map(t => (
                                 <DropdownMenuItem key={t.id} onClick={() => onSelectTemplate?.(t.id)}>
                                     {t.name}
                                 </DropdownMenuItem>
                             ))}
+                            {/* Saved Masters */}
+                            {savedMasters && savedMasters.length > 0 && (
+                                <>
+                                    <div className="h-px bg-border my-1" />
+                                    <div className="px-2 py-1 text-xs text-muted-foreground">保存されたマスター</div>
+                                    {savedMasters.map(m => (
+                                        <DropdownMenuItem key={m.id} onClick={() => onLoadSavedMaster?.(m.id)}>
+                                            {m.title}
+                                        </DropdownMenuItem>
+                                    ))}
+                                </>
+                            )}
                         </DropdownMenuContent>
                     </DropdownMenu>
+                    {extraActions}
                 </div>
             ) : (
                 <div className="flex items-center gap-1">

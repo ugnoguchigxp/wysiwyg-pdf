@@ -324,12 +324,14 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                 onShowShortcuts={() => setShowShortcuts(true)}
                 onBack={onBack}
                 i18nOverrides={EDITOR_TRANSLATIONS}
+                loadMenu={
+                    <DocumentLoadMenu
+                        fetchRecent={fetchRecent}
+                        fetchBrowse={fetchBrowse}
+                        onLoad={handleLoad}
+                    />
+                }
             >
-                <DocumentLoadMenu
-                    fetchRecent={fetchRecent}
-                    fetchBrowse={fetchBrowse}
-                    onLoad={handleLoad}
-                />
                 <button
                     onClick={() => setIsDashboardMode(!isDashboardMode)}
                     className={`p-2 rounded-md hover:bg-accent transition-colors flex items-center gap-2 ${isDashboardMode ? 'text-blue-500 bg-blue-100 dark:bg-blue-900' : 'text-muted-foreground'}`}

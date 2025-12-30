@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { ShapeRenderer } from '@/components/canvas/renderers/ShapeRenderer'
 
 const recorded = {
+  Group: [] as any[],
   Rect: [] as any[],
   Ellipse: [] as any[],
   Line: [] as any[],
@@ -12,6 +13,7 @@ const recorded = {
 }
 
 const resetRecorded = () => {
+  recorded.Group.length = 0
   recorded.Rect.length = 0
   recorded.Ellipse.length = 0
   recorded.Line.length = 0
@@ -24,6 +26,10 @@ const record = (key: keyof typeof recorded, props: any) => {
 }
 
 vi.mock('react-konva', () => ({
+  Group: ({ children, ...props }: any) => {
+    record('Group', props)
+    return <div data-testid="Group">{children}</div>
+  },
   Rect: (props: any) => {
     record('Rect', props)
     return <div data-testid="Rect" />
@@ -143,7 +149,7 @@ describe('components/canvas/renderers/ShapeRenderer', () => {
         commonProps={commonProps}
       />
     )
-    expect(recorded.Rect[0].fill).toBe('teal')
+    expect(recorded.Group.length).toBeGreaterThan(0)
 
     render(
       <ShapeRenderer

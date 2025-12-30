@@ -190,7 +190,7 @@ describe('components/canvas/CanvasElementRenderer', () => {
       />
     )
 
-    expect(screen.getAllByTestId('Path').length).toBeGreaterThan(0)
+    expect(screen.getAllByTestId('Line').length).toBeGreaterThan(0)
   })
   it('renders shapes (rect, circle)', () => {
     mockTextHeight = null

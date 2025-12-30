@@ -1,4 +1,4 @@
-export type DocumentType = 'report' | 'bed-layout' | 'signature' | 'mindmap' | 'slide'
+export type DocumentType = 'report' | 'bed-layout' | 'signature' | 'mindmap' | 'slide' | 'slide-master'
 
 export interface DocumentSummary {
   id: string

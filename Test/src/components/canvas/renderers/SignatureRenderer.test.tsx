@@ -10,12 +10,14 @@ vi.mock('@/utils/handwriting', () => ({
 
 const recorded = {
   Group: [] as any[],
+  Line: [] as any[],
   Path: [] as any[],
   Rect: [] as any[],
 }
 
 const resetRecorded = () => {
   recorded.Group.length = 0
+  recorded.Line.length = 0
   recorded.Path.length = 0
   recorded.Rect.length = 0
 }
@@ -28,6 +30,10 @@ vi.mock('react-konva', () => ({
   Group: ({ children, ...props }: any) => {
     record('Group', props)
     return <div data-testid="Group">{children}</div>
+  },
+  Line: (props: any) => {
+    record('Line', props)
+    return <div data-testid="Line" />
   },
   Path: (props: any) => {
     record('Path', props)
@@ -44,9 +50,6 @@ describe('components/canvas/renderers/SignatureRenderer', () => {
 
   it('renders handwriting paths and hit area', () => {
     resetRecorded()
-    pathSpy
-      .mockReturnValueOnce('M0 0')
-      .mockReturnValueOnce('M1 1')
 
     render(
       <SignatureRenderer
@@ -69,10 +72,10 @@ describe('components/canvas/renderers/SignatureRenderer', () => {
       />
     )
 
-    expect(pathSpy).toHaveBeenCalledTimes(2)
-    expect(recorded.Path.length).toBe(2)
-    expect(recorded.Path[0].data).toBe('M0 0')
-    expect(recorded.Path[0].fill).toBe('#111111')
+    expect(recorded.Line.length).toBe(2)
+    expect(recorded.Line[0].points).toEqual([0, 0, 10, 10])
+    expect(recorded.Line[0].stroke).toBe('#111111')
+    expect(recorded.Line[0].strokeWidth).toBe(0.5)
     const rectProps = recorded.Rect[0]
     expect(rectProps.width).toBe(200)
     expect(rectProps.height).toBe(100)

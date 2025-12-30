@@ -109,7 +109,7 @@ export const useSlideOperations = ({
         if (!template) return
 
         setDoc(prev => {
-            const masterSurfaces = prev.surfaces.filter(s => s.masterId === undefined && s.type === 'slide')
+            const masterSurfaces = prev.surfaces.filter(s => !s.masterId && s.type === 'slide')
 
             // 1. Update Surfaces (Background)
             const newSurfaces = prev.surfaces.map(s => {

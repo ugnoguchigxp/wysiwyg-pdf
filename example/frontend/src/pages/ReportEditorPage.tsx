@@ -243,12 +243,14 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
                 onShowShortcuts={() => setShowShortcuts(true)}
                 onBack={onBack}
                 i18nOverrides={EDITOR_TRANSLATIONS}
+                loadMenu={
+                    <DocumentLoadMenu
+                        fetchRecent={fetchRecent}
+                        fetchBrowse={fetchBrowse}
+                        onLoad={handleLoad}
+                    />
+                }
             >
-                <DocumentLoadMenu
-                    fetchRecent={fetchRecent}
-                    fetchBrowse={fetchBrowse}
-                    onLoad={handleLoad}
-                />
                 <button
                     onClick={() => setDarkMode(!darkMode)}
                     className="p-2 rounded-md hover:bg-accent text-muted-foreground transition-colors"

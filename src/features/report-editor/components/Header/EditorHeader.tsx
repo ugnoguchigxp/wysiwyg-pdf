@@ -27,6 +27,7 @@ export interface EditorHeaderProps {
   onBack?: () => void
   onShowShortcuts?: () => void
   onSettingsClick?: () => void
+  loadMenu?: React.ReactNode
   children?: React.ReactNode
   i18nOverrides?: Record<string, string>
 }
@@ -47,6 +48,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   onBack,
   onShowShortcuts,
   onSettingsClick,
+  loadMenu,
   children,
   i18nOverrides,
 }) => {
@@ -69,6 +71,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
     <div className="px-5 py-3 bg-secondary border-b border-border flex items-center justify-between shrink-0 h-16 transition-colors shadow-sm">
       <div className="flex items-center gap-4 min-w-0 flex-1 mr-4">
         <button
+          type="button"
           onClick={onBack}
           className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap shrink-0"
         >
@@ -109,6 +112,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
 
         {/* History Controls */}
         <button
+          type="button"
           onClick={onUndo}
           disabled={!canUndo}
           className="p-2 rounded-md hover:bg-accent text-muted-foreground disabled:opacity-30 transition-colors"
@@ -117,6 +121,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
           <Undo className="w-4 h-4" />
         </button>
         <button
+          type="button"
           onClick={onRedo}
           disabled={!canRedo}
           className="p-2 rounded-md hover:bg-accent text-muted-foreground disabled:opacity-30 transition-colors"
@@ -140,6 +145,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
 
         {/* Actions */}
         <button
+          type="button"
           onClick={onDownloadImage}
           className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-foreground hover:bg-accent rounded-md border border-border transition-colors shadow-sm whitespace-nowrap flex-shrink-0"
         >
@@ -148,6 +154,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
         </button>
 
         <button
+          type="button"
           onClick={onDownloadPdf}
           className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-foreground hover:bg-accent rounded-md border border-border transition-colors shadow-sm whitespace-nowrap flex-shrink-0"
         >
@@ -155,13 +162,21 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
           {resolveText('header_pdf', 'PDF')}
         </button>
 
+        <div className="h-6 w-px bg-border mx-1" />
+
+        {/* [Load] [Save] order */}
+        {loadMenu}
+
         <button
+          type="button"
           onClick={onSave}
           className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 rounded-md shadow-sm transition-colors whitespace-nowrap flex-shrink-0"
         >
           <Save className="w-4 h-4" />
           {resolveText('save', 'Save')}
         </button>
+
+        <div className="h-6 w-px bg-border mx-1" />
 
         {onSettingsClick && (
           <Button
@@ -175,7 +190,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
           </Button>
         )}
 
-        {/* Custom Actions (e.g. Theme Toggle) */}
+        {/* Custom Actions (e.g. Dashboard, DarkMode switches) rendered AFTER Save */}
         {children}
       </div>
     </div>
