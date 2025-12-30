@@ -366,37 +366,50 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
         }
 
         const textNode = element as TextNode
-        const dimensions = calculateDimensions(text, {
-          family: textNode.font,
-          size: textNode.fontSize,
-          weight: textNode.fontWeight,
-          padding: textNode.padding,
-        })
 
-        // Note: fontSize in textNode is usually in 'pt' or 'px'?
-        // Looking at ReportKonvaEditor lines 359: size: mmToPx(textNode.fontSize || ptToMm(12), { dpi })
-        // It seems textNode.fontSize is stored in 'mm' in the model?
-        // Let's re-verify the types and assumptions.
-        // ReportKonvaEditor L359: mmToPx(textNode.fontSize || ptToMm(12), { dpi })
-        // If textNode.fontSize is defined, it is treated as mm by mmToPx directly?
-        // Actually, let's look at L359 again:
-        // size: mmToPx(textNode.fontSize || ptToMm(12), { dpi })
-        // If textNode.fontSize is 10 (mm), mmToPx(10) -> px.
-        // If textNode.fontSize is undefined, ptToMm(12) -> mm, then mmToPx -> px.
-        // So textNode.fontSize IS in mm.
+        // 縦書きと横書きでサイズ計算を分ける
+        if (textNode.vertical) {
+          // 縦書き: 縦書き用のサイズ計算
+          const fontSize = textNode.fontSize ?? ptToMm(12)
+          const padding = textNode.padding ?? 10
 
-        console.log('[ReportKonvaEditor] handleTextUpdate:', { text, ...dimensions })
+          const lines = (text || '').split('\n')
+          const maxLineLength = Math.max(...lines.map(line => Array.from(line).length), 1)
 
-        // Update text and dimensions together (Transient)
-        handleElementChange(
-          {
-            id: editingElementId,
-            text,
-            w: dimensions.w,
-            h: dimensions.h,
-          } as Partial<UnifiedNode> & { id?: string },
-          { saveToHistory: false }
-        )
+          // 高さ = 最長行の文字数 × フォントサイズ + padding × 2
+          const contentHeight = maxLineLength * fontSize
+          const newH = contentHeight + padding * 2
+
+          // 縦書き: 高さのみ自動更新する（幅とX座標は変更しない）
+          // これにより、「勝手に右/左にスライドする」問題を防ぐ
+          const updatePatch: Partial<UnifiedNode> = { id: editingElementId, text, h: newH }
+
+          handleElementChange(
+            updatePatch as Partial<UnifiedNode> & { id?: string },
+            { saveToHistory: false }
+          )
+        } else {
+          // 横書き: 従来のサイズ計算
+          const dimensions = calculateDimensions(text, {
+            family: textNode.font,
+            size: textNode.fontSize,
+            weight: textNode.fontWeight,
+            padding: textNode.padding,
+          })
+
+          console.log('[ReportKonvaEditor] handleTextUpdate:', { text, ...dimensions })
+
+          // Update text and dimensions together (Transient)
+          handleElementChange(
+            {
+              id: editingElementId,
+              text,
+              w: dimensions.w,
+              h: dimensions.h,
+            } as Partial<UnifiedNode> & { id?: string },
+            { saveToHistory: false }
+          )
+        }
       },
       [editingElementId, templateDoc.nodes, handleElementChange, calculateDimensions]
     )
@@ -406,11 +419,31 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       if (editingElementId) {
         const element = templateDoc.nodes.find((n) => n.id === editingElementId)
         if (element && element.t === 'text') {
-          // Re-trigger update with force=true to ensure it hits history
-          // Note: We don't need to recalculate if we assume handleTextUpdate did it.
-          // However, for safety, let's just trigger a "no-op" update or same-value update with force.
-          // Actually, passing the current values is enough.
-          handleElementChange({ id: editingElementId }, { saveToHistory: true, force: true })
+          const textNode = element as TextNode
+
+          if (textNode.vertical) {
+            // 縦書きテキスト: 確定時にサイズを計算
+            const fontSize = textNode.fontSize ?? ptToMm(12)
+            const padding = textNode.padding ?? 10
+
+            const lines = (textNode.text || '').split('\n')
+            const maxLineLength = Math.max(...lines.map(line => Array.from(line).length), 1)
+
+            // 高さ = 最長行の文字数 × フォントサイズ + padding × 2
+            const contentHeight = maxLineLength * fontSize
+            const newH = contentHeight + padding * 2
+
+            // 縦書き: 高さのみ更新、WidthとX座標は変更しない
+            const updatePatch: Partial<UnifiedNode> = { id: editingElementId, h: newH }
+
+            handleElementChange(
+              updatePatch as Partial<UnifiedNode> & { id?: string },
+              { saveToHistory: true, force: true }
+            )
+          } else {
+            // 横書き: 従来通り
+            handleElementChange({ id: editingElementId }, { saveToHistory: true, force: true })
+          }
         }
       }
       setEditingElementId(null)

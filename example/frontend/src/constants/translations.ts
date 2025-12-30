@@ -108,6 +108,7 @@ export const EDITOR_TRANSLATIONS = {
     properties_border_width_box: '枠線の太さ',
     properties_show_frame: '枠線をつける',
     properties_corner_radius: '角丸',
+    properties_vertical_text: '縦書き',
 
     properties_text_underline: '下線',
     properties_text_strikethrough: '取り消し線',

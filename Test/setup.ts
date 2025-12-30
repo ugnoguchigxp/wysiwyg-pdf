@@ -5,14 +5,14 @@ import React from 'react'
 // Radix UI (and friends) rely on these browser APIs.
 if (!globalThis.ResizeObserver) {
   globalThis.ResizeObserver = class ResizeObserver {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
+    observe() { }
+    unobserve() { }
+    disconnect() { }
   }
 }
 
 if (!HTMLElement.prototype.scrollIntoView) {
-  HTMLElement.prototype.scrollIntoView = () => {}
+  HTMLElement.prototype.scrollIntoView = () => { }
 }
 
 {
@@ -60,12 +60,25 @@ if (!HTMLElement.prototype.scrollIntoView) {
       return {
         font: '',
         measureText: (text: string) => ({ width: (text?.length ?? 0) * 10 }),
-        scale: () => {},
-        setTransform: () => {},
-        save: () => {},
-        restore: () => {},
-        clearRect: () => {},
-        fillRect: () => {},
+        scale: () => { },
+        transform: () => { },
+        translate: () => { },
+        rotate: () => { },
+        fillText: () => { },
+        strokeText: () => { },
+        beginPath: () => { },
+        moveTo: () => { },
+        lineTo: () => { },
+        closePath: () => { },
+        stroke: () => { },
+        fill: () => { },
+        arc: () => { },
+        rect: () => { },
+        setTransform: () => { },
+        save: () => { },
+        restore: () => { },
+        clearRect: () => { },
+        fillRect: () => { },
         getImageData: () => ({ data: [0, 0, 0, 0] }),
       }
     }

@@ -146,6 +146,9 @@ export interface TextNode extends BaseNode {
 
   // Dynamic Content (for Slide Master)
   dynamicContent?: 'slide-number' | string
+
+  // Vertical Orientation
+  vertical?: boolean // true if text is vertical (Tategaki)
 }
 
 export interface ShapeNode extends BaseNode {

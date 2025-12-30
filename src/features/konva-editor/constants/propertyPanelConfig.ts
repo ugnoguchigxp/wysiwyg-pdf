@@ -442,6 +442,17 @@ export const WIDGET_PRESETS: Record<string, WidgetConfig> = {
 
 export const SECTION_PRESETS: Record<string, SectionConfig> = {
   // === Common Sections ===
+  'sec:text-vertical': {
+    id: 'common-text-vertical',
+    condition: (node) => node.t === 'text',
+    widgets: [
+      {
+        type: 'checkbox',
+        labelKey: 'properties_vertical_text',
+        props: { fieldKey: 'vertical' },
+      }
+    ],
+  },
   'sec:posSize': {
     id: 'common-pos-size',
     widgets: ['posSize:full'],
@@ -614,7 +625,7 @@ export const TEXT_OBJECT_CONFIG: ObjectPanelConfig = {
             showUnderline: true,
             showStrikethrough: true,
           },
-        }
+        },
       ],
     },
     // Frame Section (Checkbox Toggle)
@@ -754,7 +765,7 @@ export const DEFAULT_PANEL_LAYOUT: PanelLayout = {
 export const REPORT_PANEL_CONFIG: PropertyPanelConfig = {
   editorType: 'report',
   layout: { ...DEFAULT_PANEL_LAYOUT, width: 288 },
-  defaultSections: ['sec:posSize'],
+  defaultSections: ['sec:text-vertical', 'sec:posSize'],
   objects: [
     TEXT_OBJECT_CONFIG,
     SHAPE_OBJECT_CONFIG,
@@ -768,7 +779,7 @@ export const REPORT_PANEL_CONFIG: PropertyPanelConfig = {
 export const BED_LAYOUT_PANEL_CONFIG: PropertyPanelConfig = {
   editorType: 'bedLayout',
   layout: DEFAULT_PANEL_LAYOUT,
-  defaultSections: ['sec:posSize'],
+  defaultSections: ['sec:text-vertical', 'sec:posSize'],
   objects: [
     BED_LAYOUT_TEXT_OBJECT_CONFIG,
     SHAPE_OBJECT_CONFIG,
@@ -781,7 +792,7 @@ export const BED_LAYOUT_PANEL_CONFIG: PropertyPanelConfig = {
 export const MINDMAP_PANEL_CONFIG: PropertyPanelConfig = {
   editorType: 'report', // Re-use report type for now as schema is similar
   layout: DEFAULT_PANEL_LAYOUT,
-  defaultSections: ['sec:posSize'],
+  defaultSections: ['sec:text-vertical', 'sec:posSize'],
   objects: [
     TEXT_OBJECT_CONFIG,
     SHAPE_OBJECT_CONFIG,

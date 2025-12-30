@@ -178,7 +178,7 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
 
     const { calculateDimensions } = useTextDimensions()
 
-    const handleTextUpdate = (text: string) => {
+    const handleTextUpdate = (text: string, rect?: { x: number; y: number; w: number; h: number }) => {
       if (!editingElementId) return
 
       const element = elements.find((el) => el.id === editingElementId)
@@ -189,11 +189,25 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
 
       const textNode = element as TextNode
 
+      // If explicit rect is provided (e.g. from VerticalTextEditor)
+      if (rect) {
+        onChange({
+          id: editingElementId,
+          text,
+          x: rect.x,
+          y: rect.y,
+          w: rect.w,
+          h: rect.h
+        } as Partial<UnifiedNode> & { id: string })
+        return
+      }
+
       const dimensions = calculateDimensions(text, {
         family: textNode.font,
         size: textNode.fontSize,
         weight: textNode.fontWeight,
         padding: textNode.padding,
+        isVertical: textNode.vertical,
       })
 
       onChange({

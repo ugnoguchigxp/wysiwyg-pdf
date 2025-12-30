@@ -9,7 +9,7 @@ interface TextEditOverlayProps {
   element: TextNode
   scale: number
   stageNode: Konva.Stage | null
-  onUpdate: (text: string) => void
+  onUpdate: (text: string, rect?: { x: number; y: number; w: number; h: number }) => void
   onFinish: () => void
 }
 
@@ -28,12 +28,9 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
   useLayoutEffect(() => {
     if (textareaRef.current) {
       if (document.activeElement !== textareaRef.current) {
-        // Auto-focus on mount (or re-mount)
         textareaRef.current.focus({ preventScroll: true })
       }
 
-      // Sync value ONLY if not composing and not currently focused
-      // preventing interruptions during IME composition or regular typing.
       if (!isComposing.current && document.activeElement !== textareaRef.current && textareaRef.current.value !== element.text) {
         textareaRef.current.value = element.text
       }
@@ -41,11 +38,9 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
   }, [element.text])
 
   // 2. Style/Geometry Effect - Handles positioning and sizing
-  // Use useLayoutEffect to prevent visual flashes before paint
   useLayoutEffect(() => {
     if (!stageNode || !element) return
 
-    // Find the node in Konva stage to get absolute position
     const node = stageNode.findOne(`#${element.id}`)
     if (!node) return
 
@@ -55,97 +50,132 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
       y: absolutePosition.y,
     }
 
-    // Calculate style
-    const vAlign = element.vAlign || 'm'
+    const scaledW = element.w * scale
+    const scaledH = element.h * scale
 
-    // Padding logic
+    // パディング計算
     const paddingMm = element.padding || 0
     const padding = paddingMm * scale
 
-    // Text Dimensions for alignment
-    // Use calculateTextDimensions with 'Arial' to match Konva default
-    // Note: We use element.text here for dimension calc, but we shouldn't re-run this ENTIRE effect just for text change unless W/H implies it?
-    // Actually, for alignment (vertical center), we NEED content height.
-    // So 'dim' calculation depends on text.
-    // IF text changes, 'dim.h' changes, so 'paddingTop' (extraTop) changes.
-    // So we MUST re-calculate style on text change.
-    // BUT we can still use useLayoutEffect to make it synchronous.
-    const dim = calculateTextDimensions(element.text, {
-      family: element.font || 'Arial',
-      size: element.fontSize,
-      weight: element.fontWeight,
-      padding: 0 // pure text content
-    })
+    // 内部ボックスの位置とサイズ
+    const boxLeft = areaPosition.x + padding
+    const boxTop = areaPosition.y + padding
+    const boxW = Math.max(0, scaledW - (padding * 2))
+    const boxH = Math.max(0, scaledH - (padding * 2))
 
-    // Geometry Calculation
-    // Match CanvasElementRenderer: Text node is positioned AT padding, with width = W - 2P
-    const scaledW = element.w * scale
-    const scaledH = element.h * scale
-    const scaledPadding = padding // calculated above as element.padding * scale
+    // Debug log
+    console.log('[TextEditOverlay] render:', {
+      id: element.id,
+      w: element.w, h: element.h,
+      vertical: element.vertical,
+      boxW, boxH,
+      areaPosition
+    });
 
-    const innerW = Math.max(0, scaledW - (scaledPadding * 2))
-    const innerH = Math.max(0, scaledH - (scaledPadding * 2))
-
-    // Position offset (Inner Box)
-    const boxLeft = areaPosition.x + scaledPadding
-    const boxTop = areaPosition.y + scaledPadding
-
-    // Vertical alignment within the inner box
-    const scaledTextContentHeight = dim.h * scale
-    let extraTop = 0
-    if (vAlign === 'm') {
-      extraTop = (innerH - scaledTextContentHeight) / 2
-    } else if (vAlign === 'b') {
-      extraTop = innerH - scaledTextContentHeight
-    }
-    const finalPaddingTop = Math.max(0, extraTop)
-
-    const newStyle: React.CSSProperties = {
+    let newStyle: React.CSSProperties = {
       position: 'absolute',
-      // Position at inner box
+      // 位置は絶対座標（Canvasレンダリング領域と一致）
       top: `${boxTop}px`,
       left: `${boxLeft}px`,
-      width: `${innerW}px`,
-      height: `${innerH}px`,
-
+      width: `${boxW}px`,
+      height: `${boxH}px`,
       fontSize: `${(element.fontSize ?? ptToMm(12)) * scale}px`,
-      fontFamily: element.font || 'Arial',
+      fontFamily: element.font || 'Noto Sans JP',
       fontWeight: element.fontWeight || 400,
       fontStyle: element.italic ? 'italic' : 'normal',
-      textDecoration: [
-        element.underline ? 'underline' : '',
-        element.lineThrough ? 'line-through' : '',
-      ]
-        .filter(Boolean)
-        .join(' '),
       color: element.fill || '#000000',
-      textAlign:
-        element.align === 'r'
-          ? 'right'
-          : element.align === 'c'
-            ? 'center'
-            : element.align === 'j'
-              ? 'justify'
-              : 'left',
-      lineHeight: 1.2,
-      background: 'transparent',
+      // 背景は透明にしてKonvaのテキストと重ねても違和感ないようにする（あるいは半透明白？）
+      // 横書きでは transparent だったが、見やすくするために半透明白を維持するか、統一するか。
+      // ユーザー要望「横書きロジックをそのまま」に従い、transparentを基本とするが、
+      // 編集エリアがわかりにくいので少し色をつけるか？
+      // 初期コードでは `rgba(255, 255, 255, 0.9)` だった。
+      background: 'rgba(255, 255, 255, 0.5)',
       border: 'none',
-      outline: 'none',
+      outline: '1px solid #007AFF',
       resize: 'none',
-
-      // No horizontal padding in the textarea itself, because we sized it to the inner content box
-      paddingLeft: 0,
-      paddingRight: 0,
-      paddingBottom: 0,
-      paddingTop: `${finalPaddingTop}px`,
-
       boxSizing: 'border-box',
       margin: 0,
       overflow: 'hidden',
-      whiteSpace: 'pre', // Prevent wrapping in edit mode
       zIndex: 1000,
       transformOrigin: 'top left',
       transform: `rotate(${element.r || 0}deg)`,
+    }
+
+    if (element.vertical) {
+      // 縦書きテキスト: Hidden textarea + Konva描画アプローチ
+      // 
+      // 仕組み:
+      // 1. textarea は完全に透明で最小サイズ（スクロール防止）
+      // 2. 入力は textarea で受け付ける（IME対応）
+      // 3. 表示は Konva の VerticalKonvaText がリアルタイムで描画
+      //
+      // これにより「縦書き入力している感覚」を実現
+      newStyle = {
+        position: 'absolute',
+        // テキストノードの左上に配置（小さいのでどこでもOK）
+        left: `${areaPosition.x}px`,
+        top: `${areaPosition.y}px`,
+        // 最小サイズにしてスクロールを防ぐ
+        width: '1px',
+        height: '1px',
+        // 完全に透明にする
+        opacity: 0,
+        // クリック・フォーカスは受け付ける
+        pointerEvents: 'auto',
+        // 背景・ボーダーも透明
+        background: 'transparent',
+        border: 'none',
+        outline: 'none',
+        // テキスト関連
+        fontSize: '16px',
+        color: 'transparent',
+        caretColor: 'transparent',
+        resize: 'none',
+        overflow: 'hidden',
+        padding: 0,
+        margin: 0,
+        zIndex: 1000,
+      }
+    } else {
+      // 横書きスタイル
+      const vAlign = element.vAlign || 'm'
+      const dim = calculateTextDimensions(element.text, {
+        family: element.font || 'Arial',
+        size: element.fontSize,
+        weight: element.fontWeight,
+        padding: 0
+      })
+
+      const scaledTextContentHeight = dim.h * scale
+      let extraTop = 0
+      if (vAlign === 'm') {
+        extraTop = (boxH - scaledTextContentHeight) / 2
+      } else if (vAlign === 'b') {
+        extraTop = boxH - scaledTextContentHeight
+      }
+      const finalPaddingTop = Math.max(0, extraTop)
+
+      newStyle = {
+        ...newStyle,
+        textAlign:
+          element.align === 'r'
+            ? 'right'
+            : element.align === 'c'
+              ? 'center'
+              : element.align === 'j'
+                ? 'justify'
+                : 'left',
+        lineHeight: 1.2,
+        textDecoration: [
+          element.underline ? 'underline' : '',
+          element.lineThrough ? 'line-through' : '',
+        ].filter(Boolean).join(' '),
+        paddingLeft: 0,
+        paddingRight: 0,
+        paddingBottom: 0,
+        paddingTop: `${finalPaddingTop}px`,
+        whiteSpace: 'pre',
+      }
     }
 
     setStyle(newStyle)
@@ -154,10 +184,10 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
     element.x, element.y, element.w, element.h,
     element.padding, element.vAlign,
     element.fontSize, element.font, element.fontWeight,
-    element.text, // Text is needed for vertical alignment (content height)
+    element.text,
+    element.vertical,
     scale,
     stageNode,
-    // Add other relevant props if they affect style
     element.italic, element.underline, element.lineThrough, element.fill, element.align, element.r
   ])
 
@@ -171,21 +201,14 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       if (e.shiftKey) {
-        // Standard behavior for Shift+Enter in textarea is usually newline anyway,
-        // but if we want to explicitly allow it or do something else we can.
-        // For now, let it bubble or default behavior occur.
         return
       }
 
       if (e.metaKey || e.ctrlKey) {
-        // Ctrl+Enter or Cmd+Enter to finish
         e.preventDefault()
         handleFinish()
         return
       }
-
-      // Plain Enter -> Newline (default behavior of textarea)
-      // Do nothing, let event populate textarea
     }
 
     if (e.key === 'Escape') {
@@ -203,21 +226,22 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
 
   const handleCompositionEnd = (e: React.CompositionEvent<HTMLTextAreaElement>) => {
     isComposing.current = false
-    // Ensure final value is synced up
-    onUpdate(e.currentTarget.value)
+    handleChange({ target: { value: e.currentTarget.value } } as React.ChangeEvent<HTMLTextAreaElement>)
   }
 
   return (
-    <textarea
-      ref={textareaRef}
-      style={style}
-      defaultValue={element.text}
-      onChange={handleChange}
-      onBlur={handleFinish}
-      onKeyDown={handleKeyDown}
-      onCompositionStart={handleCompositionStart}
-      onCompositionEnd={handleCompositionEnd}
-      wrap="off"
-    />
+    <>
+      <textarea
+        ref={textareaRef}
+        style={style}
+        defaultValue={element.text}
+        onChange={handleChange}
+        onBlur={handleFinish}
+        onKeyDown={handleKeyDown}
+        onCompositionStart={handleCompositionStart}
+        onCompositionEnd={handleCompositionEnd}
+        wrap="off"
+      />
+    </>
   )
 }

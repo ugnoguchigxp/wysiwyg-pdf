@@ -151,6 +151,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
               onClick={handleAddText}
               className={TOOLBAR_BUTTON_CLASS}
               aria-label={resolveText('toolbar_add_text', 'Add Text')}
+              data-testid="toolbar-add-text"
             >
               <Type size={20} />
             </button>

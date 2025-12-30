@@ -2,6 +2,7 @@ import type React from 'react'
 import { Circle, Group, Line, Path, Rect, Text } from 'react-konva'
 import type { TextNode } from '@/types/canvas'
 import type { CanvasElementCommonProps, CanvasElementRendererProps } from '../types'
+import { VerticalKonvaText, VerticalCaret } from '@/features/vertical-text'
 
 interface TextRendererProps {
   element: TextNode
@@ -115,32 +116,66 @@ export const TextRenderer: React.FC<TextRendererProps> = ({
             listening={false}
           />
         )}
-        <Text
-          x={textX}
-          y={textY}
-          width={textW}
-          height={textH}
-          text={text}
-          fontSize={fontSize}
-          fontFamily={font}
-          fontStyle={
-            `${italic ? 'italic ' : ''}${fontWeight && fontWeight >= 700 ? 'bold' : ''} `.trim() ||
-            'normal'
-          }
-          textDecoration={[underline ? 'underline' : '', lineThrough ? 'line-through' : '']
-            .filter(Boolean)
-            .join(' ')}
-          fill={fill}
-          stroke={stroke}
-          strokeWidth={strokeW}
-          align={
-            align === 'l' ? 'left' : align === 'r' ? 'right' : align === 'c' ? 'center' : 'justify'
-          }
-          verticalAlign={vAlign === 'm' ? 'middle' : vAlign === 'b' ? 'bottom' : 'top'}
-          lineHeight={1.2}
-          listening={false} // Let the group handle events
-          visible={!isEditing} // Hide underlying text while editing to prevent visual mismatch
-        />
+        {element.vertical ? (
+          <>
+            <VerticalKonvaText
+              node={{ ...element, x: textX, y: textY }}
+              // 縦書き: 透明なtextareaで入力するため、編集中もKonva表示を継続
+              visible={true}
+            />
+            {/* 編集中は点滅カレットを表示 */}
+            {isEditing && (() => {
+              // VerticalKonvaText と同じロジックでカレット位置を計算
+              const caretFontSize = fontSize || 16;
+              const caretPadding = padding;
+              const columnSpacing = 1.5;
+              const startX = textW - (caretFontSize * (columnSpacing / 2 + 0.5));
+
+              const lines = (text || '').split('\n');
+              const columnIndex = lines.length - 1;
+              const currentLineLength = lines.length > 0 ? Array.from(lines[lines.length - 1] || '').length : 0;
+
+              const caretX = textX + startX - columnIndex * (caretFontSize * columnSpacing);
+              const caretY = textY + caretPadding + currentLineLength * caretFontSize;
+
+              return (
+                <VerticalCaret
+                  x={caretX - caretFontSize / 2}
+                  y={caretY}
+                  width={caretFontSize}
+                  visible={true}
+                />
+              );
+            })()}
+          </>
+        ) : (
+          <Text
+            x={textX}
+            y={textY}
+            width={textW}
+            height={textH}
+            text={text}
+            fontSize={fontSize}
+            fontFamily={font}
+            fontStyle={
+              `${italic ? 'italic ' : ''}${fontWeight && fontWeight >= 700 ? 'bold' : ''} `.trim() ||
+              'normal'
+            }
+            textDecoration={[underline ? 'underline' : '', lineThrough ? 'line-through' : '']
+              .filter(Boolean)
+              .join(' ')}
+            fill={fill}
+            stroke={stroke}
+            strokeWidth={strokeW}
+            align={
+              align === 'l' ? 'left' : align === 'r' ? 'right' : align === 'c' ? 'center' : 'justify'
+            }
+            verticalAlign={vAlign === 'm' ? 'middle' : vAlign === 'b' ? 'bottom' : 'top'}
+            lineHeight={1.2}
+            listening={false} // Let the group handle events
+            visible={!isEditing} // Hide underlying text while editing to prevent visual mismatch
+          />
+        )}
         {/* Collapse Toggle Button - Only if enabled for this node */}
         {element.data?.hasChildren &&
           onToggleCollapse &&
@@ -193,6 +228,53 @@ export const TextRenderer: React.FC<TextRendererProps> = ({
               </Group>
             )
           })()}
+      </Group>
+    )
+  }
+
+  if (element.vertical) {
+    // カレット位置の計算
+    // テキストの最後の文字の次の位置に表示
+    const caretFontSize = fontSize || 16;
+    const padding = element.padding || 10;
+    const columnSpacing = 1.5;
+
+    // テキストの行数（改行で分割）
+    const lines = (text || '').split('\n');
+    const currentLineLength = lines.length > 0 ? Array.from(lines[lines.length - 1] || '').length : 0;
+
+    // カレット位置（右上から開始、下に進む）
+    const startX = (element.w || 100) - padding - (caretFontSize * (columnSpacing / 2 + 0.5));
+    const columnIndex = lines.length - 1; // 現在の列（0始まり）
+    const caretX = startX - columnIndex * (caretFontSize * columnSpacing);
+    const caretY = padding + currentLineLength * caretFontSize;
+
+    return (
+      <Group
+        {...commonProps}
+        // 編集中はマウスカーソルを縦書き用に変更
+        onMouseEnter={(e) => {
+          if (isEditing) {
+            const container = e.target.getStage()?.container();
+            if (container) container.style.cursor = 'vertical-text';
+          }
+        }}
+        onMouseLeave={(e) => {
+          const container = e.target.getStage()?.container();
+          if (container) container.style.cursor = 'default';
+        }}
+      >
+        {/* 縦書き: 透明なtextareaで入力するため、編集中もKonva表示を継続 */}
+        <VerticalKonvaText node={{ ...element, x: 0, y: 0 }} visible={true} />
+        {/* 編集中は点滅カレットを表示 */}
+        {isEditing && (
+          <VerticalCaret
+            x={caretX - caretFontSize / 2}
+            y={caretY}
+            width={caretFontSize}
+            visible={true}
+          />
+        )}
       </Group>
     )
   }
