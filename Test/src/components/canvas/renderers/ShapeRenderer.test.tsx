@@ -184,4 +184,53 @@ describe('components/canvas/renderers/ShapeRenderer', () => {
 
     expect(recorded.Path.length).toBeGreaterThanOrEqual(5)
   })
+
+  it('covers heart, pentagon, hexagon, and cone shapes', () => {
+    resetRecorded()
+
+    // Heart shape
+    render(
+      <ShapeRenderer
+        element={{ id: 'heart', t: 'shape', shape: 'heart', w: 24, h: 24, fill: 'red' } as any}
+        commonProps={commonProps}
+      />
+    )
+    expect(recorded.Path.length).toBeGreaterThan(0)
+    expect(recorded.Path[0].fill).toBe('red')
+
+    // Pentagon shape
+    render(
+      <ShapeRenderer
+        element={{ id: 'pent', t: 'shape', shape: 'pentagon', x: 0, y: 0, w: 50, h: 50, fill: 'purple' } as any}
+        commonProps={commonProps}
+      />
+    )
+    const pentProps = recorded.Line[recorded.Line.length - 1]
+    expect(pentProps.closed).toBe(true)
+    expect(pentProps.fill).toBe('purple')
+
+    // Hexagon shape
+    render(
+      <ShapeRenderer
+        element={{ id: 'hex', t: 'shape', shape: 'hexagon', x: 0, y: 0, w: 60, h: 50, fill: 'yellow' } as any}
+        commonProps={commonProps}
+      />
+    )
+    const hexProps = recorded.Line[recorded.Line.length - 1]
+    expect(hexProps.closed).toBe(true)
+    expect(hexProps.fill).toBe('yellow')
+
+    // Cone shape
+    render(
+      <ShapeRenderer
+        element={{ id: 'cone', t: 'shape', shape: 'cone', w: 40, h: 60, fill: 'orange' } as any}
+        commonProps={commonProps}
+      />
+    )
+    expect(recorded.Group.length).toBeGreaterThan(0)
+    // Cone has Line (body) and Ellipse (base)
+    expect(recorded.Line.length).toBeGreaterThan(0)
+    expect(recorded.Ellipse.length).toBeGreaterThan(0)
+  })
 })
+

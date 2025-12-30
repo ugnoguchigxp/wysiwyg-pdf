@@ -1,9 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { Rect } from 'react-konva' // Added Rect
+import { Rect } from 'react-konva'
 import type { Doc, UnifiedNode } from '@/types/canvas'
-// Note: getMergedNodes from '@/utils/master' handles basic master/placeholder merging
-// but this component has additional processing (dynamicContent, locking), so direct use is deferred
-
 
 import { KonvaCanvasEditor, type KonvaCanvasEditorHandle } from '@/components/canvas/KonvaCanvasEditor'
 import { WysiwygPropertiesPanel } from '@/features/report-editor/components/PropertyPanel/WysiwygPropertiesPanel'
@@ -13,9 +10,15 @@ import { PresentationMode } from './PresentationMode'
 
 import { useSlideHistory } from '../hooks/useSlideHistory'
 import { useFitToScreen } from '../hooks/useFitToScreen'
+import { useMasterModeToggle } from '../hooks/useMasterModeToggle'
 import { exportToPptx } from '../utils/pptxExport'
-import { PAGE_SIZES } from '@/constants/pageSizes' // Keeping PAGE_SIZES
-
+import { PAGE_SIZES } from '@/constants/pageSizes'
+import {
+    isMasterSurface,
+    processMasterNodesForDisplay,
+    mergeDisplayNodes,
+    getSlidePageNumber
+} from '../utils/slideHelpers'
 
 import { INITIAL_DOC } from '../utils/slideFactories'
 import { useSlideOperations } from '../hooks/useSlideOperations'
@@ -64,7 +67,6 @@ export const SlideEditor: React.FC<SlideEditorProps> = ({
 
     const editorContainerRef = useRef<HTMLDivElement>(null)
     const canvasRef = useRef<KonvaCanvasEditorHandle>(null)
-    const lastSlideIdRef = useRef<string | null>(null) // To restore slide after master edit
     const lastLoadNonceRef = useRef<number | undefined>(undefined)
 
     useEffect(() => {
@@ -116,9 +118,8 @@ export const SlideEditor: React.FC<SlideEditorProps> = ({
     }, [doc.surfaces, currentSlideId])
 
     const currentSlide = doc.surfaces.find(s => s.id === currentSlideId)
-    // Master vs Slide logic
-    // s.masterId == null (or undefined) means it is a master
-    const isMasterEditMode = !!currentSlide && !currentSlide.masterId && currentSlide.id !== 'master-blank'
+    // Use utility function for master detection
+    const isMasterEditMode = isMasterSurface(currentSlide)
 
     useEffect(() => {
         console.log('[SlideEditor] State Check:', {
@@ -145,79 +146,25 @@ export const SlideEditor: React.FC<SlideEditorProps> = ({
     const masterNodes = masterSurfaceForSlide
         ? doc.nodes.filter(n => n.s === masterSurfaceForSlide.id)
         : []
-    // If we are editing master, we filter by currentSlideId (which IS the master id)
-    // If we are editing slide, we also filter by currentSlideId
     const currentSurfaceNodes = doc.nodes.filter(n => n.s === currentSlideId)
 
-    // Calculate Slide Number
-    // Filter only standard slides (not masters) to count index
-    const allSlides = doc.surfaces.filter(s => !!s.masterId)
-    const slideIndex = allSlides.findIndex(s => s.id === currentSlideId)
-    const pageNumber = slideIndex >= 0 ? slideIndex + 1 : 1
+    // Calculate Slide Number using utility
+    const pageNumber = getSlidePageNumber(doc.surfaces, currentSlideId)
 
-    // Process Master Nodes for Dynamic Content
-    // AND Filter out placeholders (they are hidden on slide view, as they are copied to slide)
-    const processedMasterNodes = masterNodes
-        .filter(n => !n.isPlaceholder) // Hide placeholders
-        .map(n => {
-            // Lock by default
-            const node = { ...n, locked: true }
+    // Process Master Nodes using utility
+    const processedMasterNodes = processMasterNodesForDisplay(masterNodes, pageNumber)
 
-            // Dynamic Content Replacement
-            if (node.t === 'text' && node.dynamicContent === 'slide-number') {
-                return { ...node, text: String(pageNumber) }
-            }
-            return node
-        })
+    // Merge for display using utility
+    const displayNodes = mergeDisplayNodes(isMasterEditMode, processedMasterNodes, currentSurfaceNodes)
 
-    // Merge for display
-    // Case 1: Master Edit Mode -> Show ONLY master nodes (editable, no replacement)
-    // Case 2: Slide Edit Mode -> Show Master Nodes (Locked background, processed) + Slide Nodes (Editable)
-    const displayNodes = isMasterEditMode
-        ? currentSurfaceNodes
-        : [
-            ...processedMasterNodes,
-            ...currentSurfaceNodes
-        ]
-
-    const handleToggleMasterEdit = () => {
-        if (isMasterEditMode) {
-            // Exit Master Mode: Return to previous slide or first normal slide
-            const targetId = lastSlideIdRef.current || doc.surfaces.find(s => !!s.masterId)?.id || doc.surfaces[0].id
-            console.log('[SlideEditor] Exiting Master Mode. Target ID:', targetId)
-            setCurrentSlideId(targetId)
-        } else {
-            // Enter Master Mode
-            lastSlideIdRef.current = currentSlideId
-
-            // 1. Try master associated with current slide
-            let targetMasterId = currentSlide?.masterId
-
-            // 2. Fallback: If no masterId (shouldn't happen for slides) or currentSlide is master-blank or similar
-            if (!targetMasterId || targetMasterId === 'master-blank') {
-                const anyMaster = doc.surfaces.find(s => !s.masterId && s.id !== 'master-blank')
-                targetMasterId = anyMaster?.id || 'master-default'
-            }
-
-            console.log('[SlideEditor] Entering Master Mode. Attempting Target Master ID:', targetMasterId)
-
-            // Check if that master exists
-            const masterExists = doc.surfaces.find(s => s.id === targetMasterId)
-
-            if (masterExists) {
-                setCurrentSlideId(targetMasterId)
-            } else {
-                // Last ditch: ANY master that isn't blank
-                const anyMaster = doc.surfaces.find(s => !s.masterId && s.id !== 'master-blank')
-                if (anyMaster) {
-                    console.log('[SlideEditor] Referenced master not found. Falling back to any master:', anyMaster.id)
-                    setCurrentSlideId(anyMaster.id)
-                } else {
-                    console.warn('No master slide found to edit.')
-                }
-            }
-        }
-    }
+    // Use hook for master mode toggle
+    const { handleToggleMasterEdit } = useMasterModeToggle({
+        currentSlideId,
+        currentSlide,
+        doc,
+        isMasterEditMode,
+        setCurrentSlideId
+    })
 
     // Auto Zoom
     const { zoom } = useFitToScreen(
