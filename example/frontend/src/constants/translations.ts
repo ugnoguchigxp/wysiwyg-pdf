@@ -137,4 +137,10 @@ export const EDITOR_TRANSLATIONS = {
     bed_layout_image_preview: '画像プレビュー',
     shape_preview: '図形プレビュー',
     report_image_alt: 'アセット',
+
+    // Context Menu
+    ctx_bring_to_front: '最前面へ移動',
+    ctx_send_to_back: '最背面へ移動',
+    ctx_bring_forward: '前面へ移動',
+    ctx_send_backward: '背面へ移動',
 }

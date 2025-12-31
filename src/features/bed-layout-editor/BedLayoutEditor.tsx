@@ -27,6 +27,7 @@ interface KonvaEditorProps {
   gridSize?: number
   surfaceId?: string
   onCreateNodes?: (nodes: UnifiedNode[]) => void
+  onReorderNodes?: (nodeIds: string[]) => void
 }
 
 export interface BedLayoutEditorHandle {
@@ -52,11 +53,18 @@ export const BedLayoutEditor = React.forwardRef<BedLayoutEditorHandle, KonvaEdit
       gridSize = 15,
       surfaceId,
       onCreateNodes,
+      onReorderNodes,
     },
     ref
   ) => {
     // Konva Stage reference for image export
     const editorRef = React.useRef<KonvaCanvasEditorHandle | null>(null)
+
+    const resolvedSurfaceId =
+      surfaceId ||
+      document.surfaces.find((s) => s.type === 'canvas')?.id ||
+      document.surfaces[0]?.id ||
+      'layout'
 
     React.useImperativeHandle(ref, () => ({
       downloadImage: () => {
@@ -102,11 +110,6 @@ export const BedLayoutEditor = React.forwardRef<BedLayoutEditorHandle, KonvaEdit
       copy: () => editorRef.current?.copy(),
       paste: () => editorRef.current?.paste(),
     }))
-    const resolvedSurfaceId =
-      surfaceId ||
-      document.surfaces.find((s) => s.type === 'canvas')?.id ||
-      document.surfaces[0]?.id ||
-      'layout'
     const surface =
       document.surfaces.find((s) => s.id === resolvedSurfaceId) || document.surfaces[0]
     const paperWidth = surface?.w ?? 0
@@ -115,43 +118,46 @@ export const BedLayoutEditor = React.forwardRef<BedLayoutEditorHandle, KonvaEdit
     const elements = document.nodes.filter((n) => n.s === resolvedSurfaceId)
 
     return (
-      <KonvaCanvasEditor
-        ref={editorRef}
-        elements={elements}
-        selectedIds={selection}
-        onSelect={onSelect}
-        onChange={onChangeElement}
-        zoom={zoom}
-        paperWidth={paperWidth}
-        paperHeight={paperHeight}
-        onDelete={() => {
-          if (selection.length > 0 && onDelete) {
-            const id = selection[0]
-            if (id) onDelete(id)
-          }
-        }}
-        onUndo={_onUndo}
-        onRedo={_onRedo}
-        background={<PaperBackground document={document} surfaceId={resolvedSurfaceId} />}
-        renderCustom={(el, commonProps, handleShapeRef) => {
-          if (el.t === 'widget' && el.widget === 'bed') {
-            const { ref: _ignoredRef, ...propsWithoutRef } = commonProps
-            return (
-              <BedElement
-                {...propsWithoutRef}
-                element={el as WidgetNode}
-                isSelected={selection.includes(el.id)}
-                shapeRef={handleShapeRef}
-              />
-            )
-          }
-          return null
-        }}
-        showGrid={showGrid}
-        snapStrength={snapStrength}
-        gridSize={gridSize}
-        onCreateElements={onCreateNodes}
-      />
+      <>
+        <KonvaCanvasEditor
+          ref={editorRef}
+          elements={elements}
+          selectedIds={selection}
+          onSelect={onSelect}
+          onChange={onChangeElement}
+          zoom={zoom}
+          paperWidth={paperWidth}
+          paperHeight={paperHeight}
+          onDelete={() => {
+            if (selection.length > 0 && onDelete) {
+              const id = selection[0]
+              if (id) onDelete(id)
+            }
+          }}
+          onUndo={_onUndo}
+          onRedo={_onRedo}
+          background={<PaperBackground document={document} surfaceId={resolvedSurfaceId} />}
+          renderCustom={(el, commonProps, handleShapeRef) => {
+            if (el.t === 'widget' && el.widget === 'bed') {
+              const { ref: _ignoredRef, ...propsWithoutRef } = commonProps
+              return (
+                <BedElement
+                  {...propsWithoutRef}
+                  element={el as WidgetNode}
+                  isSelected={selection.includes(el.id)}
+                  shapeRef={handleShapeRef}
+                />
+              )
+            }
+            return null
+          }}
+          showGrid={showGrid}
+          snapStrength={snapStrength}
+          gridSize={gridSize}
+          onCreateElements={onCreateNodes}
+          onReorderNodes={onReorderNodes}
+        />
+      </>
     )
   }
 )

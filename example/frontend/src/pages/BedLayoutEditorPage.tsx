@@ -455,6 +455,13 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                                     setSelectedElementId(nodes[nodes.length - 1].id)
                                 }
                             }}
+                            onReorderNodes={(nodeIds) => {
+                                executeBedOp({
+                                    kind: 'reorder-elements',
+                                    prevOrder: bedDoc.nodes.map((n: Doc['nodes'][number]) => n.id),
+                                    nextOrder: nodeIds,
+                                })
+                            }}
                         />
                     )}
                 </div>

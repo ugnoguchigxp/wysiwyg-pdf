@@ -11,6 +11,8 @@ import { GridLayer } from './GridLayer'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { TextEditOverlay } from './TextEditOverlay'
 import { cn } from '@/lib/utils'
+import { ObjectContextMenu } from './ObjectContextMenu'
+import { reorderNodes } from '@/utils/reorderUtils'
 
 export interface KonvaCanvasEditorHandle {
   getStage: () => Konva.Stage | null
@@ -67,6 +69,8 @@ interface KonvaCanvasEditorProps {
   }
   className?: string
   showPaperBorder?: boolean
+  onReorderNodes?: (nodeIds: string[]) => void
+  onContextMenu?: (e: Konva.KonvaEventObject<PointerEvent>, element: UnifiedNode) => void
 }
 
 export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvasEditorProps>(
@@ -103,12 +107,57 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       dragState,
       className,
       showPaperBorder = true,
+      onReorderNodes,
+      onContextMenu,
     },
     ref
   ) => {
     const containerRef = useRef<HTMLDivElement>(null)
     const stageRef = useRef<Konva.Stage>(null)
     const [editingElementId, setEditingElementId] = useState<string | null>(null)
+
+    // Context Menu State
+    const [contextMenu, setContextMenu] = useState<{
+      visible: boolean
+      x: number
+      y: number
+      elementId: string | null
+    }>({
+      visible: false,
+      x: 0,
+      y: 0,
+      elementId: null,
+    })
+
+    // ...
+
+    const handleDefaultContextMenu = useCallback((e: Konva.KonvaEventObject<PointerEvent>, element: UnifiedNode) => {
+      e.evt.preventDefault()
+
+      // Select the element if not already selected
+      if (!selectedIds.includes(element.id)) {
+        onSelect([element.id])
+      }
+
+      setContextMenu({
+        visible: true,
+        x: e.evt.clientX,
+        y: e.evt.clientY,
+        elementId: element.id
+      })
+    }, [selectedIds, onSelect])
+
+    const handleReorder = useCallback((action: 'bringToFront' | 'sendToBack' | 'bringForward' | 'sendBackward') => {
+      if (!contextMenu.elementId || !onReorderNodes) return
+
+      const newElements = reorderNodes(elements, contextMenu.elementId, action)
+
+      // Only notify if order actually changed (optimization could be added to utility but checking diff here is simple enough, or just trust the utility)
+      // Actually reorderNodes always returns a new array.
+      // We pass IDs to the callback.
+      onReorderNodes(newElements.map(el => el.id))
+      setContextMenu(prev => ({ ...prev, visible: false }))
+    }, [elements, contextMenu.elementId, onReorderNodes])
 
     // Initial Scroll Centering
     useImperativeHandle(ref, () => ({
@@ -176,7 +225,10 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       }
     }
 
-    const handleTextUpdate = (text: string, rect?: { x: number; y: number; w: number; h: number }) => {
+    const handleTextUpdate = (
+      text: string,
+      rect?: { x: number; y: number; w: number; h: number }
+    ) => {
       if (!editingElementId) return
 
       const element = elements.find((el) => el.id === editingElementId)
@@ -195,7 +247,7 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
           x: rect.x,
           y: rect.y,
           w: rect.w,
-          h: rect.h
+          h: rect.h,
         } as Partial<UnifiedNode> & { id: string })
         return
       }
@@ -327,7 +379,7 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       <div
         ref={containerRef}
         className={cn(
-          "w-full h-full bg-gray-100 dark:bg-gray-900 overflow-auto flex scrollbar-thin p-2",
+          'w-full h-full bg-gray-100 dark:bg-gray-900 overflow-auto flex scrollbar-thin p-2',
           className
         )}
         style={{
@@ -338,8 +390,8 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       >
         <div
           className={cn(
-            "relative bg-white dark:bg-gray-800 w-fit h-fit",
-            showPaperBorder && "shadow-lg border-2 border-gray-500"
+            'relative bg-white dark:bg-gray-800 w-fit h-fit',
+            showPaperBorder && 'shadow-lg border-2 border-gray-500'
           )}
         >
           <Stage
@@ -348,6 +400,10 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
             scaleX={displayScale}
             scaleY={displayScale}
             ref={stageRef}
+            onContextMenu={(e) => {
+              // Prevent default on stage if background clicked
+              e.evt.preventDefault()
+            }}
             onMouseDown={(e) => {
               if (onStageMouseDown) {
                 onStageMouseDown(e)
@@ -460,6 +516,13 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
                   onDragEnter={onDragStart ? handleNodeDragEnter : undefined}
                   onDragLeave={onDragStart ? onDragLeave : undefined}
                   dragState={dragState}
+                  onContextMenu={(e) => {
+                    if (onContextMenu) {
+                      onContextMenu(e, element)
+                    } else {
+                      handleDefaultContextMenu(e, element)
+                    }
+                  }}
                 />
               ))}
             </Layer>
@@ -478,6 +541,14 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
               onFinish={handleTextEditFinish}
             />
           )}
+
+          <ObjectContextMenu
+            visible={contextMenu.visible}
+            x={contextMenu.x}
+            y={contextMenu.y}
+            onClose={() => setContextMenu(prev => ({ ...prev, visible: false }))}
+            onAction={handleReorder}
+          />
         </div>
       </div>
     )

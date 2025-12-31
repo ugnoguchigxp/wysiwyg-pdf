@@ -128,6 +128,7 @@ export const BedElement: React.FC<BedElementProps> = ({
   onTap,
   onMouseEnter,
   onMouseLeave,
+  onContextMenu,
   bedStatus,
   enableStatusStyling = false,
   renderText = true,
@@ -194,6 +195,7 @@ export const BedElement: React.FC<BedElementProps> = ({
       onTap={onTap}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
+      onContextMenu={onContextMenu}
     >
       {/* Bed Frame */}
       <Rect

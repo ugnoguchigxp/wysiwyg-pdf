@@ -68,109 +68,51 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
 
 ```typescript
 // src/features/bed-layout-editor/BedLayoutEditor.tsx
-
-import { ObjectContextMenu } from './components/ObjectContextMenu/ObjectContextMenu'
-
-// コンテキストメニュー状態の型定義
-interface ContextMenuState {
-  visible: boolean
-  x: number
-  y: number
-  elementId: string | null
-}
-
 export const BedLayoutEditor = React.forwardRef<BedLayoutEditorHandle, KonvaEditorProps>(
   (props, ref) => {
-    const { document, onChangeElement, selection, /* ... */ } = props
+    // ... destructuring including onReorderNodes
     
-    // コンテキストメニュー状態
-    const [contextMenu, setContextMenu] = React.useState<ContextMenuState>({
-      visible: false,
-      x: 0,
-      y: 0,
-      elementId: null,
-    })
-
-    // 右クリックハンドラ
-    const handleContextMenu = React.useCallback(
-      (e: Konva.KonvaEventObject<PointerEvent>, element: UnifiedNode) => {
-        e.evt.preventDefault()
-        setContextMenu({
-          visible: true,
-          x: e.evt.clientX,
-          y: e.evt.clientY,
-          elementId: element.id,
-        })
-      },
-      []
-    )
-
     // 並び替えハンドラ
     const handleReorder = React.useCallback(
       (action: 'bringToFront' | 'sendToBack' | 'bringForward' | 'sendBackward') => {
-        if (!contextMenu.elementId) return
+        if (!contextMenu.elementId || !props.onReorderNodes) return
 
         const elements = document.nodes.filter((n) => n.s === resolvedSurfaceId)
         const currentIndex = elements.findIndex((el) => el.id === contextMenu.elementId)
         if (currentIndex === -1) return
 
         const newElements = [...elements]
-        const [target] = newElements.splice(currentIndex, 1)
-
-        switch (action) {
-          case 'bringToFront':
-            newElements.push(target)
-            break
-          case 'sendToBack':
-            newElements.unshift(target)
-            break
-          case 'bringForward':
-            if (currentIndex < elements.length - 1) {
-              newElements.splice(currentIndex + 1, 0, target)
-            } else {
-              newElements.push(target)
-            }
-            break
-          case 'sendBackward':
-            if (currentIndex > 0) {
-              newElements.splice(currentIndex - 1, 0, target)
-            } else {
-              newElements.unshift(target)
-            }
-            break
-        }
-
-        // 他のsurfaceのノードと結合して更新
+        // ... (reorder logic) ...
+        
         const otherNodes = document.nodes.filter((n) => n.s !== resolvedSurfaceId)
-        const updatedNodes = [...otherNodes, ...newElements]
-        
-        // 親コンポーネントへ変更を通知
-        // Note: `onChangeElement` は部分更新用なので、全ノード更新には別の方法が必要かもしれない
-        // 既存の `onCreateNodes` や新規prop `onReorderNodes` を検討
-        onChangeElement(updatedNodes.map(n => ({ id: n.id, ...n })))
-        
-        setContextMenu({ visible: false, x: 0, y: 0, elementId: null })
+        const allOrderedNodes = [...otherNodes, ...newElements]
+        props.onReorderNodes(allOrderedNodes.map(n => n.id))
       },
-      [contextMenu.elementId, document.nodes, resolvedSurfaceId, onChangeElement]
+      [/*...*/]
     )
 
-    return (
-      <>
-        <KonvaCanvasEditor
-          // ... existing props
-          onContextMenu={handleContextMenu}
-        />
-        <ObjectContextMenu
-          visible={contextMenu.visible}
-          x={contextMenu.x}
-          y={contextMenu.y}
-          onClose={() => setContextMenu({ visible: false, x: 0, y: 0, elementId: null })}
-          onAction={handleReorder}
-        />
-      </>
-    )
+    // ...
   }
 )
+```
+
+### 3.4 `BedLayoutEditorPage` (Consumer) の変更
+
+コンシューマー側で `onReorderNodes` を受け取り、`reorder-elements` 操作を実行します。
+
+```typescript
+// BedLayoutEditorPage.tsx
+
+<BedLayoutEditor
+  // ...
+  onReorderNodes={(nodeIds) => {
+      executeBedOp({
+          kind: 'reorder-elements',
+          prevOrder: bedDoc.nodes.map(n => n.id),
+          nextOrder: nodeIds,
+      })
+  }}
+/>
 ```
 
 ### 3.4 `ObjectContextMenu` 新規作成

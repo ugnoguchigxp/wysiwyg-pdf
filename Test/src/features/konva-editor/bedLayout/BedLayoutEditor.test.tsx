@@ -1,14 +1,15 @@
 import React from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import { BedLayoutEditor } from '@/features/bed-layout-editor/BedLayoutEditor'
 
 const stage = {
   toDataURL: vi.fn(() => 'data:image/png;base64,bed'),
   find: vi.fn((_sel: string) => []),
   findOne: vi.fn((_sel: string) => ({
     visible: () => true,
-    hide: () => {},
-    show: () => {},
+    hide: () => { },
+    show: () => { },
   })),
 }
 
@@ -18,6 +19,8 @@ vi.mock('@/components/canvas/KonvaCanvasEditor', async () => {
     KonvaCanvasEditor: React.forwardRef((props: any, ref: any) => {
       React.useImperativeHandle(ref, () => ({
         getStage: () => stage,
+        copy: vi.fn(),
+        paste: vi.fn(),
       }))
 
       const custom =
@@ -26,7 +29,7 @@ vi.mock('@/components/canvas/KonvaCanvasEditor', async () => {
           : null
 
       return (
-        <div>
+        <div data-testid="konva-editor-mock">
           <div data-testid="paper-size">
             {props.paperWidth}x{props.paperHeight}
           </div>
@@ -35,6 +38,17 @@ vi.mock('@/components/canvas/KonvaCanvasEditor', async () => {
           </button>
           <div data-testid="bg">{props.background}</div>
           <div data-testid="custom">{custom}</div>
+          {props.elements?.map((el: any) => (
+            <div key={el.id} data-testid={`node-${el.id}`}>
+              {el.t}
+            </div>
+          ))}
+          <button
+            data-testid="trigger-reorder"
+            onClick={() => props.onReorderNodes?.(['2', '1'])}
+          >
+            Reorder
+          </button>
         </div>
       )
     }),
@@ -49,13 +63,11 @@ vi.mock('@/features/konva-editor/renderers/bed-elements/BedElement', () => ({
   BedElement: () => <div data-testid="bed-element" />,
 }))
 
-import { BedLayoutEditor } from '@/features/bed-layout-editor/BedLayoutEditor'
-
 describe('BedLayoutEditor', () => {
   it('computes paper size, renders custom bed element, deletes, and downloads image', () => {
     const onDelete = vi.fn()
     const ref = React.createRef<any>()
-    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => { })
 
     const doc = {
       v: 1,
@@ -72,8 +84,8 @@ describe('BedLayoutEditor', () => {
         document={doc}
         zoom={1}
         selection={['bed1']}
-        onSelect={() => {}}
-        onChangeElement={() => {}}
+        onSelect={() => { }}
+        onChangeElement={() => { }}
         onDelete={onDelete}
       />
     )
@@ -89,5 +101,37 @@ describe('BedLayoutEditor', () => {
     expect(stage.toDataURL).toHaveBeenCalled()
     expect(clickSpy).toHaveBeenCalled()
   })
-})
 
+  it('passes onReorderNodes to KonvaCanvasEditor', () => {
+    const onReorderNodes = vi.fn()
+    const doc = {
+      v: 1,
+      id: 'doc',
+      title: 'bed',
+      unit: 'mm',
+      surfaces: [{ id: 'layout', type: 'canvas', w: 100, h: 100 }],
+      nodes: [
+        { id: '1', t: 'widget', widget: 'bed', s: 'layout' },
+        { id: '2', t: 'text', s: 'layout' }
+      ],
+    } as any
+
+    render(
+      <BedLayoutEditor
+        document={doc}
+        zoom={1}
+        selection={[]}
+        onSelect={() => { }}
+        onChangeElement={() => { }}
+        onReorderNodes={onReorderNodes}
+      />
+    )
+
+    // Simulate reorder action from the mock
+    const btn = screen.getByTestId('trigger-reorder')
+    fireEvent.click(btn)
+
+    // Verify callback was called with values simulated by the mock
+    expect(onReorderNodes).toHaveBeenCalledWith(['2', '1'])
+  })
+})
