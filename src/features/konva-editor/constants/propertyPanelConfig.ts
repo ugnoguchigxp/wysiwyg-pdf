@@ -52,6 +52,7 @@ export type WidgetType =
   | 'arrowhead'
   | 'numberInput'
   | 'checkbox'
+  | 'list'
 
 // ========================================
 // Preset System (プリセットシステム)
@@ -204,6 +205,10 @@ export interface CheckboxWidgetConfig extends BaseWidgetConfig {
   }
 }
 
+export interface ListWidgetConfig extends BaseWidgetConfig {
+  type: 'list'
+}
+
 export type WidgetConfig =
   | PosSizeWidgetConfig
   | FontWidgetConfig
@@ -242,6 +247,7 @@ export type WidgetConfig =
   | ArrowheadWidgetConfig
   | NumberInputWidgetConfig
   | CheckboxWidgetConfig
+  | ListWidgetConfig
 
 // ========================================
 // Section Configuration
@@ -417,6 +423,10 @@ export const WIDGET_PRESETS: Record<string, WidgetConfig> = {
     type: 'textContent',
     props: { rows: 3 },
   },
+  'list:default': {
+    type: 'list',
+    labelKey: 'properties_list',
+  },
 
   // === Label ===
   'labelField:name': {
@@ -515,6 +525,10 @@ export const SECTION_PRESETS: Record<string, SectionConfig> = {
   'sec:text-alignment': {
     id: 'text-alignment',
     widgets: ['align:horizontal', 'align:vertical'],
+  },
+  'sec:text-list': {
+    id: 'text-list',
+    widgets: ['list:default'],
   },
   'sec:text-content': {
     id: 'text-content',
@@ -690,6 +704,7 @@ export const TEXT_OBJECT_CONFIG: ObjectPanelConfig = {
       ]
     },
     'sec:text-alignment',
+    'sec:text-list',
     'sec:text-content',
     'sec:text-binding',
   ],
@@ -698,7 +713,7 @@ export const TEXT_OBJECT_CONFIG: ObjectPanelConfig = {
 export const BED_LAYOUT_TEXT_OBJECT_CONFIG: ObjectPanelConfig = {
   objectType: 'text',
   header: { iconName: 'Type', labelKey: 'properties_element_text' },
-  sections: ['sec:text-font', 'sec:text-colors', 'sec:text-alignment', 'sec:text-content'],
+  sections: ['sec:text-font', 'sec:text-colors', 'sec:text-alignment', 'sec:text-list', 'sec:text-content'],
 }
 
 export const SHAPE_OBJECT_CONFIG: ObjectPanelConfig = {

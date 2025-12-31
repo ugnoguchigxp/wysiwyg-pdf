@@ -3,7 +3,8 @@ import '@/features/konva-editor/styles/print.css'
 import { useI18n } from '@/i18n/I18nContext'
 import { RenderLine, RenderShape } from '@/features/konva-editor/renderers/print/ReportPrintLayout'
 import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
-import { mmToPt } from '@/utils/units'
+import { mmToPt, ptToMm } from '@/utils/units'
+import { parseListLine } from '@/features/konva-editor/utils/textList'
 import type {
   Doc,
   ImageNode,
@@ -185,11 +186,52 @@ const BedPrintElement: React.FC<{
 
   if (element.t === 'text') {
     const textEl = element as TextNode
+    const numberMarkerScale = 0.75
+    const fontSizeMm = textEl.fontSize ?? ptToMm(12)
+    const lineHeight = 1.2
+    const textAlign = textEl.align === 'r' ? 'right' : textEl.align === 'c' ? 'center' : 'left'
+
+    const renderListText = () => {
+      if (textEl.vertical) return textEl.text
+      const lines = (textEl.text || '').split('\n')
+      const hasList = lines.some((line) => parseListLine(line, { vertical: false }).isList)
+      if (!hasList) return textEl.text
+
+      return lines.map((line, index) => {
+        const parsed = parseListLine(line, { vertical: false })
+        if (!parsed.isList || !parsed.type || !parsed.markerText) {
+          return (
+            <div key={`line-${index}`}>{line === '' ? '\u00A0' : line}</div>
+          )
+        }
+
+        const indentSpaces = ' '.repeat(parsed.indentLength)
+        const gapSpaces = ' '.repeat(parsed.gapLength)
+        const markerStyle =
+          parsed.type === 'number'
+            ? {
+                fontSize: `${mmToPtValue(fontSizeMm * numberMarkerScale)}pt`,
+                verticalAlign: 'middle',
+                display: 'inline-block',
+              }
+            : undefined
+
+        return (
+          <div key={`list-line-${index}`}>
+            {indentSpaces}
+            <span style={markerStyle}>{parsed.markerText}</span>
+            {gapSpaces}
+            {parsed.content === '' ? '\u00A0' : parsed.content}
+          </div>
+        )
+      })
+    }
+
     return (
       <div
         style={{
           ...style,
-          fontSize: `${mmToPtValue(textEl.fontSize)}pt`,
+          fontSize: `${mmToPtValue(fontSizeMm)}pt`,
           fontWeight: textEl.fontWeight,
           fontStyle: textEl.italic ? 'italic' : 'normal',
           textDecoration: [
@@ -199,16 +241,16 @@ const BedPrintElement: React.FC<{
             .filter(Boolean)
             .join(' '),
           color: textEl.fill,
-          textAlign: textEl.align === 'r' ? 'right' : textEl.align === 'c' ? 'center' : 'left',
           fontFamily: '"Meiryo", "Hiragino Kaku Gothic ProN", "MS PGothic", sans-serif',
           display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent:
-            textEl.align === 'c' ? 'center' : textEl.align === 'r' ? 'flex-end' : 'flex-start',
-          whiteSpace: 'pre-wrap',
+          flexDirection: 'column',
+          alignItems: 'stretch',
+          justifyContent: 'flex-start',
+          whiteSpace: 'pre',
+          lineHeight,
         }}
       >
-        {textEl.text}
+        <div style={{ width: '100%', textAlign }}>{renderListText()}</div>
       </div>
     )
   }

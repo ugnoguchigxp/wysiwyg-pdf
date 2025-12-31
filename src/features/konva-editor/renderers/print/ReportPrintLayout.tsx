@@ -3,6 +3,7 @@ import '@/features/konva-editor/styles/print.css'
 import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
 import { mmToPt, ptToMm } from '@/utils/units'
 import { createHandwritingPath } from '@/utils/handwriting'
+import { parseListLine } from '@/features/konva-editor/utils/textList'
 import type {
   Doc,
   ImageNode,
@@ -278,6 +279,12 @@ const PrintElement = ({ element }: { element: UnifiedNode }) => {
 
   if (element.t === 'text') {
     const textEl = element as TextNode
+    const numberMarkerScale = 0.75
+    const fontSizeMm = textEl.fontSize ?? ptToMm(12)
+    const lineHeight = 1.2
+    const textAlign = textEl.align === 'r' ? 'right' : textEl.align === 'c' ? 'center' : 'left'
+    const vAlign =
+      textEl.vAlign === 'b' ? 'flex-end' : textEl.vAlign === 'm' ? 'center' : 'flex-start'
 
     const shouldShowBox =
       textEl.hasFrame !== undefined
@@ -300,11 +307,47 @@ const PrintElement = ({ element }: { element: UnifiedNode }) => {
     const borderRadius =
       shouldShowBox && actualRadius > 0 ? `${mmToPtValue(actualRadius)}pt` : undefined
 
+    const renderListText = () => {
+      if (textEl.vertical) return textEl.text
+      const lines = (textEl.text || '').split('\n')
+      const hasList = lines.some((line) => parseListLine(line, { vertical: false }).isList)
+      if (!hasList) return textEl.text
+
+      return lines.map((line, index) => {
+        const parsed = parseListLine(line, { vertical: false })
+        if (!parsed.isList || !parsed.type || !parsed.markerText) {
+          return (
+            <div key={`line-${index}`}>{line === '' ? '\u00A0' : line}</div>
+          )
+        }
+
+        const indentSpaces = ' '.repeat(parsed.indentLength)
+        const gapSpaces = ' '.repeat(parsed.gapLength)
+        const markerStyle =
+          parsed.type === 'number'
+            ? {
+                fontSize: `${mmToPtValue(fontSizeMm * numberMarkerScale)}pt`,
+                verticalAlign: 'middle',
+                display: 'inline-block',
+              }
+            : undefined
+
+        return (
+          <div key={`list-line-${index}`}>
+            {indentSpaces}
+            <span style={markerStyle}>{parsed.markerText}</span>
+            {gapSpaces}
+            {parsed.content === '' ? '\u00A0' : parsed.content}
+          </div>
+        )
+      })
+    }
+
     return (
       <div
         style={{
           ...style,
-          fontSize: `${mmToPtValue(textEl.fontSize)}pt`,
+          fontSize: `${mmToPtValue(fontSizeMm)}pt`,
           fontWeight: textEl.fontWeight,
           fontStyle: textEl.italic ? 'italic' : 'normal',
           textDecoration: [
@@ -314,14 +357,13 @@ const PrintElement = ({ element }: { element: UnifiedNode }) => {
             .filter(Boolean)
             .join(' '),
           color: textEl.fill,
-          textAlign: textEl.align === 'r' ? 'right' : textEl.align === 'c' ? 'center' : 'left',
           fontFamily: textEl.font,
           display: 'flex',
-          alignItems:
-            textEl.vAlign === 'b' ? 'flex-end' : textEl.vAlign === 'm' ? 'center' : 'flex-start',
-          justifyContent:
-            textEl.align === 'c' ? 'center' : textEl.align === 'r' ? 'flex-end' : 'flex-start',
-          whiteSpace: 'pre-wrap',
+          flexDirection: 'column',
+          alignItems: 'stretch',
+          justifyContent: vAlign,
+          whiteSpace: 'pre',
+          lineHeight,
           border: borderStyle,
           backgroundColor,
           borderRadius,
@@ -329,7 +371,7 @@ const PrintElement = ({ element }: { element: UnifiedNode }) => {
           boxSizing: 'border-box',
         }}
       >
-        {textEl.text}
+        <div style={{ width: '100%', textAlign }}>{renderListText()}</div>
       </div>
     )
   }

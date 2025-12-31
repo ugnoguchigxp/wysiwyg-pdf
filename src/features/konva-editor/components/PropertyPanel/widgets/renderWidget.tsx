@@ -12,6 +12,7 @@ import { FontWidget } from './FontWidget'
 import { ImageWidget } from './ImageWidget'
 import { LabelFieldWidget } from './LabelFieldWidget'
 import { LineStyleWidget } from './LineStyleWidget'
+import { ListWidget } from './ListWidget'
 import { NumberInputWidget } from './NumberInputWidget'
 import { PolygonWidget } from './PolygonWidget'
 import { PosSizeWidget } from './PosSizeWidget'
@@ -72,6 +73,8 @@ export const renderWidget = (
       return <NumberInputWidget {...commonProps} config={config} />
     case 'checkbox':
       return <CheckboxWidget {...commonProps} config={config} />
+    case 'list':
+      return <ListWidget {...commonProps} config={config} />
     case 'custom':
       if (customRenderers?.[config.props.renderKey]) {
         const CustomComponent = customRenderers[config.props.renderKey]

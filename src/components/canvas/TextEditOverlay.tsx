@@ -4,6 +4,12 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import type { TextNode } from '@/types/canvas'
 import { ptToMm } from '@/utils/units'
 import { calculateTextDimensions } from '@/features/konva-editor/utils/textUtils'
+import {
+  buildListLine,
+  getNextListNumber,
+  normalizeListText,
+  parseListLine,
+} from '@/features/konva-editor/utils/textList'
 
 interface TextEditOverlayProps {
   element: TextNode
@@ -199,9 +205,194 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.nativeEvent.isComposing || isComposing.current) {
+      return
+    }
+    if (e.key === 'Tab') {
+      const textarea = textareaRef.current
+      if (!textarea) return
+
+      e.preventDefault()
+      if (element.vertical) return
+
+      const value = textarea.value
+      const selectionStart = textarea.selectionStart ?? 0
+      const selectionEnd = textarea.selectionEnd ?? 0
+
+      const lines = value.split('\n')
+      const lineStarts: number[] = []
+      let offset = 0
+      for (const line of lines) {
+        lineStarts.push(offset)
+        offset += line.length + 1
+      }
+
+      const getLineIndex = (pos: number) => {
+        for (let i = lineStarts.length - 1; i >= 0; i -= 1) {
+          if (pos >= lineStarts[i]) return i
+        }
+        return 0
+      }
+
+      const startLine = getLineIndex(selectionStart)
+      const endLine = selectionEnd > 0 && value[selectionEnd - 1] === '\n'
+        ? getLineIndex(selectionEnd - 1)
+        : getLineIndex(selectionEnd)
+
+      let changed = false
+      const updatedLines = lines.map((line, index) => {
+        if (index < startLine || index > endLine) return line
+        const parsed = parseListLine(line, { vertical: element.vertical })
+        if (!parsed.isList || !parsed.type) return line
+        const delta = e.shiftKey ? -1 : 1
+        const nextLevel = Math.min(5, Math.max(1, parsed.level + delta))
+        if (nextLevel === parsed.level) return line
+        changed = true
+        return buildListLine(parsed.content, parsed.type, nextLevel, { vertical: element.vertical })
+      })
+
+      if (!changed) return
+
+      const normalized = normalizeListText(updatedLines.join('\n'), { vertical: element.vertical })
+      const newLines = normalized.split('\n')
+      const newLineStarts: number[] = []
+      let newOffset = 0
+      for (const line of newLines) {
+        newLineStarts.push(newOffset)
+        newOffset += line.length + 1
+      }
+
+      const adjustPosition = (pos: number) => {
+        const lineIndex = getLineIndex(pos)
+        const oldLine = lines[lineIndex] ?? ''
+        const newLine = newLines[lineIndex] ?? ''
+        const oldLineStart = lineStarts[lineIndex] ?? 0
+        const newLineStart = newLineStarts[lineIndex] ?? 0
+        const column = pos - oldLineStart
+        const oldParsed = parseListLine(oldLine, { vertical: element.vertical })
+        const newParsed = parseListLine(newLine, { vertical: element.vertical })
+        const oldPrefix = oldParsed.isList ? oldParsed.prefixLength : 0
+        const newPrefix = newParsed.isList ? newParsed.prefixLength : 0
+        const prefixDelta = column >= oldPrefix ? newPrefix - oldPrefix : 0
+        const newColumn = Math.min(newLine.length, Math.max(0, column + prefixDelta))
+        return newLineStart + newColumn
+      }
+
+      const nextStart = adjustPosition(selectionStart)
+      const nextEnd = adjustPosition(selectionEnd)
+
+      textarea.value = normalized
+      textarea.selectionStart = nextStart
+      textarea.selectionEnd = nextEnd
+      onUpdate(normalized)
+      return
+    }
+
     if (e.key === 'Enter') {
       if (e.shiftKey) {
         return
+      }
+
+      const textarea = textareaRef.current
+      if (!textarea) return
+
+      const selectionStart = textarea.selectionStart ?? 0
+      const selectionEnd = textarea.selectionEnd ?? 0
+      if (selectionStart === selectionEnd) {
+        const value = textarea.value
+        const lines = value.split('\n')
+        let lineStart = 0
+        let lineIndex = 0
+        for (let i = 0; i < lines.length; i += 1) {
+          const lineEnd = lineStart + lines[i].length
+          if (selectionStart >= lineStart && selectionStart <= lineEnd) {
+            lineIndex = i
+            break
+          }
+          lineStart = lineEnd + 1
+        }
+        const lineText = lines[lineIndex] ?? ''
+        const parsed = parseListLine(lineText, { vertical: element.vertical })
+
+        if (parsed.isList && parsed.type) {
+          e.preventDefault()
+          if (parsed.content.trim() === '') {
+            const before = value.slice(0, lineStart)
+            const after = value.slice(lineStart + lineText.length)
+            const updated = `${before}${after}`
+            textarea.value = updated
+            textarea.selectionStart = lineStart
+            textarea.selectionEnd = lineStart
+            onUpdate(updated)
+            return
+          }
+
+          const nextNumber =
+            parsed.type === 'number'
+              ? getNextListNumber(value, lineIndex, parsed.level, { vertical: element.vertical })
+              : undefined
+          const newLine = buildListLine('', parsed.type, parsed.level, {
+            vertical: element.vertical,
+            number: nextNumber,
+          })
+          const insert = `\n${newLine}`
+          const updated = value.slice(0, selectionStart) + insert + value.slice(selectionEnd)
+          const nextPos = selectionStart + insert.length
+
+          if (parsed.type === 'number') {
+            const normalized = normalizeListText(updated, { vertical: element.vertical })
+            const oldLines = updated.split('\n')
+            const newLines = normalized.split('\n')
+            const oldLineStarts: number[] = []
+            const newLineStarts: number[] = []
+            let oldOffset = 0
+            let newOffset = 0
+            for (const line of oldLines) {
+              oldLineStarts.push(oldOffset)
+              oldOffset += line.length + 1
+            }
+            for (const line of newLines) {
+              newLineStarts.push(newOffset)
+              newOffset += line.length + 1
+            }
+
+            const getLineIndex = (pos: number) => {
+              for (let i = oldLineStarts.length - 1; i >= 0; i -= 1) {
+                if (pos >= oldLineStarts[i]) return i
+              }
+              return 0
+            }
+
+            const adjustPosition = (pos: number) => {
+              const lineIndex = getLineIndex(pos)
+              const oldLine = oldLines[lineIndex] ?? ''
+              const newLine = newLines[lineIndex] ?? ''
+              const oldLineStart = oldLineStarts[lineIndex] ?? 0
+              const newLineStart = newLineStarts[lineIndex] ?? 0
+              const column = pos - oldLineStart
+              const oldParsed = parseListLine(oldLine, { vertical: element.vertical })
+              const newParsed = parseListLine(newLine, { vertical: element.vertical })
+              const oldPrefix = oldParsed.isList ? oldParsed.prefixLength : 0
+              const newPrefix = newParsed.isList ? newParsed.prefixLength : 0
+              const prefixDelta = column >= oldPrefix ? newPrefix - oldPrefix : 0
+              const newColumn = Math.min(newLine.length, Math.max(0, column + prefixDelta))
+              return newLineStart + newColumn
+            }
+
+            const adjustedPos = adjustPosition(nextPos)
+            textarea.value = normalized
+            textarea.selectionStart = adjustedPos
+            textarea.selectionEnd = adjustedPos
+            onUpdate(normalized)
+            return
+          }
+
+          textarea.value = updated
+          textarea.selectionStart = nextPos
+          textarea.selectionEnd = nextPos
+          onUpdate(updated)
+          return
+        }
       }
 
       if (e.metaKey || e.ctrlKey) {

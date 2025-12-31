@@ -3,6 +3,9 @@ import { Circle, Group, Line, Path, Rect, Text } from 'react-konva'
 import type { TextNode } from '@/types/canvas'
 import type { CanvasElementCommonProps, CanvasElementRendererProps } from '../types'
 import { VerticalKonvaText, VerticalCaret } from '@/features/vertical-text'
+import { mmToPx, pxToMm, ptToMm } from '@/utils/units'
+import { measureText } from '@/features/konva-editor/utils/textUtils'
+import { parseListLine } from '@/features/konva-editor/utils/textList'
 
 interface TextRendererProps {
   element: TextNode
@@ -42,6 +45,160 @@ export const TextRenderer: React.FC<TextRendererProps> = ({
     hasFrame,
   } = element
 
+  const fontSizeMm = fontSize ?? ptToMm(12)
+  const lineHeight = 1.2
+  const numberMarkerScale = 0.75
+
+  const measureTextMm = (value: string, sizeMm: number) => {
+    const sizePx = mmToPx(sizeMm, { dpi: 96 })
+    const metrics = measureText(value || ' ', {
+      family: font || 'Arial',
+      size: sizePx,
+      weight: fontWeight,
+    })
+    return pxToMm(metrics.width, { dpi: 96 })
+  }
+
+  const renderListLines = (options: {
+    offsetX: number
+    offsetY: number
+    textX: number
+    textY: number
+    textW: number
+    textH: number
+    visible: boolean
+  }) => {
+    const lines = (text || '').split('\n')
+    const hasList = lines.some((line) => parseListLine(line, { vertical: false }).isList)
+    if (!hasList) return null
+
+    return (
+      <Group x={options.offsetX} y={options.offsetY} visible={options.visible} listening={false}>
+        {lines.map((line, index) => {
+          const parsed = parseListLine(line, { vertical: false })
+          if (!parsed.isList || !parsed.type || !parsed.markerText) {
+            return (
+              <Text
+                // biome-ignore lint/suspicious/noArrayIndexKey: line order is stable
+                key={`line-${index}`}
+                x={options.textX}
+                y={options.textY + index * fontSizeMm * lineHeight}
+                text={line}
+                fontSize={fontSizeMm}
+                fontFamily={font}
+                fontStyle={
+                  `${italic ? 'italic ' : ''}${fontWeight && fontWeight >= 700 ? 'bold' : ''} `.trim() ||
+                  'normal'
+                }
+                textDecoration={[underline ? 'underline' : '', lineThrough ? 'line-through' : '']
+                  .filter(Boolean)
+                  .join(' ')}
+                fill={fill}
+                stroke={stroke}
+                strokeWidth={strokeW}
+                align={
+                  align === 'l' ? 'left' : align === 'r' ? 'right' : align === 'c' ? 'center' : 'justify'
+                }
+                verticalAlign={vAlign === 'm' ? 'middle' : vAlign === 'b' ? 'bottom' : 'top'}
+                lineHeight={lineHeight}
+                width={options.textW}
+                listening={false}
+              />
+            )
+          }
+
+          const indentSpaces = ' '.repeat(parsed.indentLength)
+          const gapSpaces = ' '.repeat(parsed.gapLength)
+          const markerSize = parsed.type === 'number' ? fontSizeMm * numberMarkerScale : fontSizeMm
+          const markerYOffset = parsed.type === 'number' ? (fontSizeMm - markerSize) / 2 : 0
+          const indentWidth = measureTextMm(indentSpaces, fontSizeMm)
+          const markerWidth = measureTextMm(parsed.markerText, markerSize)
+          const gapWidth = measureTextMm(gapSpaces, fontSizeMm)
+
+          const lineWidth =
+            indentWidth + markerWidth + gapWidth + measureTextMm(parsed.content, fontSizeMm)
+          let lineX = options.textX
+          if (align === 'c') {
+            lineX = options.textX + Math.max(0, (options.textW - lineWidth) / 2)
+          } else if (align === 'r') {
+            lineX = options.textX + Math.max(0, options.textW - lineWidth)
+          }
+
+          const baseY = options.textY + index * fontSizeMm * lineHeight
+
+          return (
+            <Group
+              // biome-ignore lint/suspicious/noArrayIndexKey: line order is stable
+              key={`list-line-${index}`}
+            >
+              <Text
+                x={lineX}
+                y={baseY}
+                text={indentSpaces}
+                fontSize={fontSizeMm}
+                fontFamily={font}
+                fontStyle={
+                  `${italic ? 'italic ' : ''}${fontWeight && fontWeight >= 700 ? 'bold' : ''} `.trim() ||
+                  'normal'
+                }
+                fill={fill}
+                lineHeight={lineHeight}
+                listening={false}
+              />
+              <Text
+                x={lineX + indentWidth}
+                y={baseY + markerYOffset}
+                text={parsed.markerText}
+                fontSize={markerSize}
+                fontFamily={font}
+                fontStyle={
+                  `${italic ? 'italic ' : ''}${fontWeight && fontWeight >= 700 ? 'bold' : ''} `.trim() ||
+                  'normal'
+                }
+                fill={fill}
+                lineHeight={lineHeight}
+                listening={false}
+              />
+              <Text
+                x={lineX + indentWidth + markerWidth}
+                y={baseY}
+                text={gapSpaces}
+                fontSize={fontSizeMm}
+                fontFamily={font}
+                fontStyle={
+                  `${italic ? 'italic ' : ''}${fontWeight && fontWeight >= 700 ? 'bold' : ''} `.trim() ||
+                  'normal'
+                }
+                fill={fill}
+                lineHeight={lineHeight}
+                listening={false}
+              />
+              <Text
+                x={lineX + indentWidth + markerWidth + gapWidth}
+                y={baseY}
+                text={parsed.content}
+                fontSize={fontSizeMm}
+                fontFamily={font}
+                fontStyle={
+                  `${italic ? 'italic ' : ''}${fontWeight && fontWeight >= 700 ? 'bold' : ''} `.trim() ||
+                  'normal'
+                }
+                textDecoration={[underline ? 'underline' : '', lineThrough ? 'line-through' : '']
+                  .filter(Boolean)
+                  .join(' ')}
+                fill={fill}
+                stroke={stroke}
+                strokeWidth={strokeW}
+                lineHeight={lineHeight}
+                listening={false}
+              />
+            </Group>
+          )
+        })}
+      </Group>
+    )
+  }
+
   // Determine if we should show the box
   const shouldShowBox =
     hasFrame !== undefined
@@ -61,6 +218,18 @@ export const TextRenderer: React.FC<TextRendererProps> = ({
 
     const minDim = Math.min(element.w, element.h)
     const actualCornerRadius = minDim * percent
+
+    const listLayer = !element.vertical
+      ? renderListLines({
+          offsetX: 0,
+          offsetY: 0,
+          textX,
+          textY,
+          textW,
+          textH,
+          visible: !isEditing,
+        })
+      : null
 
     return (
       <Group {...commonProps}>
@@ -149,32 +318,35 @@ export const TextRenderer: React.FC<TextRendererProps> = ({
             })()}
           </>
         ) : (
-          <Text
-            x={textX}
-            y={textY}
-            width={textW}
-            height={textH}
-            text={text}
-            fontSize={fontSize}
-            fontFamily={font}
-            fontStyle={
-              `${italic ? 'italic ' : ''}${fontWeight && fontWeight >= 700 ? 'bold' : ''} `.trim() ||
-              'normal'
-            }
-            textDecoration={[underline ? 'underline' : '', lineThrough ? 'line-through' : '']
-              .filter(Boolean)
-              .join(' ')}
-            fill={fill}
-            stroke={stroke}
-            strokeWidth={strokeW}
-            align={
-              align === 'l' ? 'left' : align === 'r' ? 'right' : align === 'c' ? 'center' : 'justify'
-            }
-            verticalAlign={vAlign === 'm' ? 'middle' : vAlign === 'b' ? 'bottom' : 'top'}
-            lineHeight={1.2}
-            listening={false} // Let the group handle events
-            visible={!isEditing} // Hide underlying text while editing to prevent visual mismatch
-          />
+          <>
+            {listLayer}
+            <Text
+              x={textX}
+              y={textY}
+              width={textW}
+              height={textH}
+              text={text}
+              fontSize={fontSize}
+              fontFamily={font}
+              fontStyle={
+                `${italic ? 'italic ' : ''}${fontWeight && fontWeight >= 700 ? 'bold' : ''} `.trim() ||
+                'normal'
+              }
+              textDecoration={[underline ? 'underline' : '', lineThrough ? 'line-through' : '']
+                .filter(Boolean)
+                .join(' ')}
+              fill={fill}
+              stroke={stroke}
+              strokeWidth={strokeW}
+              align={
+                align === 'l' ? 'left' : align === 'r' ? 'right' : align === 'c' ? 'center' : 'justify'
+              }
+              verticalAlign={vAlign === 'm' ? 'middle' : vAlign === 'b' ? 'bottom' : 'top'}
+              lineHeight={lineHeight}
+              listening={false} // Let the group handle events
+              visible={!listLayer && !isEditing} // Hide underlying text while editing to prevent visual mismatch
+            />
+          </>
         )}
         {/* Collapse Toggle Button - Only if enabled for this node */}
         {element.data?.hasChildren &&
@@ -279,30 +451,47 @@ export const TextRenderer: React.FC<TextRendererProps> = ({
     )
   }
 
+  const listLayer = !element.vertical
+    ? renderListLines({
+        offsetX: 0,
+        offsetY: 0,
+        textX: 0,
+        textY: 0,
+        textW: element.w,
+        textH: element.h,
+        visible: !isEditing,
+      })
+    : null
+
   return (
-    <Text
-      {...commonProps}
-      height={element.h}
-      text={text}
-      fontSize={fontSize}
-      fontFamily={font}
-      fontStyle={
-        `${italic ? 'italic ' : ''}${fontWeight && fontWeight >= 700 ? 'bold' : ''} `.trim() ||
-        'normal'
-      }
-      textDecoration={[underline ? 'underline' : '', lineThrough ? 'line-through' : '']
-        .filter(Boolean)
-        .join(' ')}
-      fill={fill}
-      stroke={stroke}
-      strokeWidth={strokeW}
-      align={
-        align === 'l' ? 'left' : align === 'r' ? 'right' : align === 'c' ? 'center' : 'justify'
-      }
-      verticalAlign={vAlign === 'm' ? 'middle' : vAlign === 'b' ? 'bottom' : 'top'}
-      lineHeight={1.2}
-      width={element.w}
-      visible={!isEditing} // Hide underlying text while editing
-    />
+    <Group {...commonProps}>
+      {listLayer}
+      <Text
+        x={0}
+        y={0}
+        height={element.h}
+        text={text}
+        fontSize={fontSize}
+        fontFamily={font}
+        fontStyle={
+          `${italic ? 'italic ' : ''}${fontWeight && fontWeight >= 700 ? 'bold' : ''} `.trim() ||
+          'normal'
+        }
+        textDecoration={[underline ? 'underline' : '', lineThrough ? 'line-through' : '']
+          .filter(Boolean)
+          .join(' ')}
+        fill={fill}
+        stroke={stroke}
+        strokeWidth={strokeW}
+        align={
+          align === 'l' ? 'left' : align === 'r' ? 'right' : align === 'c' ? 'center' : 'justify'
+        }
+        verticalAlign={vAlign === 'm' ? 'middle' : vAlign === 'b' ? 'bottom' : 'top'}
+        lineHeight={lineHeight}
+        width={element.w}
+        opacity={listLayer ? 0 : 1}
+        visible={!isEditing}
+      />
+    </Group>
   )
 }
