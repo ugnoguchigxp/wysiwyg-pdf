@@ -8,11 +8,11 @@ routes = [
 [[d1_databases]]
 binding = "DB"
 database_name = "wysiwyg-pdf-db"
-database_id = "e46e7f22-38d5-45d4-86a0-c6e3d237190e" # Placeholder
+database_id = "ebca882c-a6db-44fb-8051-8b05d9153995"
 
 [[r2_buckets]]
 binding = "BUCKET"
-bucket_name = "wysiwyg-pdf-assets"
+bucket_name = "wysiwyg-pdf-asset"
 
 [triggers]
 crons = ["*/30 * * * *"] # Every 30 minutes

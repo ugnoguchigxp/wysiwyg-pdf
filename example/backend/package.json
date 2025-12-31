@@ -8,7 +8,7 @@
     "start": "bun src/index.ts",
     "deploy": "wrangler deploy",
     "dev:cf": "wrangler dev",
-    "db:init": "wrangler d1 execute DB --file=d1-schema.sql",
+    "db:init": "wrangler d1 execute DB --remote --file=d1-schema.sql",
     "build:frontend": "cd ../frontend && bunx vite build",
     "deploy:all": "bun run build:frontend && wrangler deploy"
   },
