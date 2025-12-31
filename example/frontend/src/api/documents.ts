@@ -29,10 +29,9 @@ export type SaveDocumentResult =
   | { status: 'saved'; document: DocumentDetail }
   | { status: 'exists'; document: DocumentSummary }
 
-const DEFAULT_BASE_URL = 'http://localhost:3001'
+const DEFAULT_BASE_URL = '/api'
 const RAW_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL
-const BASE_URL =
-  RAW_BASE_URL && RAW_BASE_URL !== 'http://localhost:8000' ? RAW_BASE_URL : DEFAULT_BASE_URL
+const BASE_URL = RAW_BASE_URL || DEFAULT_BASE_URL
 
 const buildQuery = (params: Record<string, string | number | undefined>) => {
   const query = new URLSearchParams()

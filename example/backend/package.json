@@ -5,10 +5,20 @@
   "type": "module",
   "scripts": {
     "dev": "bun --watch src/index.ts",
-    "start": "bun src/index.ts"
+    "start": "bun src/index.ts",
+    "deploy": "wrangler deploy",
+    "dev:cf": "wrangler dev",
+    "db:init": "wrangler d1 execute DB --file=d1-schema.sql",
+    "build:frontend": "cd ../frontend && bunx vite build",
+    "deploy:all": "bun run build:frontend && wrangler deploy"
   },
   "dependencies": {
     "drizzle-orm": "^0.44.4",
     "hono": "^4.9.10"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20251231.0",
+    "@types/bun": "^1.3.5",
+    "wrangler": "^4.54.0"
   }
 }

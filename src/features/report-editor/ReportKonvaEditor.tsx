@@ -1,38 +1,32 @@
 import type Konva from 'konva'
 import {
   forwardRef,
-  useCallback,
   useEffect,
   useImperativeHandle,
   useMemo,
   useRef,
   useState,
 } from 'react'
-import { Image as KonvaImage, Rect as KonvaRect, Layer, Stage } from 'react-konva'
+import { Rect as KonvaRect, Layer, Stage } from 'react-konva'
 import { CanvasElementRenderer } from '@/components/canvas/CanvasElementRenderer'
 import { GridLayer } from '@/components/canvas/GridLayer'
 import { useKeyboardShortcuts } from '@/components/canvas/hooks/useKeyboardShortcuts'
 import { TextEditOverlay } from '@/components/canvas/TextEditOverlay'
-import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
-import type { Doc, SignatureNode, Surface, TableNode, TextNode, UnifiedNode } from '@/types/canvas' // Direct import
-// import { createContextLogger } from '@/utils/logger' // Removed unused
+import type { Doc, TableNode, TextNode, UnifiedNode } from '@/types/canvas' // Direct import
 import { mmToPx, ptToMm } from '@/utils/units'
-import { applyTextLayoutUpdates, calculateVerticalTextHeight } from '@/features/konva-editor/utils/textLayout'
-import {
-  deleteCol,
-  deleteRow,
-  insertCol,
-  insertRow,
-  mergeCells,
-  unmergeCells,
-} from './utils/tableOperations'
-import { getStrokesBox, normalizeStrokes, processStrokes } from './utils/signatureUtils'
-import { reorderNodes } from '@/utils/reorderUtils'
+// Table operations imports removed (unused)
+// Signature utils moved to useSignature
+// import { reorderNodes } from '@/utils/reorderUtils' // Moved to hook
 import { TableContextMenu } from './components/ContextMenu/TableContextMenu'
 import { ObjectContextMenu } from '@/components/canvas/ObjectContextMenu'
+import { useReportContextMenu } from './hooks/useReportContextMenu'
+import { useNodeOperations } from './hooks/useNodeOperations'
+import { useSignature } from './hooks/useSignature'
 // const log = createContextLogger('ReportKonvaEditor') // Removed unused
 
 const dpi = 96
+
+import { PageBackground } from './components/PageBackground'
 
 export interface ReportKonvaEditorHandle {
   downloadImage: () => void
@@ -91,64 +85,7 @@ const getColWidth = (cols: number[], colIndex: number, span: number = 1) => {
   return w
 }
 
-const PageBackground = ({
-  width,
-  height,
-  surface,
-}: {
-  width: number
-  height: number
-  surface: Surface
-}) => {
-  const [image, setImage] = useState<HTMLImageElement | null>(null)
-
-  const bg = surface.bg
-  const isColor = bg ? bg.startsWith('#') || bg.startsWith('rgb') : true
-
-  useEffect(() => {
-    if (!bg || isColor) {
-      setImage(null)
-      return
-    }
-
-    if (!bg.startsWith('http') && !bg.startsWith('data:')) {
-      findImageWithExtension(bg).then((res) => {
-        if (res) setImage(res.img)
-      })
-    } else {
-      const img = new window.Image()
-      img.src = bg
-      img.onload = () => setImage(img)
-    }
-  }, [bg, isColor])
-
-  return (
-    <>
-      <KonvaRect
-        name="_background"
-        x={0}
-        y={0}
-        width={width}
-        height={height}
-        fill={isColor ? bg || '#ffffff' : '#ffffff'}
-        shadowColor="black"
-        shadowBlur={10}
-        shadowOpacity={0.1}
-      />
-      {image && (
-        <KonvaImage
-          name="_background"
-          x={0}
-          y={0}
-          width={width}
-          height={height}
-          image={image}
-          listening={false}
-        />
-      )}
-    </>
-  )
-}
+// PageBackground moved to components/PageBackground
 
 export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonvaEditorProps>(
   (
@@ -188,29 +125,13 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       col: number
     } | null>(null)
 
-    const [editingCellValue, setEditingCellValue] = useState<string>('')
 
-    const [contextMenu, setContextMenu] = useState<{
-      visible: boolean
-      x: number
-      y: number
-      elementId: string
-      type: 'table' | 'line' | 'object'
-      row?: number
-      col?: number
-    } | null>(null)
+
 
     // Sync selectedCell to parent
     useEffect(() => {
       onSelectedCellChange?.(selectedCell)
     }, [selectedCell, onSelectedCellChange])
-
-    // Signature Drawing State
-    const [isDrawing, setIsDrawing] = useState(false)
-    const [currentStrokes, setCurrentStrokes] = useState<number[][]>([])
-    const [currentPoints, setCurrentPoints] = useState<number[]>([])
-    const [currentPressure, setCurrentPressure] = useState<number[]>([])
-    const [allPressureData, setAllPressureData] = useState<number[][]>([])
 
     // Current Surface (Page)
     const currentSurface =
@@ -262,277 +183,49 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       onElementSelect(element)
     }
 
-    // Removed unused cell handlers: handleCellClick, handleCellDblClick
-    // If these needed to be exposed or used, they should be connected. 
-    // Re-adding empty handlers or using underscore to keep structure if deemed important,
-    // but based on lint feedback they were purely unused.
-
-    // Kept commitCellEdit as it was used in editing flow?
-    // It was also marked unused. If so, cell editing via dbl click logic was disconnected or handled otherwise.
-    // I will simply omit them to clean the file.
-
-    const handleElementChange = useCallback(
-      (
-        updates:
-          | (Partial<UnifiedNode> & { id?: string })
-          | (Partial<UnifiedNode> & { id?: string })[],
-        options?: { saveToHistory?: boolean; force?: boolean }
-      ) => {
-        const updateList = Array.isArray(updates) ? updates : [updates]
-
-        const updateMap = new Map(
-          updateList.map((u) => {
-            const id = u.id || selectedElementId
-            return [id, u]
-          })
-        )
-
-        const nextNodes = templateDoc.nodes.map((el) => {
-          const update = updateMap.get(el.id)
-          if (update) {
-            return { ...el, ...update, id: el.id } as UnifiedNode
-          }
-          return el
-        })
-
-        onTemplateChange({ ...templateDoc, nodes: nextNodes }, options)
-      },
-      [onTemplateChange, selectedElementId, templateDoc]
-    )
-
-    const handleTextUpdate = useCallback(
-      (text: string) => {
-        if (!editingElementId) return
-
-        const element = templateDoc.nodes.find((n) => n.id === editingElementId)
-        if (!element || element.t !== 'text') {
-          handleElementChange(
-            { id: editingElementId, text } as Partial<UnifiedNode> & { id?: string },
-            { saveToHistory: false }
-          )
-          return
-        }
-
-        const textNode = element as TextNode
-
-        const updatePatch = applyTextLayoutUpdates(textNode, { text })
-        handleElementChange(
-          { id: editingElementId, ...updatePatch } as Partial<UnifiedNode> & { id?: string },
-          { saveToHistory: false }
-        )
-      },
-      [editingElementId, templateDoc.nodes, handleElementChange]
-    )
-
-    const handleTextEditFinish = useCallback(() => {
-      if (editingElementId) {
-        const element = templateDoc.nodes.find((n) => n.id === editingElementId)
-        if (element && element.t === 'text') {
-          const textNode = element as TextNode
-
-          if (textNode.vertical) {
-            const fontSize = textNode.fontSize ?? ptToMm(12)
-            const padding = textNode.padding ?? 10
-            const newH = calculateVerticalTextHeight(textNode.text ?? '', fontSize, padding)
-            const updatePatch: Partial<UnifiedNode> = { id: editingElementId, h: newH }
-
-            handleElementChange(
-              updatePatch as Partial<UnifiedNode> & { id?: string },
-              { saveToHistory: true, force: true }
-            )
-          } else {
-            handleElementChange({ id: editingElementId }, { saveToHistory: true, force: true })
-          }
-        }
-      }
-      setEditingElementId(null)
-    }, [editingElementId, templateDoc.nodes, handleElementChange])
-
-    const handleContextMenu = (e: Konva.KonvaEventObject<PointerEvent>, element: UnifiedNode) => {
-      e.evt.preventDefault()
-
-      if (element.t === 'table') {
-        const parseFromId = (id: string) => {
-          const parts = id.split('_cell_')
-          if (parts.length !== 2) return null
-          const elementId = parts[0]
-          const rc = parts[1].split('_')
-          if (rc.length < 2) return null
-          const row = Number.parseInt(rc[0]!, 10)
-          const col = Number.parseInt(rc[1]!, 10)
-          if (Number.isNaN(row) || Number.isNaN(col)) return null
-          return { elementId, row, col }
-        }
-
-        const target = e.target
-        const idsToTry = [
-          target.id(),
-          target.getParent()?.id(),
-          target.getParent()?.getParent()?.id(),
-        ].filter(Boolean) as string[]
-        let parsed: { elementId: string; row: number; col: number } | null = null
-        for (const id of idsToTry) {
-          parsed = parseFromId(id)
-          if (parsed) break
-        }
-        if (parsed) {
-          // Sync selection
-          setSelectedCell(parsed)
-          setEditingCell(null)
-
-          setContextMenu({
-            visible: true,
-            x: e.evt.clientX,
-            y: e.evt.clientY,
-            elementId: parsed.elementId,
-            type: 'table',
-            row: parsed.row,
-            col: parsed.col,
-          })
-          return
-        }
-      }
-
-      // Auto-select on right click for Object Context Menu
-      if (element.id !== selectedElementId) {
-        onElementSelect(element)
-      }
-
-      // Default to Object Context Menu for other types (or table fallback)
-      setContextMenu({
-        visible: true,
-        x: e.evt.clientX,
-        y: e.evt.clientY,
-        elementId: element.id,
-        type: 'object',
-      })
-    }
-
-    const handleReorder = useCallback((action: 'bringToFront' | 'sendToBack' | 'bringForward' | 'sendBackward') => {
-      if (!contextMenu || !contextMenu.elementId) return
-
-      const newNodes = reorderNodes(templateDoc.nodes, contextMenu.elementId, action)
-
-      onTemplateChange({ ...templateDoc, nodes: newNodes })
-      setContextMenu(null)
-    }, [contextMenu, templateDoc, onTemplateChange])
-
-    const applyTableUpdate = useCallback(
-      (elementId: string, updater: (t: TableNode) => TableNode) => {
-        const nextNodes = templateDoc.nodes.map((n) => {
-          if (n.id !== elementId || n.t !== 'table') return n
-          return updater(n as TableNode)
-        })
-        onTemplateChange({ ...templateDoc, nodes: nextNodes })
-      },
-      [onTemplateChange, templateDoc]
-    )
-
-    const handleContextMenuAction = useCallback(
-      (
-        action:
-          | 'insertRowAbove'
-          | 'insertRowBelow'
-          | 'insertColLeft'
-          | 'insertColRight'
-          | 'deleteRow'
-          | 'deleteCol'
-          | 'mergeRight'
-          | 'mergeDown'
-          | 'unmerge'
-      ) => {
-        if (!contextMenu) return
-        const { elementId, row, col, type } = contextMenu
-
-        if (type !== 'table' || row === undefined || col === undefined) return
-
-        applyTableUpdate(elementId, (table) => {
-          switch (action) {
-            case 'insertRowAbove':
-              return insertRow(table, row, 'above')
-            case 'insertRowBelow':
-              return insertRow(table, row, 'below')
-            case 'insertColLeft':
-              return insertCol(table, col, row, 'left')
-            case 'insertColRight':
-              return insertCol(table, col, row, 'right')
-            case 'deleteRow':
-              return deleteRow(table, row)
-            case 'deleteCol':
-              return deleteCol(table, col)
-            case 'mergeRight':
-              return mergeCells(table, row, col, 'right')
-            case 'mergeDown':
-              return mergeCells(table, row, col, 'down')
-            case 'unmerge':
-              return unmergeCells(table, row, col)
-            default:
-              return table
-          }
-        })
-
-        setContextMenu(null)
-      },
-      [applyTableUpdate, contextMenu]
-    )
-
-    const commitSignature = useCallback((): Doc | null => {
-      if (currentStrokes.length === 0) return null
-
-      const simplifiedStrokes = processStrokes(currentStrokes, {
-        simplification: drawingSettings.simplification,
-      })
-
-      const box = getStrokesBox(simplifiedStrokes)
-
-      const normalizedStrokes = normalizeStrokes(simplifiedStrokes, box)
-
-      const hasPressureData = allPressureData.some((pressure) => pressure.length > 0)
-      const element: SignatureNode = {
-        id: `sig-${crypto.randomUUID()}`,
-        t: 'signature',
-        s: currentSurface.id,
-        name: 'Signature',
-        x: box.x,
-        y: box.y,
-        w: box.w,
-        h: box.h,
-        strokes: normalizedStrokes,
-        stroke: drawingSettings.stroke,
-        strokeW: drawingSettings.strokeWidth,
-        pressureData: hasPressureData ? allPressureData : undefined,
-        usePressureSim: !hasPressureData,
-        r: 0,
-        locked: false,
-        hidden: false,
-      }
-
-      const nextDoc = {
-        ...templateDoc,
-        nodes: [...templateDoc.nodes, element],
-      }
-      onTemplateChange(nextDoc)
-
-      setCurrentStrokes([])
-      setCurrentPoints([])
-      setCurrentPressure([])
-      setAllPressureData([])
-      setIsDrawing(false)
-      onElementSelect(element)
-
-      return nextDoc
-    }, [
-      currentStrokes,
-      currentSurface.id,
+    // === Use Extracted Hooks ===
+    const {
+      handleElementChange,
+      handleTextUpdate,
+      handleTextEditFinish,
+    } = useNodeOperations({
       templateDoc,
-      getStrokesBox,
       onTemplateChange,
+      selectedElementId: selectedElementId,
+      editingElementId,
+      setEditingElementId,
+    })
+
+    const {
+      currentStrokes,
+      commitSignature,
+      handleSignatureMouseDown,
+      handleSignatureMouseMove,
+      handleSignatureMouseUp,
+    } = useSignature({
+      templateDoc,
+      onTemplateChange,
+      currentSurface,
       onElementSelect,
-      drawingSettings.stroke,
-      drawingSettings.strokeWidth,
-      drawingSettings.simplification,
-      allPressureData,
-    ])
+      drawingSettings,
+    })
+
+    const {
+      contextMenu,
+      setContextMenu,
+      handleContextMenu,
+      handleReorder,
+      handleContextMenuAction,
+    } = useReportContextMenu({
+      templateDoc,
+      onTemplateChange,
+      stageRef,
+      activeTool,
+      setSelectedCell,
+      setEditingCell,
+      onElementSelect,
+      selectedElementId,
+    })
 
     useEffect(() => {
       if (activeTool !== 'signature' && currentStrokes.length > 0) {
@@ -541,30 +234,14 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
     }, [activeTool, commitSignature, currentStrokes.length])
 
     const handleStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+      if (activeTool === 'signature') {
+        handleSignatureMouseDown(e)
+        return
+      }
+
       const stage = e.target.getStage()
       const interestedInBackground =
         e.target === stage || e.target.name() === '_background'
-
-      if (activeTool === 'signature' && interestedInBackground) {
-        setIsDrawing(true)
-        const nativeEvent = e.evt as PointerEvent | undefined // Cast to check pressure
-        const pressure =
-          nativeEvent && 'pressure' in nativeEvent ? (nativeEvent as any).pressure : undefined
-        const isPressureDevice = typeof pressure === 'number' && pressure !== 0.5 && pressure !== 0
-        const point = stage?.getPointerPosition()
-        if (point) {
-          const transform = stage?.getAbsoluteTransform().copy()
-          transform?.invert()
-          const pos = transform?.point(point)
-          if (pos) {
-            setCurrentPoints([pos.x, pos.y])
-            if (isPressureDevice && typeof pressure === 'number') {
-              setCurrentPressure([pressure])
-            }
-          }
-        }
-        return
-      }
 
       if (interestedInBackground) {
         handleElementSelect(null)
@@ -574,41 +251,11 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
     }
 
     const handleStageMouseMove = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
-      // Signature Drawing
-      if (activeTool === 'signature' && isDrawing) {
-        const stage = e.target.getStage()
-        const nativeEvent = e.evt as PointerEvent | undefined
-        const pressure =
-          nativeEvent && 'pressure' in nativeEvent ? (nativeEvent as any).pressure : undefined
-        const isPressureDevice = typeof pressure === 'number' && pressure !== 0.5 && pressure !== 0
-        const point = stage?.getPointerPosition()
-        if (point) {
-          const transform = stage?.getAbsoluteTransform().copy()
-          transform?.invert()
-          const pos = transform?.point(point)
-          if (pos) {
-            setCurrentPoints((prev) => [...prev, pos.x, pos.y])
-            if (isPressureDevice) {
-              setCurrentPressure((prev) => [...prev, pressure])
-            }
-          }
-        }
-      }
+      handleSignatureMouseMove(e)
     }
 
     const handleStageMouseUp = () => {
-      if (activeTool === 'signature' && isDrawing) {
-        setIsDrawing(false)
-        if (currentPoints.length > 0) {
-          setCurrentStrokes((prev) => [...prev, currentPoints])
-          setCurrentPoints([])
-          setAllPressureData((prev) => [
-            ...prev,
-            currentPressure.length > 0 ? currentPressure : [],
-          ])
-          setCurrentPressure([])
-        }
-      }
+      handleSignatureMouseUp()
     }
 
     const handleDelete = () => {
@@ -819,7 +466,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
                   key={element.id}
                   element={element}
                   isSelected={selectedElementId === element.id}
-                  onSelect={(e) => {
+                  onSelect={() => {
                     handleElementSelect(element)
                     if (contextMenu && contextMenu.elementId !== element.id) {
                       setContextMenu(null)

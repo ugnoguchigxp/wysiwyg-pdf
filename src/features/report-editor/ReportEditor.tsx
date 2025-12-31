@@ -12,7 +12,6 @@ export interface ReportEditorProps {
   schema?: IDataSchema
   initialZoom?: number
   showGrid?: boolean
-  snapStrength?: number
   gridSize?: number
 }
 
@@ -22,7 +21,6 @@ export const ReportEditor: React.FC<ReportEditorProps> = ({
   schema,
   initialZoom = 1.0,
   showGrid = false,
-  snapStrength = 5,
   gridSize = 15,
 }) => {
   const [zoom, setZoom] = useState<number>(initialZoom * 100)
@@ -98,7 +96,6 @@ export const ReportEditor: React.FC<ReportEditorProps> = ({
           activeTool={activeTool}
           drawingSettings={drawingSettings}
           showGrid={showGrid}
-          snapStrength={snapStrength}
           gridSize={gridSize}
         />
       </div>

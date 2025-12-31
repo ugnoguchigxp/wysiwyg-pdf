@@ -4,6 +4,7 @@ import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImag
 import { mmToPt, ptToMm } from '@/utils/units'
 import { createHandwritingPath } from '@/utils/handwriting'
 import { parseListLine } from '@/features/konva-editor/utils/textList'
+import { calculateVerticalLayout } from '@/features/vertical-text/utils/vertical-layout'
 import type {
   Doc,
   ImageNode,
@@ -307,7 +308,9 @@ const PrintElement = ({ element }: { element: UnifiedNode }) => {
     const borderRadius =
       shouldShowBox && actualRadius > 0 ? `${mmToPtValue(actualRadius)}pt` : undefined
 
+
     const renderListText = () => {
+      // vertical text is handled separately now, but keeping check just in case
       if (textEl.vertical) return textEl.text
       const lines = (textEl.text || '').split('\n')
       const hasList = lines.some((line) => parseListLine(line, { vertical: false }).isList)
@@ -341,6 +344,56 @@ const PrintElement = ({ element }: { element: UnifiedNode }) => {
           </div>
         )
       })
+    }
+
+    if (textEl.vertical) {
+       const padding = textEl.padding ?? 10
+       const COLUMN_SPACING = 1.5
+       const startX = textEl.w - padding - (fontSizeMm * (COLUMN_SPACING / 2 + 0.5))
+       
+       const charMetrics = calculateVerticalLayout(textEl.text || '', startX, padding, {
+          fontSize: fontSizeMm,
+          columnSpacing: COLUMN_SPACING,
+          letterSpacing: 0,
+       })
+
+       return (
+        <div style={style}>
+           <div style={{
+              position: 'relative',
+              width: '100%',
+              height: '100%',
+              border: borderStyle,
+              backgroundColor: backgroundColor,
+              borderRadius: borderRadius,
+              boxSizing: 'border-box',
+           }}>
+             {charMetrics.map((metric, index) => (
+                <div
+                   key={index}
+                   style={{
+                      position: 'absolute',
+                      left: `${mmToPtValue(metric.x + metric.offsetX)}pt`,
+                      top: `${mmToPtValue(metric.y + metric.offsetY)}pt`,
+                      fontSize: `${mmToPtValue(fontSizeMm)}pt`,
+                      fontFamily: textEl.font,
+                      color: textEl.fill,
+                      width: `${mmToPtValue(fontSizeMm)}pt`,
+                      height: `${mmToPtValue(fontSizeMm)}pt`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transform: metric.rotation ? `rotate(${metric.rotation}deg)` : undefined,
+                      lineHeight: 1,
+                      whiteSpace: 'pre',
+                   }}
+                >
+                  {metric.char}
+                </div>
+             ))}
+           </div>
+        </div>
+       )
     }
 
     return (

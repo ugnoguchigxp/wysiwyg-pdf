@@ -1,0 +1,22 @@
+name = "wysiwyg-pdf-backend"
+main = "src/worker.ts"
+compatibility_date = "2024-01-01"
+routes = [
+	{ pattern = "pdf.wysiwyg-doc.com", custom_domain = true }
+]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "wysiwyg-pdf-db"
+database_id = "e46e7f22-38d5-45d4-86a0-c6e3d237190e" # Placeholder
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "wysiwyg-pdf-assets"
+
+[triggers]
+crons = ["*/30 * * * *"] # Every 30 minutes
+
+[assets]
+directory = "../frontend/dist"
+binding = "ASSETS"

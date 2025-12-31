@@ -8,7 +8,7 @@ export const uploadFile = async (file: File, signal?: AbortSignal): Promise<Uplo
     const formData = new FormData();
     formData.append('file', file);
 
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    const baseUrl = import.meta.env.VITE_API_URL || '/api';
     const response = await fetch(`${baseUrl}/upload`, {
         method: 'POST',
         body: formData,
