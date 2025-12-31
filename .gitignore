@@ -43,3 +43,7 @@ example/data.sqlite
 
 example/backend/public/uploads/
 
+
+# Cloudflare
+.wrangler/
+example/backend/.wrangler/

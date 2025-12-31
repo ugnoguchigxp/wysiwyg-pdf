@@ -4,6 +4,9 @@
 
 npm: https://www.npmjs.com/package/wysiwyg-pdf
 
+
+[Live Demo](https://pdf.wysiwyg-doc.com)
+
 It is designed as a set of **composable editor building blocks**:
 
 - **Canvas editor** (`ReportKonvaEditor`) for selection, transform, drag/drop, inline text editing, copy/paste
@@ -489,4 +492,18 @@ Also ensure CSS assets (e.g., `print.css`) are included in the published files.
 
 ## License
 
-MIT
+## Deployment to Cloudflare Workers
+
+An example deployment configuration is provided in `example/backend`.
+
+It supports:
+- **Cloudflare Workers** (Hono + D1 + R2)
+- **Unified Deployment** (Frontend + Backend as single unit)
+- **Periodic Cleanup** (Cron Triggers)
+
+See `example/backend/wrangler.toml` for configuration.
+
+```bash
+cd example/backend
+pnpm run deploy:all # Deploys both frontend and backend
+```
