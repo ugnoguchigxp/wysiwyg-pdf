@@ -82,7 +82,8 @@
     "react-konva": "^19.2.1",
     "tailwind-merge": "^2.6.0",
     "use-image": "^1.1.4",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "exceljs": "^4.4.0"
   },
   "peerDependencies": {
     "pptxgenjs": "^3.12.0",

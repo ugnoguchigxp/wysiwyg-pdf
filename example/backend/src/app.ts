@@ -59,6 +59,47 @@ routes.post("/upload", async (c) => {
     }
 });
 
+import { importExcel } from "./excel-importer";
+
+routes.post("/excel/import", async (c) => {
+    const body = await c.req.parseBody();
+    const file = body.file as File;
+
+    if (!file) {
+        return c.json({ error: "no_file" }, 400);
+    }
+
+    try {
+        const buffer = await file.arrayBuffer();
+        const doc = await importExcel(buffer);
+
+        const id = globalThis.crypto.randomUUID();
+        const now = Date.now();
+        const user = "anonymous";
+        // Remove extension and ensure title is unique enough or let DB handle it?
+        // Schema has unique index on (user, title). 
+        // We should probably append timestamp if needed, but let's start simple.
+        // Actually, let's append a short random string to avoid collision if user uploads same file twice.
+        const title = `${file.name.replace(/\.[^/.]+$/, "")} (${new Date().toLocaleTimeString()})`;
+
+        const db = c.get("db");
+        await db.insert(documents).values({
+            id,
+            user,
+            type: "report",
+            title,
+            payload: JSON.stringify(doc),
+            createdAt: now,
+            updatedAt: now,
+        });
+
+        return c.json({ id, title });
+    } catch (e) {
+        console.error("Excel import failed", e);
+        return c.json({ error: "import_failed", details: String(e) }, 500);
+    }
+});
+
 const parsePayload = (raw: string) => {
     try {
         return JSON.parse(raw);

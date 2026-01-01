@@ -10,10 +10,13 @@
     "dev:cf": "wrangler dev",
     "db:init": "wrangler d1 execute DB --remote --file=d1-schema.sql",
     "build:frontend": "cd ../frontend && bunx vite build",
-    "deploy:all": "bun run build:frontend && wrangler deploy"
+    "deploy:all": "bun run build:frontend && wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "build": "bun build src/index.ts --outdir dist"
   },
   "dependencies": {
     "drizzle-orm": "^0.44.4",
+    "exceljs": "^4.4.0",
     "hono": "^4.9.10"
   },
   "devDependencies": {

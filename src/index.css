@@ -1,0 +1,82 @@
+/* ../../src/features/konva-editor/styles/print.css */
+@media print {
+  @page {
+    margin: 0;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    margin: 0;
+    padding: 0;
+  }
+
+  .print-container {
+    margin: 0;
+    padding: 0;
+  }
+
+  .print-page {
+    page-break-after: always;
+    overflow: hidden;
+  }
+}
+
+.print-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.print-page {
+  position: relative;
+  background: #fff;
+  margin-bottom: 20px;
+  box-shadow: 0 0 10px #0000001a;
+}
+
+@media print {
+  .print-page {
+    box-shadow: none;
+    margin-bottom: 0;
+  }
+}
+
+/* ../../src/features/mindmap-editor/mindmap-print.css */
+@media print {
+  @page {
+    margin: 0;
+    size: landscape;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    margin: 0;
+    padding: 0;
+  }
+
+  .mindmap-header, [role="dialog"] {
+    display: none !important;
+  }
+
+  .mindmap-canvas-container {
+    position: fixed !important;
+    overflow: visible !important;
+    z-index: 9999 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    top: 0 !important;
+    left: 0 !important;
+  }
+
+  .mindmap-canvas-container > div {
+    overflow: visible !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .mindmap-root {
+    overflow: visible !important;
+    height: 100vh !important;
+  }
+}

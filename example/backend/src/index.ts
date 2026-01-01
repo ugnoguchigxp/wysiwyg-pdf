@@ -6,6 +6,7 @@ import { LocalStorage } from "./storage/local";
 import { seed } from "./seed";
 import { db as dbCheck, sqlite } from "./db";
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import type { Bindings } from "./types";
 import type { StorageService } from "./storage/types";
 
@@ -26,10 +27,12 @@ app.use("*", async (c, next) => {
 // Serve static files for uploads
 app.use("/public/*", serveStatic({ root: "./" }));
 
+app.use("*", cors());
+
 // Mount routes
 app.route("/api", routes);
 
-const port = Number(process.env.PORT ?? 3001);
+const port = Number(process.env.PORT ?? 8000);
 
 Bun.serve({
   fetch: app.fetch,

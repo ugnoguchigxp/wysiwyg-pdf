@@ -30,8 +30,10 @@ export type SaveDocumentResult =
   | { status: 'exists'; document: DocumentSummary }
 
 const DEFAULT_BASE_URL = '/api'
-const RAW_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL
-const BASE_URL = RAW_BASE_URL || DEFAULT_BASE_URL
+// Force using proxy to avoid stale environment variables requiring restart
+const BASE_URL = DEFAULT_BASE_URL
+// const RAW_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL
+// const BASE_URL = RAW_BASE_URL || DEFAULT_BASE_URL
 
 const buildQuery = (params: Record<string, string | number | undefined>) => {
   const query = new URLSearchParams()
@@ -100,4 +102,21 @@ export const saveDocument = async (input: SaveDocumentInput): Promise<SaveDocume
 
   const document = await res.json()
   return { status: 'saved', document }
+}
+
+export const importExcel = async (file: File): Promise<{ id: string; title: string }> => {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const res = await fetchWithFallback(`${BASE_URL}/excel/import`, {
+    method: 'POST',
+    body: formData,
+  })
+
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => 'Unknown error')
+    throw new Error(`Failed to import Excel: ${res.status} ${errorText}`)
+  }
+
+  return res.json()
 }

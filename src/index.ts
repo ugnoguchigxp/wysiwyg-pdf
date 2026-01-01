@@ -52,3 +52,6 @@ export * from './i18n/I18nContext'
 
 // Types
 export * from './features/konva-editor/types'
+
+// Excel Import
+export * from './features/excel-import'

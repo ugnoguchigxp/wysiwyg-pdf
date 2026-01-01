@@ -21,12 +21,13 @@ export default defineConfig({
       '@radix-ui/react-tooltip': path.resolve(__dirname, './node_modules/@radix-ui/react-tooltip'),
       'wysiwyg-pdf': path.resolve(__dirname, '../../src/index.ts'),
       '@': path.resolve(__dirname, '../../src'),
+      exceljs: path.resolve(__dirname, './node_modules/exceljs'),
     },
   },
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
     },

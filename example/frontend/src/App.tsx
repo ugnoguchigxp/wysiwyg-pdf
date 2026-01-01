@@ -10,13 +10,15 @@ import { SlideEditorPage } from './pages/SlideEditorPage'
 import { QueueProvider, QueueViewer } from 'wysiwyg-pdf'
 
 
+import { ExcelImportPage } from './pages/ExcelImportPage'
+
 // Simple Hash Router Hook
 const useHashLocation = () => {
-  const [location, setLocation] = useState(window.location.hash.replace('#', '') || '/')
+  const [hash, setHash] = useState(window.location.hash.replace('#', '') || '/')
 
   useEffect(() => {
     const handleHashChange = () => {
-      setLocation(window.location.hash.replace('#', '') || '/')
+      setHash(window.location.hash.replace('#', '') || '/')
     }
     // Handle initial hash check and also regular changes
     window.addEventListener('hashchange', handleHashChange)
@@ -27,20 +29,36 @@ const useHashLocation = () => {
     window.location.hash = path
   }
 
-  return { location, navigate }
+  const [path, queryString] = hash.split('?')
+  const params = new URLSearchParams(queryString)
+
+  return { location: path, params, navigate }
 }
 
 function App() {
-  const { location, navigate } = useHashLocation()
+  const { location, params, navigate } = useHashLocation()
 
   return (
     <QueueProvider>
-      {location === '/report' && <ReportEditorPage onBack={() => navigate('/')} />}
+      {location === '/report' && (
+        <ReportEditorPage
+          onBack={() => navigate('/')}
+          initialDocId={params.get('id') || undefined}
+        />
+      )}
       {location === '/bed' && <BedLayoutEditorPage onBack={() => navigate('/')} />}
       {location === '/viewer' && <ViewerPage onBack={() => navigate('/')} />}
       {location === '/signature' && <SignatureDemoPage onBack={() => navigate('/')} />}
       {location === '/mindmap' && <MindmapDemoPage onBack={() => navigate('/')} />}
       {location === '/slide' && <SlideEditorPage onBack={() => navigate('/')} />}
+
+      {location === '/excel-import' && (
+        <ExcelImportPage
+          onBack={() => navigate('/')}
+          onComplete={(id) => navigate(`/report?id=${id}`)}
+        />
+      )}
+
       {location === '/' && <DashboardPage onNavigate={(page) => navigate(`/${page}`)} />}
       <QueueViewer />
     </QueueProvider>

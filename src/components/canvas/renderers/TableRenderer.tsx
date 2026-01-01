@@ -83,6 +83,13 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
   const cellMap = new Map<string, TableNode['table']['cells'][number]>()
   for (const c of cells) cellMap.set(`${c.r}:${c.c} `, c)
 
+  const backgrounds: React.ReactNode[] = []
+  const borders: React.ReactNode[] = []
+  const texts: React.ReactNode[] = []
+
+  // Helper to create identifying key
+  const getCellId = (r: number, c: number) => `${tableElement.id}_cell_${r}_${c} `
+
   const rendered: React.ReactNode[] = []
 
   for (let r = 0; r < rowCount; r++) {
@@ -93,7 +100,7 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
       const rs = cell?.rs || 1
       const cs = cell?.cs || 1
 
-      // Mark occupied for spans (including the top-left cell position)
+      // Mark occupied
       if (rs > 1 || cs > 1) {
         for (let rr = 0; rr < rs; rr++) {
           for (let cc = 0; cc < cs; cc++) {
@@ -110,25 +117,31 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
       const h = getRowHeight(r, rs)
 
       const borderColor = cell?.borderColor || cell?.border || '#cccccc'
-      const borderW = cell?.borderW ?? (cell?.border ? 0.2 : 0.2)
-      const borderEnabled = borderW > 0
+      // Fix: Default border width should be 0 if no border is specified, otherwise we get unwanted gridlines everywhere.
       const bg = cell?.bg
       const fontSize = cell?.fontSize ?? ptToMm(12)
       const fontFamily = cell?.font || 'Meiryo'
       const color = cell?.color || '#000000'
       const align = cell?.align || 'l'
-      const vAlign = cell?.vAlign || 'm'
+      const vAlign = cell?.vAlign || 'm' // Default to middle alignment for better visual consistency
 
       const isSelectedCell =
         isSelected && _selectedCell && _selectedCell.row === r && _selectedCell.col === c
 
-      const cellId = `${tableElement.id}_cell_${r}_${c} `
+      const cellId = getCellId(r, c)
 
-      rendered.push(
-        <Group
-          key={cellId}
+      // 1. Background Layer
+      // Add generous overlap (0.5) to prevent sub-pixel gaps (artifacts) between cells like in the blue header
+      const OVERLAP = 0.5
+      backgrounds.push(
+        <Rect
+          key={`${cellId}_bg`}
           x={x}
           y={y}
+          width={w + OVERLAP}
+          height={h + OVERLAP}
+          fill={bg || 'transparent'}
+          listening={false}
           onClick={(e) => {
             e.cancelBubble = true
             onCellClick?.(tableElement.id, r, c)
@@ -137,52 +150,244 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
             e.cancelBubble = true
             onCellDblClick?.(tableElement.id, r, c)
           }}
-        >
+          // Make transparent cells hit-testable if they are part of the table logic
+          hitFunc={(ctx, shape) => {
+            ctx.beginPath()
+            ctx.rect(0, 0, shape.width() - OVERLAP, shape.height() - OVERLAP)
+            ctx.closePath()
+            ctx.fillStrokeShape(shape)
+          }}
+        />
+      )
+
+      // 2. Borders Layer
+      // Fix: Adjust coordinates to center borders on grid lines to overlap adjacent borders (prevent double lines)
+      // 3. Borders (Explicit)
+      if (cell?.borders) {
+        borders.push(
+          <Group key={`${cellId}_borders`} x={x} y={y} listening={false}>
+            {cell.borders.l && (
+              <Rect
+                x={-(cell.borders.l.width || 0.2) / 2}
+                y={0}
+                width={cell.borders.l.width || 0.2}
+                height={h}
+                fill={cell.borders.l.color || '#000000'}
+                listening={false}
+              />
+            )}
+            {cell.borders.r && (
+              <Rect
+                x={w - (cell.borders.r.width || 0.2) / 2}
+                y={0}
+                width={cell.borders.r.width || 0.2}
+                height={h}
+                fill={cell.borders.r.color || '#000000'}
+                listening={false}
+              />
+            )}
+            {cell.borders.t && (
+              <Rect
+                x={0}
+                y={-(cell.borders.t.width || 0.2) / 2}
+                width={w}
+                height={cell.borders.t.width || 0.2}
+                fill={cell.borders.t.color || '#000000'}
+                listening={false}
+              />
+            )}
+            {cell.borders.b && (
+              <Rect
+                x={0}
+                y={h - (cell.borders.b.width || 0.2) / 2}
+                width={w}
+                height={cell.borders.b.width || 0.2}
+                fill={cell.borders.b.color || '#000000'}
+                listening={false}
+              />
+            )}
+          </Group>
+        )
+      } else {
+        // Fallback or default grid
+        // FIX: Usage of strokeEnabled={false} is the most reliable way to prevent any ghost strokes
+        borders.push(
           <Rect
-            id={cellId}
-            x={0}
-            y={0}
+            key={`${cellId}_border_fallback`}
+            x={x}
+            y={y}
             width={w}
             height={h}
-            fill={bg || 'transparent'}
-            stroke={borderEnabled ? borderColor : undefined}
-            strokeWidth={borderEnabled ? borderW : 0}
+            strokeEnabled={false} // Disable stroke entirely
+            fillEnabled={false}
+            listening={false}
           />
+        )
+      }
 
-          {!!cell?.v && (
-            <Text
-              id={`${cellId} _text`}
-              x={4 * invScale}
-              y={0}
-              width={Math.max(0, w - 8 * invScale)}
-              height={h}
-              text={cell.v}
-              fontSize={fontSize}
-              fontFamily={fontFamily}
-              fill={color}
-              align={align === 'r' ? 'right' : align === 'c' ? 'center' : 'left'}
-              verticalAlign={vAlign === 't' ? 'top' : vAlign === 'b' ? 'bottom' : 'middle'}
-              listening={false}
-            />
-          )}
+      // Debug: Log Header Cell (e.g. Blue cell) to see if it has explicit borders causing white gaps
+      if (r === 1 && c === 1) { // Adjust Row/Col as needed. r=1 is likely row 2.
+        console.log('[DEBUG] Header Cell Info:', JSON.stringify({
+          r, c,
+          v: cell?.v,
+          bg,
+          borders: cell?.borders, // Check if explicit borders exist
+          borderFallback: !cell?.borders
+        }, null, 2))
+      }
 
-          {isSelectedCell && (
-            <Rect
-              x={0}
-              y={0}
-              width={w}
-              height={h}
-              stroke="#3b82f6"
-              strokeWidth={2 * invScale}
-              dash={[4, 4]}
-              fillEnabled={false}
-              listening={false}
-            />
-          )}
-        </Group>
-      )
+      // 3. Text/Content Layer
+      if (!!cell?.v) {
+        const isRight = (align as string) === 'r' || (align as string) === 'right'
+
+        // Style Logic
+        const fontStyle = ((cell.bold ? 'bold ' : '') + (cell.italic ? 'italic' : '')).trim()
+        const textDecoration = cell.strike ? 'line-through' : undefined
+
+        // PADDING Logic
+        // Add small horizontal padding to prevent text touching borders
+        // Reduced to 0.5 based on feedback (2.0 was too large)
+        const PADDING_X = 0.5 * invScale
+        const PADDING_Y = 1.6 * invScale // Increased vertical padding to ensuring text floats off the line
+
+        // ... (Align Logic omitted - preserved)
+        // Large Header Text logic
+        // Fix: Lower threshold and force "INVOICE" to never wrap
+        const isLargeText = fontSize > 2.8 // Lowered slightly
+        const isInvoiceHeader = typeof cell.v === 'string' && cell.v.includes('INVOICE')
+        const shouldUnconstrain = !cell.wrap || isLargeText || !!cell.bold || isInvoiceHeader
+
+        let textW = (!cell.wrap ? undefined : Math.max(0, w - 2 * PADDING_X))
+        let textX = x + PADDING_X
+
+        let textH = h - 2 * PADDING_Y // Constrain height with padding
+        let textY = y + PADDING_Y     // Offset Y
+
+        const LARGE_WIDTH = 5000
+
+        if (isRight) {
+          textW = LARGE_WIDTH
+          textX = x + w - LARGE_WIDTH - PADDING_X
+        } else if (align === 'c' || align === 'center') {
+          if (shouldUnconstrain) {
+            textW = LARGE_WIDTH
+            textX = x + (w / 2) - (LARGE_WIDTH / 2)
+          } else {
+            textW = w - 2 * PADDING_X
+          }
+        } else {
+          // Left align (default)
+          // Fix: Use Massive Width strategy even for Left Align to ensure verticalAlign works consistently with Right/Center.
+          if (shouldUnconstrain) {
+            textW = LARGE_WIDTH
+          }
+        }
+
+        texts.push(
+          <Text
+            key={`${cellId}_text`}
+            x={textX}
+            y={textY}
+            width={textW}
+            height={textH}
+            text={cell.v}
+            fontSize={fontSize}
+            fontFamily={fontFamily}
+            fontStyle={fontStyle}
+            textDecoration={textDecoration}
+            fill={color}
+            align={isRight ? 'right' : (align === 'c' ? 'center' : 'left')}
+            // Fix: Map 'bottom' (and default 'middle') to 'middle' to ensure visual centering. 
+            // Only 'top' is respected as distinct.
+            verticalAlign={vAlign === 't' ? 'top' : 'middle'}
+            wrap={shouldUnconstrain ? 'none' : 'word'}
+            listening={false}
+          />
+        )
+      }
+
+      // Selection Highlight (on top of everything for this cell, or in separate layer)
+      // We will put it in texts layer for now so it's on top of borders
+      if (isSelectedCell) {
+        texts.push(
+          <Rect
+            key={`${cellId}_selected`}
+            x={x}
+            y={y}
+            width={w}
+            height={h}
+            stroke="#3b82f6"
+            strokeWidth={2 * invScale}
+            dash={[4, 4]}
+            fillEnabled={false}
+            listening={false}
+          />
+        )
+      }
     }
   }
+
+  // Combine layers
+  rendered.push(...backgrounds, ...borders, ...texts)
+
+  // ==================================================================================================
+  // Debug Headers (A, B, C... / 1, 2, 3...)
+  // ==================================================================================================
+  const HEADER_BG = '#f3f4f6'
+  const HEADER_BORDER = '#d1d5db'
+  const HEADER_TEXT = '#6b7280'
+  const COL_HEADER_H = 24 * invScale
+  const ROW_HEADER_W = 32 * invScale
+  const FONT_SIZE = 10 * invScale
+
+  const toColumnName = (num: number): string => {
+    let s = ''
+    let t = num + 1
+    while (t > 0) {
+      let m = (t - 1) % 26
+      s = String.fromCharCode(65 + m) + s
+      t = Math.floor((t - m) / 26)
+    }
+    return s
+  }
+
+  // Column Headers (Top)
+  for (let c = 0; c < colCount; c++) {
+    const x = getColX(c)
+    const w = cols[c] ?? 0
+    rendered.push(
+      <Group key={`col_header_${c}`} x={x} y={-COL_HEADER_H}>
+        <Rect width={w} height={COL_HEADER_H} fill={HEADER_BG} stroke={HEADER_BORDER} strokeWidth={1 * invScale} />
+        <Text
+          x={0} y={0} width={w} height={COL_HEADER_H}
+          text={toColumnName(c)}
+          align="center" verticalAlign="middle"
+          fontSize={FONT_SIZE} fill={HEADER_TEXT}
+        />
+      </Group>
+    )
+  }
+
+  // Row Headers (Left)
+  for (let r = 0; r < rowCount; r++) {
+    const y = getRowY(r)
+    const h = rows[r] ?? 0
+    rendered.push(
+      <Group key={`row_header_${r}`} x={-ROW_HEADER_W} y={y}>
+        <Rect width={ROW_HEADER_W} height={h} fill={HEADER_BG} stroke={HEADER_BORDER} strokeWidth={1 * invScale} />
+        <Text
+          x={0} y={0} width={ROW_HEADER_W} height={h}
+          text={String(r + 1)}
+          align="center" verticalAlign="middle"
+          fontSize={FONT_SIZE} fill={HEADER_TEXT}
+        />
+      </Group>
+    )
+  }
+  // Corner Box
+  rendered.push(
+    <Rect key="header_corner" x={-ROW_HEADER_W} y={-COL_HEADER_H} width={ROW_HEADER_W} height={COL_HEADER_H} fill={HEADER_BG} stroke={HEADER_BORDER} strokeWidth={1 * invScale} />
+  )
 
   const handles: React.ReactNode[] = []
   const HANDLE_SIZE = 8 * invScale

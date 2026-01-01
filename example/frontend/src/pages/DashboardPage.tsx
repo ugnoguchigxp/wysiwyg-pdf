@@ -1,9 +1,9 @@
 import React from 'react'
-import { FileText, LayoutTemplate, Moon, Sun, Monitor, GitBranch } from 'lucide-react'
+import { FileText, LayoutTemplate, Moon, Sun, Monitor, GitBranch, FileSpreadsheet } from 'lucide-react'
 
 
 interface DashboardPageProps {
-    onNavigate: (page: 'report' | 'bed' | 'viewer' | 'signature' | 'mindmap' | 'slide') => void
+    onNavigate: (page: 'report' | 'bed' | 'viewer' | 'signature' | 'mindmap' | 'slide' | 'excel-import') => void
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
@@ -39,6 +39,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                         <h2 className="text-2xl font-bold mb-2 text-foreground">Report Editor</h2>
                         <p className="text-muted-foreground text-center">
                             Create and edit PDF report templates with drag-and-drop ease.
+                        </p>
+                    </button>
+
+                    <button
+                        onClick={() => onNavigate('excel-import')}
+                        className="flex flex-col items-center justify-center p-12 rounded-xl border-2 border-border bg-card hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200 group h-80"
+                    >
+                        <div className="w-24 h-24 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
+                            <FileSpreadsheet className="w-12 h-12 text-green-600 dark:text-green-400" />
+                        </div>
+                        <h2 className="text-2xl font-bold mb-2 text-foreground">Excel Import</h2>
+                        <p className="text-muted-foreground text-center">
+                            Convert Excel files to PDF templates.
                         </p>
                     </button>
 

@@ -288,11 +288,27 @@ export interface Cell {
   border?: string
   borderColor?: string
   borderW?: number
+  borders?: {
+    t?: BorderStyle
+    r?: BorderStyle
+    b?: BorderStyle
+    l?: BorderStyle
+  }
+  wrap?: boolean
   font?: string
   fontSize?: number
   align?: 'l' | 'c' | 'r'
   vAlign?: 't' | 'm' | 'b'
   color?: string
+  bold?: boolean
+  italic?: boolean
+  strike?: boolean
+}
+
+export interface BorderStyle {
+  style?: string
+  color?: string
+  width?: number
 }
 
 // Link interface removed

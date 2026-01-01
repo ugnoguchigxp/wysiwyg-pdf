@@ -68,9 +68,10 @@ const INITIAL_DOC: Doc = {
 
 interface ReportEditorPageProps {
     onBack: () => void
+    initialDocId?: string
 }
 
-export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) => {
+export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack, initialDocId }) => {
     const { t } = useTranslation()
     const [templateName, setTemplateName] = useState('New Template')
     const [zoom, setZoom] = useState(100)
@@ -149,6 +150,12 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack }) =>
         setTemplateName(detail.title)
         setSelectedElementId(null)
     }, [setDocument])
+
+    useEffect(() => {
+        if (initialDocId) {
+            void handleLoad(initialDocId)
+        }
+    }, [initialDocId, handleLoad])
 
     const handleSave = () => {
         const save = async () => {
