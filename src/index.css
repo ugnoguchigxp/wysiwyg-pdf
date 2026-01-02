@@ -44,7 +44,10 @@
 /* ../../src/features/mindmap-editor/mindmap-print.css */
 @media print {
   @page {
-    margin: 0;
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    margin-left: 0;
     size: landscape;
   }
 
@@ -55,7 +58,8 @@
     padding: 0;
   }
 
-  .mindmap-header, [role="dialog"] {
+  .mindmap-header,
+  [role="dialog"] {
     display: none !important;
   }
 

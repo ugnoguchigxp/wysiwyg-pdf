@@ -4,7 +4,11 @@ import { calculateTextDimensions, measureText } from './textUtils'
 
 const TEXT_LAYOUT_KEYS = ['text', 'font', 'fontSize', 'fontWeight', 'padding'] as const
 
-export function calculateVerticalTextHeight(text: string, fontSize: number, padding: number): number {
+export function calculateVerticalTextHeight(
+  text: string,
+  fontSize: number,
+  padding: number
+): number {
   const lines = (text || '').split('\n')
   const maxLineLength = Math.max(...lines.map((line) => Array.from(line).length), 1)
   const contentHeight = maxLineLength * fontSize

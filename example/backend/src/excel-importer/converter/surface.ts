@@ -5,11 +5,11 @@
  * （Phase1: まずは1ページ前提のシンプル実装）
  */
 
-import type { ExcelSheet, ExcelRow, ExcelCell, MergedCell } from '../types/excel'
+import type { ExcelCell, ExcelRow, ExcelSheet, MergedCell } from '../types/excel'
 import type { ImportOptions } from '../types/options'
-import type { OutputSurface, OutputNode } from '../types/output'
 import { DEFAULT_IMPORT_OPTIONS } from '../types/options'
-import { excelColWidthToMm, excelRowHeightToMm, PAPER_SIZES, inchToMm, pxToMm } from '../utils'
+import type { OutputNode, OutputSurface } from '../types/output'
+import { excelColWidthToMm, excelRowHeightToMm, inchToMm, PAPER_SIZES, pxToMm } from '../utils'
 import { convertToTableNode } from './table'
 
 export function convertSheet(
@@ -21,16 +21,20 @@ export function convertSheet(
   const resolvedOptions = { ...DEFAULT_IMPORT_OPTIONS, ...options }
 
   // 1. ページサイズ決定
-  const paperKey = options.pageSize ?? sheet.pageSetup.paperSize ?? DEFAULT_IMPORT_OPTIONS.pageSize ?? 'a4'
+  const paperKey =
+    options.pageSize ?? sheet.pageSetup.paperSize ?? DEFAULT_IMPORT_OPTIONS.pageSize ?? 'a4'
   const paper = PAPER_SIZES[paperKey] ?? PAPER_SIZES.a4
-  const orientation = options.orientation ?? sheet.pageSetup.orientation ?? DEFAULT_IMPORT_OPTIONS.orientation ?? 'portrait'
+  const orientation =
+    options.orientation ??
+    sheet.pageSetup.orientation ??
+    DEFAULT_IMPORT_OPTIONS.orientation ??
+    'portrait'
   const landscape = orientation === 'landscape'
   const pageSize = landscape ? { w: paper.h, h: paper.w } : { w: paper.w, h: paper.h }
 
   // 2. 余白(mm)
   // options.margin takes precedence. Then Excel settings. Then Default.
-  const margin = options.margin ??
-  {
+  const margin = options.margin ?? {
     t: inchToMm(sheet.pageSetup.margin.top),
     r: inchToMm(sheet.pageSetup.margin.right),
     b: inchToMm(sheet.pageSetup.margin.bottom),
@@ -40,8 +44,12 @@ export function convertSheet(
   // 3. 対象範囲決定
   const { rowMap, colMap, filteredRows, filteredMerged } = filterRowsCols(sheet, resolvedOptions)
 
-  const contentWidth = colMap.map((i) => sheet.columns[i]?.width ?? 8.43).reduce((s, w) => s + excelColWidthToMm(w), 0)
-  const contentHeight = rowMap.map((i) => sheet.rows[i]?.height ?? 15).reduce((s, h) => s + excelRowHeightToMm(h), 0)
+  const contentWidth = colMap
+    .map((i) => sheet.columns[i]?.width ?? 8.43)
+    .reduce((s, w) => s + excelColWidthToMm(w), 0)
+  const contentHeight = rowMap
+    .map((i) => sheet.rows[i]?.height ?? 15)
+    .reduce((s, h) => s + excelRowHeightToMm(h), 0)
 
   // 4. 縮尺
   const drawableWidth = pageSize.w - margin.l - margin.r
@@ -62,7 +70,7 @@ export function convertSheet(
       1
     )
   } else if (sheet.pageSetup.fitToPage) {
-    // 3. Excel "Fit to Pages" settings 
+    // 3. Excel "Fit to Pages" settings
     // If fitToPage is defined in Excel, we calculate scale to fit X pages wide / Y pages tall.
     const { width: pagesWide, height: pagesTall } = sheet.pageSetup.fitToPage
 
@@ -104,7 +112,9 @@ export function convertSheet(
   // Safety: Prevent Scale from becoming too small (Task 5-1)
   const SAFE_MIN_SCALE = 0.3
   if (scale < SAFE_MIN_SCALE) {
-    console.warn(`[Layout] Calculated scale ${scale} is below safe limit ${SAFE_MIN_SCALE}. Clamping likely needed or pagination strategy change.`)
+    console.warn(
+      `[Layout] Calculated scale ${scale} is below safe limit ${SAFE_MIN_SCALE}. Clamping likely needed or pagination strategy change.`
+    )
     // For now we use the calculated scale but user might want to know.
   }
 
@@ -116,7 +126,7 @@ export function convertSheet(
     pageSize,
     paperKey,
     colMapSize: colMap.length,
-    columnsCount: sheet.columns.length
+    columnsCount: sheet.columns.length,
   })
 
   // 5. 行高・列幅 (スケール適用後)
@@ -133,13 +143,27 @@ export function convertSheet(
 
   // 累積座標（ページ判定用）
   const rowCumH = [0]
-  rowHeightsMm.forEach((h, i) => rowCumH.push(rowCumH[i] + h))
+  rowHeightsMm.forEach((h, i) => {
+    rowCumH.push(rowCumH[i] + h)
+  })
   const colCumW = [0]
-  colWidthsMm.forEach((w, i) => colCumW.push(colCumW[i] + w))
+  colWidthsMm.forEach((w, i) => {
+    colCumW.push(colCumW[i] + w)
+  })
 
   // 6. ページ分割
-  const rowRanges = calculateRowRanges(rowHeightsMm, drawableHeight, sheet.pageSetup.horizontalPageBreaks, !!resolvedOptions.fitToPage)
-  const colRanges = calculateColRanges(colWidthsMm, drawableWidth, sheet.pageSetup.verticalPageBreaks, !!resolvedOptions.fitToPage)
+  const rowRanges = calculateRowRanges(
+    rowHeightsMm,
+    drawableHeight,
+    sheet.pageSetup.horizontalPageBreaks,
+    !!resolvedOptions.fitToPage
+  )
+  const colRanges = calculateColRanges(
+    colWidthsMm,
+    drawableWidth,
+    sheet.pageSetup.verticalPageBreaks,
+    !!resolvedOptions.fitToPage
+  )
 
   const surfaces: OutputSurface[] = []
   const nodes: OutputNode[] = []
@@ -167,7 +191,9 @@ export function convertSheet(
           ...sheet,
           rows: filteredRows.slice(rr.startRow, rr.endRow + 1),
           // columns配列はメタデータ用だが、colMapに含まれるものだけにフィルタ済みと仮定
-          columns: sheet.columns.filter((col) => colMap.includes(col.index)).slice(cr.startCol, cr.endCol + 1),
+          columns: sheet.columns
+            .filter((col) => colMap.includes(col.index))
+            .slice(cr.startCol, cr.endCol + 1),
           mergedCells: filteredMerged,
         },
         {
@@ -203,7 +229,7 @@ export function convertSheet(
       const pageStartX = colCumW[cr.startCol]
       const pageEndX = colCumW[cr.endCol + 1] ?? colCumW[colCumW.length - 1]
 
-      sheet.images.forEach(img => {
+      sheet.images.forEach((img) => {
         // マッピング: 元のRow/Col index -> rowMap/colMap index
         // 見つからない(=非表示/範囲外)場合はスキップ
         const localRowIdx = rowMap.indexOf(img.range.from.row)
@@ -221,8 +247,12 @@ export function convertSheet(
 
         // ページ判定 (TopLeftが範囲内)
         // 厳密には画像の一部が入る場合も考慮すべきだが、まずはTopLeft基準
-        if (globalX >= pageStartX && globalX < pageEndX && globalY >= pageStartY && globalY < pageEndY) {
-
+        if (
+          globalX >= pageStartX &&
+          globalX < pageEndX &&
+          globalY >= pageStartY &&
+          globalY < pageEndY
+        ) {
           // Width/Height計算
           // TwoCellAnchor: to - from
           const toRowIdx = rowMap.indexOf(img.range.to.row)
@@ -256,9 +286,9 @@ export function convertSheet(
             w,
             h,
             assetId: undefined, // URL or Base64 lookup needed. For now just node structure.
-            // We need 'src' or 'assetId'. 
+            // We need 'src' or 'assetId'.
             // OutputImageNode supports 'src' (data url).
-            src: `data:image/${img.extension};base64,${Buffer.from(new Uint8Array(img.data)).toString('base64')}`
+            src: `data:image/${img.extension};base64,${Buffer.from(new Uint8Array(img.data)).toString('base64')}`,
           })
         }
       })
@@ -315,7 +345,7 @@ function filterRowsCols(sheet: ExcelSheet, options: ImportOptions): FilterResult
           index: newRowIdx,
           height: 15, // default
           hidden: false,
-          cells: []
+          cells: [],
         }
       }
 
@@ -331,7 +361,7 @@ function filterRowsCols(sheet: ExcelSheet, options: ImportOptions): FilterResult
       return {
         ...originalRow,
         index: newRowIdx,
-        cells: newCells
+        cells: newCells,
       }
     })
 
@@ -353,7 +383,7 @@ function filterRowsCols(sheet: ExcelSheet, options: ImportOptions): FilterResult
     // 行が存在しない場合はスキップするか？
     // ExcelJSのrowsはsparse。存在チェックにはfindなどが要るが
     // ここでは単純に sheet.rows を回してみるアプローチではなく、範囲で回す
-    const row = sheet.rows.find(row => row.index === r)
+    const row = sheet.rows.find((row) => row.index === r)
 
     // 行オブジェクトがない、またはhiddenならスキップ (ただし空行保持設定なら話は別だが、UsedRange logicではトリム済)
     if (!row) {
@@ -370,7 +400,7 @@ function filterRowsCols(sheet: ExcelSheet, options: ImportOptions): FilterResult
 
   // colMap構築
   for (let c = startCol; c <= endCol; c++) {
-    const colKey = sheet.columns.find(col => col.index === c)
+    const colKey = sheet.columns.find((col) => col.index === c)
     if (colKey && colKey.hidden) continue
 
     // 列が空かどうかのチェック (isColumnEmptyは全行スキャンするため重いが...)
@@ -405,7 +435,11 @@ function filterRowsCols(sheet: ExcelSheet, options: ImportOptions): FilterResult
   return { rowMap, colMap, filteredRows, filteredMerged }
 }
 
-function filterMergedCells(mergedCells: MergedCell[], rowMap: number[], colMap: number[]): MergedCell[] {
+function filterMergedCells(
+  mergedCells: MergedCell[],
+  rowMap: number[],
+  colMap: number[]
+): MergedCell[] {
   const colIndexMap = new Map(colMap.map((c, i) => [c, i]))
   const rowIndexMap = new Map(rowMap.map((r, i) => [r, i]))
 
@@ -439,7 +473,9 @@ function filterMergedCells(mergedCells: MergedCell[], rowMap: number[], colMap: 
 }
 
 function isRowEmpty(row: ExcelRow): boolean {
-  return row.cells.every((cell) => cell.value === null || cell.value === undefined || cell.value === '')
+  return row.cells.every(
+    (cell) => cell.value === null || cell.value === undefined || cell.value === ''
+  )
 }
 
 function isColumnEmpty(rows: ExcelRow[], colIndex: number): boolean {
@@ -452,7 +488,12 @@ function isColumnEmpty(rows: ExcelRow[], colIndex: number): boolean {
 /**
  * 行/列分割範囲を計算
  */
-function calculateRowRanges(sizes: number[], limit: number, manualBreaks?: number[], forceFit: boolean = false) {
+function calculateRowRanges(
+  sizes: number[],
+  limit: number,
+  manualBreaks?: number[],
+  forceFit: boolean = false
+) {
   if (sizes.length === 0) return [{ startRow: 0, endRow: 0 }]
   if (forceFit) return [{ startRow: 0, endRow: sizes.length - 1 }]
 
@@ -475,7 +516,12 @@ function calculateRowRanges(sizes: number[], limit: number, manualBreaks?: numbe
   return ranges
 }
 
-function calculateColRanges(sizes: number[], limit: number, manualBreaks?: number[], forceFit: boolean = false) {
+function calculateColRanges(
+  sizes: number[],
+  limit: number,
+  manualBreaks?: number[],
+  forceFit: boolean = false
+) {
   if (sizes.length === 0) return [{ startCol: 0, endCol: 0 }]
   if (forceFit) return [{ startCol: 0, endCol: sizes.length - 1 }]
 
@@ -501,7 +547,12 @@ function calculateColRanges(sizes: number[], limit: number, manualBreaks?: numbe
 /**
  * 厳密なUsedRangeを計算 (データまたはスタイルがある範囲)
  */
-function calculateStrictUsedRange(sheet: ExcelSheet): { startRow: number, endRow: number, startCol: number, endCol: number } {
+function calculateStrictUsedRange(sheet: ExcelSheet): {
+  startRow: number
+  endRow: number
+  startCol: number
+  endCol: number
+} {
   let minR = Infinity
   let maxR = -Infinity
   let minC = Infinity
@@ -554,7 +605,10 @@ function isCellEffective(cell: ExcelCell): boolean {
 
   // スタイルがある (Fill)
   if (cell.style.fill) {
-    if (cell.style.fill.type !== 'pattern' || (cell.style.fill.patternType && cell.style.fill.patternType !== 'none')) {
+    if (
+      cell.style.fill.type !== 'pattern' ||
+      (cell.style.fill.patternType && cell.style.fill.patternType !== 'none')
+    ) {
       return true
     }
   }
@@ -603,11 +657,11 @@ function parseHeaderFooterString(text: string): import('../types/output').Header
 
   const result: import('../types/output').HeaderFooterContent = {}
 
-  // Regex to find sections. 
+  // Regex to find sections.
   // Sections can be in any order? usually L, C, R.
   // &L marks start of Left, until &C or &R or End.
 
-  const parts = text.split(/&([LCR])/).filter(s => s) // Split and keep delimiters
+  const parts = text.split(/&([LCR])/).filter((s) => s) // Split and keep delimiters
 
   // parts[0] might be content if it starts without &LCR (assumed Center? No, Excel usually starts with &C if centered)
   // If splits: ["L", "Left Text", "C", "Center", "R", "Right"]
@@ -620,9 +674,18 @@ function parseHeaderFooterString(text: string): import('../types/output').Header
   // Iterate
   for (let i = 0; i < parts.length; i++) {
     const p = parts[i]
-    if (p === 'L') { currentKey = 'left'; continue }
-    if (p === 'C') { currentKey = 'center'; continue }
-    if (p === 'R') { currentKey = 'right'; continue }
+    if (p === 'L') {
+      currentKey = 'left'
+      continue
+    }
+    if (p === 'C') {
+      currentKey = 'center'
+      continue
+    }
+    if (p === 'R') {
+      currentKey = 'right'
+      continue
+    }
 
     // Content
     if (currentKey) {

@@ -13,7 +13,10 @@ import { mapFont } from '../utils/font'
 /**
  * CellStyle を OutputCell 用のスタイルに変換
  */
-export function convertCellStyle(style: CellStyle | undefined, options: ImportOptions): Partial<OutputCell> {
+export function convertCellStyle(
+  style: CellStyle | undefined,
+  options: ImportOptions
+): Partial<OutputCell> {
   if (!style) return {}
 
   const result: Partial<OutputCell> = {}
@@ -59,7 +62,9 @@ export function convertCellStyle(style: CellStyle | undefined, options: ImportOp
   }
 
   // 配置
-  const align = style.alignment?.horizontal ? normalizeHorizontal(style.alignment.horizontal) : undefined
+  const align = style.alignment?.horizontal
+    ? normalizeHorizontal(style.alignment.horizontal)
+    : undefined
   if (align) result.align = align
 
   const vAlign = style.alignment?.vertical ? normalizeVertical(style.alignment.vertical) : undefined
@@ -67,8 +72,8 @@ export function convertCellStyle(style: CellStyle | undefined, options: ImportOp
 
   // MANUAL OVERRIDES for Known Issues (User Feedback)
   // Force "Thank you for your business!" to be centered
-  /* @ts-ignore */
-  if (style.font && style.alignment && typeof style['value'] === 'unknown') {
+
+  if (style.font && style.alignment && typeof (style as any)['value'] === 'undefined') {
     // We don't have value here easily in convertCellStyle unless passed?
     // convertCellStyle takes `style`. The value is in `cell.v`.
     // We need to move this logic or pass value.
@@ -102,9 +107,12 @@ function convertBorderSide(
  */
 type BorderSide = 'top' | 'right' | 'bottom' | 'left' | 'diagonal'
 
-export function pickBorder(
-  border: NonNullable<CellStyle['border']> | undefined
-): { style: NonNullable<NonNullable<CellStyle['border']>[BorderSide]>['style']; color?: NonNullable<NonNullable<CellStyle['border']>[BorderSide]>['color'] } | undefined {
+export function pickBorder(border: NonNullable<CellStyle['border']> | undefined):
+  | {
+      style: NonNullable<NonNullable<CellStyle['border']>[BorderSide]>['style']
+      color?: NonNullable<NonNullable<CellStyle['border']>[BorderSide]>['color']
+    }
+  | undefined {
   if (!border) return undefined
   const order: BorderSide[] = ['top', 'right', 'bottom', 'left', 'diagonal']
   for (const key of order) {
@@ -124,7 +132,7 @@ export function borderWidth(style: BorderStyleType | undefined): number {
   const map: Record<BorderStyleType, number> = {
     thin: 0.2,
     medium: 0.5, // Reduced from 0.7
-    thick: 0.7,  // Reduced from 1.0
+    thick: 0.7, // Reduced from 1.0
     double: 0.7,
     dotted: 0.2,
     dashed: 0.25,
@@ -148,7 +156,9 @@ function convertFont(
   // if (font.size && (font.size > 20 || font.size < 10) || font.bold || font.italic) {
   //   console.log(`[DEBUG] Font Style:`, { name: font.name, size: font.size, bold: font.bold, italic: font.italic, strike: font.strike })
   // }
-  const mappedFont = font.name ? mapFont(font.name, options.fontMapping, options.defaultFont) : undefined
+  const mappedFont = font.name
+    ? mapFont(font.name, options.fontMapping, options.defaultFont)
+    : undefined
   return {
     font: mappedFont,
     fontSize: font.size ? ptToMm(font.size) : undefined,
@@ -164,7 +174,7 @@ function normalizeHorizontal(value: NonNullable<CellStyle['alignment']>['horizon
     fill: 'l',
     justify: 'l',
     centerContinuous: 'l', // Center Across Selection - Map to Left to allow flow instead of centering in single cell
-    distributed: 'c',     // Distributed
+    distributed: 'c', // Distributed
   }
   return map[value]
 }

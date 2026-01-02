@@ -1,15 +1,15 @@
 import type Konva from 'konva'
 import type React from 'react'
 import { useLayoutEffect, useRef, useState } from 'react'
-import type { TextNode } from '@/types/canvas'
-import { ptToMm } from '@/utils/units'
-import { calculateTextDimensions } from '@/features/konva-editor/utils/textUtils'
 import {
   buildListLine,
   getNextListNumber,
   normalizeListText,
   parseListLine,
 } from '@/features/konva-editor/utils/textList'
+import { calculateTextDimensions } from '@/features/konva-editor/utils/textUtils'
+import type { TextNode } from '@/types/canvas'
+import { ptToMm } from '@/utils/units'
 
 interface TextEditOverlayProps {
   element: TextNode
@@ -37,7 +37,11 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
         textareaRef.current.focus({ preventScroll: true })
       }
 
-      if (!isComposing.current && document.activeElement !== textareaRef.current && textareaRef.current.value !== element.text) {
+      if (
+        !isComposing.current &&
+        document.activeElement !== textareaRef.current &&
+        textareaRef.current.value !== element.text
+      ) {
         textareaRef.current.value = element.text
       }
     }
@@ -66,17 +70,19 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
     // 内部ボックスの位置とサイズ
     const boxLeft = areaPosition.x + padding
     const boxTop = areaPosition.y + padding
-    const boxW = Math.max(0, scaledW - (padding * 2))
-    const boxH = Math.max(0, scaledH - (padding * 2))
+    const boxW = Math.max(0, scaledW - padding * 2)
+    const boxH = Math.max(0, scaledH - padding * 2)
 
     // Debug log
     console.log('[TextEditOverlay] render:', {
       id: element.id,
-      w: element.w, h: element.h,
+      w: element.w,
+      h: element.h,
       vertical: element.vertical,
-      boxW, boxH,
-      areaPosition
-    });
+      boxW,
+      boxH,
+      areaPosition,
+    })
 
     let newStyle: React.CSSProperties = {
       position: 'absolute',
@@ -109,7 +115,7 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
 
     if (element.vertical) {
       // 縦書きテキスト: Hidden textarea + Konva描画アプローチ
-      // 
+      //
       // 仕組み:
       // 1. textarea は完全に透明で最小サイズ（スクロール防止）
       // 2. 入力は textarea で受け付ける（IME対応）
@@ -149,7 +155,7 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
         family: element.font || 'Arial',
         size: element.fontSize,
         weight: element.fontWeight,
-        padding: 0
+        padding: 0,
       })
 
       const scaledTextContentHeight = dim.h * scale
@@ -175,7 +181,9 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
         textDecoration: [
           element.underline ? 'underline' : '',
           element.lineThrough ? 'line-through' : '',
-        ].filter(Boolean).join(' '),
+        ]
+          .filter(Boolean)
+          .join(' '),
         paddingLeft: 0,
         paddingRight: 0,
         paddingBottom: 0,
@@ -187,14 +195,25 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
     setStyle(newStyle)
   }, [
     element.id,
-    element.x, element.y, element.w, element.h,
-    element.padding, element.vAlign,
-    element.fontSize, element.font, element.fontWeight,
+    element.x,
+    element.y,
+    element.w,
+    element.h,
+    element.padding,
+    element.vAlign,
+    element.fontSize,
+    element.font,
+    element.fontWeight,
     element.text,
     element.vertical,
     scale,
     stageNode,
-    element.italic, element.underline, element.lineThrough, element.fill, element.align, element.r
+    element.italic,
+    element.underline,
+    element.lineThrough,
+    element.fill,
+    element.align,
+    element.r,
   ])
 
   const handleFinish = () => {
@@ -235,9 +254,10 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
       }
 
       const startLine = getLineIndex(selectionStart)
-      const endLine = selectionEnd > 0 && value[selectionEnd - 1] === '\n'
-        ? getLineIndex(selectionEnd - 1)
-        : getLineIndex(selectionEnd)
+      const endLine =
+        selectionEnd > 0 && value[selectionEnd - 1] === '\n'
+          ? getLineIndex(selectionEnd - 1)
+          : getLineIndex(selectionEnd)
 
       let changed = false
       const updatedLines = lines.map((line, index) => {
@@ -417,7 +437,9 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
 
   const handleCompositionEnd = (e: React.CompositionEvent<HTMLTextAreaElement>) => {
     isComposing.current = false
-    handleChange({ target: { value: e.currentTarget.value } } as React.ChangeEvent<HTMLTextAreaElement>)
+    handleChange({
+      target: { value: e.currentTarget.value },
+    } as React.ChangeEvent<HTMLTextAreaElement>)
   }
 
   return (

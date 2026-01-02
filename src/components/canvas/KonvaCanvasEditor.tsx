@@ -1,18 +1,18 @@
 import type Konva from 'konva'
-import React, { useCallback, forwardRef, useImperativeHandle, useRef, useState } from 'react'
-import { Layer, Stage, Rect } from 'react-konva'
-import type { TextNode, UnifiedNode } from '../../types/canvas'
-import { mmToPx } from '@/utils/units'
+import React, { forwardRef, useCallback, useImperativeHandle, useRef, useState } from 'react'
+import { Layer, Rect, Stage } from 'react-konva'
 // import { measureText } from '@/features/konva-editor/utils/textUtils'
 import { applyTextLayoutUpdates } from '@/features/konva-editor/utils/textLayout'
+import { cn } from '@/lib/utils'
+import { reorderNodes } from '@/utils/reorderUtils'
+import { mmToPx } from '@/utils/units'
+import type { TextNode, UnifiedNode } from '../../types/canvas'
 import { CanvasElementRenderer } from './CanvasElementRenderer'
-import type { CanvasElementCommonProps, CanvasShapeRefCallback } from './types'
 import { GridLayer } from './GridLayer'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
-import { TextEditOverlay } from './TextEditOverlay'
-import { cn } from '@/lib/utils'
 import { ObjectContextMenu } from './ObjectContextMenu'
-import { reorderNodes } from '@/utils/reorderUtils'
+import { TextEditOverlay } from './TextEditOverlay'
+import type { CanvasElementCommonProps, CanvasShapeRefCallback } from './types'
 
 export interface KonvaCanvasEditorHandle {
   getStage: () => Konva.Stage | null
@@ -131,33 +131,39 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
 
     // ...
 
-    const handleDefaultContextMenu = useCallback((e: Konva.KonvaEventObject<PointerEvent>, element: UnifiedNode) => {
-      e.evt.preventDefault()
+    const handleDefaultContextMenu = useCallback(
+      (e: Konva.KonvaEventObject<PointerEvent>, element: UnifiedNode) => {
+        e.evt.preventDefault()
 
-      // Select the element if not already selected
-      if (!selectedIds.includes(element.id)) {
-        onSelect([element.id])
-      }
+        // Select the element if not already selected
+        if (!selectedIds.includes(element.id)) {
+          onSelect([element.id])
+        }
 
-      setContextMenu({
-        visible: true,
-        x: e.evt.clientX,
-        y: e.evt.clientY,
-        elementId: element.id
-      })
-    }, [selectedIds, onSelect])
+        setContextMenu({
+          visible: true,
+          x: e.evt.clientX,
+          y: e.evt.clientY,
+          elementId: element.id,
+        })
+      },
+      [selectedIds, onSelect]
+    )
 
-    const handleReorder = useCallback((action: 'bringToFront' | 'sendToBack' | 'bringForward' | 'sendBackward') => {
-      if (!contextMenu.elementId || !onReorderNodes) return
+    const handleReorder = useCallback(
+      (action: 'bringToFront' | 'sendToBack' | 'bringForward' | 'sendBackward') => {
+        if (!contextMenu.elementId || !onReorderNodes) return
 
-      const newElements = reorderNodes(elements, contextMenu.elementId, action)
+        const newElements = reorderNodes(elements, contextMenu.elementId, action)
 
-      // Only notify if order actually changed (optimization could be added to utility but checking diff here is simple enough, or just trust the utility)
-      // Actually reorderNodes always returns a new array.
-      // We pass IDs to the callback.
-      onReorderNodes(newElements.map(el => el.id))
-      setContextMenu(prev => ({ ...prev, visible: false }))
-    }, [elements, contextMenu.elementId, onReorderNodes])
+        // Only notify if order actually changed (optimization could be added to utility but checking diff here is simple enough, or just trust the utility)
+        // Actually reorderNodes always returns a new array.
+        // We pass IDs to the callback.
+        onReorderNodes(newElements.map((el) => el.id))
+        setContextMenu((prev) => ({ ...prev, visible: false }))
+      },
+      [elements, contextMenu.elementId, onReorderNodes]
+    )
 
     // Initial Scroll Centering
     useImperativeHandle(ref, () => ({
@@ -340,10 +346,10 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       onCopy: handleCopy,
       onPaste: handlePaste,
       onSelectAll: handleSelectAll,
-      onMoveUp: () => { }, // Disabled
-      onMoveDown: () => { }, // Disabled
-      onMoveLeft: () => { }, // Disabled
-      onMoveRight: () => { }, // Disabled
+      onMoveUp: () => {}, // Disabled
+      onMoveDown: () => {}, // Disabled
+      onMoveLeft: () => {}, // Disabled
+      onMoveRight: () => {}, // Disabled
     }
 
     useKeyboardShortcuts(shortcutsHandlers)
@@ -546,7 +552,7 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
             visible={contextMenu.visible}
             x={contextMenu.x}
             y={contextMenu.y}
-            onClose={() => setContextMenu(prev => ({ ...prev, visible: false }))}
+            onClose={() => setContextMenu((prev) => ({ ...prev, visible: false }))}
             onAction={handleReorder}
           />
         </div>

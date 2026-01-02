@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import '@/features/konva-editor/styles/print.css'
 import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
-import { ptToMm } from '@/utils/units'
 import { parseListLine } from '@/features/konva-editor/utils/textList'
 import { calculateVerticalLayout } from '@/features/vertical-text/utils/vertical-layout'
 import type {
@@ -15,15 +14,12 @@ import type {
   TextNode,
   UnifiedNode,
 } from '@/types/canvas'
-import { RenderTable } from './elements/RenderTable'
-import { RenderShape } from './elements/RenderShape'
+import { ptToMm } from '@/utils/units'
 import { RenderLine } from './elements/RenderLine'
+import { RenderShape } from './elements/RenderShape'
 import { RenderSignature } from './elements/RenderSignature'
+import { RenderTable } from './elements/RenderTable'
 import { mmPt, mmToPtValue } from './utils'
-
-
-
-
 
 const PrintElement = ({ element }: { element: UnifiedNode }) => {
   const [imageSrc, setImageSrc] = useState<string | null>(null)
@@ -77,8 +73,8 @@ const PrintElement = ({ element }: { element: UnifiedNode }) => {
       textEl.hasFrame !== undefined
         ? textEl.hasFrame
         : textEl.borderColor ||
-        (textEl.borderWidth && textEl.borderWidth > 0) ||
-        textEl.backgroundColor
+          (textEl.borderWidth && textEl.borderWidth > 0) ||
+          textEl.backgroundColor
 
     const borderStyle =
       shouldShowBox && textEl.borderWidth && textEl.borderWidth > 0
@@ -94,7 +90,6 @@ const PrintElement = ({ element }: { element: UnifiedNode }) => {
     const borderRadius =
       shouldShowBox && actualRadius > 0 ? `${mmToPtValue(actualRadius)}pt` : undefined
 
-
     const renderListText = () => {
       // vertical text is handled separately now, but keeping check just in case
       if (textEl.vertical) return textEl.text
@@ -105,9 +100,7 @@ const PrintElement = ({ element }: { element: UnifiedNode }) => {
       return lines.map((line, index) => {
         const parsed = parseListLine(line, { vertical: false })
         if (!parsed.isList || !parsed.type || !parsed.markerText) {
-          return (
-            <div key={`line-${index}`}>{line === '' ? '\u00A0' : line}</div>
-          )
+          return <div key={`line-${index}`}>{line === '' ? '\u00A0' : line}</div>
         }
 
         const indentSpaces = ' '.repeat(parsed.indentLength)
@@ -115,10 +108,10 @@ const PrintElement = ({ element }: { element: UnifiedNode }) => {
         const markerStyle =
           parsed.type === 'number'
             ? {
-              fontSize: `${mmToPtValue(fontSizeMm * numberMarkerScale)}pt`,
-              verticalAlign: 'middle',
-              display: 'inline-block',
-            }
+                fontSize: `${mmToPtValue(fontSizeMm * numberMarkerScale)}pt`,
+                verticalAlign: 'middle',
+                display: 'inline-block',
+              }
             : undefined
 
         return (
@@ -135,7 +128,7 @@ const PrintElement = ({ element }: { element: UnifiedNode }) => {
     if (textEl.vertical) {
       const padding = textEl.padding ?? 10
       const COLUMN_SPACING = 1.5
-      const startX = textEl.w - padding - (fontSizeMm * (COLUMN_SPACING / 2 + 0.5))
+      const startX = textEl.w - padding - fontSizeMm * (COLUMN_SPACING / 2 + 0.5)
 
       const charMetrics = calculateVerticalLayout(textEl.text || '', startX, padding, {
         fontSize: fontSizeMm,
@@ -145,15 +138,17 @@ const PrintElement = ({ element }: { element: UnifiedNode }) => {
 
       return (
         <div style={style}>
-          <div style={{
-            position: 'relative',
-            width: '100%',
-            height: '100%',
-            border: borderStyle,
-            backgroundColor: backgroundColor,
-            borderRadius: borderRadius,
-            boxSizing: 'border-box',
-          }}>
+          <div
+            style={{
+              position: 'relative',
+              width: '100%',
+              height: '100%',
+              border: borderStyle,
+              backgroundColor: backgroundColor,
+              borderRadius: borderRadius,
+              boxSizing: 'border-box',
+            }}
+          >
             {charMetrics.map((metric, index) => (
               <div
                 key={index}
@@ -260,7 +255,15 @@ const PrintElement = ({ element }: { element: UnifiedNode }) => {
   return null
 }
 
-const RenderHeaderFooter = ({ content, type, margin }: { content: import('@/types/canvas').HeaderFooterContent | undefined, type: 'header' | 'footer', margin?: import('@/types/canvas').Margin }) => {
+const RenderHeaderFooter = ({
+  content,
+  type,
+  margin,
+}: {
+  content: import('@/types/canvas').HeaderFooterContent | undefined
+  type: 'header' | 'footer'
+  margin?: import('@/types/canvas').Margin
+}) => {
   if (!content) return null
   const isHeader = type === 'header'
 
@@ -281,7 +284,7 @@ const RenderHeaderFooter = ({ content, type, margin }: { content: import('@/type
     fontFamily: 'Helvetica, Arial, sans-serif',
     zIndex: 10,
     [isHeader ? 'top' : 'bottom']: verticalPos,
-    color: '#333'
+    color: '#333',
   }
 
   return (

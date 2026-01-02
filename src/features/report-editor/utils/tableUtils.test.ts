@@ -22,7 +22,7 @@ describe('tableUtils', () => {
         it('handles undefined rows gracefully', () => {
             // @ts-ignore - testing robustness
             const sparseRows = [10, undefined, 30]
-            expect(getRowY(sparseRows, 3)).toBe(10 + 30)
+            expect(getRowY(sparseRows as any, 3)).toBe(10 + 30)
         })
     })
 

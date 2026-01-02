@@ -1,11 +1,11 @@
 import type React from 'react'
 import { Circle, Group, Line, Path, Rect, Text } from 'react-konva'
-import type { TextNode } from '@/types/canvas'
-import type { CanvasElementCommonProps, CanvasElementRendererProps } from '../types'
-import { VerticalKonvaText, VerticalCaret } from '@/features/vertical-text'
-import { mmToPx, pxToMm, ptToMm } from '@/utils/units'
-import { measureText } from '@/features/konva-editor/utils/textUtils'
 import { parseListLine } from '@/features/konva-editor/utils/textList'
+import { measureText } from '@/features/konva-editor/utils/textUtils'
+import { VerticalCaret, VerticalKonvaText } from '@/features/vertical-text'
+import type { TextNode } from '@/types/canvas'
+import { mmToPx, ptToMm, pxToMm } from '@/utils/units'
+import type { CanvasElementCommonProps, CanvasElementRendererProps } from '../types'
 
 interface TextRendererProps {
   element: TextNode
@@ -97,7 +97,13 @@ export const TextRenderer: React.FC<TextRendererProps> = ({
                 stroke={stroke}
                 strokeWidth={strokeW}
                 align={
-                  align === 'l' ? 'left' : align === 'r' ? 'right' : align === 'c' ? 'center' : 'justify'
+                  align === 'l'
+                    ? 'left'
+                    : align === 'r'
+                      ? 'right'
+                      : align === 'c'
+                        ? 'center'
+                        : 'justify'
                 }
                 verticalAlign={vAlign === 'm' ? 'middle' : vAlign === 'b' ? 'bottom' : 'top'}
                 lineHeight={lineHeight}
@@ -293,29 +299,31 @@ export const TextRenderer: React.FC<TextRendererProps> = ({
               visible={true}
             />
             {/* 編集中は点滅カレットを表示 */}
-            {isEditing && (() => {
-              // VerticalKonvaText と同じロジックでカレット位置を計算
-              const caretFontSize = fontSize || 16;
-              const caretPadding = padding;
-              const columnSpacing = 1.5;
-              const startX = textW - (caretFontSize * (columnSpacing / 2 + 0.5));
+            {isEditing &&
+              (() => {
+                // VerticalKonvaText と同じロジックでカレット位置を計算
+                const caretFontSize = fontSize || 16
+                const caretPadding = padding
+                const columnSpacing = 1.5
+                const startX = textW - caretFontSize * (columnSpacing / 2 + 0.5)
 
-              const lines = (text || '').split('\n');
-              const columnIndex = lines.length - 1;
-              const currentLineLength = lines.length > 0 ? Array.from(lines[lines.length - 1] || '').length : 0;
+                const lines = (text || '').split('\n')
+                const columnIndex = lines.length - 1
+                const currentLineLength =
+                  lines.length > 0 ? Array.from(lines[lines.length - 1] || '').length : 0
 
-              const caretX = textX + startX - columnIndex * (caretFontSize * columnSpacing);
-              const caretY = textY + caretPadding + currentLineLength * caretFontSize;
+                const caretX = textX + startX - columnIndex * (caretFontSize * columnSpacing)
+                const caretY = textY + caretPadding + currentLineLength * caretFontSize
 
-              return (
-                <VerticalCaret
-                  x={caretX - caretFontSize / 2}
-                  y={caretY}
-                  width={caretFontSize}
-                  visible={true}
-                />
-              );
-            })()}
+                return (
+                  <VerticalCaret
+                    x={caretX - caretFontSize / 2}
+                    y={caretY}
+                    width={caretFontSize}
+                    visible={true}
+                  />
+                )
+              })()}
           </>
         ) : (
           <>
@@ -339,7 +347,13 @@ export const TextRenderer: React.FC<TextRendererProps> = ({
               stroke={stroke}
               strokeWidth={strokeW}
               align={
-                align === 'l' ? 'left' : align === 'r' ? 'right' : align === 'c' ? 'center' : 'justify'
+                align === 'l'
+                  ? 'left'
+                  : align === 'r'
+                    ? 'right'
+                    : align === 'c'
+                      ? 'center'
+                      : 'justify'
               }
               verticalAlign={vAlign === 'm' ? 'middle' : vAlign === 'b' ? 'bottom' : 'top'}
               lineHeight={lineHeight}
@@ -407,19 +421,20 @@ export const TextRenderer: React.FC<TextRendererProps> = ({
   if (element.vertical) {
     // カレット位置の計算
     // テキストの最後の文字の次の位置に表示
-    const caretFontSize = fontSize || 16;
-    const padding = element.padding || 10;
-    const columnSpacing = 1.5;
+    const caretFontSize = fontSize || 16
+    const padding = element.padding || 10
+    const columnSpacing = 1.5
 
     // テキストの行数（改行で分割）
-    const lines = (text || '').split('\n');
-    const currentLineLength = lines.length > 0 ? Array.from(lines[lines.length - 1] || '').length : 0;
+    const lines = (text || '').split('\n')
+    const currentLineLength =
+      lines.length > 0 ? Array.from(lines[lines.length - 1] || '').length : 0
 
     // カレット位置（右上から開始、下に進む）
-    const startX = (element.w || 100) - padding - (caretFontSize * (columnSpacing / 2 + 0.5));
-    const columnIndex = lines.length - 1; // 現在の列（0始まり）
-    const caretX = startX - columnIndex * (caretFontSize * columnSpacing);
-    const caretY = padding + currentLineLength * caretFontSize;
+    const startX = (element.w || 100) - padding - caretFontSize * (columnSpacing / 2 + 0.5)
+    const columnIndex = lines.length - 1 // 現在の列（0始まり）
+    const caretX = startX - columnIndex * (caretFontSize * columnSpacing)
+    const caretY = padding + currentLineLength * caretFontSize
 
     return (
       <Group
@@ -427,13 +442,13 @@ export const TextRenderer: React.FC<TextRendererProps> = ({
         // 編集中はマウスカーソルを縦書き用に変更
         onMouseEnter={(e) => {
           if (isEditing) {
-            const container = e.target.getStage()?.container();
-            if (container) container.style.cursor = 'vertical-text';
+            const container = e.target.getStage()?.container()
+            if (container) container.style.cursor = 'vertical-text'
           }
         }}
         onMouseLeave={(e) => {
-          const container = e.target.getStage()?.container();
-          if (container) container.style.cursor = 'default';
+          const container = e.target.getStage()?.container()
+          if (container) container.style.cursor = 'default'
         }}
       >
         {/* 縦書き: 透明なtextareaで入力するため、編集中もKonva表示を継続 */}

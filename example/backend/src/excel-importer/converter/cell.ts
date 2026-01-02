@@ -7,8 +7,8 @@
 import type { ExcelCell, ExcelRichText } from '../types/excel'
 import type { ImportOptions } from '../types/options'
 import type { OutputCell } from '../types/output'
-import { convertCellStyle } from './style'
 import { colorInfoToCSS, ptToMm } from '../utils'
+import { convertCellStyle } from './style'
 
 /**
  * セルをOutputCellに変換
@@ -17,7 +17,7 @@ export function convertCell(cell: ExcelCell, options: ImportOptions): OutputCell
   const v = formatValue(cell, options)
   const style = convertCellStyle(cell.style, options)
 
-  let richTextFragments
+  let richTextFragments: any[] = []
   if (isRichText(cell.value)) {
     const rt = cell.value
     richTextFragments = rt.richText.map((fragment) => ({

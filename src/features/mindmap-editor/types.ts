@@ -1,4 +1,4 @@
-import type { UnifiedNode, LineNode } from '@/types/canvas'
+import type { LineNode, UnifiedNode } from '@/types/canvas'
 
 export interface MindmapGraph {
   rootId: string | null

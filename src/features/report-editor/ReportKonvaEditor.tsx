@@ -1,28 +1,22 @@
 import type Konva from 'konva'
-import {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { Rect as KonvaRect, Layer, Stage } from 'react-konva'
 import { CanvasElementRenderer } from '@/components/canvas/CanvasElementRenderer'
+import { CellEditOverlay } from '@/components/canvas/CellEditOverlay'
 import { GridLayer } from '@/components/canvas/GridLayer'
 import { useKeyboardShortcuts } from '@/components/canvas/hooks/useKeyboardShortcuts'
+import { ObjectContextMenu } from '@/components/canvas/ObjectContextMenu'
 import { TextEditOverlay } from '@/components/canvas/TextEditOverlay'
-import { CellEditOverlay } from '@/components/canvas/CellEditOverlay'
 import type { Doc, TableNode, TextNode, UnifiedNode } from '@/types/canvas' // Direct import
 import { mmToPx, ptToMm } from '@/utils/units'
 // Table operations imports removed (unused)
 // Signature utils moved to useSignature
 // import { reorderNodes } from '@/utils/reorderUtils' // Moved to hook
 import { TableContextMenu } from './components/ContextMenu/TableContextMenu'
-import { ObjectContextMenu } from '@/components/canvas/ObjectContextMenu'
-import { useReportContextMenu } from './hooks/useReportContextMenu'
 import { useNodeOperations } from './hooks/useNodeOperations'
+import { useReportContextMenu } from './hooks/useReportContextMenu'
 import { useSignature } from './hooks/useSignature'
+
 // const log = createContextLogger('ReportKonvaEditor') // Removed unused
 
 const dpi = 96
@@ -52,13 +46,7 @@ interface ReportKonvaEditorProps {
   gridSize?: number
 }
 
-import {
-  getColWidth,
-  getColX,
-  getRowHeight,
-  getRowY,
-  getCellAt,
-} from './utils/tableUtils'
+import { getCellAt, getColWidth, getColX, getRowHeight, getRowY } from './utils/tableUtils'
 
 // PageBackground moved to components/PageBackground
 
@@ -99,9 +87,6 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       row: number
       col: number
     } | null>(null)
-
-
-
 
     // Sync selectedCell to parent
     useEffect(() => {
@@ -159,11 +144,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
     }
 
     // === Use Extracted Hooks ===
-    const {
-      handleElementChange,
-      handleTextUpdate,
-      handleTextEditFinish,
-    } = useNodeOperations({
+    const { handleElementChange, handleTextUpdate, handleTextEditFinish } = useNodeOperations({
       templateDoc,
       onTemplateChange,
       selectedElementId: selectedElementId,
@@ -215,8 +196,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       }
 
       const stage = e.target.getStage()
-      const interestedInBackground =
-        e.target === stage || e.target.name() === '_background'
+      const interestedInBackground = e.target === stage || e.target.name() === '_background'
 
       if (interestedInBackground) {
         handleElementSelect(null)
@@ -237,7 +217,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       if (!editingCell || !selectedTable) return
 
       const newCells = [...selectedTable.table.cells]
-      const idx = newCells.findIndex(c => c.r === editingCell.row && c.c === editingCell.col)
+      const idx = newCells.findIndex((c) => c.r === editingCell.row && c.c === editingCell.col)
 
       if (idx >= 0) {
         newCells[idx] = { ...newCells[idx], v: val, richText: undefined }
@@ -246,7 +226,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
         newCells.push({
           r: editingCell.row,
           c: editingCell.col,
-          v: val
+          v: val,
         })
       }
 
@@ -254,8 +234,8 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
         ...selectedTable,
         table: {
           ...selectedTable.table,
-          cells: newCells
-        }
+          cells: newCells,
+        },
       }
 
       handleElementChange(newTable)
@@ -264,8 +244,6 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
     const handleCellEditFinish = () => {
       setEditingCell(null)
     }
-
-
 
     const handleDelete = () => {
       if (selectedElementId) {
@@ -367,7 +345,9 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
 
         try {
           gridLayer?.hide()
-          tableHeaders.forEach((n) => n.hide())
+          tableHeaders.forEach((n) => {
+            n.hide()
+          })
           transformers.forEach((tr) => {
             tr.hide()
           })
@@ -384,7 +364,9 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
           if (gridLayer && wasGridVisible) {
             gridLayer.show()
           }
-          tableHeaders.forEach((n) => n.show())
+          tableHeaders.forEach((n) => {
+            n.show()
+          })
           transformers.forEach((tr, idx) => {
             const prev = transformerVisibility[idx]
             if (prev) tr.show()

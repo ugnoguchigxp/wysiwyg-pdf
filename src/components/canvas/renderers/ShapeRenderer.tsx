@@ -1,5 +1,5 @@
-import React from 'react'
-import { Ellipse, Line, Path, Rect, Star, Group } from 'react-konva'
+import type React from 'react'
+import { Ellipse, Group, Line, Path, Rect, Star } from 'react-konva'
 import type { ShapeNode } from '@/types/canvas'
 import type { CanvasElementCommonProps } from '../types'
 
@@ -8,10 +8,7 @@ interface ShapeRendererProps {
   commonProps: CanvasElementCommonProps
 }
 
-export const ShapeRenderer: React.FC<ShapeRendererProps> = ({
-  element,
-  commonProps,
-}) => {
+export const ShapeRenderer: React.FC<ShapeRendererProps> = ({ element, commonProps }) => {
   const shape = element
   switch (shape.shape) {
     case 'rect':
@@ -53,16 +50,7 @@ export const ShapeRenderer: React.FC<ShapeRendererProps> = ({
       return (
         <Line
           {...commonProps}
-          points={[
-            shape.w / 2,
-            0,
-            shape.w,
-            shape.h / 2,
-            shape.w / 2,
-            shape.h,
-            0,
-            shape.h / 2,
-          ]}
+          points={[shape.w / 2, 0, shape.w, shape.h / 2, shape.w / 2, shape.h, 0, shape.h / 2]}
           closed
           fill={shape.fill}
           stroke={shape.stroke}
@@ -169,11 +157,16 @@ export const ShapeRenderer: React.FC<ShapeRendererProps> = ({
           x={(shape.x || 0) + shape.w / 2}
           y={(shape.y || 0) + shape.h / 2}
           points={[
-            0, -shape.h / 2,
-            shape.w / 2, -shape.h * 0.12,
-            shape.w * 0.31, shape.h / 2,
-            -shape.w * 0.31, shape.h / 2,
-            -shape.w / 2, -shape.h * 0.12
+            0,
+            -shape.h / 2,
+            shape.w / 2,
+            -shape.h * 0.12,
+            shape.w * 0.31,
+            shape.h / 2,
+            -shape.w * 0.31,
+            shape.h / 2,
+            -shape.w / 2,
+            -shape.h * 0.12,
           ]}
           closed
           fill={shape.fill}
@@ -188,12 +181,18 @@ export const ShapeRenderer: React.FC<ShapeRendererProps> = ({
           x={(shape.x || 0) + shape.w / 2}
           y={(shape.y || 0) + shape.h / 2}
           points={[
-            -shape.w * 0.25, -shape.h / 2,
-            shape.w * 0.25, -shape.h / 2,
-            shape.w / 2, 0,
-            shape.w * 0.25, shape.h / 2,
-            -shape.w * 0.25, shape.h / 2,
-            -shape.w / 2, 0
+            -shape.w * 0.25,
+            -shape.h / 2,
+            shape.w * 0.25,
+            -shape.h / 2,
+            shape.w / 2,
+            0,
+            shape.w * 0.25,
+            shape.h / 2,
+            -shape.w * 0.25,
+            shape.h / 2,
+            -shape.w / 2,
+            0,
           ]}
           closed
           fill={shape.fill}

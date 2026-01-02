@@ -1,20 +1,31 @@
 import type Konva from 'konva'
-import React, { useEffect, useState, useCallback, useRef } from 'react'
-import type { Doc, UnifiedNode } from '@/types/canvas'
-import { KonvaCanvasEditor, type KonvaCanvasEditorHandle } from '@/components/canvas/KonvaCanvasEditor'
+import {
+  ChevronsDown,
+  ChevronsUp,
+  Download,
+  FileDown,
+  ImageIcon,
+  Keyboard,
+  Upload,
+} from 'lucide-react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  KonvaCanvasEditor,
+  type KonvaCanvasEditorHandle,
+} from '@/components/canvas/KonvaCanvasEditor'
 import { Button } from '@/components/ui/Button'
-import { ChevronsDown, ChevronsUp, Download, Upload, Keyboard, ImageIcon, FileDown } from 'lucide-react'
-import { useI18n } from '@/i18n/I18nContext'
 import { Modal, ModalFooter } from '@/components/ui/Modal'
-import { useMindmapGraph } from './hooks/useMindmapGraph'
-import { useMindmapLayout } from './hooks/useMindmapLayout'
-import { useMindmapOperations } from './hooks/useMindmapOperations'
-import { useMindmapHistory } from './hooks/useMindmapHistory'
-import { useMindmapInteraction } from './hooks/useMindmapInteraction'
-import { useMindmapVisibility } from './hooks/useMindmapVisibility'
-import { useMindmapDrag } from './hooks/useMindmapDrag'
+import { useI18n } from '@/i18n/I18nContext'
+import type { Doc, UnifiedNode } from '@/types/canvas'
 import { MermaidExportModal } from './components/MermaidExportModal'
 import { MermaidImportModal } from './components/MermaidImportModal'
+import { useMindmapDrag } from './hooks/useMindmapDrag'
+import { useMindmapGraph } from './hooks/useMindmapGraph'
+import { useMindmapHistory } from './hooks/useMindmapHistory'
+import { useMindmapInteraction } from './hooks/useMindmapInteraction'
+import { useMindmapLayout } from './hooks/useMindmapLayout'
+import { useMindmapOperations } from './hooks/useMindmapOperations'
+import { useMindmapVisibility } from './hooks/useMindmapVisibility'
 import './mindmap-print.css'
 
 // Initial Doc with standard TextNode
@@ -50,8 +61,6 @@ const INITIAL_DOC: Doc = {
     },
   ],
 }
-
-
 
 interface MindmapEditorProps {
   readOnly?: boolean
@@ -332,11 +341,7 @@ export const MindmapEditor: React.FC<MindmapEditorProps> = ({
         <div className="h-12 border-b bg-white flex items-center justify-between px-4 shadow-sm z-10 mindmap-header">
           <h1 className="font-bold text-slate-700">Mindmap Editor</h1>
           <div className="flex gap-2">
-            <Button
-              variant="circle-help"
-              size="circle"
-              title="ショートカット"
-            >
+            <Button variant="circle-help" size="circle" title="ショートカット">
               ?
             </Button>
             {!readOnly && (

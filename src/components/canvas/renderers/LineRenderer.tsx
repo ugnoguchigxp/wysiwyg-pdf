@@ -2,11 +2,11 @@ import type Konva from 'konva'
 import type React from 'react'
 import { useRef } from 'react'
 import { Circle, Group, Line } from 'react-konva'
+import type { Anchor, LineNode, UnifiedNode } from '@/types/canvas'
 import { LineMarker } from '../LineMarker'
+import type { CanvasElementCommonProps } from '../types'
 import { getAnchorPointAndDirection, getOrthogonalPath } from '../utils/connectionRouting'
 import { isWHElement } from '../utils/elementUtils'
-import type { Anchor, LineNode, UnifiedNode } from '@/types/canvas'
-import type { CanvasElementCommonProps } from '../types'
 
 interface LineRendererProps {
   element: LineNode
@@ -57,10 +57,7 @@ export const LineRenderer: React.FC<LineRendererProps> = ({
 
   const anchors: Anchor[] = ['tl', 't', 'tr', 'l', 'r', 'bl', 'b', 'br']
 
-  const getAnchorPoint = (
-    n: UnifiedNode,
-    anchor: Anchor
-  ): { x: number; y: number } | null => {
+  const getAnchorPoint = (n: UnifiedNode, anchor: Anchor): { x: number; y: number } | null => {
     if (n.t === 'line') return null
     if (n.x === undefined || n.y === undefined || n.w === undefined || n.h === undefined)
       return null
@@ -180,10 +177,7 @@ export const LineRenderer: React.FC<LineRendererProps> = ({
     e.cancelBubble = true
   }
 
-  const moveHandleDrag = (
-    handleType: 'start' | 'end',
-    e: Konva.KonvaEventObject<DragEvent>
-  ) => {
+  const moveHandleDrag = (handleType: 'start' | 'end', e: Konva.KonvaEventObject<DragEvent>) => {
     const base = lineDraftPtsRef.current || [...pts]
 
     // Determine index based on handle type and CURRENT base length (which changes with routing)
@@ -217,8 +211,7 @@ export const LineRenderer: React.FC<LineRendererProps> = ({
     // -------------------------------------------------------------------
     const threshold = 12 * invScale
     const showMargin = 80 * invScale
-    let best: { nodeId: string; anchor: Anchor; x: number; y: number; dist2: number } | null =
-      null
+    let best: { nodeId: string; anchor: Anchor; x: number; y: number; dist2: number } | null = null
 
     const activeFill = '#059669'
     const baseStroke = '#0f766e'
@@ -282,8 +275,7 @@ export const LineRenderer: React.FC<LineRendererProps> = ({
     if (best) {
       nextPos = { x: best.x, y: best.y }
       // Update draft connection info
-      if (pointIndex === 0)
-        startConnDraftRef.current = { nodeId: best.nodeId, anchor: best.anchor }
+      if (pointIndex === 0) startConnDraftRef.current = { nodeId: best.nodeId, anchor: best.anchor }
       else if (pointIndex === base.length - 2)
         endConnDraftRef.current = { nodeId: best.nodeId, anchor: best.anchor }
 
@@ -351,8 +343,7 @@ export const LineRenderer: React.FC<LineRendererProps> = ({
     e.cancelBubble = true
     const next = lineDraftPtsRef.current
     const group = e.target.getParent()
-    if (group)
-      (group as Konva.Group).draggable((readOnly ? false : !element.locked) && isSelected)
+    if (group) (group as Konva.Group).draggable((readOnly ? false : !element.locked) && isSelected)
 
     if (anchorOverlayGroupRef.current) {
       anchorOverlayGroupRef.current.visible(false)

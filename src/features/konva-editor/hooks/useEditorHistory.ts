@@ -120,22 +120,18 @@ function applyOperationDoc(doc: Doc, op: Operation): Doc {
 
       // Debug logging for bed position updates
       if ('x' in update || 'y' in update) {
-        const target = doc.nodes.find(n => n.id === id)
+        const target = doc.nodes.find((n) => n.id === id)
         if (target && target.t === 'widget' && (target as any).widget === 'bed') {
           console.log(`[applyOperationDoc] Updating bed ${id} position:`, {
             from: { x: target.x, y: target.y },
-            to: { x: update.x ?? target.x, y: update.y ?? target.y }
+            to: { x: update.x ?? target.x, y: update.y ?? target.y },
           })
         }
       }
 
       return {
         ...doc,
-        nodes: doc.nodes.map((n) =>
-          n.id === id
-            ? ({ ...n, ...update, id } as UnifiedNode)
-            : n
-        ),
+        nodes: doc.nodes.map((n) => (n.id === id ? ({ ...n, ...update, id } as UnifiedNode) : n)),
       }
     }
 

@@ -10,47 +10,47 @@ import { mmToPx } from '@/utils/units'
  * @returns [zoom, recalculate]
  */
 export function useFitToScreen(
-    containerRef: RefObject<HTMLElement | null>,
-    slideWidthMm: number,
-    slideHeightMm: number,
-    marginRatio = 0.9
+  containerRef: RefObject<HTMLElement | null>,
+  slideWidthMm: number,
+  slideHeightMm: number,
+  marginRatio = 0.9
 ) {
-    const [zoom, setZoom] = useState(100)
+  const [zoom, setZoom] = useState(100)
 
-    const calculateZoom = useCallback(() => {
-        if (!containerRef.current) return
+  const calculateZoom = useCallback(() => {
+    if (!containerRef.current) return
 
-        const { clientWidth, clientHeight } = containerRef.current
-        if (clientWidth === 0 || clientHeight === 0) return
+    const { clientWidth, clientHeight } = containerRef.current
+    if (clientWidth === 0 || clientHeight === 0) return
 
-        // Standard DPI for display calculation
-        const dpi = 96
-        const slideWidthPx = mmToPx(slideWidthMm, { dpi })
-        const slideHeightPx = mmToPx(slideHeightMm, { dpi })
+    // Standard DPI for display calculation
+    const dpi = 96
+    const slideWidthPx = mmToPx(slideWidthMm, { dpi })
+    const slideHeightPx = mmToPx(slideHeightMm, { dpi })
 
-        const fitW = clientWidth / slideWidthPx
-        const fitH = clientHeight / slideHeightPx
+    const fitW = clientWidth / slideWidthPx
+    const fitH = clientHeight / slideHeightPx
 
-        const scale = Math.min(fitW, fitH) * marginRatio
+    const scale = Math.min(fitW, fitH) * marginRatio
 
-        // Round to integer percentage
-        setZoom(Math.floor(scale * 100))
-    }, [containerRef, slideWidthMm, slideHeightMm, marginRatio])
+    // Round to integer percentage
+    setZoom(Math.floor(scale * 100))
+  }, [containerRef, slideWidthMm, slideHeightMm, marginRatio])
 
-    useEffect(() => {
-        if (!containerRef.current) return
+  useEffect(() => {
+    if (!containerRef.current) return
 
-        const observer = new ResizeObserver(() => {
-            calculateZoom()
-        })
+    const observer = new ResizeObserver(() => {
+      calculateZoom()
+    })
 
-        observer.observe(containerRef.current)
+    observer.observe(containerRef.current)
 
-        // Initial calc
-        calculateZoom()
+    // Initial calc
+    calculateZoom()
 
-        return () => observer.disconnect()
-    }, [containerRef, calculateZoom])
+    return () => observer.disconnect()
+  }, [containerRef, calculateZoom])
 
-    return { zoom, calculateZoom }
+  return { zoom, calculateZoom }
 }

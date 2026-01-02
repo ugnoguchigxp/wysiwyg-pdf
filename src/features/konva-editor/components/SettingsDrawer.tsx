@@ -1,7 +1,7 @@
 import { X } from 'lucide-react'
 import type React from 'react'
-import { useI18n } from '@/i18n/I18nContext'
 import { EditableSelect } from '@/components/ui/EditableSelect'
+import { useI18n } from '@/i18n/I18nContext'
 
 const FIBONACCI_grid_SIZES = [2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377]
 

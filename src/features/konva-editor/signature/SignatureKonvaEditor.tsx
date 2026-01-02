@@ -152,7 +152,11 @@ export const SignatureKonvaEditor: React.FC<SignatureKonvaEditorProps> = ({
               // Skip simplification for the LAST line IF we are currently drawing (isDrawing=true)
               // to avoid jitter while drawing.
               const isLastLine = i === lines.length - 1
-              const shouldSimplify = simplification && simplification > 0 && points.length > 4 && (!isLastLine || !isDrawing)
+              const shouldSimplify =
+                simplification &&
+                simplification > 0 &&
+                points.length > 4 &&
+                (!isLastLine || !isDrawing)
 
               if (shouldSimplify) {
                 points = simplifyPoints(points, simplification!)

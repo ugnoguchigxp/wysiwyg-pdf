@@ -1,11 +1,5 @@
+import { ArrowLeft, ArrowRight, Circle, Diamond, Minus } from 'lucide-react'
 import type React from 'react'
-import {
-  ArrowLeft,
-  ArrowRight,
-  Circle,
-  Diamond,
-  Minus,
-} from 'lucide-react'
 import type { ArrowheadWidgetConfig } from '@/features/konva-editor/constants/propertyPanelConfig'
 import type { ArrowType, LineNode } from '@/types/canvas'
 import { cn } from '@/utils/utils'

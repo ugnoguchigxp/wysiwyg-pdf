@@ -8,14 +8,13 @@ import {
   WrapText,
 } from 'lucide-react'
 import type React from 'react'
-import { useI18n } from '@/i18n/I18nContext'
+import { useState } from 'react'
 import { EditableSelect } from '@/components/ui/EditableSelect'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/Tooltip'
-import { DEFAULT_FONT_FAMILIES } from '@/features/konva-editor/constants/propertyPanelConfig'
 import { ColorInput } from '@/features/konva-editor/components/PropertyPanel/ColorInput'
+import { DEFAULT_FONT_FAMILIES } from '@/features/konva-editor/constants/propertyPanelConfig'
+import { useI18n } from '@/i18n/I18nContext'
 import type { TableNode } from '@/types/canvas'
-
-import { useState } from 'react'
 
 // Helper type for cell properties
 type CellProps = TableNode['table']['cells'][number]
@@ -32,7 +31,6 @@ type BorderStyle = 'solid' | 'dashed' | 'dotted' | 'double' | 'none'
 
 const BORDER_STYLES: BorderStyle[] = ['solid', 'dashed', 'dotted', 'double', 'none']
 
-
 export const TableProperties: React.FC<TablePropertiesProps> = ({
   element,
   onUpdate,
@@ -43,23 +41,22 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
   const [selectedBorderSide, setSelectedBorderSide] = useState<BorderSideSelection>('all')
   const [activeBorderStyle, setActiveBorderStyle] = useState<BorderStyle>('solid')
 
-
   const resolveText = (key: string, defaultValue?: string) => {
     if (i18nOverrides?.[key]) return i18nOverrides[key]
     return t(key, defaultValue ?? key)
   }
 
-  const updateBorder = (updates: { style?: string, width?: number, color?: string }) => {
+  const updateBorder = (updates: { style?: string; width?: number; color?: string }) => {
     // Prepare the update object for cells
     const getNewBorders = (currentBorders: any) => {
       const sides = selectedBorderSide === 'all' ? ['t', 'r', 'b', 'l'] : [selectedBorderSide]
       const newBorders = { ...(currentBorders || {}) }
 
-      sides.forEach(side => {
+      sides.forEach((side) => {
         if (side === 'none') return
         newBorders[side] = {
           ...(newBorders[side] || { style: 'solid', width: 0.2, color: '#000' }),
-          ...updates
+          ...updates,
         }
       })
       return newBorders
@@ -74,7 +71,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
       const cell = newCells[idx]
       newCells[idx] = {
         ...cell,
-        borders: getNewBorders(cell.borders)
+        borders: getNewBorders(cell.borders),
       }
     }
 
@@ -87,7 +84,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
           r: selectedCell.row,
           c: selectedCell.col,
           v: '',
-          borders: getNewBorders({})
+          borders: getNewBorders({}),
         } as CellProps)
       }
     } else {
@@ -125,16 +122,21 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
       // Global
       const rowCount = element.table.rows.length
       const colCount = element.table.cols.length
-      const covered = Array(rowCount).fill(null).map(() => Array(colCount).fill(false))
+      const covered = Array(rowCount)
+        .fill(null)
+        .map(() => Array(colCount).fill(false))
 
       // Calculate covered...
       for (const cell of newCells) {
-        const rs = cell.rs || 1; const cs = cell.cs || 1
+        const rs = cell.rs || 1
+        const cs = cell.cs || 1
         if (rs <= 1 && cs <= 1) continue
-        for (let rr = 0; rr < rs; rr++) for (let cc = 0; cc < cs; cc++) {
-          if (rr === 0 && cc === 0) continue;
-          if (cell.r + rr < rowCount && cell.c + cc < colCount) covered[cell.r + rr][cell.c + cc] = true
-        }
+        for (let rr = 0; rr < rs; rr++)
+          for (let cc = 0; cc < cs; cc++) {
+            if (rr === 0 && cc === 0) continue
+            if (cell.r + rr < rowCount && cell.c + cc < colCount)
+              covered[cell.r + rr][cell.c + cc] = true
+          }
       }
 
       for (let i = 0; i < newCells.length; i++) {
@@ -233,7 +235,6 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                 />
               </div>
             </div>
-
           </div>
 
           {/* Number Format */}
@@ -248,11 +249,15 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                 className="w-full h-7 text-[12px] bg-background border border-border rounded"
               >
                 <option value="">General</option>
-                {formatOptions.filter(o => o.value).map(o => (
-                  <option key={o.value} value={o.value}>{o.label} ({o.value})</option>
-                ))}
+                {formatOptions
+                  .filter((o) => o.value)
+                  .map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label} ({o.value})
+                    </option>
+                  ))}
               </select>
-              {activeData.numFmt && !formatOptions.find(o => o.value === activeData.numFmt) && (
+              {activeData.numFmt && !formatOptions.find((o) => o.value === activeData.numFmt) && (
                 <div className="text-[10px] text-muted-foreground break-all">
                   Custom: {activeData.numFmt}
                 </div>
@@ -280,7 +285,9 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                           <AlignLeft size={14} />
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent><p>{resolveText('side_left', 'Left')}</p></TooltipContent>
+                      <TooltipContent>
+                        <p>{resolveText('side_left', 'Left')}</p>
+                      </TooltipContent>
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -292,7 +299,9 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                           <AlignCenter size={14} />
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent><p>{resolveText('center', 'Center')}</p></TooltipContent>
+                      <TooltipContent>
+                        <p>{resolveText('center', 'Center')}</p>
+                      </TooltipContent>
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -304,7 +313,9 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                           <AlignRight size={14} />
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent><p>{resolveText('side_right', 'Right')}</p></TooltipContent>
+                      <TooltipContent>
+                        <p>{resolveText('side_right', 'Right')}</p>
+                      </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </div>
@@ -322,7 +333,9 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                           <ArrowUpToLine size={14} />
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent><p>{resolveText('top', 'Top')}</p></TooltipContent>
+                      <TooltipContent>
+                        <p>{resolveText('top', 'Top')}</p>
+                      </TooltipContent>
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -334,7 +347,9 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                           <AlignVerticalJustifyCenter size={14} />
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent><p>{resolveText('middle', 'Middle')}</p></TooltipContent>
+                      <TooltipContent>
+                        <p>{resolveText('middle', 'Middle')}</p>
+                      </TooltipContent>
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -346,7 +361,9 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                           <ArrowDownToLine size={14} />
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent><p>{resolveText('bottom', 'Bottom')}</p></TooltipContent>
+                      <TooltipContent>
+                        <p>{resolveText('bottom', 'Bottom')}</p>
+                      </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </div>
@@ -376,7 +393,6 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
               </div>
             </div>
           </div>
-
         </div>
 
         <div className="border-t border-border pt-4">
@@ -384,7 +400,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
 
           {/* Border Side Selector */}
           <div className="flex bg-muted rounded p-1 mb-2 gap-1 uppercase text-[10px] font-bold">
-            {['all', 't', 'b', 'l', 'r'].map(side => (
+            {['all', 't', 'b', 'l', 'r'].map((side) => (
               <button
                 key={side}
                 type="button"
@@ -410,7 +426,11 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
                   }}
                   className="w-full h-7 text-[12px] bg-background border border-border rounded"
                 >
-                  {BORDER_STYLES.map(s => <option key={s} value={s}>{s}</option>)}
+                  {BORDER_STYLES.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>

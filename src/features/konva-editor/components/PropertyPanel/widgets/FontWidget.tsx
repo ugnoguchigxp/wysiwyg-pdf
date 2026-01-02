@@ -1,10 +1,5 @@
+import { Bold, Italic, Strikethrough, Underline } from 'lucide-react'
 import type React from 'react'
-import {
-  Bold,
-  Italic,
-  Strikethrough,
-  Underline,
-} from 'lucide-react'
 import type { FontWidgetConfig } from '@/features/konva-editor/constants/propertyPanelConfig'
 import {
   DEFAULT_FONT_FAMILIES,

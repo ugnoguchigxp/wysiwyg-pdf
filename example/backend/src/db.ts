@@ -1,7 +1,7 @@
-import { Database } from "bun:sqlite";
-import { drizzle } from "drizzle-orm/bun-sqlite";
+import { Database } from 'bun:sqlite'
+import { drizzle } from 'drizzle-orm/bun-sqlite'
 
-const sqlite = new Database("data.sqlite");
+const sqlite = new Database('data.sqlite')
 
 sqlite.exec(`
   CREATE TABLE IF NOT EXISTS documents (
@@ -17,7 +17,7 @@ sqlite.exec(`
     ON documents(user, title);
   CREATE INDEX IF NOT EXISTS documents_type_updated_at_idx
     ON documents(type, updated_at);
-`);
+`)
 
-export const db = drizzle(sqlite);
-export { sqlite };
+export const db = drizzle(sqlite)
+export { sqlite }

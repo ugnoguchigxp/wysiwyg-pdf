@@ -28,7 +28,14 @@ const getIndentLength = (indent: string) => indent.replace(/\t/g, '  ').length
 export const parseListLine = (line: string, options: ParseOptions = {}): ParsedListLine => {
   const match = line.match(/^(\s*)(・|(\d+)\.)(\s*)(.*)$/)
   if (!match) {
-    return { isList: false, level: 1, content: line, prefixLength: 0, indentLength: 0, gapLength: 0 }
+    return {
+      isList: false,
+      level: 1,
+      content: line,
+      prefixLength: 0,
+      indentLength: 0,
+      gapLength: 0,
+    }
   }
 
   const indentRaw = match[1] ?? ''
@@ -40,7 +47,11 @@ export const parseListLine = (line: string, options: ParseOptions = {}): ParsedL
   const gapLength = getIndentLength(spaceAfter)
   const level = options.vertical
     ? 1
-    : clamp(Math.floor(Math.max(indentLength - LIST_MARKER_INDENT, 0) / LIST_INDENT_STEP) + 1, 1, MAX_LIST_LEVEL)
+    : clamp(
+        Math.floor(Math.max(indentLength - LIST_MARKER_INDENT, 0) / LIST_INDENT_STEP) + 1,
+        1,
+        MAX_LIST_LEVEL
+      )
 
   return {
     isList: true,
@@ -61,7 +72,9 @@ export const buildListLine = (
   options: ParseOptions & { number?: number } = {}
 ) => {
   const safeLevel = options.vertical ? 1 : clamp(level, 1, MAX_LIST_LEVEL)
-  const indent = options.vertical ? '' : ' '.repeat(LIST_MARKER_INDENT + LIST_INDENT_STEP * (safeLevel - 1))
+  const indent = options.vertical
+    ? ''
+    : ' '.repeat(LIST_MARKER_INDENT + LIST_INDENT_STEP * (safeLevel - 1))
   const marker = type === 'bullet' ? BULLET_MARKER : `${options.number ?? 1}.`
   const gap = ' '.repeat(LIST_MARKER_GAP)
   return `${indent}${marker}${gap}${content}`
@@ -83,7 +96,10 @@ export const normalizeListText = (text: string, options: ParseOptions = {}) => {
     if (parsed.type === 'number') {
       counters[level - 1] += 1
       for (let i = level; i < MAX_LIST_LEVEL; i += 1) counters[i] = 0
-      return buildListLine(parsed.content, 'number', level, { ...options, number: counters[level - 1] })
+      return buildListLine(parsed.content, 'number', level, {
+        ...options,
+        number: counters[level - 1],
+      })
     }
 
     counters.fill(0)

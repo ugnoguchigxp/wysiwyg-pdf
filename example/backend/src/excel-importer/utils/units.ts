@@ -140,7 +140,7 @@ export function excelColWidthToMm(width: number, mdw: number = DEFAULT_MDW): num
 export function mmToExcelColWidth(mm: number, mdw: number = DEFAULT_MDW): number {
   const px = mmToPx(mm)
   // 逆算（近似）
-  return (px / mdw) * 256 / 256
+  return ((px / mdw) * 256) / 256
 }
 
 /**

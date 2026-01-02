@@ -4,11 +4,11 @@ import type { MindmapGraph } from '../types'
 import { buildMindmapGraph } from '../utils/treeUtils'
 
 export const useMindmapGraph = (doc: Doc): MindmapGraph => {
-    const nodes = doc.nodes
+  const nodes = doc.nodes
 
-    const graph = useMemo(() => {
-        return buildMindmapGraph(nodes)
-    }, [nodes])
+  const graph = useMemo(() => {
+    return buildMindmapGraph(nodes)
+  }, [nodes])
 
-    return graph
+  return graph
 }

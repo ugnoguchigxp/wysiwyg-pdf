@@ -28,7 +28,7 @@ export function enrichAIOperation(doc: Doc, aiOp: AIOperation): Operation {
       const prev: Partial<UnifiedNode> = {}
       for (const key of Object.keys(aiOp.next)) {
         if (key in node) {
-          ; (prev as unknown as Record<string, unknown>)[key] = (
+          ;(prev as unknown as Record<string, unknown>)[key] = (
             node as unknown as Record<string, unknown>
           )[key]
         }

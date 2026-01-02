@@ -31,14 +31,7 @@
   },
   "overrides": [
     {
-      "includes": [
-        "Test/**",
-        "**/*.test.*",
-        "**/*.spec.*",
-        "coverage/**",
-        "example/**",
-        "dist/**"
-      ],
+      "includes": ["Test/**", "**/*.test.*", "**/*.spec.*", "coverage/**", "example/**", "dist/**"],
       "linter": {
         "enabled": false
       },

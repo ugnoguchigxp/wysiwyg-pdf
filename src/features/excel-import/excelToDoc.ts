@@ -1,6 +1,6 @@
+import type { Column, Cell as ExcelCell, Row, Worksheet } from 'exceljs'
 import ExcelJS from 'exceljs'
-import type { Cell as ExcelCell, Column, Row, Worksheet } from 'exceljs'
-import type { Doc, Surface, TableNode, Cell } from '../../types/canvas'
+import type { Cell, Doc, Surface, TableNode } from '../../types/canvas'
 import type { ExcelImportOptions } from './types'
 
 const PAPER_SIZES: Record<string, { w: number; h: number }> = {
@@ -12,7 +12,10 @@ const PAPER_SIZES: Record<string, { w: number; h: number }> = {
   legal: { w: 215.9, h: 355.6 },
 }
 
-export async function excelToDoc(buffer: ArrayBuffer, options: ExcelImportOptions = {}): Promise<Doc> {
+export async function excelToDoc(
+  buffer: ArrayBuffer,
+  options: ExcelImportOptions = {}
+): Promise<Doc> {
   const workbook = new ExcelJS.Workbook()
   await workbook.xlsx.load(buffer)
 
@@ -87,7 +90,14 @@ export async function excelToDoc(buffer: ArrayBuffer, options: ExcelImportOption
 
 function extractBgColor(cell: ExcelCell): string | undefined {
   const fill = cell.fill
-  if (fill && fill.type === 'pattern' && 'fgColor' in fill && fill.fgColor && 'argb' in fill.fgColor && fill.fgColor.argb) {
+  if (
+    fill &&
+    fill.type === 'pattern' &&
+    'fgColor' in fill &&
+    fill.fgColor &&
+    'argb' in fill.fgColor &&
+    fill.fgColor.argb
+  ) {
     return '#' + String(fill.fgColor.argb).slice(2)
   }
   return undefined

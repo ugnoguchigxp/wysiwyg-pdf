@@ -5,5 +5,5 @@
  */
 
 export * from './excel'
-export * from './output'
 export * from './options'
+export * from './output'

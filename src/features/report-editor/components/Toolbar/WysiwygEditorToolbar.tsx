@@ -10,7 +10,6 @@ import {
   ZoomOut,
 } from 'lucide-react'
 import type React from 'react'
-import { useI18n } from '@/i18n/I18nContext'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,20 +17,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/DropdownMenu'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/Tooltip'
-import type { Doc } from '@/types/canvas'
-import { useCanvasOperations } from '@/features/konva-editor/hooks/useCanvasOperations'
 import { EDITOR_SHAPES } from '@/features/konva-editor/constants/shapes'
-
-
-
-
+import { useCanvasOperations } from '@/features/konva-editor/hooks/useCanvasOperations'
+import { useI18n } from '@/i18n/I18nContext'
+import type { Doc } from '@/types/canvas'
 
 const TOOLBAR_BUTTON_CLASS =
   'w-10 h-10 flex items-center justify-center rounded border border-border bg-muted text-muted-foreground hover:bg-accent transition-colors'
 const TOOLBAR_BUTTON_ACTIVE_CLASS =
   'w-10 h-10 flex items-center justify-center rounded border border-primary bg-primary/10 text-primary'
-
-
 
 interface IWysiwygEditorToolbarProps {
   zoom: number
@@ -84,7 +78,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
     onSelectElement,
     onToolSelect,
     resolveText,
-    dpi
+    dpi,
   })
 
   // Removed duplicated logic for addText, addShape, addLine, addImage, addTable
@@ -93,9 +87,6 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
   const handleAddImage = () => addImage(currentPageId)
   const handleAddTable = () => addTable(currentPageId)
   const handleAddShape = (type: string) => addShape(type, currentPageId)
-
-
-
 
   return (
     <div className="flex flex-col items-center gap-2 p-2 bg-secondary border-r border-border text-muted-foreground">

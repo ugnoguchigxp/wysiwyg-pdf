@@ -90,7 +90,16 @@ export interface ImportOptions {
  * デフォルトオプション
  */
 export const DEFAULT_IMPORT_OPTIONS: Required<
-  Pick<ImportOptions, 'defaultFont' | 'pageSize' | 'orientation' | 'fitToPage' | 'printAreaOnly' | 'skipEmptyRows' | 'skipEmptyColumns'>
+  Pick<
+    ImportOptions,
+    | 'defaultFont'
+    | 'pageSize'
+    | 'orientation'
+    | 'fitToPage'
+    | 'printAreaOnly'
+    | 'skipEmptyRows'
+    | 'skipEmptyColumns'
+  >
 > = {
   defaultFont: 'Noto Sans JP',
   pageSize: 'a4',

@@ -12,7 +12,7 @@
     "build:frontend": "cd ../frontend && bunx vite build",
     "deploy:all": "bun run build:frontend && wrangler deploy",
     "typecheck": "tsc --noEmit",
-    "build": "bun build src/index.ts --outdir dist",
+    "build": "bun build src/index.ts --outdir dist --target bun",
     "lint": "biome check src/",
     "lint:fix": "biome check --apply src/",
     "format": "biome format --write src/",

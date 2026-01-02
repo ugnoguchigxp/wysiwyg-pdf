@@ -5,13 +5,13 @@
  */
 
 import type {
-  ExcelSheet,
-  ExcelRow,
+  CellRange,
   ExcelColumn,
+  ExcelImage,
+  ExcelRow,
+  ExcelSheet,
   MergedCell,
   PageSetup,
-  CellRange,
-  ExcelImage,
 } from '../types/excel'
 import { parseCell } from './cell'
 
@@ -24,7 +24,10 @@ type ExcelJSWorksheet = {
   columnCount: number
   getRow: (index: number) => ExcelJSRow
   getColumn: (index: number) => ExcelJSColumn
-  eachRow: (options: { includeEmpty: boolean }, callback: (row: ExcelJSRow, rowNumber: number) => void) => void
+  eachRow: (
+    options: { includeEmpty: boolean },
+    callback: (row: ExcelJSRow, rowNumber: number) => void
+  ) => void
   columns?: unknown[] // Added for access to raw column definitions
   model: {
     merges?: string[]
@@ -86,7 +89,10 @@ type ExcelJSRow = {
   number: number
   height?: number
   hidden?: boolean
-  eachCell: (options: { includeEmpty: boolean }, callback: (cell: ExcelJSCell, colNumber: number) => void) => void
+  eachCell: (
+    options: { includeEmpty: boolean },
+    callback: (cell: ExcelJSCell, colNumber: number) => void
+  ) => void
 }
 
 type ExcelJSColumn = {
@@ -268,18 +274,20 @@ function parsePageSetup(setup: ExcelJSPageSetup): PageSetup {
     scale: setup.scale,
     fitToPage: setup.fitToPage
       ? {
-        width: setup.fitToWidth,
-        height: setup.fitToHeight,
-      }
+          width: setup.fitToWidth,
+          height: setup.fitToHeight,
+        }
       : undefined,
-    headerFooter: setup.headerFooter ? {
-      oddHeader: setup.headerFooter.oddHeader,
-      oddFooter: setup.headerFooter.oddFooter,
-      evenHeader: setup.headerFooter.evenHeader,
-      evenFooter: setup.headerFooter.evenFooter,
-      firstHeader: setup.headerFooter.firstHeader,
-      firstFooter: setup.headerFooter.firstFooter,
-    } : undefined,
+    headerFooter: setup.headerFooter
+      ? {
+          oddHeader: setup.headerFooter.oddHeader,
+          oddFooter: setup.headerFooter.oddFooter,
+          evenHeader: setup.headerFooter.evenHeader,
+          evenFooter: setup.headerFooter.evenFooter,
+          firstHeader: setup.headerFooter.firstHeader,
+          firstFooter: setup.headerFooter.firstFooter,
+        }
+      : undefined,
   }
 }
 
@@ -394,8 +402,8 @@ function parseImages(worksheet: ExcelJSWorksheet): ExcelImage[] {
             colOff: raw.range.br.nativeColOff,
             row: raw.range.br.nativeRow,
             rowOff: raw.range.br.nativeRowOff,
-          }
-        }
+          },
+        },
       })
     }
   } catch (e) {

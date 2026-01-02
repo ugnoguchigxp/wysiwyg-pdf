@@ -1,12 +1,12 @@
 import type React from 'react'
 import type { ListWidgetConfig } from '@/features/konva-editor/constants/propertyPanelConfig'
-import type { TextNode } from '@/types/canvas'
-import { cn } from '@/utils/utils'
 import {
   applyListFormatting,
   getListTypeFromText,
   removeListFormatting,
 } from '@/features/konva-editor/utils/textList'
+import type { TextNode } from '@/types/canvas'
+import { cn } from '@/utils/utils'
 import { WidgetLabel } from '../shared'
 import type { WidgetProps } from './types'
 
@@ -23,11 +23,17 @@ const BulletIcon: React.FC = () => (
 
 const NumberIcon: React.FC = () => (
   <svg viewBox="0 0 64 64" width="20" height="20" aria-hidden="true">
-    <text x="4" y="20" fontSize="14" fontFamily="system-ui, sans-serif">1.</text>
+    <text x="4" y="20" fontSize="14" fontFamily="system-ui, sans-serif">
+      1.
+    </text>
     <rect x="22" y="14" width="32" height="4" rx="2" />
-    <text x="4" y="36" fontSize="14" fontFamily="system-ui, sans-serif">2.</text>
+    <text x="4" y="36" fontSize="14" fontFamily="system-ui, sans-serif">
+      2.
+    </text>
     <rect x="22" y="30" width="32" height="4" rx="2" />
-    <text x="4" y="52" fontSize="14" fontFamily="system-ui, sans-serif">3.</text>
+    <text x="4" y="52" fontSize="14" fontFamily="system-ui, sans-serif">
+      3.
+    </text>
     <rect x="22" y="46" width="32" height="4" rx="2" />
   </svg>
 )

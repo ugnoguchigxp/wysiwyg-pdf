@@ -1,4 +1,4 @@
-import type { Doc, UnifiedNode, TextNode, ShapeNode, ImageNode, LineNode } from '@/types/canvas'
+import type { Doc, ImageNode, LineNode, ShapeNode, TextNode, UnifiedNode } from '@/types/canvas'
 
 /**
  * Checks if pptxgenjs is available (installed).

@@ -1,9 +1,5 @@
+import { AlignVerticalJustifyCenter, ArrowDownToLine, ArrowUpToLine } from 'lucide-react'
 import type React from 'react'
-import {
-  AlignVerticalJustifyCenter,
-  ArrowDownToLine,
-  ArrowUpToLine,
-} from 'lucide-react'
 import type { VAlignmentWidgetConfig } from '@/features/konva-editor/constants/propertyPanelConfig'
 import type { TextNode } from '@/types/canvas'
 import { cn } from '@/utils/utils'

@@ -1,12 +1,11 @@
-
 import type React from 'react'
 import { Group, Rect, Text } from 'react-konva'
-import { ptToMm } from '@/utils/units'
 import type { TableNode, UnifiedNode } from '@/types/canvas'
-import { RichTextRenderer } from './RichTextRenderer'
+import { ptToMm } from '@/utils/units'
 import type { CanvasElementCommonProps } from '../types'
 import { TableHeaders } from './components/TableHeaders'
 import { TableResizeHandles } from './components/TableResizeHandles'
+import { RichTextRenderer } from './RichTextRenderer'
 
 interface TableRendererProps {
   element: TableNode
@@ -38,8 +37,6 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
 
   const rowCount = rows.length
   const colCount = cols.length
-
-
 
   // Track occupied cells due to row/col spans to avoid rendering duplicates.
   const occupied = Array(rowCount)
@@ -117,7 +114,6 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
       const y = getRowY(r)
       const w = getColWidth(c, cs)
       const h = getRowHeight(r, rs)
-
 
       // Fix: Default border width should be 0 if no border is specified, otherwise we get unwanted gridlines everywhere.
       const bg = cell?.bg
@@ -227,14 +223,23 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
       }
 
       // Debug: Log Header Cell (e.g. Blue cell) to see if it has explicit borders causing white gaps
-      if (r === 1 && c === 1) { // Adjust Row/Col as needed. r=1 is likely row 2.
-        console.log('[DEBUG] Header Cell Info:', JSON.stringify({
-          r, c,
-          v: cell?.v,
-          bg,
-          borders: cell?.borders, // Check if explicit borders exist
-          borderFallback: !cell?.borders
-        }, null, 2))
+      if (r === 1 && c === 1) {
+        // Adjust Row/Col as needed. r=1 is likely row 2.
+        console.log(
+          '[DEBUG] Header Cell Info:',
+          JSON.stringify(
+            {
+              r,
+              c,
+              v: cell?.v,
+              bg,
+              borders: cell?.borders, // Check if explicit borders exist
+              borderFallback: !cell?.borders,
+            },
+            null,
+            2
+          )
+        )
       }
 
       // 3. Text/Content Layer
@@ -261,7 +266,7 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
             wrap={!!cell.wrap}
           />
         )
-      } else if (!!cell?.v) {
+      } else if (cell?.v) {
         const isRight = align === 'r'
 
         // Style Logic
@@ -281,11 +286,11 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
         const isInvoiceHeader = typeof cell.v === 'string' && cell.v.includes('INVOICE')
         const shouldUnconstrain = !cell.wrap || isLargeText || !!cell.bold || isInvoiceHeader
 
-        let textW = (!cell.wrap ? undefined : Math.max(0, w - 2 * PADDING_X))
+        let textW = !cell.wrap ? undefined : Math.max(0, w - 2 * PADDING_X)
         let textX = x + PADDING_X
 
-        let textH = h - 2 * PADDING_Y // Constrain height with padding
-        let textY = y + PADDING_Y     // Offset Y
+        const textH = h - 2 * PADDING_Y // Constrain height with padding
+        const textY = y + PADDING_Y // Offset Y
 
         const LARGE_WIDTH = 5000
 
@@ -295,7 +300,7 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
         } else if (align === 'c') {
           if (shouldUnconstrain) {
             textW = LARGE_WIDTH
-            textX = x + (w / 2) - (LARGE_WIDTH / 2)
+            textX = x + w / 2 - LARGE_WIDTH / 2
           } else {
             textW = w - 2 * PADDING_X
           }
@@ -320,8 +325,8 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
             fontStyle={fontStyle}
             textDecoration={textDecoration}
             fill={color}
-            align={isRight ? 'right' : (align === 'c' ? 'center' : 'left')}
-            // Fix: Map 'bottom' (and default 'middle') to 'middle' to ensure visual centering. 
+            align={isRight ? 'right' : align === 'c' ? 'center' : 'left'}
+            // Fix: Map 'bottom' (and default 'middle') to 'middle' to ensure visual centering.
             // Only 'top' is respected as distinct.
             verticalAlign={vAlign === 't' ? 'top' : 'middle'}
             wrap={shouldUnconstrain ? 'none' : 'word'}

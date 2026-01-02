@@ -6,13 +6,13 @@
  */
 
 import React from 'react'
-import { useI18n } from '@/i18n/I18nContext'
 import { UnifiedPropertyPanel } from '@/features/konva-editor/components/PropertyPanel/UnifiedPropertyPanel'
 import type { WidgetProps } from '@/features/konva-editor/components/PropertyPanel/widgets'
 import { REPORT_PANEL_CONFIG } from '@/features/konva-editor/constants/propertyPanelConfig'
+import { applyTextLayoutUpdates } from '@/features/konva-editor/utils/textLayout'
+import { useI18n } from '@/i18n/I18nContext'
 import type { Doc, LineNode, TableNode, UnifiedNode } from '@/types/canvas'
 import type { IDataSchema } from '@/types/schema'
-import { applyTextLayoutUpdates } from '@/features/konva-editor/utils/textLayout'
 import { BindingSelector } from './BindingSelector'
 import { DataBindingModal } from './DataBindingModal'
 import { TableProperties } from './TableProperties'
@@ -33,7 +33,12 @@ export interface WysiwygPropertiesPanelProps {
   i18nOverrides?: Record<string, string>
   activeTool?: string
   onToolSelect?: (tool: string) => void
-  drawingSettings?: { stroke: string; strokeWidth: number; useOffset?: boolean; simplification?: number }
+  drawingSettings?: {
+    stroke: string
+    strokeWidth: number
+    useOffset?: boolean
+    simplification?: number
+  }
   onDrawingSettingsChange?: (settings: {
     stroke: string
     strokeWidth: number
@@ -84,135 +89,135 @@ const CanvasSettingsPanel: React.FC<{
   onSnapStrengthChange,
   resolveText,
 }) => {
-    const { t } = useI18n()
-    const currentSurface =
-      templateDoc.surfaces.find((s) => s.id === currentPageId) || templateDoc.surfaces[0]
-    const bg = currentSurface?.bg || '#ffffff'
-    const isColor = bg.startsWith('#') || bg.startsWith('rgb')
+  const { t } = useI18n()
+  const currentSurface =
+    templateDoc.surfaces.find((s) => s.id === currentPageId) || templateDoc.surfaces[0]
+  const bg = currentSurface?.bg || '#ffffff'
+  const isColor = bg.startsWith('#') || bg.startsWith('rgb')
 
-    const updateSurface = (updates: Partial<typeof currentSurface>) => {
-      const nextDoc = {
-        ...templateDoc,
-        surfaces: templateDoc.surfaces.map((s) =>
-          s.id === currentSurface.id ? { ...s, ...updates } : s
-        ),
-      }
-      onTemplateChange(nextDoc)
+  const updateSurface = (updates: Partial<typeof currentSurface>) => {
+    const nextDoc = {
+      ...templateDoc,
+      surfaces: templateDoc.surfaces.map((s) =>
+        s.id === currentSurface.id ? { ...s, ...updates } : s
+      ),
     }
+    onTemplateChange(nextDoc)
+  }
 
-    return (
-      <div className="w-64 bg-secondary px-2 py-1 overflow-x-hidden overflow-y-auto text-foreground">
-        {/* Page Background */}
-        <div className="mb-3">
-          <h4 className="text-[13px] font-medium text-muted-foreground mb-1">
-            {resolveText('properties_page_background', 'Background')}
-          </h4>
-          <div className="mb-1">
-            <label className={labelClass}>{resolveText('color', 'Color')}</label>
-            <input
-              type="color"
-              value={isColor ? bg : '#ffffff'}
-              onChange={(e) => updateSurface({ bg: e.target.value })}
-              className={`${inputClass} h-8 p-0.5 cursor-pointer`}
-            />
-          </div>
-          <div>
-            <label className={labelClass}>{resolveText('properties_image_url', 'Image URL')}</label>
-            <div className="flex gap-1 mb-1">
-              <input
-                value={!isColor ? bg : ''}
-                onChange={(e) => updateSurface({ bg: e.target.value })}
-                placeholder={resolveText('properties_image_url_placeholder', 'http://...')}
-                className={`${inputClass} flex-1`}
-              />
-              {!isColor && (
-                <button
-                  onClick={() => updateSurface({ bg: '#ffffff' })}
-                  className="px-2 py-1 text-xs bg-destructive text-destructive-foreground rounded hover:bg-destructive/90 transition-colors"
-                  title={resolveText('remove', 'Remove')}
-                >
-                  ×
-                </button>
-              )}
-            </div>
-            <label className="flex flex-col items-center justify-center w-full h-8 border border-border border-dashed rounded cursor-pointer hover:bg-muted transition-colors">
-              <span className="text-xs text-muted-foreground">
-                {resolveText('browse', 'Browse...')}
-              </span>
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) {
-                    const reader = new FileReader()
-                    reader.onload = (ev) => {
-                      const result = ev.target?.result as string
-                      if (result) {
-                        updateSurface({ bg: result })
-                      }
-                    }
-                    reader.readAsDataURL(file)
-                  }
-                }}
-              />
-            </label>
-          </div>
+  return (
+    <div className="w-64 bg-secondary px-2 py-1 overflow-x-hidden overflow-y-auto text-foreground">
+      {/* Page Background */}
+      <div className="mb-3">
+        <h4 className="text-[13px] font-medium text-muted-foreground mb-1">
+          {resolveText('properties_page_background', 'Background')}
+        </h4>
+        <div className="mb-1">
+          <label className={labelClass}>{resolveText('color', 'Color')}</label>
+          <input
+            type="color"
+            value={isColor ? bg : '#ffffff'}
+            onChange={(e) => updateSurface({ bg: e.target.value })}
+            className={`${inputClass} h-8 p-0.5 cursor-pointer`}
+          />
         </div>
-
-        {/* Grid Settings */}
-        {onShowGridChange && (
-          <div className="mb-3">
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-[13px] text-muted-foreground">
-                {t('settings_show_grid', 'Grid')}
-              </label>
-              <input
-                type="checkbox"
-                checked={showGrid ?? false}
-                onChange={(e) => onShowGridChange(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-            </div>
-            {showGrid && onGridSizeChange && (
-              <div>
-                <label className={labelClass}>{t('settings_grid_size', 'Size')}</label>
-                <select
-                  value={gridSize ?? 13}
-                  onChange={(e) => onGridSizeChange(Number(e.target.value))}
-                  className={inputClass}
-                >
-                  {FIBONACCI_GRID_SIZES.map((size) => (
-                    <option key={size} value={size}>
-                      {size}pt
-                    </option>
-                  ))}
-                </select>
-              </div>
+        <div>
+          <label className={labelClass}>{resolveText('properties_image_url', 'Image URL')}</label>
+          <div className="flex gap-1 mb-1">
+            <input
+              value={!isColor ? bg : ''}
+              onChange={(e) => updateSurface({ bg: e.target.value })}
+              placeholder={resolveText('properties_image_url_placeholder', 'http://...')}
+              className={`${inputClass} flex-1`}
+            />
+            {!isColor && (
+              <button
+                onClick={() => updateSurface({ bg: '#ffffff' })}
+                className="px-2 py-1 text-xs bg-destructive text-destructive-foreground rounded hover:bg-destructive/90 transition-colors"
+                title={resolveText('remove', 'Remove')}
+              >
+                ×
+              </button>
             )}
           </div>
-        )}
-
-        {/* Snap to Grid */}
-        {onSnapStrengthChange && (
-          <div className="mb-3">
-            <div className="flex items-center justify-between">
-              <label className="text-[13px] text-muted-foreground">
-                {t('settings_snap_to_grid', 'Snap to Grid')}
-              </label>
-              <input
-                type="checkbox"
-                checked={(snapStrength ?? 0) > 0}
-                onChange={(e) => onSnapStrengthChange(e.target.checked ? (gridSize ?? 15) : 0)}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-        )}
+          <label className="flex flex-col items-center justify-center w-full h-8 border border-border border-dashed rounded cursor-pointer hover:bg-muted transition-colors">
+            <span className="text-xs text-muted-foreground">
+              {resolveText('browse', 'Browse...')}
+            </span>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) {
+                  const reader = new FileReader()
+                  reader.onload = (ev) => {
+                    const result = ev.target?.result as string
+                    if (result) {
+                      updateSurface({ bg: result })
+                    }
+                  }
+                  reader.readAsDataURL(file)
+                }
+              }}
+            />
+          </label>
+        </div>
       </div>
-    )
-  }
+
+      {/* Grid Settings */}
+      {onShowGridChange && (
+        <div className="mb-3">
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-[13px] text-muted-foreground">
+              {t('settings_show_grid', 'Grid')}
+            </label>
+            <input
+              type="checkbox"
+              checked={showGrid ?? false}
+              onChange={(e) => onShowGridChange(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+          </div>
+          {showGrid && onGridSizeChange && (
+            <div>
+              <label className={labelClass}>{t('settings_grid_size', 'Size')}</label>
+              <select
+                value={gridSize ?? 13}
+                onChange={(e) => onGridSizeChange(Number(e.target.value))}
+                className={inputClass}
+              >
+                {FIBONACCI_GRID_SIZES.map((size) => (
+                  <option key={size} value={size}>
+                    {size}pt
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Snap to Grid */}
+      {onSnapStrengthChange && (
+        <div className="mb-3">
+          <div className="flex items-center justify-between">
+            <label className="text-[13px] text-muted-foreground">
+              {t('settings_snap_to_grid', 'Snap to Grid')}
+            </label>
+            <input
+              type="checkbox"
+              checked={(snapStrength ?? 0) > 0}
+              onChange={(e) => onSnapStrengthChange(e.target.checked ? (gridSize ?? 15) : 0)}
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 // ========================================
 // Signature Drawing Panel (署名描画モード時)
@@ -273,7 +278,10 @@ const SignatureDrawingPanel: React.FC<{
         step="0.1"
         value={drawingSettings.simplification ?? 0}
         onChange={(e) =>
-          onDrawingSettingsChange({ ...drawingSettings, simplification: parseFloat(e.target.value) })
+          onDrawingSettingsChange({
+            ...drawingSettings,
+            simplification: parseFloat(e.target.value),
+          })
         }
         className="w-full accent-accent"
       />
@@ -340,7 +348,9 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
   ) => {
     const currentNode = templateDoc.nodes.find((n) => n.id === id)
     const finalUpdates =
-      currentNode && currentNode.t === 'text' ? applyTextLayoutUpdates(currentNode, updates) : updates
+      currentNode && currentNode.t === 'text'
+        ? applyTextLayoutUpdates(currentNode, updates)
+        : updates
 
     const nextDoc: Doc = {
       ...templateDoc,
@@ -423,7 +433,9 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
             <input
               type="checkbox"
               checked={line.routing === 'orthogonal'}
-              onChange={e => handleChange(node.id, { routing: e.target.checked ? 'orthogonal' : 'straight' })}
+              onChange={(e) =>
+                handleChange(node.id, { routing: e.target.checked ? 'orthogonal' : 'straight' })
+              }
               className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             <span className="text-[13px] text-muted-foreground">Orthogonal Routing (90°)</span>
@@ -450,8 +462,10 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
             // Current end is at length-2, length-1
             // Previous point is at length-4, length-3
             const len = newPts.length
-            const p1x = newPts[len - 4], p1y = newPts[len - 3]
-            const p2x = newPts[len - 2], p2y = newPts[len - 1]
+            const p1x = newPts[len - 4],
+              p1y = newPts[len - 3]
+            const p2x = newPts[len - 2],
+              p2y = newPts[len - 1]
             const mx = (p1x + p2x) / 2
             const my = (p1y + p2y) / 2
             // Insert before end point (at index len-2)
@@ -465,7 +479,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
           // Last intermediate is at len-4.
           // Remove range: [len-2 - (removeCount*2), len-2] ?
           // Splice start index: length - 2 - (count * 2)
-          newPts.splice(newPts.length - 2 - (removeCount * 2), removeCount * 2)
+          newPts.splice(newPts.length - 2 - removeCount * 2, removeCount * 2)
         }
         handleChange(node.id, { pts: newPts })
       }
@@ -477,7 +491,7 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
             type="number"
             min="0"
             value={intermediateCount}
-            onChange={e => updateCount(parseInt(e.target.value, 10))}
+            onChange={(e) => updateCount(parseInt(e.target.value, 10))}
             className={inputClass}
           />
         </div>

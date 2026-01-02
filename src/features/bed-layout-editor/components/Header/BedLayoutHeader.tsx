@@ -1,9 +1,9 @@
 import type React from 'react'
-import { useI18n } from '@/i18n/I18nContext'
 import {
   EditorHeader,
   type EditorHeaderProps,
 } from '@/features/report-editor/components/Header/EditorHeader'
+import { useI18n } from '@/i18n/I18nContext'
 
 export const BedLayoutHeader: React.FC<EditorHeaderProps> = (props) => {
   const { t } = useI18n()

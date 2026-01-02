@@ -1,9 +1,10 @@
-import type { TableNode, Cell } from '@/types/canvas'
+import type { Cell, TableNode } from '@/types/canvas'
 
 const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0)
 const clamp = (v: number, min: number, max: number) => (v < min ? min : v > max ? max : v)
 
-const findCell = (cells: Cell[], r: number, c: number) => cells.find((cc) => cc.r === r && cc.c === c)
+const findCell = (cells: Cell[], r: number, c: number) =>
+  cells.find((cc) => cc.r === r && cc.c === c)
 
 const cellRect = (c: { r: number; c: number; rs?: number; cs?: number }) => {
   const rs = c.rs || 1
@@ -18,7 +19,11 @@ const rectIntersects = (
   return !(a.r2 < b.r1 || a.r1 > b.r2 || a.c2 < b.c1 || a.c1 > b.c2)
 }
 
-export const insertRow = (table: TableNode, targetRow: number, where: 'above' | 'below'): TableNode => {
+export const insertRow = (
+  table: TableNode,
+  targetRow: number,
+  where: 'above' | 'below'
+): TableNode => {
   const insertIndex = where === 'above' ? targetRow : targetRow + 1
   const newRows = [...table.table.rows]
 
@@ -83,7 +88,12 @@ export const insertRow = (table: TableNode, targetRow: number, where: 'above' | 
   }
 }
 
-export const insertCol = (table: TableNode, targetCol: number, targetRow: number, where: 'left' | 'right'): TableNode => {
+export const insertCol = (
+  table: TableNode,
+  targetCol: number,
+  targetRow: number,
+  where: 'left' | 'right'
+): TableNode => {
   const insertIndex = where === 'left' ? targetCol : targetCol + 1
   const newCols = [...table.table.cols]
 
@@ -107,7 +117,8 @@ export const insertCol = (table: TableNode, targetCol: number, targetRow: number
   for (let r = 0; r < table.table.rows.length; r++) {
     // Find template cell from the column where interaction happened
     const template =
-      cells.find((cell) => cell.r === r && cell.c === targetCol) || findCell(cells, targetRow, targetCol)
+      cells.find((cell) => cell.r === r && cell.c === targetCol) ||
+      findCell(cells, targetRow, targetCol)
 
     if (template) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -232,7 +243,12 @@ export const deleteCol = (table: TableNode, targetCol: number): TableNode => {
   }
 }
 
-export const mergeCells = (table: TableNode, targetRow: number, targetCol: number, direction: 'right' | 'down'): TableNode => {
+export const mergeCells = (
+  table: TableNode,
+  targetRow: number,
+  targetCol: number,
+  direction: 'right' | 'down'
+): TableNode => {
   const cells = [...table.table.cells]
 
   // Helper to ensure base exists (if sparse) - though in this pure function we might just create a temp one
@@ -243,13 +259,13 @@ export const mergeCells = (table: TableNode, targetRow: number, targetCol: numbe
   const findOrBase = (r: number, c: number) => {
     const found = findCell(cells, r, c)
     if (found) return found
-    // If not found, imply a default cell exists there? 
+    // If not found, imply a default cell exists there?
     // In the original code, it did `ensureBaseExists` which pushed to `cells`.
     return { r, c, v: '' } as Cell
   }
 
   const current = findOrBase(targetRow, targetCol)
-  // If the cell wasn't in the list, we should effectively "add" it to our consideration, 
+  // If the cell wasn't in the list, we should effectively "add" it to our consideration,
   // but if we are about to merge it, we need it in the final list.
   // The original code `ensureBaseExists` pushed it to `cells` so that subsequent logic would see it.
   const workingCells = [...cells]

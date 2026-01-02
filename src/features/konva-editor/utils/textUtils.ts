@@ -49,8 +49,6 @@ export const calculateTextDimensions = (text: string, fontSettings: FontSettings
     if (width > maxLineLength) maxLineLength = width
   }
 
-
-
   // Add padding (convert mm to px)
   const paddingMm = fontSettings.padding || 0
   const paddingPx = mmToPx(paddingMm, { dpi })
@@ -92,8 +90,8 @@ export const calculateTextDimensions = (text: string, fontSettings: FontSettings
     const h = maxChars * charHeight
 
     return {
-      w: pxToMm(w + (paddingPx * 2), { dpi }),
-      h: pxToMm(h + (paddingPx * 2), { dpi })
+      w: pxToMm(w + paddingPx * 2, { dpi }),
+      h: pxToMm(h + paddingPx * 2, { dpi }),
     }
   } else {
     // 横書き: w = 最長行の長さ(long), h = 行の積み重なり(stack)
@@ -102,8 +100,8 @@ export const calculateTextDimensions = (text: string, fontSettings: FontSettings
     const hLH = font.size * 1.2
     const hStack = lines.length * hLH
     return {
-      w: pxToMm(maxLineLength + (paddingPx * 2), { dpi }),
-      h: pxToMm(hStack + (paddingPx * 2), { dpi })
+      w: pxToMm(maxLineLength + paddingPx * 2, { dpi }),
+      h: pxToMm(hStack + paddingPx * 2, { dpi }),
     }
   }
 }

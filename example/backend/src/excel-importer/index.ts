@@ -4,4 +4,4 @@
 
 export { importExcel, importExcelFromFile } from './api'
 export type { ImportOptions } from './types/options'
-export type { OutputDoc, OutputSurface, OutputTableNode, OutputCell } from './types/output'
+export type { OutputCell, OutputDoc, OutputSurface, OutputTableNode } from './types/output'

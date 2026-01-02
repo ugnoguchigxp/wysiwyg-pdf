@@ -23,7 +23,7 @@ async function loadExcelJS() {
   try {
     const mod = await import('exceljs')
     return mod
-  } catch (err) {
+  } catch (_e) {
     throw new Error(
       'exceljs が見つかりません。example/backend 配下で `bun add exceljs` または `npm install exceljs` を実行してください。'
     )
@@ -38,7 +38,10 @@ type ExcelJSWorksheet = {
   columnCount: number
   getRow: (index: number) => unknown
   getColumn: (index: number) => unknown
-  eachRow: (options: { includeEmpty: boolean }, callback: (row: unknown, rowNumber: number) => void) => void
+  eachRow: (
+    options: { includeEmpty: boolean },
+    callback: (row: unknown, rowNumber: number) => void
+  ) => void
   model: {
     merges?: string[]
   }
@@ -85,7 +88,9 @@ export async function parseExcelFile(filePath: string): Promise<ExcelWorkbook> {
  * @returns 中間表現のワークブック
  */
 export function parseWorkbook(workbook: ExcelJSWorkbook): ExcelWorkbook {
-  const sheets = workbook.worksheets.map((ws: ExcelJSWorksheet, index: number) => parseSheet(ws, index))
+  const sheets = workbook.worksheets.map((ws: ExcelJSWorksheet, index: number) =>
+    parseSheet(ws as any, index)
+  )
 
   return {
     sheets,

@@ -2,11 +2,6 @@ import type Konva from 'konva'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Transformer } from 'react-konva'
-import { TextRenderer } from './renderers/TextRenderer'
-import { ShapeRenderer } from './renderers/ShapeRenderer'
-import { LineRenderer } from './renderers/LineRenderer'
-import { TableRenderer } from './renderers/TableRenderer'
-import { SignatureRenderer } from './renderers/SignatureRenderer'
 import type {
   ImageNode,
   LineNode,
@@ -15,11 +10,15 @@ import type {
   TableNode,
   TextNode,
 } from '../../types/canvas'
-
 // Helpers & Components Imports
 import { CanvasImage } from './CanvasImage'
 import { useCanvasDrag } from './hooks/useCanvasDrag'
 import { useCanvasTransform } from './hooks/useCanvasTransform'
+import { LineRenderer } from './renderers/LineRenderer'
+import { ShapeRenderer } from './renderers/ShapeRenderer'
+import { SignatureRenderer } from './renderers/SignatureRenderer'
+import { TableRenderer } from './renderers/TableRenderer'
+import { TextRenderer } from './renderers/TextRenderer'
 import type { CanvasElementCommonProps, CanvasElementRendererProps } from './types'
 
 export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
@@ -367,7 +366,7 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
     onDragEnd,
     onDragEnter,
     handleMindmapDragEnter,
-    onDragLeave
+    onDragLeave,
   ])
 
   return (
@@ -386,15 +385,15 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           enabledAnchors={
             !element.locked
               ? [
-                'top-left',
-                'top-right',
-                'bottom-left',
-                'bottom-right',
-                'middle-left',
-                'middle-right',
-                'top-center',
-                'bottom-center',
-              ]
+                  'top-left',
+                  'top-right',
+                  'bottom-left',
+                  'bottom-right',
+                  'middle-left',
+                  'middle-right',
+                  'top-center',
+                  'bottom-center',
+                ]
               : []
           }
           boundBoxFunc={(oldBox, newBox) => {

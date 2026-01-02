@@ -7,7 +7,6 @@
 
 import { ChevronDown } from 'lucide-react'
 import React from 'react'
-import { useI18n } from '@/i18n/I18nContext'
 import type {
   PresetRef,
   PropertyPanelConfig,
@@ -19,9 +18,10 @@ import {
   SECTION_PRESETS,
   WIDGET_PRESETS,
 } from '@/features/konva-editor/constants/propertyPanelConfig'
+import { applyTextLayoutUpdates } from '@/features/konva-editor/utils/textLayout'
+import { useI18n } from '@/i18n/I18nContext'
 import type { UnifiedNode } from '@/types/canvas'
 import { cn } from '@/utils/utils'
-import { applyTextLayoutUpdates } from '@/features/konva-editor/utils/textLayout'
 import type { WidgetProps } from './widgets'
 import { renderWidget } from './widgets'
 
@@ -32,7 +32,11 @@ import { renderWidget } from './widgets'
 export interface UnifiedPropertyPanelProps {
   config: PropertyPanelConfig
   selectedNode: UnifiedNode | null
-  onChange: (id: string, updates: Partial<UnifiedNode>, options?: { saveToHistory?: boolean }) => void
+  onChange: (
+    id: string,
+    updates: Partial<UnifiedNode>,
+    options?: { saveToHistory?: boolean }
+  ) => void
   onDelete?: (id: string) => void
   i18nOverrides?: Record<string, string>
   /** カスタムウィジェットレンダラー */

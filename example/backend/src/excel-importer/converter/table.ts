@@ -4,9 +4,9 @@
  * ページ範囲のセルを OutputTableNode に変換する
  */
 
-import type { ExcelSheet, ExcelRow, ExcelCell, MergedCell } from '../types/excel'
+import type { ExcelCell, ExcelRow, ExcelSheet, MergedCell } from '../types/excel'
 import type { ImportOptions } from '../types/options'
-import type { OutputTableNode, OutputCell, OutputBorderStyle } from '../types/output'
+import type { OutputBorderStyle, OutputCell, OutputTableNode } from '../types/output'
 import { convertCell } from './cell'
 import { borderWidth } from './style'
 
@@ -96,7 +96,7 @@ function collectCells(
     // local col is relative to range.startCol.
     // row.cells stores absolute col.
     const targetCol = range.startCol + c
-    return row.cells.find(cell => cell.col === targetCol)
+    return row.cells.find((cell) => cell.col === targetCol)
   }
 
   // Pre-calculate cell outputs (base)
@@ -200,7 +200,7 @@ function resolveEdge(
   // If equal width, we can use a style priority or just pick one.
   // borderWidth is a function, need to cast style if needed or trust it matches.
   // The style in OutputBorderStyle is string (CSS-like), but borderWidth expects BorderStyleType (Excel).
-  // Need to map or cast? 
+  // Need to map or cast?
   // OutputBorderStyle.style is usually 'solid', 'dashed' etc. which matches BorderStyleType roughly.
   // But strictly, OutputBorderStyle.style might be valid CSS ('solid', 'dashed', 'dotted', 'double').
   // BorderStyleType has more ('hair', 'mediumDashed'...).

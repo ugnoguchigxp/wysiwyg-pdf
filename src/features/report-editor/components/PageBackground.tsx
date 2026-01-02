@@ -4,58 +4,58 @@ import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImag
 import type { Surface } from '@/types/canvas'
 
 interface PageBackgroundProps {
-    width: number
-    height: number
-    surface: Surface
+  width: number
+  height: number
+  surface: Surface
 }
 
 export const PageBackground = ({ width, height, surface }: PageBackgroundProps) => {
-    const [image, setImage] = useState<HTMLImageElement | null>(null)
+  const [image, setImage] = useState<HTMLImageElement | null>(null)
 
-    const bg = surface.bg
-    const isColor = bg ? bg.startsWith('#') || bg.startsWith('rgb') : true
+  const bg = surface.bg
+  const isColor = bg ? bg.startsWith('#') || bg.startsWith('rgb') : true
 
-    useEffect(() => {
-        if (!bg || isColor) {
-            setImage(null)
-            return
-        }
+  useEffect(() => {
+    if (!bg || isColor) {
+      setImage(null)
+      return
+    }
 
-        if (!bg.startsWith('http') && !bg.startsWith('data:')) {
-            findImageWithExtension(bg).then((res) => {
-                if (res) setImage(res.img)
-            })
-        } else {
-            const img = new window.Image()
-            img.src = bg
-            img.onload = () => setImage(img)
-        }
-    }, [bg, isColor])
+    if (!bg.startsWith('http') && !bg.startsWith('data:')) {
+      findImageWithExtension(bg).then((res) => {
+        if (res) setImage(res.img)
+      })
+    } else {
+      const img = new window.Image()
+      img.src = bg
+      img.onload = () => setImage(img)
+    }
+  }, [bg, isColor])
 
-    return (
-        <>
-            <KonvaRect
-                name="_background"
-                x={0}
-                y={0}
-                width={width}
-                height={height}
-                fill={isColor ? bg || '#ffffff' : '#ffffff'}
-                shadowColor="black"
-                shadowBlur={10}
-                shadowOpacity={0.1}
-            />
-            {image && (
-                <KonvaImage
-                    name="_background"
-                    x={0}
-                    y={0}
-                    width={width}
-                    height={height}
-                    image={image}
-                    listening={false}
-                />
-            )}
-        </>
-    )
+  return (
+    <>
+      <KonvaRect
+        name="_background"
+        x={0}
+        y={0}
+        width={width}
+        height={height}
+        fill={isColor ? bg || '#ffffff' : '#ffffff'}
+        shadowColor="black"
+        shadowBlur={10}
+        shadowOpacity={0.1}
+      />
+      {image && (
+        <KonvaImage
+          name="_background"
+          x={0}
+          y={0}
+          width={width}
+          height={height}
+          image={image}
+          listening={false}
+        />
+      )}
+    </>
+  )
 }

@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import '@/features/konva-editor/styles/print.css'
-import { useI18n } from '@/i18n/I18nContext'
 import { RenderLine } from '@/features/konva-editor/renderers/print/elements/RenderLine'
 import { RenderShape } from '@/features/konva-editor/renderers/print/elements/RenderShape'
 import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
-import { mmToPt, ptToMm } from '@/utils/units'
 import { parseListLine } from '@/features/konva-editor/utils/textList'
+import { useI18n } from '@/i18n/I18nContext'
 import type {
   Doc,
   ImageNode,
@@ -15,6 +14,7 @@ import type {
   UnifiedNode,
   WidgetNode,
 } from '@/types/canvas'
+import { mmToPt, ptToMm } from '@/utils/units'
 
 const mmToPtValue = (mm: number | undefined) => mmToPt(mm ?? 0)
 const mmPt = (mm: number | undefined) => `${mmToPtValue(mm)}pt`
@@ -201,9 +201,7 @@ const BedPrintElement: React.FC<{
       return lines.map((line, index) => {
         const parsed = parseListLine(line, { vertical: false })
         if (!parsed.isList || !parsed.type || !parsed.markerText) {
-          return (
-            <div key={`line-${index}`}>{line === '' ? '\u00A0' : line}</div>
-          )
+          return <div key={`line-${index}`}>{line === '' ? '\u00A0' : line}</div>
         }
 
         const indentSpaces = ' '.repeat(parsed.indentLength)
@@ -211,10 +209,10 @@ const BedPrintElement: React.FC<{
         const markerStyle =
           parsed.type === 'number'
             ? {
-              fontSize: `${mmToPtValue(fontSizeMm * numberMarkerScale)}pt`,
-              verticalAlign: 'middle',
-              display: 'inline-block',
-            }
+                fontSize: `${mmToPtValue(fontSizeMm * numberMarkerScale)}pt`,
+                verticalAlign: 'middle',
+                display: 'inline-block',
+              }
             : undefined
 
         return (

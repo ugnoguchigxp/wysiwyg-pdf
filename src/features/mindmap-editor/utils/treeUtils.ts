@@ -1,4 +1,4 @@
-import type { UnifiedNode, LineNode } from '@/types/canvas'
+import type { LineNode, UnifiedNode } from '@/types/canvas'
 import type { MindmapGraph } from '../types'
 
 export const buildMindmapGraph = (nodes: UnifiedNode[]): MindmapGraph => {

@@ -52,7 +52,12 @@ export interface OutputAsset {
 // Nodes
 // ========================================
 
-export type OutputNode = OutputTableNode | OutputTextNode | OutputShapeNode | OutputLineNode | OutputImageNode
+export type OutputNode =
+  | OutputTableNode
+  | OutputTextNode
+  | OutputShapeNode
+  | OutputLineNode
+  | OutputImageNode
 
 interface OutputBaseNode {
   id: string

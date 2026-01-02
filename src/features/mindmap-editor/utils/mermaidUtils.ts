@@ -1,6 +1,6 @@
-import type { Doc, TextNode, LineNode, UnifiedNode } from '@/types/canvas'
-import type { MindmapGraph } from '../types'
+import type { Doc, LineNode, TextNode, UnifiedNode } from '@/types/canvas'
 import { generateNodeId, generateSurfaceId } from '@/utils/id'
+import type { MindmapGraph } from '../types'
 
 interface ParsedNode {
   text: string
@@ -21,7 +21,7 @@ export const exportToMermaid = (_doc: Doc, graph: MindmapGraph): string => {
   if (!rootNode || rootNode.t !== 'text') return ''
 
   const rootText = (rootNode as TextNode).text
-  const sanitizedRootText = /[\(\)\[\]\{\}\n]/.test(rootText)
+  const sanitizedRootText = /[()[\]{}\n]/.test(rootText)
     ? `"${rootText.replace(/"/g, "'")}"`
     : rootText
   lines.push(`  root((${sanitizedRootText}))`)
@@ -34,7 +34,7 @@ export const exportToMermaid = (_doc: Doc, graph: MindmapGraph): string => {
         const indent = '  '.repeat(depth + 1)
         const text = (child as TextNode).text
         // Sanitize: Wrap in quotes if it contains special chars or newlines
-        const sanitizedText = /[\(\)\[\]\{\}\n]/.test(text) ? `"${text.replace(/"/g, "'")}"` : text
+        const sanitizedText = /[()[\]{}\n]/.test(text) ? `"${text.replace(/"/g, "'")}"` : text
         lines.push(`${indent}${sanitizedText}`)
         buildTree(childId, depth + 1)
       }
@@ -140,11 +140,7 @@ const buildDoc = (rootText: string, tree: ParsedNode[], surfaceId: string): Doc 
    * ノードを再帰的に構築
    * isRight: 右側に配置するかどうか（レイアウトエンジンで使用）
    */
-  const buildNodes = (
-    parentId: string,
-    children: ParsedNode[],
-    isRight: boolean
-  ) => {
+  const buildNodes = (parentId: string, children: ParsedNode[], isRight: boolean) => {
     children.forEach((child) => {
       const childId = generateNodeId(tempDoc, 'text')
       tempDoc.nodes.push({ id: childId, t: 'text' } as UnifiedNode)

@@ -5,6 +5,8 @@ import {
   ArrowUp,
   BedDouble,
   Circle,
+  ClipboardPaste,
+  Copy,
   Database,
   Diamond,
   Heart,
@@ -21,11 +23,8 @@ import {
   Type,
   ZoomIn,
   ZoomOut,
-  Copy,
-  ClipboardPaste,
 } from 'lucide-react'
 import type React from 'react'
-import { useI18n } from '@/i18n/I18nContext'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,6 +33,7 @@ import {
 } from '@/components/ui/DropdownMenu'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/Tooltip'
 import { calculateInitialTextBoxSize } from '@/features/konva-editor/utils/textLayout'
+import { useI18n } from '@/i18n/I18nContext'
 import type {
   Doc,
   ImageNode,

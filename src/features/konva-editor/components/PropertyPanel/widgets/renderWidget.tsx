@@ -20,8 +20,8 @@ import { SelectWidget } from './SelectWidget'
 import { SliderWidget } from './SliderWidget'
 import { StrokeWidget } from './StrokeWidget'
 import { TextContentWidget } from './TextContentWidget'
-import { VAlignmentWidget } from './VAlignmentWidget'
 import type { WidgetProps } from './types'
+import { VAlignmentWidget } from './VAlignmentWidget'
 
 export const renderWidget = (
   config: WidgetConfig,

@@ -4,7 +4,7 @@
  * ExcelJSのCellを中間表現に変換
  */
 
-import type { ExcelCell, CellValue, ExcelRichText } from '../types/excel'
+import type { CellValue, ExcelCell, ExcelRichText } from '../types/excel'
 import { parseCellStyle } from './style'
 
 // ExcelJSの型（プレースホルダー）
@@ -183,22 +183,14 @@ function extractRichTextValue(value: unknown): CellValue {
  * ハイパーリンクかどうかを判定
  */
 function isHyperlink(value: unknown): boolean {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'hyperlink' in value
-  )
+  return typeof value === 'object' && value !== null && 'hyperlink' in value
 }
 
 /**
  * エラー値かどうかを判定
  */
 function isErrorValue(value: unknown): boolean {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'error' in value
-  )
+  return typeof value === 'object' && value !== null && 'error' in value
 }
 
 /**

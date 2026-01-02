@@ -1,12 +1,10 @@
 import { useCallback } from 'react'
 import type { Doc, LineNode, TextNode, UnifiedNode } from '@/types/canvas'
+import { generateNodeId } from '@/utils/id'
 import type { MindmapGraph } from '../types'
 import { getSubtreeIds } from '../utils/treeUtils'
-import { generateNodeId } from '@/utils/id'
 
 type NodeUpdate = Partial<UnifiedNode> & { id: string }
-
-
 
 interface UseMindmapOperationsParams {
   setDoc: (
@@ -50,7 +48,10 @@ export const useMindmapOperations = ({
       }
 
       const newId = generateNodeId(prev, 'text')
-      const linkId = generateNodeId({ ...prev, nodes: [...prev.nodes, { id: newId } as UnifiedNode] }, 'line')
+      const linkId = generateNodeId(
+        { ...prev, nodes: [...prev.nodes, { id: newId } as UnifiedNode] },
+        'line'
+      )
 
       const newNode: TextNode = {
         id: newId,
@@ -125,7 +126,10 @@ export const useMindmapOperations = ({
       }
 
       const newId = generateNodeId(prev, 'text')
-      const linkId = generateNodeId({ ...prev, nodes: [...prev.nodes, { id: newId } as UnifiedNode] }, 'line')
+      const linkId = generateNodeId(
+        { ...prev, nodes: [...prev.nodes, { id: newId } as UnifiedNode] },
+        'line'
+      )
 
       const newNode: TextNode = {
         id: newId,
@@ -249,31 +253,28 @@ export const useMindmapOperations = ({
     })
   }, [selectedNodeId, graph])
 
-  const removeChildNode = useCallback(
-    (parentId: string, childId: string) => {
-      setDoc((prev) => {
-        // Find line connecting parent -> child
-        // Relying on state (prev.nodes) is safer than graph prop which might be stale
-        const newNodes = prev.nodes.filter((n) => {
-          if (n.t === 'line') {
-            const line = n as LineNode
-            if (line.endConn?.nodeId === childId && line.startConn?.nodeId === parentId) {
-              return false
-            }
+  const removeChildNode = useCallback((parentId: string, childId: string) => {
+    setDoc((prev) => {
+      // Find line connecting parent -> child
+      // Relying on state (prev.nodes) is safer than graph prop which might be stale
+      const newNodes = prev.nodes.filter((n) => {
+        if (n.t === 'line') {
+          const line = n as LineNode
+          if (line.endConn?.nodeId === childId && line.startConn?.nodeId === parentId) {
+            return false
           }
-          return true
-        })
-
-        if (newNodes.length === prev.nodes.length) return prev
-
-        return {
-          ...prev,
-          nodes: newNodes,
         }
+        return true
       })
-    },
-    []
-  )
+
+      if (newNodes.length === prev.nodes.length) return prev
+
+      return {
+        ...prev,
+        nodes: newNodes,
+      }
+    })
+  }, [])
 
   const addChildNodeTo = useCallback((parentId: string, childId: string) => {
     setDoc((prev) => {
@@ -366,7 +367,9 @@ export const useMindmapOperations = ({
 
         if (position !== 'child') {
           // If 'before' or 'after', we attach to target's parent
-          const targetLine = prev.nodes.find(n => n.t === 'line' && (n as LineNode).endConn?.nodeId === targetId) as LineNode
+          const targetLine = prev.nodes.find(
+            (n) => n.t === 'line' && (n as LineNode).endConn?.nodeId === targetId
+          ) as LineNode
           if (targetLine?.startConn?.nodeId) {
             parentId = targetLine.startConn.nodeId
           } else {
@@ -376,7 +379,8 @@ export const useMindmapOperations = ({
           }
         }
 
-        const parent = prev.nodes.find((n) => n.id === parentId) || prev.nodes.find(n => n.id === targetId)
+        const parent =
+          prev.nodes.find((n) => n.id === parentId) || prev.nodes.find((n) => n.id === targetId)
 
         if (!parent) return { ...prev, nodes: newNodes }
 

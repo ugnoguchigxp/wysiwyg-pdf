@@ -1,7 +1,7 @@
 import { Keyboard } from 'lucide-react'
 import React from 'react'
-import { useI18n } from '@/i18n/I18nContext'
 import { Modal, ModalFooter } from '@/components/ui/Modal'
+import { useI18n } from '@/i18n/I18nContext'
 
 interface ShortcutHelpModalProps {
   open: boolean

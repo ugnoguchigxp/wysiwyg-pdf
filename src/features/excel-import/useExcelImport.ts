@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
+import type { Doc } from '../../types/canvas'
 import { excelToDoc } from './excelToDoc'
 import type { ExcelImportOptions } from './types'
-import type { Doc } from '../../types/canvas'
 
 const MAX_SIZE = 10 * 1024 * 1024 // 10MB
 
@@ -14,7 +14,10 @@ interface UseExcelImportReturn {
   error: string | null
 }
 
-export function useExcelImport(onSuccess: (doc: Doc) => void, options: ExcelImportOptions = {}): UseExcelImportReturn {
+export function useExcelImport(
+  onSuccess: (doc: Doc) => void,
+  options: ExcelImportOptions = {}
+): UseExcelImportReturn {
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)

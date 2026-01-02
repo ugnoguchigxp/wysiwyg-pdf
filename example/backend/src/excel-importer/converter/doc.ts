@@ -5,8 +5,8 @@
  */
 
 import type { ExcelWorkbook } from '../types/excel'
-import type { OutputDoc } from '../types/output'
 import type { ImportOptions } from '../types/options'
+import type { OutputDoc } from '../types/output'
 import { convertSheet } from './surface'
 
 /**
@@ -16,10 +16,7 @@ import { convertSheet } from './surface'
  * @param options インポートオプション
  * @returns OutputDoc
  */
-export function convertWorkbook(
-  workbook: ExcelWorkbook,
-  options: ImportOptions = {}
-): OutputDoc {
+export function convertWorkbook(workbook: ExcelWorkbook, options: ImportOptions = {}): OutputDoc {
   const docId = options.documentId ?? generateId()
   const title = options.documentTitle ?? workbook.metadata?.title ?? 'Untitled'
 

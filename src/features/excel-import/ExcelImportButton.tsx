@@ -1,6 +1,6 @@
-import { useExcelImport } from './useExcelImport'
 import type { Doc } from '../../types/canvas'
 import type { ExcelImportOptions } from './types'
+import { useExcelImport } from './useExcelImport'
 
 interface Props {
   onImport: (doc: Doc) => void

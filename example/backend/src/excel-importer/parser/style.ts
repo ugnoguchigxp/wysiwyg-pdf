@@ -5,14 +5,14 @@
  */
 
 import type {
-  CellStyle,
-  FontInfo,
-  FillInfo,
+  AlignmentInfo,
   BorderInfo,
   BorderStyle,
   BorderStyleType,
-  AlignmentInfo,
+  CellStyle,
   ColorInfo,
+  FillInfo,
+  FontInfo,
 } from '../types/excel'
 
 // ExcelJSの型（プレースホルダー）
@@ -216,9 +216,7 @@ function parseAlignment(alignment: ExcelJSAlignment): AlignmentInfo {
 /**
  * 水平配置を正規化
  */
-function normalizeHorizontalAlignment(
-  align?: string
-): AlignmentInfo['horizontal'] {
+function normalizeHorizontalAlignment(align?: string): AlignmentInfo['horizontal'] {
   const mapping: Record<string, AlignmentInfo['horizontal']> = {
     left: 'left',
     center: 'center',
@@ -234,9 +232,7 @@ function normalizeHorizontalAlignment(
 /**
  * 垂直配置を正規化
  */
-function normalizeVerticalAlignment(
-  align?: string
-): AlignmentInfo['vertical'] {
+function normalizeVerticalAlignment(align?: string): AlignmentInfo['vertical'] {
   const mapping: Record<string, AlignmentInfo['vertical']> = {
     top: 'top',
     middle: 'middle',
