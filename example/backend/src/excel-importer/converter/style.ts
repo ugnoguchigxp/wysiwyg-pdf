@@ -102,7 +102,7 @@ function convertBorderSide(
  */
 type BorderSide = 'top' | 'right' | 'bottom' | 'left' | 'diagonal'
 
-function pickBorder(
+export function pickBorder(
   border: NonNullable<CellStyle['border']> | undefined
 ): { style: NonNullable<NonNullable<CellStyle['border']>[BorderSide]>['style']; color?: NonNullable<NonNullable<CellStyle['border']>[BorderSide]>['color'] } | undefined {
   if (!border) return undefined

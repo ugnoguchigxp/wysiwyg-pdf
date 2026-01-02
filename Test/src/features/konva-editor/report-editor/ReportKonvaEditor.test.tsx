@@ -36,7 +36,7 @@ vi.mock('@/components/canvas/CanvasElementRenderer', () => ({
             data-testid={`ctx-${props.element.id}-0-0`}
             onClick={() =>
               props.onContextMenu?.({
-                evt: { preventDefault: () => {}, clientX: 12, clientY: 34 },
+                evt: { preventDefault: () => { }, clientX: 12, clientY: 34 },
                 target: {
                   id: () => `${props.element.id}_cell_0_0`,
                   getParent: () => null,
@@ -97,11 +97,11 @@ vi.mock('react-konva', async () => {
 
     const stageObj = {
       toDataURL: stageState.toDataURL,
-      setPointersPositions: () => {},
+      setPointersPositions: () => { },
       getPointerPosition: () => stageState.pointer,
       getAbsoluteTransform: () => ({
         copy: () => ({
-          invert: () => {},
+          invert: () => { },
           point: (p: any) => p,
         }),
       }),
@@ -143,7 +143,7 @@ import { useCanvasTransform } from '../../../../../src/components/canvas/hooks/u
 
 beforeEach(() => {
   if (!globalThis.crypto || !('randomUUID' in globalThis.crypto)) {
-    ;(globalThis as any).crypto = { randomUUID: () => 'uuid' }
+    ; (globalThis as any).crypto = { randomUUID: () => 'uuid' }
   }
 })
 
@@ -239,7 +239,7 @@ describe('ReportKonvaEditor', () => {
       nodes: [],
     } as any
 
-    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => { })
 
     const { container } = render(
       <ReportKonvaEditor
@@ -265,8 +265,8 @@ describe('ReportKonvaEditor', () => {
     const next = onTemplateChange.mock.calls[0]?.[0] as Doc
     const added = (next.nodes ?? []).find((n: any) => n.t === 'text' && n.bind === 'cat.f1') as any
     expect(added).toBeTruthy()
-    expect(added.text).toBe('Hello')
-    expect(added.fontSize).toBeCloseTo(ptToMm(12), 10)
+    expect(added.text).toBe('{Hello}')
+    expect(added.fontSize).toBeCloseTo(ptToMm(10), 10)
     expect(added.x).toBeCloseTo(pxToMm(10, { dpi: 96 }), 10)
     expect(added.y).toBeCloseTo(pxToMm(20, { dpi: 96 }), 10)
 
@@ -377,7 +377,7 @@ describe('ReportKonvaEditor', () => {
     } as any
 
     localStorage.clear()
-    ;(globalThis.crypto as any).randomUUID = () => 'pasted-id'
+      ; (globalThis.crypto as any).randomUUID = () => 'pasted-id'
 
     render(
       <ReportKonvaEditor
@@ -620,6 +620,7 @@ describe('ReportKonvaEditor', () => {
         onElementSelect={onElementSelect}
         onTemplateChange={onTemplateChange}
         currentPageId="p1"
+        activeTool="select"
       />
     )
 

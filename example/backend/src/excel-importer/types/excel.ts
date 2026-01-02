@@ -168,7 +168,7 @@ export interface CellStyle {
 
 export interface FontInfo {
   name: string
-  size: number // pt
+  size?: number // pt
   bold?: boolean
   italic?: boolean
   underline?: boolean | 'single' | 'double'

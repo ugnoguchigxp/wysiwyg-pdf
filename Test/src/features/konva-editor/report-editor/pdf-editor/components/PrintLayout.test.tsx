@@ -9,7 +9,10 @@ vi.mock('@/features/konva-editor/utils/canvasImageUtils', () => ({
   })),
 }))
 
-import { PrintLayout, RenderLine, RenderShape, RenderSignature } from '@/features/konva-editor/renderers/print/ReportPrintLayout'
+import { PrintLayout } from '@/features/konva-editor/renderers/print/ReportPrintLayout'
+import { RenderLine } from '@/features/konva-editor/renderers/print/elements/RenderLine'
+import { RenderShape } from '@/features/konva-editor/renderers/print/elements/RenderShape'
+import { RenderSignature } from '@/features/konva-editor/renderers/print/elements/RenderSignature'
 
 describe('PrintLayout', () => {
   it('renders pages and elements (including bg image resolution)', async () => {

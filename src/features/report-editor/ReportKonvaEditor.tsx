@@ -52,39 +52,13 @@ interface ReportKonvaEditorProps {
   gridSize?: number
 }
 
-const getRowY = (rows: number[], rowIndex: number) => {
-  let y = 0
-  for (let i = 0; i < rowIndex; i++) {
-    if (rows[i] !== undefined) y += rows[i]
-  }
-  return y
-}
-
-const getColX = (cols: number[], colIndex: number) => {
-  let x = 0
-  for (let i = 0; i < colIndex; i++) {
-    if (cols[i] !== undefined) x += cols[i]
-  }
-  return x
-}
-
-const getRowHeight = (rows: number[], rowIndex: number, span: number = 1) => {
-  let h = 0
-  for (let i = 0; i < span; i++) {
-    const rh = rows[rowIndex + i]
-    if (rh !== undefined) h += rh
-  }
-  return h
-}
-
-const getColWidth = (cols: number[], colIndex: number, span: number = 1) => {
-  let w = 0
-  for (let i = 0; i < span; i++) {
-    const cw = cols[colIndex + i]
-    if (cw !== undefined) w += cw
-  }
-  return w
-}
+import {
+  getColWidth,
+  getColX,
+  getRowHeight,
+  getRowY,
+  getCellAt,
+} from './utils/tableUtils'
 
 // PageBackground moved to components/PageBackground
 
@@ -291,61 +265,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       setEditingCell(null)
     }
 
-    const getCellAt = (table: TableNode) => {
-      // Convert stage (pointer) coordinates to Table-relative coordinates (mm)
-      // table.x/y are in mm.
-      // stageX/Y are in px (screen).
-      // we need local mm.
 
-      // Stage transformation:
-      // Screen Px = (Logic Mm * displayScale)
-      // So Logic Mm = Screen Px / displayScale.
-
-      // But stageRef might be panned? Stage has {x, y} (if draggable, but here fixed 0,0 usually or viewport).
-      // Let's assume Stage is 0,0 based on rendering.
-      // Actually Stage has scale.
-      // Pointer Position is absolute on Stage.
-
-      const pointer = stageRef.current?.getPointerPosition()
-      if (!pointer) return null
-
-      const logicX = pointer.x / displayScale
-      const logicY = pointer.y / displayScale
-
-      const localX = logicX - (table.x || 0)
-      const localY = logicY - (table.y || 0)
-
-      if (localX < 0 || localY < 0) return null
-
-      // Find Column
-      let cx = 0
-      let colIndex = -1
-      for (let i = 0; i < table.table.cols.length; i++) {
-        const w = table.table.cols[i]
-        if (localX >= cx && localX < cx + w) {
-          colIndex = i
-          break
-        }
-        cx += w
-      }
-
-      // Find Row
-      let cy = 0
-      let rowIndex = -1
-      for (let i = 0; i < table.table.rows.length; i++) {
-        const h = table.table.rows[i]
-        if (localY >= cy && localY < cy + h) {
-          rowIndex = i
-          break
-        }
-        cy += h
-      }
-
-      if (colIndex >= 0 && rowIndex >= 0) {
-        return { row: rowIndex, col: colIndex }
-      }
-      return null
-    }
 
     const handleDelete = () => {
       if (selectedElementId) {
@@ -487,7 +407,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
         const payload = JSON.parse(jsonData)
         if (payload.type !== 'binding') return
 
-        const { text } = payload.data
+        const { text, fieldId } = payload.data
 
         stageRef.current.setPointersPositions(e)
         const stagePos = stageRef.current.getPointerPosition()
@@ -504,6 +424,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
           w: 100,
           h: 10,
           text: `{${text}}`,
+          bind: fieldId,
           fontSize: ptToMm(10),
           fill: '#000000',
           align: 'l', // Fixed align type
@@ -577,6 +498,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
                     if (element.t === 'table' && element.id === elementId) {
                       setEditingCell({ elementId, row: r, col: c })
                       setSelectedCell({ elementId, row: r, col: c })
+                      handleElementSelect(element)
                     }
                   }}
                   onChange={handleElementChange}
@@ -584,7 +506,11 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
                     if (element.t === 'text') {
                       setEditingElementId(element.id)
                     } else if (element.t === 'table') {
-                      const cell = getCellAt(element) // getCellAt computes from pointer internally
+                      const cell = getCellAt(
+                        element,
+                        stageRef.current?.getPointerPosition() || null,
+                        displayScale
+                      )
                       if (cell) {
                         setEditingCell({ elementId: element.id, ...cell })
                         setSelectedCell({ elementId: element.id, ...cell }) // Also select it

@@ -21,10 +21,10 @@ app.use("*", async (c, next) => {
 
 app.route("/api", routes);
 
-app.get('*', async (c) => {
+app.all('*', async (c) => {
     if (c.env.ASSETS) {
         const res = await c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
-        return res;
+        return res as unknown as Response;
     }
     return c.text("Not Found", 404);
 });

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import '@/features/konva-editor/styles/print.css'
 import { useI18n } from '@/i18n/I18nContext'
-import { RenderLine, RenderShape } from '@/features/konva-editor/renderers/print/ReportPrintLayout'
+import { RenderLine } from '@/features/konva-editor/renderers/print/elements/RenderLine'
+import { RenderShape } from '@/features/konva-editor/renderers/print/elements/RenderShape'
 import { findImageWithExtension } from '@/features/konva-editor/utils/canvasImageUtils'
 import { mmToPt, ptToMm } from '@/utils/units'
 import { parseListLine } from '@/features/konva-editor/utils/textList'
@@ -210,10 +211,10 @@ const BedPrintElement: React.FC<{
         const markerStyle =
           parsed.type === 'number'
             ? {
-                fontSize: `${mmToPtValue(fontSizeMm * numberMarkerScale)}pt`,
-                verticalAlign: 'middle',
-                display: 'inline-block',
-              }
+              fontSize: `${mmToPtValue(fontSizeMm * numberMarkerScale)}pt`,
+              verticalAlign: 'middle',
+              display: 'inline-block',
+            }
             : undefined
 
         return (

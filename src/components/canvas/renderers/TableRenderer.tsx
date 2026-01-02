@@ -1,10 +1,12 @@
-import type Konva from 'konva'
+
 import type React from 'react'
 import { Group, Rect, Text } from 'react-konva'
 import { ptToMm } from '@/utils/units'
 import type { TableNode, UnifiedNode } from '@/types/canvas'
 import { RichTextRenderer } from './RichTextRenderer'
 import type { CanvasElementCommonProps } from '../types'
+import { TableHeaders } from './components/TableHeaders'
+import { TableResizeHandles } from './components/TableResizeHandles'
 
 interface TableRendererProps {
   element: TableNode
@@ -37,8 +39,7 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
   const rowCount = rows.length
   const colCount = cols.length
 
-  const totalW = cols.reduce((acc, v) => acc + (v ?? 0), 0)
-  const totalH = rows.reduce((acc, v) => acc + (v ?? 0), 0)
+
 
   // Track occupied cells due to row/col spans to avoid rendering duplicates.
   const occupied = Array(rowCount)
@@ -117,7 +118,7 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
       const w = getColWidth(c, cs)
       const h = getRowHeight(r, rs)
 
-      const _borderColor = cell?.borderColor || cell?.border || '#cccccc'
+
       // Fix: Default border width should be 0 if no border is specified, otherwise we get unwanted gridlines everywhere.
       const bg = cell?.bg
       const fontSize = cell?.fontSize ?? ptToMm(12)
@@ -354,213 +355,40 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
   rendered.push(...backgrounds, ...borders, ...texts)
 
   // ==================================================================================================
-  // Debug Headers (A, B, C... / 1, 2, 3...)
+  // Headers (A, B, C... / 1, 2, 3...)
   // ==================================================================================================
-  const HEADER_BG = '#f3f4f6'
-  const HEADER_BORDER = '#d1d5db'
-  const HEADER_TEXT = '#6b7280'
-  const COL_HEADER_H = 24 * invScale
-  const ROW_HEADER_W = 32 * invScale
-  const FONT_SIZE = 10 * invScale
-
-  const toColumnName = (num: number): string => {
-    let s = ''
-    let t = num + 1
-    while (t > 0) {
-      let m = (t - 1) % 26
-      s = String.fromCharCode(65 + m) + s
-      t = Math.floor((t - m) / 26)
-    }
-    return s
-  }
-
-  // Column Headers (Top)
-  for (let c = 0; c < colCount; c++) {
-    const x = getColX(c)
-    const w = cols[c] ?? 0
-    rendered.push(
-      <Group key={`col_header_${c}`} x={x} y={-COL_HEADER_H} name="table-header-ui">
-        <Rect width={w} height={COL_HEADER_H} fill={HEADER_BG} stroke={HEADER_BORDER} strokeWidth={1 * invScale} />
-        <Text
-          x={0} y={0} width={w} height={COL_HEADER_H}
-          text={toColumnName(c)}
-          align="center" verticalAlign="middle"
-          fontSize={FONT_SIZE} fill={HEADER_TEXT}
-        />
-      </Group>
-    )
-  }
-
-  // Row Headers (Left)
-  for (let r = 0; r < rowCount; r++) {
-    const y = getRowY(r)
-    const h = rows[r] ?? 0
-    rendered.push(
-      <Group key={`row_header_${r}`} x={-ROW_HEADER_W} y={y} name="table-header-ui">
-        <Rect width={ROW_HEADER_W} height={h} fill={HEADER_BG} stroke={HEADER_BORDER} strokeWidth={1 * invScale} />
-        <Text
-          x={0} y={0} width={ROW_HEADER_W} height={h}
-          text={String(r + 1)}
-          align="center" verticalAlign="middle"
-          fontSize={FONT_SIZE} fill={HEADER_TEXT}
-        />
-      </Group>
-    )
-  }
-  // Corner Box
   rendered.push(
-    <Rect key="header_corner" x={-ROW_HEADER_W} y={-COL_HEADER_H} width={ROW_HEADER_W} height={COL_HEADER_H} fill={HEADER_BG} stroke={HEADER_BORDER} strokeWidth={1 * invScale} name="table-header-ui" />
+    <TableHeaders
+      key="table_headers"
+      rowCount={rowCount}
+      colCount={colCount}
+      rows={rows}
+      cols={cols}
+      getRowY={getRowY}
+      getColX={getColX}
+      invScale={invScale}
+    />
   )
 
-  const handles: React.ReactNode[] = []
-  const HANDLE_SIZE = 8 * invScale
-  const MIN_ROW = 10
-  const MIN_COL = 10
-
   if (isSelected && !readOnly) {
-    // Row resize handles
-    for (let i = 0; i < rowCount - 1; i++) {
-      const boundaryY = getRowY(i + 1)
-
-      handles.push(
-        <Rect
-          key={`${tableElement.id}_row_handle_${i} `}
-          x={0}
-          y={boundaryY - HANDLE_SIZE / 2}
-          width={totalW}
-          height={HANDLE_SIZE}
-          fill="transparent"
-          draggable
-          dragBoundFunc={function (this: Konva.Node, pos) {
-            const parent = this.getParent()
-            if (!parent) return pos
-
-            const transform = parent.getAbsoluteTransform().copy()
-            transform.invert()
-            const localPos = transform.point(pos)
-
-            // Allow free movement along Y in local space, lock X to 0
-            const newLocal = { x: 0, y: localPos.y }
-            return parent.getAbsoluteTransform().point(newLocal)
-          }}
-          onMouseEnter={(e) => {
-            const container = e.target.getStage()?.container()
-            if (container) container.style.cursor = 'row-resize'
-          }}
-          onMouseLeave={(e) => {
-            const container = e.target.getStage()?.container()
-            if (container) container.style.cursor = 'default'
-          }}
-          onDragStart={(e) => {
-            const node = e.target as Konva.Shape
-            node.fill('#3b82f6')
-          }}
-          onDragEnd={(e) => {
-            e.cancelBubble = true
-            const node = e.target as Konva.Shape
-            node.fill('transparent')
-            const delta = node.y() - (boundaryY - HANDLE_SIZE / 2)
-
-            // Reset visual position immediately - React will re-render with new rows if valid
-            node.position({ x: 0, y: boundaryY - HANDLE_SIZE / 2 })
-
-            if (Math.abs(delta) < 0.01) return
-
-            const newRows = [...rows]
-            const topH = (newRows[i] ?? 0) + delta
-            const bottomH = (newRows[i + 1] ?? 0) - delta
-            if (topH >= MIN_ROW && bottomH >= MIN_ROW) {
-              newRows[i] = topH
-              newRows[i + 1] = bottomH
-              onChange({
-                id: tableElement.id,
-                h: newRows.reduce((acc, v) => acc + (v ?? 0), 0),
-                table: {
-                  ...tableElement.table,
-                  rows: newRows,
-                },
-              } as unknown as Partial<UnifiedNode>)
-            }
-          }}
-        />
-      )
-    }
-
-    // Column resize handles
-    for (let i = 0; i < colCount - 1; i++) {
-      const boundaryX = getColX(i + 1)
-
-      handles.push(
-        <Rect
-          key={`${tableElement.id}_col_handle_${i} `}
-          x={boundaryX - HANDLE_SIZE / 2}
-          y={0}
-          width={HANDLE_SIZE}
-          height={totalH}
-          fill="transparent"
-          draggable
-          dragBoundFunc={function (this: Konva.Node, pos) {
-            const parent = this.getParent()
-            if (!parent) return pos
-
-            const transform = parent.getAbsoluteTransform().copy()
-            transform.invert()
-            const localPos = transform.point(pos)
-
-            // Allow free movement along X in local space, lock Y to 0
-            const newLocal = { x: localPos.x, y: 0 }
-            return parent.getAbsoluteTransform().point(newLocal)
-          }}
-          onMouseEnter={(e) => {
-            const container = e.target.getStage()?.container()
-            if (container) container.style.cursor = 'col-resize'
-          }}
-          onMouseLeave={(e) => {
-            const container = e.target.getStage()?.container()
-            if (container) container.style.cursor = 'default'
-          }}
-          onDragStart={(e) => {
-            const node = e.target as Konva.Shape
-            node.fill('#3b82f6')
-          }}
-          onDragEnd={(e) => {
-            e.cancelBubble = true
-            const node = e.target as Konva.Shape
-            node.fill('transparent')
-            const delta = node.x() - (boundaryX - HANDLE_SIZE / 2)
-
-            // Reset visual position immediately
-            node.position({ x: boundaryX - HANDLE_SIZE / 2, y: 0 })
-
-            if (Math.abs(delta) < 0.01) return
-
-            const newCols = [...cols]
-            const leftW = (newCols[i] ?? 0) + delta
-            const rightW = (newCols[i + 1] ?? 0) - delta
-            if (leftW >= MIN_COL && rightW >= MIN_COL) {
-              newCols[i] = leftW
-              newCols[i + 1] = rightW
-              onChange({
-                id: tableElement.id,
-                w: newCols.reduce((acc, v) => acc + (v ?? 0), 0),
-                table: {
-                  ...tableElement.table,
-                  cols: newCols,
-                },
-              } as unknown as Partial<UnifiedNode>)
-            }
-          }}
-        />
-      )
-    }
+    rendered.push(
+      <TableResizeHandles
+        key="table_resize_handles"
+        tableElement={tableElement}
+        rows={rows}
+        cols={cols}
+        getRowY={getRowY}
+        getColX={getColX}
+        invScale={invScale}
+        onChange={onChange}
+      />
+    )
   }
 
   return (
     <Group {...commonProps}>
       {rendered}
-      {/* Table Frame Selector (Hit Area for Outer Selection) - Moved to be AFTER cells to ensure it sits ON TOP (for the border area). 
-          Allows clicking the 'outer frame' to select the table instead of the edge cell. 
-      */}
+      {/* Table Frame Selector (Hit Area for Outer Selection) */}
       <Rect
         width={tableElement.w}
         height={tableElement.h}
@@ -588,7 +416,7 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
           commonProps.onSelect?.(e)
         }}
       />
-      {handles}
+
       {isSelected && !_selectedCell && (
         <Rect
           x={0}

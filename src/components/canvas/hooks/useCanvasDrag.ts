@@ -141,19 +141,11 @@ export const useCanvasDrag = ({ element, allElements, onChange }: UseCanvasDragP
                 lineBody.points(nextPts)
 
                 // Update markers/handles
-                let dxStart = nextPts[2] - nextPts[0]
-                let dyStart = nextPts[3] - nextPts[1]
-                if (nextPts.length <= 2) {
-                    dxStart = nextPts[endIdx] - nextPts[0]
-                    dyStart = nextPts[endIdx + 1] - nextPts[1]
-                }
+                const dxStart = nextPts[2] - nextPts[0]
+                const dyStart = nextPts[3] - nextPts[1]
 
-                let dxEnd = nextPts[endIdx] - nextPts[endIdx - 2]
-                let dyEnd = nextPts[endIdx + 1] - nextPts[endIdx - 1]
-                if (nextPts.length <= 2) {
-                    dxEnd = dxStart
-                    dyEnd = dyStart
-                }
+                const dxEnd = nextPts[endIdx] - nextPts[endIdx - 2]
+                const dyEnd = nextPts[endIdx + 1] - nextPts[endIdx - 1]
 
                 const angleStart = Math.atan2(dyStart, dxStart) + Math.PI
                 const angleEnd = Math.atan2(dyEnd, dxEnd)

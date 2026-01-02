@@ -21,20 +21,21 @@ export function convertSheet(
   const resolvedOptions = { ...DEFAULT_IMPORT_OPTIONS, ...options }
 
   // 1. ページサイズ決定
-  const paperKey = resolvedOptions.pageSize ?? sheet.pageSetup.paperSize ?? 'a4'
+  const paperKey = options.pageSize ?? sheet.pageSetup.paperSize ?? DEFAULT_IMPORT_OPTIONS.pageSize ?? 'a4'
   const paper = PAPER_SIZES[paperKey] ?? PAPER_SIZES.a4
-  const landscape = (resolvedOptions.orientation ?? sheet.pageSetup.orientation) === 'landscape'
+  const orientation = options.orientation ?? sheet.pageSetup.orientation ?? DEFAULT_IMPORT_OPTIONS.orientation ?? 'portrait'
+  const landscape = orientation === 'landscape'
   const pageSize = landscape ? { w: paper.h, h: paper.w } : { w: paper.w, h: paper.h }
 
   // 2. 余白(mm)
-  const margin =
-    resolvedOptions.margin ??
-    {
-      t: inchToMm(sheet.pageSetup.margin.top),
-      r: inchToMm(sheet.pageSetup.margin.right),
-      b: inchToMm(sheet.pageSetup.margin.bottom),
-      l: inchToMm(sheet.pageSetup.margin.left),
-    }
+  // options.margin takes precedence. Then Excel settings. Then Default.
+  const margin = options.margin ??
+  {
+    t: inchToMm(sheet.pageSetup.margin.top),
+    r: inchToMm(sheet.pageSetup.margin.right),
+    b: inchToMm(sheet.pageSetup.margin.bottom),
+    l: inchToMm(sheet.pageSetup.margin.left),
+  }
 
   // 3. 対象範囲決定
   const { rowMap, colMap, filteredRows, filteredMerged } = filterRowsCols(sheet, resolvedOptions)
@@ -424,6 +425,7 @@ function filterMergedCells(mergedCells: MergedCell[], rowMap: number[], colMap: 
         er < 0 ||
         ec < 0
       ) {
+        console.log('[DEBUG] FilterMergedCells: Dropping', m, { sr, sc, er, ec })
         return undefined
       }
       return {

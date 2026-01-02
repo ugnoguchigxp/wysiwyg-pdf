@@ -27,6 +27,10 @@ vi.mock('react-konva', () => ({
   Ellipse: (props: any) => <div data-testid="Ellipse" data-props={JSON.stringify(props)} />,
   Group: ({ children, ...props }: any) => {
     recordProps('Group', props)
+    if (props.ref) {
+      // Mock Group ref for auto-resize relying on shapeRef
+      props.ref({ height: () => mockTextHeight ?? props.height ?? 0 })
+    }
     return (
       <div data-testid="Group" data-props={JSON.stringify(props)}>
         {children}
@@ -331,7 +335,7 @@ describe('components/canvas/CanvasElementRenderer', () => {
       />
     )
 
-    const textProps = recordedProps.Text[recordedProps.Text.length - 1]
+    const textProps = recordedProps.Group[recordedProps.Group.length - 1]
     const stage = {
       getAbsoluteTransform: vi.fn(() => ({
         copy: () => ({
@@ -361,7 +365,7 @@ describe('components/canvas/CanvasElementRenderer', () => {
       />
     )
 
-    const textProps = recordedProps.Text[recordedProps.Text.length - 1]
+    const textProps = recordedProps.Group[recordedProps.Group.length - 1]
     const stage = {
       getAbsoluteTransform: vi.fn(() => ({
         copy: () => ({
@@ -414,45 +418,46 @@ describe('components/canvas/CanvasElementRenderer', () => {
     })
   })
 })
-  it('auto-resizes text height when text node size changes', async () => {
-    resetRecordedProps()
-    const onChange = vi.fn()
-    mockTextHeight = 42
+it('auto-resizes text height when text node size changes', async () => {
+  resetRecordedProps()
+  const onChange = vi.fn()
+  mockTextHeight = 42
 
-    render(
-      <CanvasElementRenderer
-        element={{ id: 't5', t: 'text', s: 's', x: 0, y: 0, w: 50, h: 10, text: 'auto' } as any}
-        isSelected={false}
-        onSelect={() => { }}
-        onChange={onChange}
-      />
-    )
+  render(
+    <CanvasElementRenderer
+      element={{ id: 't5', t: 'text', s: 's', x: 0, y: 0, w: 50, h: 10, text: 'auto' } as any}
+      isSelected={false}
+      onSelect={() => { }}
+      onChange={onChange}
+    />
+  )
 
-    await waitFor(() => {
-      expect(onChange).toHaveBeenCalledWith({ id: 't5', h: 42 })
-    })
+  await waitFor(() => {
+    expect(onChange).toHaveBeenCalledWith({ id: 't5', h: 42 })
   })
+})
 
-  it('triggers mindmap drag start when provided', () => {
-    resetRecordedProps()
-    const onSelect = vi.fn()
-    const onDragStart = vi.fn()
-    mockTextHeight = null
+it('triggers mindmap drag start when provided', () => {
+  resetRecordedProps()
+  const onSelect = vi.fn()
+  const onDragStart = vi.fn()
+  mockTextHeight = null
 
-    render(
-      <CanvasElementRenderer
-        element={{ id: 't6', t: 'text', s: 's', x: 0, y: 0, w: 50, h: 20, text: 'drag' } as any}
-        isSelected={false}
-        onSelect={onSelect}
-        onChange={() => { }}
-        onDragStart={onDragStart}
-      />
-    )
+  render(
+    <CanvasElementRenderer
+      element={{ id: 't6', t: 'text', s: 's', x: 0, y: 0, w: 50, h: 20, text: 'drag' } as any}
+      isSelected={false}
+      onSelect={onSelect}
+      onChange={() => { }}
+      onDragStart={onDragStart}
+    />
+  )
 
-    const textProps = recordedProps.Text[recordedProps.Text.length - 1]
-    const event = { cancelBubble: false } as any
-    textProps.onMouseDown(event)
+  // TextRenderer wraps content in a Group, and onMouseDown is on that Group
+  const groupProps = recordedProps.Group[recordedProps.Group.length - 1]
+  const event = { cancelBubble: false } as any
+  groupProps.onMouseDown(event)
 
-    expect(onDragStart).toHaveBeenCalledWith('t6', event)
-    expect(onSelect).toHaveBeenCalled()
-  })
+  expect(onDragStart).toHaveBeenCalledWith('t6', event)
+  expect(onSelect).toHaveBeenCalled()
+})

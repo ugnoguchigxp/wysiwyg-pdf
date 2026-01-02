@@ -1,13 +1,13 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock(
-  '@/features/konva-editor/renderers/print/ReportPrintLayout',
-  () => ({
-    RenderLine: ({ element }: any) => <div data-testid={`print-line-${element.id}`} />,
-    RenderShape: ({ element }: any) => <div data-testid={`print-shape-${element.id}`} />,
-  })
-)
+vi.mock('@/features/konva-editor/renderers/print/elements/RenderLine', () => ({
+  RenderLine: ({ element }: any) => <div data-testid={`print-line-${element.id}`} />,
+}))
+
+vi.mock('@/features/konva-editor/renderers/print/elements/RenderShape', () => ({
+  RenderShape: ({ element }: any) => <div data-testid={`print-shape-${element.id}`} />,
+}))
 
 vi.mock(
   '@/features/konva-editor/utils/canvasImageUtils',
@@ -57,8 +57,10 @@ describe('BedPrintLayout', () => {
     expect(screen.getByTestId('print-shape-s1')).toBeInTheDocument()
     expect(screen.getByTestId('print-line-l1')).toBeInTheDocument()
 
-    expect(await screen.findByAltText('properties_preview')).toBeInTheDocument()
-    expect(screen.getAllByAltText('properties_preview').length).toBe(2)
+    // Wait for images to load (async resolution)
+    await waitFor(() => {
+      expect(screen.getAllByAltText('properties_preview').length).toBe(2)
+    })
     expect(screen.queryByText('Hidden')).toBeNull()
   })
 })

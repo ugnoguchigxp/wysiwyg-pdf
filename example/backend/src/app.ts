@@ -42,7 +42,7 @@ routes.post("/upload", async (c) => {
     }
 
     const storage = c.get("storage");
-    const id = globalThis.crypto.randomUUID();
+    const id = crypto.randomUUID();
     const ext = file.name.split(".").pop() || "bin";
     const filename = `${id}.${ext}`;
 
@@ -73,7 +73,7 @@ routes.post("/excel/import", async (c) => {
         const buffer = await file.arrayBuffer();
         const doc = await importExcel(buffer);
 
-        const id = globalThis.crypto.randomUUID();
+        const id = crypto.randomUUID();
         const now = Date.now();
         const user = "anonymous";
         // Remove extension and ensure title is unique enough or let DB handle it?
@@ -210,7 +210,7 @@ routes.post("/documents", async (c) => {
         return c.json({ status: "updated", id: existing.id });
     }
 
-    const id = globalThis.crypto.randomUUID();
+    const id = crypto.randomUUID();
     await db.insert(documents)
         .values({
             id,

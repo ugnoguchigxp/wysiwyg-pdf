@@ -1,6 +1,5 @@
 
-import { describe, expect, test } from "bun:test";
-import { convertSheet } from "../converter/surface";
+import { convertSheet } from "./surface";
 import type { ExcelSheet, ExcelRow, CellStyle } from "../types/excel";
 import { DEFAULT_IMPORT_OPTIONS } from "../types/options";
 import { mmToPt } from "../utils";

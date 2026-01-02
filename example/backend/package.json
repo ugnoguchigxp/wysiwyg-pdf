@@ -12,7 +12,14 @@
     "build:frontend": "cd ../frontend && bunx vite build",
     "deploy:all": "bun run build:frontend && wrangler deploy",
     "typecheck": "tsc --noEmit",
-    "build": "bun build src/index.ts --outdir dist"
+    "build": "bun build src/index.ts --outdir dist",
+    "lint": "biome check src/",
+    "lint:fix": "biome check --apply src/",
+    "format": "biome format --write src/",
+    "format:check": "biome format src/",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage"
   },
   "dependencies": {
     "drizzle-orm": "^0.44.4",
@@ -20,8 +27,12 @@
     "hono": "^4.9.10"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.11.1",
     "@cloudflare/workers-types": "^4.20251231.0",
     "@types/bun": "^1.3.5",
+    "@vitest/coverage-istanbul": "^4.0.16",
+    "miniflare": "^4.20251217.0",
+    "vitest": "^4.0.16",
     "wrangler": "^4.54.0"
   }
 }

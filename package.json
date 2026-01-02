@@ -75,6 +75,7 @@
     "@tanstack/react-table": "^8.21.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "exceljs": "^4.4.0",
     "konva": "^10.0.12",
     "lucide-react": "^0.470.0",
     "perfect-freehand": "^1.2.2",
@@ -82,8 +83,7 @@
     "react-konva": "^19.2.1",
     "tailwind-merge": "^2.6.0",
     "use-image": "^1.1.4",
-    "zod": "^3.25.76",
-    "exceljs": "^4.4.0"
+    "zod": "^3.25.76"
   },
   "peerDependencies": {
     "pptxgenjs": "^3.12.0",
@@ -99,6 +99,7 @@
     "@biomejs/biome": "^2.3.8",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^24.2.1",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.0",

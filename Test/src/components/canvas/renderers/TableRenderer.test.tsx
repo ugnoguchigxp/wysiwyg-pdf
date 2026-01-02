@@ -162,8 +162,8 @@ describe('components/canvas/renderers/TableRenderer', () => {
     const selectedOutline = recorded.Rect.find((r) => r.stroke === '#3b82f6' && r.dash)
     expect(selectedOutline).toBeTruthy()
 
-    const cellGroup = recorded.Group.find((g) => typeof g.onClick === 'function')
-    cellGroup.onClick({ cancelBubble: false })
+    const cellRect = recorded.Rect.find((r) => typeof r.onClick === 'function')
+    cellRect.onClick({ cancelBubble: false })
     expect(onCellClick).toHaveBeenCalledWith('tbl1', 0, 0)
   })
 })
