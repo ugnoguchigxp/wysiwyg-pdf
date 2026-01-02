@@ -379,7 +379,7 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
     const x = getColX(c)
     const w = cols[c] ?? 0
     rendered.push(
-      <Group key={`col_header_${c}`} x={x} y={-COL_HEADER_H}>
+      <Group key={`col_header_${c}`} x={x} y={-COL_HEADER_H} name="table-header-ui">
         <Rect width={w} height={COL_HEADER_H} fill={HEADER_BG} stroke={HEADER_BORDER} strokeWidth={1 * invScale} />
         <Text
           x={0} y={0} width={w} height={COL_HEADER_H}
@@ -396,7 +396,7 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
     const y = getRowY(r)
     const h = rows[r] ?? 0
     rendered.push(
-      <Group key={`row_header_${r}`} x={-ROW_HEADER_W} y={y}>
+      <Group key={`row_header_${r}`} x={-ROW_HEADER_W} y={y} name="table-header-ui">
         <Rect width={ROW_HEADER_W} height={h} fill={HEADER_BG} stroke={HEADER_BORDER} strokeWidth={1 * invScale} />
         <Text
           x={0} y={0} width={ROW_HEADER_W} height={h}
@@ -409,7 +409,7 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
   }
   // Corner Box
   rendered.push(
-    <Rect key="header_corner" x={-ROW_HEADER_W} y={-COL_HEADER_H} width={ROW_HEADER_W} height={COL_HEADER_H} fill={HEADER_BG} stroke={HEADER_BORDER} strokeWidth={1 * invScale} />
+    <Rect key="header_corner" x={-ROW_HEADER_W} y={-COL_HEADER_H} width={ROW_HEADER_W} height={COL_HEADER_H} fill={HEADER_BG} stroke={HEADER_BORDER} strokeWidth={1 * invScale} name="table-header-ui" />
   )
 
   const handles: React.ReactNode[] = []

@@ -438,6 +438,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
 
         const gridLayer = stage.findOne('.grid-layer')
         const wasGridVisible = gridLayer?.visible()
+        const tableHeaders = stage.find('.table-header-ui')
 
         const transformers = (stage.find('Transformer') as unknown as Konva.Node[]).filter(
           (n): n is Konva.Transformer => n.getClassName?.() === 'Transformer'
@@ -446,6 +447,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
 
         try {
           gridLayer?.hide()
+          tableHeaders.forEach((n) => n.hide())
           transformers.forEach((tr) => {
             tr.hide()
           })
@@ -462,6 +464,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
           if (gridLayer && wasGridVisible) {
             gridLayer.show()
           }
+          tableHeaders.forEach((n) => n.show())
           transformers.forEach((tr, idx) => {
             const prev = transformerVisibility[idx]
             if (prev) tr.show()

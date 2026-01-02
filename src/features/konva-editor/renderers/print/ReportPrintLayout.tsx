@@ -18,7 +18,7 @@ import type {
 } from '@/types/canvas'
 
 const mmToPtValue = (mm: number | undefined) => mmToPt(mm ?? 0)
-const mmPt = (mm: number | undefined) => `${mmToPtValue(mm)}pt`
+const mmPt = (mm: number | undefined) => `${mm ?? 0}mm`
 
 export const RenderSignature = ({ element }: { element: SignatureNode }) => {
   const { strokes, stroke, strokeW } = element
@@ -205,13 +205,26 @@ const RenderTable = ({ element }: { element: TableNode }) => {
               if (!cell) return <td key={`${rowIndex}-${colIndex}`} />
 
               const fontSize = cell.fontSize ?? ptToMm(12)
-              const borderW = cell.borderW ?? (cell.border ? 0.2 : 0.2)
+              const borderW = cell.borderW ?? (cell.border ? 0.2 : 0)
               const borderColor = cell.borderColor || cell.border || '#ccc'
 
               const borderStyle: React.CSSProperties = {}
+
+              // Base border match background to prevent white gaps
+              if (cell.bg) {
+                borderStyle.border = `0.5pt solid ${cell.bg}`
+                // Overlap background to cover gaps
+                borderStyle.boxShadow = `0 0 0 1px ${cell.bg}`
+              }
+
               if (cell.borders) {
-                const mapBorder = (b: { style?: string, width?: number, color?: string } | undefined) => {
-                  if (!b || !b.style || b.style === 'none') return 'none'
+                const mapBorder = (
+                  b: { style?: string; width?: number; color?: string } | undefined
+                ) => {
+                  if (!b || !b.style || b.style === 'none') {
+                    // Fallback to background overlap if no visible border
+                    return cell.bg ? `0.5pt solid ${cell.bg}` : 'none'
+                  }
                   return `${mmToPtValue(b.width ?? 0.2)}pt ${b.style} ${b.color ?? '#000'}`
                 }
                 if (cell.borders.t) borderStyle.borderTop = mapBorder(cell.borders.t)
@@ -219,7 +232,10 @@ const RenderTable = ({ element }: { element: TableNode }) => {
                 if (cell.borders.b) borderStyle.borderBottom = mapBorder(cell.borders.b)
                 if (cell.borders.l) borderStyle.borderLeft = mapBorder(cell.borders.l)
               } else {
-                borderStyle.border = borderW > 0 ? `${mmToPtValue(borderW)}pt solid ${borderColor}` : 'none'
+                if (borderW > 0) {
+                  borderStyle.border = `${mmToPtValue(borderW)}pt solid ${borderColor}`
+                }
+                // If borderW is 0, we leave the base background-colored border
               }
 
               return (
@@ -238,13 +254,33 @@ const RenderTable = ({ element }: { element: TableNode }) => {
                       cell.vAlign === 't' ? 'top' : cell.vAlign === 'm' ? 'middle' : 'bottom',
                     color: cell.color || '#000000',
                     padding: '1pt 2pt',
-                    overflow: 'hidden',
+                    overflow: 'visible',
                     wordBreak: 'normal',
                     whiteSpace: cell.wrap ? 'pre-wrap' : 'pre',
                     lineHeight: 1.15,
                   }}
                 >
-                  {cell.v}
+                  <div
+                    style={{
+                      display: 'flex',
+                      width: '100%',
+                      height: '100%',
+                      justifyContent:
+                        cell.align === 'r'
+                          ? 'flex-end'
+                          : cell.align === 'c'
+                            ? 'center'
+                            : 'flex-start',
+                      alignItems:
+                        cell.vAlign === 'm'
+                          ? 'center'
+                          : cell.vAlign === 'b'
+                            ? 'flex-end'
+                            : 'flex-start',
+                    }}
+                  >
+                    {cell.v}
+                  </div>
                 </td>
               )
             })}
@@ -431,13 +467,16 @@ const PrintElement = ({ element }: { element: UnifiedNode }) => {
           flexDirection: 'column',
           alignItems: 'stretch',
           justifyContent: vAlign,
-          whiteSpace: 'pre',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+          letterSpacing: '-0.05em',
           lineHeight,
           border: borderStyle,
           backgroundColor,
           borderRadius,
           padding: textEl.padding ? `${mmToPtValue(textEl.padding)}pt` : undefined,
           boxSizing: 'border-box',
+          overflow: 'hidden',
         }}
       >
         <div style={{ width: '100%', textAlign }}>{renderListText()}</div>
