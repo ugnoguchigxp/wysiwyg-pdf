@@ -4,7 +4,7 @@
  * ExcelJSのCellを中間表現に変換
  */
 
-import type { ExcelCell, CellValue } from '../types/excel'
+import type { ExcelCell, CellValue, ExcelRichText } from '../types/excel'
 import { parseCellStyle } from './style'
 
 // ExcelJSの型（プレースホルダー）
@@ -156,9 +156,10 @@ function isRichText(value: unknown): boolean {
 }
 
 /**
- * リッチテキストから文字列を抽出
+ * リッチテキストから値を抽出
+ * 文字列ではなく構造化データを返すように変更
  */
-function extractRichTextValue(value: unknown): string {
+function extractRichTextValue(value: unknown): CellValue {
   // If it's the standard ExcelJS structure
   if (
     typeof value === 'object' &&
@@ -166,8 +167,8 @@ function extractRichTextValue(value: unknown): string {
     'richText' in value &&
     Array.isArray((value as any).richText)
   ) {
-    const richText = (value as any).richText as Array<{ text: string }>
-    return richText.map((part) => part.text).join('')
+    // Return original object structure (conforming to ExcelRichText)
+    return value as unknown as ExcelRichText
   }
 
   // Fallback for unknown object structures: try JSON or toString, but avoid [object Object] if possible

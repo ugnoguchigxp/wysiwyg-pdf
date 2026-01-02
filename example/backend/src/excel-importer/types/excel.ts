@@ -131,7 +131,14 @@ export interface ExcelCell {
   style: CellStyle
 }
 
-export type CellValue = string | number | boolean | Date | null
+export type CellValue = string | number | boolean | Date | ExcelRichText | null
+
+export interface ExcelRichText {
+  richText: {
+    font?: FontInfo
+    text: string
+  }[]
+}
 
 export interface MergedCell {
   startRow: number

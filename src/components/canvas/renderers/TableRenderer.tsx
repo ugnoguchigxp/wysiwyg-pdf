@@ -3,6 +3,7 @@ import type React from 'react'
 import { Group, Rect, Text } from 'react-konva'
 import { ptToMm } from '@/utils/units'
 import type { TableNode, UnifiedNode } from '@/types/canvas'
+import { RichTextRenderer } from './RichTextRenderer'
 import type { CanvasElementCommonProps } from '../types'
 
 interface TableRendererProps {
@@ -116,7 +117,7 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
       const w = getColWidth(c, cs)
       const h = getRowHeight(r, rs)
 
-      const borderColor = cell?.borderColor || cell?.border || '#cccccc'
+      const _borderColor = cell?.borderColor || cell?.border || '#cccccc'
       // Fix: Default border width should be 0 if no border is specified, otherwise we get unwanted gridlines everywhere.
       const bg = cell?.bg
       const fontSize = cell?.fontSize ?? ptToMm(12)
@@ -140,22 +141,21 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
           y={y}
           width={w + OVERLAP}
           height={h + OVERLAP}
-          fill={bg || 'transparent'}
-          listening={false}
+          fill={bg || '#ffffff'}
+          opacity={bg ? 1 : 0.01}
           onClick={(e) => {
             e.cancelBubble = true
             onCellClick?.(tableElement.id, r, c)
+            commonProps.onSelect?.(e)
+          }}
+          onTap={(e) => {
+            e.cancelBubble = true
+            onCellClick?.(tableElement.id, r, c)
+            commonProps.onSelect?.(e)
           }}
           onDblClick={(e) => {
             e.cancelBubble = true
             onCellDblClick?.(tableElement.id, r, c)
-          }}
-          // Make transparent cells hit-testable if they are part of the table logic
-          hitFunc={(ctx, shape) => {
-            ctx.beginPath()
-            ctx.rect(0, 0, shape.width() - OVERLAP, shape.height() - OVERLAP)
-            ctx.closePath()
-            ctx.fillStrokeShape(shape)
           }}
         />
       )
@@ -237,8 +237,31 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
       }
 
       // 3. Text/Content Layer
-      if (!!cell?.v) {
-        const isRight = (align as string) === 'r' || (align as string) === 'right'
+      const useRichText = cell?.richText && cell.richText.length > 0
+
+      if (useRichText && cell) {
+        const PADDING_X = 0.5 * invScale
+        const PADDING_Y = 1.6 * invScale
+
+        texts.push(
+          <RichTextRenderer
+            key={`${cellId}_richtext`}
+            fragments={cell.richText!}
+            x={x + PADDING_X}
+            y={y + PADDING_Y}
+            width={Math.max(0, w - 2 * PADDING_X)}
+            height={Math.max(0, h - 2 * PADDING_Y)}
+            align={align}
+            vAlign={vAlign}
+            defaultFontSize={fontSize}
+            defaultFontFamily={fontFamily}
+            defaultColor={color}
+            keyPrefix={cellId}
+            wrap={!!cell.wrap}
+          />
+        )
+      } else if (!!cell?.v) {
+        const isRight = align === 'r'
 
         // Style Logic
         const fontStyle = ((cell.bold ? 'bold ' : '') + (cell.italic ? 'italic' : '')).trim()
@@ -268,7 +291,7 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
         if (isRight) {
           textW = LARGE_WIDTH
           textX = x + w - LARGE_WIDTH - PADDING_X
-        } else if (align === 'c' || align === 'center') {
+        } else if (align === 'c') {
           if (shouldUnconstrain) {
             textW = LARGE_WIDTH
             textX = x + (w / 2) - (LARGE_WIDTH / 2)
@@ -544,7 +567,7 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
         fillEnabled={false}
         stroke="transparent"
         strokeWidth={1 * invScale}
-        hitStrokeWidth={40 * invScale}
+        hitStrokeWidth={5 * invScale}
         onMouseEnter={(e) => {
           const container = e.target.getStage()?.container()
           if (container) container.style.cursor = 'move'

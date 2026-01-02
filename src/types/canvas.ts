@@ -250,6 +250,9 @@ export interface SignatureNode extends BaseNode {
 // Type Enums & Helpers
 // ========================================
 
+export type CellHorizontalAlign = 'l' | 'c' | 'r'
+export type CellVerticalAlign = 't' | 'm' | 'b'
+
 export type ShapeType =
   | 'rect'
   | 'circle'
@@ -302,15 +305,28 @@ export interface Cell {
     b?: BorderStyle
     l?: BorderStyle
   }
+  richText?: RichTextFragment[] // Rich text fragments
   wrap?: boolean
   font?: string
   fontSize?: number
-  align?: 'l' | 'c' | 'r'
-  vAlign?: 't' | 'm' | 'b'
+  align?: CellHorizontalAlign
+  vAlign?: CellVerticalAlign
   color?: string
   bold?: boolean
   italic?: boolean
   strike?: boolean
+  numFmt?: string // Excel number format code (e.g. "0.00", "$#,##0.00")
+}
+
+export interface RichTextFragment {
+  text: string
+  font?: string
+  fontSize?: number
+  bold?: boolean
+  italic?: boolean
+  strike?: boolean
+  underline?: boolean
+  color?: string
 }
 
 export interface BorderStyle {

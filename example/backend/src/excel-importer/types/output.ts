@@ -95,6 +95,7 @@ export interface OutputCell {
     b?: OutputBorderStyle
     l?: OutputBorderStyle
   }
+  richText?: OutputRichTextFragment[]
   wrap?: boolean
   font?: string
   fontSize?: number
@@ -104,6 +105,18 @@ export interface OutputCell {
   bold?: boolean
   italic?: boolean
   strike?: boolean
+  numFmt?: string // Added missing numFmt
+}
+
+export interface OutputRichTextFragment {
+  text: string
+  font?: string
+  fontSize?: number
+  bold?: boolean
+  italic?: boolean
+  strike?: boolean
+  underline?: boolean
+  color?: string
 }
 
 export interface OutputBorderStyle {

@@ -12,6 +12,7 @@ import { CanvasElementRenderer } from '@/components/canvas/CanvasElementRenderer
 import { GridLayer } from '@/components/canvas/GridLayer'
 import { useKeyboardShortcuts } from '@/components/canvas/hooks/useKeyboardShortcuts'
 import { TextEditOverlay } from '@/components/canvas/TextEditOverlay'
+import { CellEditOverlay } from '@/components/canvas/CellEditOverlay'
 import type { Doc, TableNode, TextNode, UnifiedNode } from '@/types/canvas' // Direct import
 import { mmToPx, ptToMm } from '@/utils/units'
 // Table operations imports removed (unused)
@@ -258,6 +259,94 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       handleSignatureMouseUp()
     }
 
+    const handleCellUpdate = (val: string) => {
+      if (!editingCell || !selectedTable) return
+
+      const newCells = [...selectedTable.table.cells]
+      const idx = newCells.findIndex(c => c.r === editingCell.row && c.c === editingCell.col)
+
+      if (idx >= 0) {
+        newCells[idx] = { ...newCells[idx], v: val, richText: undefined }
+      } else {
+        // New cell data (inherit defaults or just v)
+        newCells.push({
+          r: editingCell.row,
+          c: editingCell.col,
+          v: val
+        })
+      }
+
+      const newTable = {
+        ...selectedTable,
+        table: {
+          ...selectedTable.table,
+          cells: newCells
+        }
+      }
+
+      handleElementChange(newTable)
+    }
+
+    const handleCellEditFinish = () => {
+      setEditingCell(null)
+    }
+
+    const getCellAt = (table: TableNode) => {
+      // Convert stage (pointer) coordinates to Table-relative coordinates (mm)
+      // table.x/y are in mm.
+      // stageX/Y are in px (screen).
+      // we need local mm.
+
+      // Stage transformation:
+      // Screen Px = (Logic Mm * displayScale)
+      // So Logic Mm = Screen Px / displayScale.
+
+      // But stageRef might be panned? Stage has {x, y} (if draggable, but here fixed 0,0 usually or viewport).
+      // Let's assume Stage is 0,0 based on rendering.
+      // Actually Stage has scale.
+      // Pointer Position is absolute on Stage.
+
+      const pointer = stageRef.current?.getPointerPosition()
+      if (!pointer) return null
+
+      const logicX = pointer.x / displayScale
+      const logicY = pointer.y / displayScale
+
+      const localX = logicX - (table.x || 0)
+      const localY = logicY - (table.y || 0)
+
+      if (localX < 0 || localY < 0) return null
+
+      // Find Column
+      let cx = 0
+      let colIndex = -1
+      for (let i = 0; i < table.table.cols.length; i++) {
+        const w = table.table.cols[i]
+        if (localX >= cx && localX < cx + w) {
+          colIndex = i
+          break
+        }
+        cx += w
+      }
+
+      // Find Row
+      let cy = 0
+      let rowIndex = -1
+      for (let i = 0; i < table.table.rows.length; i++) {
+        const h = table.table.rows[i]
+        if (localY >= cy && localY < cy + h) {
+          rowIndex = i
+          break
+        }
+        cy += h
+      }
+
+      if (colIndex >= 0 && rowIndex >= 0) {
+        return { row: rowIndex, col: colIndex }
+      }
+      return null
+    }
+
     const handleDelete = () => {
       if (selectedElementId) {
         const nextNodes = templateDoc.nodes.filter((el) => el.id !== selectedElementId)
@@ -472,9 +561,32 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
                       setContextMenu(null)
                     }
                   }}
+                  onCellClick={(elementId, r, c) => {
+                    // Handle cell selection directly from TableRenderer event
+                    if (element.t === 'table' && element.id === elementId) {
+                      setSelectedCell({ elementId, row: r, col: c })
+                      // Also ensure the table itself is selected
+                      handleElementSelect(element)
+                    }
+                  }}
+                  onCellDblClick={(elementId, r, c) => {
+                    // Handle cell editing directly from TableRenderer event
+                    if (element.t === 'table' && element.id === elementId) {
+                      setEditingCell({ elementId, row: r, col: c })
+                      setSelectedCell({ elementId, row: r, col: c })
+                    }
+                  }}
                   onChange={handleElementChange}
                   onDblClick={() => {
-                    if (element.t === 'text') setEditingElementId(element.id)
+                    if (element.t === 'text') {
+                      setEditingElementId(element.id)
+                    } else if (element.t === 'table') {
+                      const cell = getCellAt(element) // getCellAt computes from pointer internally
+                      if (cell) {
+                        setEditingCell({ elementId: element.id, ...cell })
+                        setSelectedCell({ elementId: element.id, ...cell }) // Also select it
+                      }
+                    }
                   }}
                   isEditing={editingElementId === element.id}
                   stageScale={displayScale}
@@ -508,15 +620,14 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
           )}
 
           {editingCell && selectedTable && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-              }}
-            >
-              {/* Cell Editor Omitted */}
-            </div>
+            <CellEditOverlay
+              tableNode={selectedTable}
+              cell={editingCell}
+              stageNode={stageRef.current}
+              scale={displayScale}
+              onUpdate={handleCellUpdate}
+              onFinish={handleCellEditFinish}
+            />
           )}
 
           {contextMenu && contextMenu.type === 'table' && (

@@ -21,7 +21,12 @@ const rectIntersects = (
 export const insertRow = (table: TableNode, targetRow: number, where: 'above' | 'below'): TableNode => {
   const insertIndex = where === 'above' ? targetRow : targetRow + 1
   const newRows = [...table.table.rows]
-  newRows.splice(insertIndex, 0, 50)
+
+  // Use height of the target row as default, or fallback to a reasonable default (e.g. 5mm) if undefined
+  const defaultHeight = 6
+  const refHeight = newRows[targetRow] ?? defaultHeight
+
+  newRows.splice(insertIndex, 0, refHeight)
 
   const cells = table.table.cells
   const nextCells = cells.map((c) => {
@@ -40,7 +45,7 @@ export const insertRow = (table: TableNode, targetRow: number, where: 'above' | 
     // Find template cell from the row where interaction happened (or closest neighbor)
     const template =
       cells.find((cell) => cell.r === targetRow && cell.c === c) || findCell(cells, targetRow, 0)
-    
+
     if (template) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { r: _r, c: _c, v: _v, rs: _rs, cs: _cs, ...styles } = template
@@ -61,7 +66,7 @@ export const insertRow = (table: TableNode, targetRow: number, where: 'above' | 
         v: '',
         rs: 1,
         cs: 1,
-        borderW: 2,
+        borderW: 0.2, // Fix: reduced from 2
         borderColor: '#000000',
       } as Cell)
     }
@@ -81,7 +86,12 @@ export const insertRow = (table: TableNode, targetRow: number, where: 'above' | 
 export const insertCol = (table: TableNode, targetCol: number, targetRow: number, where: 'left' | 'right'): TableNode => {
   const insertIndex = where === 'left' ? targetCol : targetCol + 1
   const newCols = [...table.table.cols]
-  newCols.splice(insertIndex, 0, 100)
+
+  // Use width of target col, or reasonable default
+  const defaultWidth = 20
+  const refWidth = newCols[targetCol] ?? defaultWidth
+
+  newCols.splice(insertIndex, 0, refWidth)
 
   const cells = table.table.cells
   const nextCells = cells.map((c) => {
@@ -98,7 +108,7 @@ export const insertCol = (table: TableNode, targetCol: number, targetRow: number
     // Find template cell from the column where interaction happened
     const template =
       cells.find((cell) => cell.r === r && cell.c === targetCol) || findCell(cells, targetRow, targetCol)
-    
+
     if (template) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { r: _r, c: _c, v: _v, rs: _rs, cs: _cs, ...styles } = template
@@ -117,7 +127,7 @@ export const insertCol = (table: TableNode, targetCol: number, targetRow: number
         v: '',
         rs: 1,
         cs: 1,
-        borderW: 2,
+        borderW: 0.2, // Fix: reduced from 2
         borderColor: '#000000',
       } as Cell)
     }
@@ -224,18 +234,18 @@ export const deleteCol = (table: TableNode, targetCol: number): TableNode => {
 
 export const mergeCells = (table: TableNode, targetRow: number, targetCol: number, direction: 'right' | 'down'): TableNode => {
   const cells = [...table.table.cells]
-  
+
   // Helper to ensure base exists (if sparse) - though in this pure function we might just create a temp one
   // The original code pushed to cells if missing. Let's replicate that logic carefully.
   // Actually, if we just modify the logic to use a potential base, we can avoid mutating input `cells` array unexpectedly before filtering.
   // But wait, `cells` is a copy `[...table.table.cells]`.
-  
+
   const findOrBase = (r: number, c: number) => {
-      const found = findCell(cells, r, c)
-      if (found) return found
-      // If not found, imply a default cell exists there? 
-      // In the original code, it did `ensureBaseExists` which pushed to `cells`.
-      return { r, c, v: '' } as Cell
+    const found = findCell(cells, r, c)
+    if (found) return found
+    // If not found, imply a default cell exists there? 
+    // In the original code, it did `ensureBaseExists` which pushed to `cells`.
+    return { r, c, v: '' } as Cell
   }
 
   const current = findOrBase(targetRow, targetCol)
@@ -244,19 +254,19 @@ export const mergeCells = (table: TableNode, targetRow: number, targetCol: numbe
   // The original code `ensureBaseExists` pushed it to `cells` so that subsequent logic would see it.
   const workingCells = [...cells]
   if (!findCell(workingCells, targetRow, targetCol)) {
-      workingCells.push({ ...current })
+    workingCells.push({ ...current })
   }
 
   const rs = current.rs || 1
   const cs = current.cs || 1
-  
+
   if (direction === 'right') {
     const colCount = table.table.cols.length
     const targetColIdx = targetCol + cs
     if (targetColIdx >= colCount) return table
 
     const baseRect = cellRect({ r: targetRow, c: targetCol, rs, cs: cs + 1 })
-    
+
     const neighbor = findCell(workingCells, targetRow, targetColIdx)
     if (!neighbor) return table
     const neighborRs = neighbor.rs || 1

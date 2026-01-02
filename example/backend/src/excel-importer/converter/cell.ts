@@ -4,10 +4,11 @@
  * ExcelCell → OutputCell
  */
 
-import type { ExcelCell } from '../types/excel'
+import type { ExcelCell, ExcelRichText } from '../types/excel'
 import type { ImportOptions } from '../types/options'
 import type { OutputCell } from '../types/output'
 import { convertCellStyle } from './style'
+import { colorInfoToCSS, ptToMm } from '../utils'
 
 /**
  * セルをOutputCellに変換
@@ -16,10 +17,26 @@ export function convertCell(cell: ExcelCell, options: ImportOptions): OutputCell
   const v = formatValue(cell, options)
   const style = convertCellStyle(cell.style, options)
 
+  let richTextFragments
+  if (isRichText(cell.value)) {
+    const rt = cell.value
+    richTextFragments = rt.richText.map((fragment) => ({
+      text: fragment.text,
+      font: fragment.font?.name,
+      fontSize: fragment.font?.size ? ptToMm(fragment.font.size) : undefined,
+      bold: fragment.font?.bold,
+      italic: fragment.font?.italic,
+      strike: fragment.font?.strike,
+      underline: !!fragment.font?.underline,
+      color: fragment.font?.color ? colorInfoToCSS(fragment.font.color) : undefined,
+    }))
+  }
+
   const result: OutputCell = {
     r: cell.row,
     c: cell.col,
     v,
+    richText: richTextFragments,
     ...style,
   }
 
@@ -72,7 +89,15 @@ function formatValue(cell: ExcelCell, options: ImportOptions): string {
     return value.toISOString()
   }
 
+  if (typeof value === 'object' && value !== null && 'richText' in value) {
+    return (value as ExcelRichText).richText.map((f) => f.text).join('')
+  }
+
   return String(value)
+}
+
+function isRichText(value: unknown): value is ExcelRichText {
+  return typeof value === 'object' && value !== null && 'richText' in value
 }
 
 /**
