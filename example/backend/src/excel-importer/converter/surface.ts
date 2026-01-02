@@ -61,7 +61,7 @@ export function convertSheet(
       1
     )
   } else if (sheet.pageSetup.fitToPage) {
-    // 3. Excel "Fit to Pages" settings (Aspose Logic)
+    // 3. Excel "Fit to Pages" settings 
     // If fitToPage is defined in Excel, we calculate scale to fit X pages wide / Y pages tall.
     const { width: pagesWide, height: pagesTall } = sheet.pageSetup.fitToPage
 
@@ -345,7 +345,6 @@ function filterRowsCols(sheet: ExcelSheet, options: ImportOptions): FilterResult
   const colMap: number[] = []
 
   // PrintAreaがない場合、UsedRangeを厳密に計算して「空行・空列」をトリムする (Task 2)
-  // Aspose RemoveWhitespaceAroundData
   const { startRow, endRow, startCol, endCol } = calculateStrictUsedRange(sheet)
 
   // rowMap構築
