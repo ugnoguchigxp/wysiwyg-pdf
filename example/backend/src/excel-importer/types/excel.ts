@@ -40,6 +40,25 @@ export interface ExcelSheet {
 
   // 計算済み情報
   usedRange?: CellRange
+
+  // 画像
+  images: ExcelImage[]
+}
+
+export interface ExcelImage {
+  id: string
+  type: 'image'
+  range: ImageAnchor
+  data: Uint8Array | ArrayBuffer // Image data buffer
+  extension: string // png, jpeg, etc.
+}
+
+export interface ImageAnchor {
+  // TwoCellAnchor type
+  from: { col: number; colOff: number; row: number; rowOff: number } // colOff/rowOff in pixels or EMUs? ExcelJS gives pixels usually.
+  to: { col: number; colOff: number; row: number; rowOff: number }
+  // EditAs?
+  editAs?: string
 }
 
 export interface PageSetup {

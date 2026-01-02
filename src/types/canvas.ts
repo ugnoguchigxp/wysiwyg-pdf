@@ -59,6 +59,14 @@ export interface Surface {
   margin?: Margin // For 'page' type
   bg?: string // Color hex or image URL (data:image/...)
   masterId?: string // 参照するマスタースライドID (undefinedならマスター)
+  header?: HeaderFooterContent
+  footer?: HeaderFooterContent
+}
+
+export interface HeaderFooterContent {
+  left?: string
+  center?: string
+  right?: string
 }
 
 export interface Margin {

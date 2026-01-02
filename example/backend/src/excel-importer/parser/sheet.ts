@@ -11,6 +11,7 @@ import type {
   MergedCell,
   PageSetup,
   CellRange,
+  ExcelImage,
 } from '../types/excel'
 import { parseCell } from './cell'
 
@@ -28,6 +29,29 @@ type ExcelJSWorksheet = {
   model: {
     merges?: string[]
   }
+  getImages?: () => ExcelJSImageEntry[]
+  workbook?: {
+    getImage: (id: number) => { name: string; extension: string; buffer: ArrayBuffer }
+  }
+}
+
+type ExcelJSImageEntry = {
+  type: 'image'
+  imageId: string
+  range: {
+    tl: ExcelJSAnchorPoint
+    br: ExcelJSAnchorPoint
+    editAs?: string
+  }
+}
+
+type ExcelJSAnchorPoint = {
+  nativeCol: number
+  nativeColOff: number
+  nativeRow: number
+  nativeRowOff: number
+  col?: number // Sometimes present
+  row?: number
 }
 
 type ExcelJSPageSetup = {
@@ -48,6 +72,14 @@ type ExcelJSPageSetup = {
   printArea?: string
   horizontalCentered?: boolean
   verticalCentered?: boolean
+  headerFooter?: {
+    oddHeader?: string
+    oddFooter?: string
+    evenHeader?: string
+    evenFooter?: string
+    firstHeader?: string
+    firstFooter?: string
+  }
 }
 
 type ExcelJSRow = {
@@ -153,7 +185,7 @@ export function parseSheet(worksheet: ExcelJSWorksheet, index: number): ExcelShe
     rows,
     columns,
     mergedCells,
-    usedRange,
+    images: parseImages(worksheet),
   }
 }
 
@@ -240,6 +272,14 @@ function parsePageSetup(setup: ExcelJSPageSetup): PageSetup {
         height: setup.fitToHeight,
       }
       : undefined,
+    headerFooter: setup.headerFooter ? {
+      oddHeader: setup.headerFooter.oddHeader,
+      oddFooter: setup.headerFooter.oddFooter,
+      evenHeader: setup.headerFooter.evenHeader,
+      evenFooter: setup.headerFooter.evenFooter,
+      firstHeader: setup.headerFooter.firstHeader,
+      firstFooter: setup.headerFooter.firstFooter,
+    } : undefined,
   }
 }
 
@@ -315,4 +355,52 @@ function calculateUsedRange(rows: ExcelRow[]): CellRange | undefined {
     endRow: maxRow,
     endCol: maxCol,
   }
+}
+
+/**
+ * 画像情報を解析
+ */
+function parseImages(worksheet: ExcelJSWorksheet): ExcelImage[] {
+  if (!worksheet.getImages || !worksheet.workbook || !worksheet.workbook.getImage) {
+    return []
+  }
+
+  const images: ExcelImage[] = []
+
+  try {
+    const rawImages = worksheet.getImages()
+
+    for (const raw of rawImages) {
+      if (!raw.range || !raw.range.tl || !raw.range.br) continue
+
+      const imgData = worksheet.workbook.getImage(Number(raw.imageId))
+      if (!imgData) continue
+
+      images.push({
+        id: raw.imageId,
+        type: 'image',
+        extension: imgData.extension,
+        data: new Uint8Array(imgData.buffer),
+        range: {
+          editAs: raw.range.editAs,
+          from: {
+            col: raw.range.tl.nativeCol,
+            colOff: raw.range.tl.nativeColOff,
+            row: raw.range.tl.nativeRow,
+            rowOff: raw.range.tl.nativeRowOff,
+          },
+          to: {
+            col: raw.range.br.nativeCol,
+            colOff: raw.range.br.nativeColOff,
+            row: raw.range.br.nativeRow,
+            rowOff: raw.range.br.nativeRowOff,
+          }
+        }
+      })
+    }
+  } catch (e) {
+    // console.warn('Failed to parse images:', e)
+  }
+
+  return images
 }

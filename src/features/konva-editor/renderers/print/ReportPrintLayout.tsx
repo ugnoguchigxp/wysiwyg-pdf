@@ -208,24 +208,40 @@ const RenderTable = ({ element }: { element: TableNode }) => {
               const borderW = cell.borderW ?? (cell.border ? 0.2 : 0.2)
               const borderColor = cell.borderColor || cell.border || '#ccc'
 
+              const borderStyle: React.CSSProperties = {}
+              if (cell.borders) {
+                const mapBorder = (b: { style?: string, width?: number, color?: string } | undefined) => {
+                  if (!b || !b.style || b.style === 'none') return 'none'
+                  return `${mmToPtValue(b.width ?? 0.2)}pt ${b.style} ${b.color ?? '#000'}`
+                }
+                if (cell.borders.t) borderStyle.borderTop = mapBorder(cell.borders.t)
+                if (cell.borders.r) borderStyle.borderRight = mapBorder(cell.borders.r)
+                if (cell.borders.b) borderStyle.borderBottom = mapBorder(cell.borders.b)
+                if (cell.borders.l) borderStyle.borderLeft = mapBorder(cell.borders.l)
+              } else {
+                borderStyle.border = borderW > 0 ? `${mmToPtValue(borderW)}pt solid ${borderColor}` : 'none'
+              }
+
               return (
                 <td
                   key={`${rowIndex}-${colIndex}`}
                   colSpan={colSpan}
                   rowSpan={rowSpan}
                   style={{
-                    border: borderW > 0 ? `${mmToPtValue(borderW)}pt solid ${borderColor}` : 'none',
+                    ...borderStyle,
                     backgroundColor: cell.bg || 'transparent',
                     fontFamily: cell.font || 'Helvetica',
                     fontSize: `${mmToPtValue(fontSize)}pt`,
                     textAlign:
                       cell.align === 'r' ? 'right' : cell.align === 'c' ? 'center' : 'left',
                     verticalAlign:
-                      cell.vAlign === 'b' ? 'bottom' : cell.vAlign === 'm' ? 'middle' : 'top',
+                      cell.vAlign === 't' ? 'top' : cell.vAlign === 'm' ? 'middle' : 'bottom',
                     color: cell.color || '#000000',
-                    padding: '4pt',
-                    wordBreak: 'break-word',
-                    whiteSpace: 'pre-wrap',
+                    padding: '1pt 2pt',
+                    overflow: 'hidden',
+                    wordBreak: 'normal',
+                    whiteSpace: cell.wrap ? 'pre-wrap' : 'pre',
+                    lineHeight: 1.15,
                   }}
                 >
                   {cell.v}
@@ -291,8 +307,8 @@ const PrintElement = ({ element }: { element: UnifiedNode }) => {
       textEl.hasFrame !== undefined
         ? textEl.hasFrame
         : textEl.borderColor ||
-          (textEl.borderWidth && textEl.borderWidth > 0) ||
-          textEl.backgroundColor
+        (textEl.borderWidth && textEl.borderWidth > 0) ||
+        textEl.backgroundColor
 
     const borderStyle =
       shouldShowBox && textEl.borderWidth && textEl.borderWidth > 0
@@ -329,10 +345,10 @@ const PrintElement = ({ element }: { element: UnifiedNode }) => {
         const markerStyle =
           parsed.type === 'number'
             ? {
-                fontSize: `${mmToPtValue(fontSizeMm * numberMarkerScale)}pt`,
-                verticalAlign: 'middle',
-                display: 'inline-block',
-              }
+              fontSize: `${mmToPtValue(fontSizeMm * numberMarkerScale)}pt`,
+              verticalAlign: 'middle',
+              display: 'inline-block',
+            }
             : undefined
 
         return (
@@ -347,53 +363,53 @@ const PrintElement = ({ element }: { element: UnifiedNode }) => {
     }
 
     if (textEl.vertical) {
-       const padding = textEl.padding ?? 10
-       const COLUMN_SPACING = 1.5
-       const startX = textEl.w - padding - (fontSizeMm * (COLUMN_SPACING / 2 + 0.5))
-       
-       const charMetrics = calculateVerticalLayout(textEl.text || '', startX, padding, {
-          fontSize: fontSizeMm,
-          columnSpacing: COLUMN_SPACING,
-          letterSpacing: 0,
-       })
+      const padding = textEl.padding ?? 10
+      const COLUMN_SPACING = 1.5
+      const startX = textEl.w - padding - (fontSizeMm * (COLUMN_SPACING / 2 + 0.5))
 
-       return (
+      const charMetrics = calculateVerticalLayout(textEl.text || '', startX, padding, {
+        fontSize: fontSizeMm,
+        columnSpacing: COLUMN_SPACING,
+        letterSpacing: 0,
+      })
+
+      return (
         <div style={style}>
-           <div style={{
-              position: 'relative',
-              width: '100%',
-              height: '100%',
-              border: borderStyle,
-              backgroundColor: backgroundColor,
-              borderRadius: borderRadius,
-              boxSizing: 'border-box',
-           }}>
-             {charMetrics.map((metric, index) => (
-                <div
-                   key={index}
-                   style={{
-                      position: 'absolute',
-                      left: `${mmToPtValue(metric.x + metric.offsetX)}pt`,
-                      top: `${mmToPtValue(metric.y + metric.offsetY)}pt`,
-                      fontSize: `${mmToPtValue(fontSizeMm)}pt`,
-                      fontFamily: textEl.font,
-                      color: textEl.fill,
-                      width: `${mmToPtValue(fontSizeMm)}pt`,
-                      height: `${mmToPtValue(fontSizeMm)}pt`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transform: metric.rotation ? `rotate(${metric.rotation}deg)` : undefined,
-                      lineHeight: 1,
-                      whiteSpace: 'pre',
-                   }}
-                >
-                  {metric.char}
-                </div>
-             ))}
-           </div>
+          <div style={{
+            position: 'relative',
+            width: '100%',
+            height: '100%',
+            border: borderStyle,
+            backgroundColor: backgroundColor,
+            borderRadius: borderRadius,
+            boxSizing: 'border-box',
+          }}>
+            {charMetrics.map((metric, index) => (
+              <div
+                key={index}
+                style={{
+                  position: 'absolute',
+                  left: `${mmToPtValue(metric.x + metric.offsetX)}pt`,
+                  top: `${mmToPtValue(metric.y + metric.offsetY)}pt`,
+                  fontSize: `${mmToPtValue(fontSizeMm)}pt`,
+                  fontFamily: textEl.font,
+                  color: textEl.fill,
+                  width: `${mmToPtValue(fontSizeMm)}pt`,
+                  height: `${mmToPtValue(fontSizeMm)}pt`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transform: metric.rotation ? `rotate(${metric.rotation}deg)` : undefined,
+                  lineHeight: 1,
+                  whiteSpace: 'pre',
+                }}
+              >
+                {metric.char}
+              </div>
+            ))}
+          </div>
         </div>
-       )
+      )
     }
 
     return (
@@ -471,6 +487,39 @@ const PrintElement = ({ element }: { element: UnifiedNode }) => {
   return null
 }
 
+const RenderHeaderFooter = ({ content, type, margin }: { content: import('@/types/canvas').HeaderFooterContent | undefined, type: 'header' | 'footer', margin?: import('@/types/canvas').Margin }) => {
+  if (!content) return null
+  const isHeader = type === 'header'
+
+  // Excel default header/footer margin usually ~0.3 inch (7.6mm) from edge
+  const verticalPos = '7.6mm'
+  const leftPos = margin ? `${mmToPtValue(margin.l)}pt` : '10mm'
+  const rightPos = margin ? `${mmToPtValue(margin.r)}pt` : '10mm'
+
+  const style: React.CSSProperties = {
+    position: 'absolute',
+    left: leftPos,
+    right: rightPos,
+    height: 'auto',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: isHeader ? 'flex-start' : 'flex-end',
+    fontSize: '9pt',
+    fontFamily: 'Helvetica, Arial, sans-serif',
+    zIndex: 10,
+    [isHeader ? 'top' : 'bottom']: verticalPos,
+    color: '#333'
+  }
+
+  return (
+    <div style={style}>
+      <div style={{ flex: 1, textAlign: 'left', whiteSpace: 'pre-wrap' }}>{content.left}</div>
+      <div style={{ flex: 1, textAlign: 'center', whiteSpace: 'pre-wrap' }}>{content.center}</div>
+      <div style={{ flex: 1, textAlign: 'right', whiteSpace: 'pre-wrap' }}>{content.right}</div>
+    </div>
+  )
+}
+
 export const PrintLayout = React.forwardRef<
   HTMLDivElement,
   { doc: Doc; orientation?: 'portrait' | 'landscape'; i18nOverrides?: Record<string, string> }
@@ -529,18 +578,24 @@ export const PrintLayout = React.forwardRef<
               <PrintElement key={element.id} element={element} />
             ))}
         </div>
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '10mm',
-            right: '10mm',
-            fontSize: '10pt',
-            color: '#666',
-            zIndex: 2,
-          }}
-        >
-          {pageIndex + 1} / {doc.surfaces.length}
-        </div>
+
+        <RenderHeaderFooter content={surface.header} type="header" margin={surface.margin} />
+        <RenderHeaderFooter content={surface.footer} type="footer" margin={surface.margin} />
+
+        {!surface.footer && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '10mm',
+              right: '10mm',
+              fontSize: '10pt',
+              color: '#666',
+              zIndex: 2,
+            }}
+          >
+            {pageIndex + 1} / {doc.surfaces.length}
+          </div>
+        )}
       </div>
     )
   }

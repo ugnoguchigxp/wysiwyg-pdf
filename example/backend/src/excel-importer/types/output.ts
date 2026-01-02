@@ -31,6 +31,14 @@ export interface OutputSurface {
     l: number
   }
   bg?: string
+  header?: HeaderFooterContent
+  footer?: HeaderFooterContent
+}
+
+export interface HeaderFooterContent {
+  left?: string
+  center?: string
+  right?: string
 }
 
 export interface OutputAsset {

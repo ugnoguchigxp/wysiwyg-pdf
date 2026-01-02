@@ -119,7 +119,7 @@ function pickBorder(
 /**
  * 罫線の太さをざっくりマッピング（mm）
  */
-function borderWidth(style: BorderStyleType | undefined): number {
+export function borderWidth(style: BorderStyleType | undefined): number {
   if (!style) return 0.2
   const map: Record<BorderStyleType, number> = {
     thin: 0.2,
