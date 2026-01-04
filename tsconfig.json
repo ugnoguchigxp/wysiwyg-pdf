@@ -27,8 +27,7 @@
     }
   },
   "include": [
-    "src",
-    "Test"
+    "src"
   ],
   "exclude": [
     "node_modules"
