@@ -19,7 +19,9 @@ export const LabelFieldWidget: React.FC<WidgetProps<LabelFieldWidgetConfig>> = (
         type="text"
         value={(node as unknown as Record<string, string>)[fieldKey] ?? ''}
         onChange={(e) =>
-          onChange({ [fieldKey]: e.target.value } as unknown as Partial<UnifiedNode>)
+          onChange({
+            [fieldKey]: e.target.value,
+          } as unknown as Partial<UnifiedNode>)
         }
         placeholder={config.props?.placeholder}
       />

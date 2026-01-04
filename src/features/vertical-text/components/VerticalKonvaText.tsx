@@ -49,7 +49,6 @@ export function VerticalKonvaText({ node, visible = true }: VerticalKonvaTextPro
     <Group x={x} y={y} visible={visible}>
       {charMetrics.map((metric, index) => (
         <Text
-          // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
           key={`${node.id}-char-${index}`}
           text={metric.char}
           x={metric.x + metric.offsetX}

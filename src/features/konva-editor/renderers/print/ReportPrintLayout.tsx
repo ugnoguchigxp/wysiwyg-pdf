@@ -298,7 +298,11 @@ const RenderHeaderFooter = ({
 
 export const PrintLayout = React.forwardRef<
   HTMLDivElement,
-  { doc: Doc; orientation?: 'portrait' | 'landscape'; i18nOverrides?: Record<string, string> }
+  {
+    doc: Doc
+    orientation?: 'portrait' | 'landscape'
+    i18nOverrides?: Record<string, string>
+  }
 >(({ doc, orientation = 'portrait' }, ref) => {
   const isLandscape = orientation === 'landscape'
   const width = isLandscape ? '297mm' : '210mm'
@@ -347,7 +351,14 @@ export const PrintLayout = React.forwardRef<
             }}
           />
         )}
-        <div style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%' }}>
+        <div
+          style={{
+            position: 'relative',
+            zIndex: 1,
+            width: '100%',
+            height: '100%',
+          }}
+        >
           {doc.nodes
             .filter((el) => el.s === surface.id)
             .map((element) => (

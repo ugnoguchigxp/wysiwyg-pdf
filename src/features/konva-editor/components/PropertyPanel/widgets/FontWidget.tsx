@@ -30,7 +30,9 @@ export const FontWidget: React.FC<WidgetProps<FontWidgetConfig>> = ({
     onValue: boolean | number,
     offValue: boolean | number
   ) => {
-    onChange({ [key]: currentValue === onValue ? offValue : onValue } as Partial<TextNode>)
+    onChange({
+      [key]: currentValue === onValue ? offValue : onValue,
+    } as Partial<TextNode>)
   }
 
   return (
@@ -58,7 +60,9 @@ export const FontWidget: React.FC<WidgetProps<FontWidgetConfig>> = ({
             <WidgetSelect
               value={String(roundTo(mmToPt(textNode.fontSize ?? ptToMm(12)), 1))}
               onChange={(e) =>
-                onChange({ fontSize: ptToMm(Number(e.target.value)) } as Partial<TextNode>)
+                onChange({
+                  fontSize: ptToMm(Number(e.target.value)),
+                } as Partial<TextNode>)
               }
             >
               {sizes.map((s: number) => (

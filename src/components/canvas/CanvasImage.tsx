@@ -9,7 +9,11 @@ import type { CanvasElementCommonProps } from './types'
 
 export const CanvasImage = forwardRef<
   Konva.Image | Konva.Group,
-  { element: ImageNode; commonProps: CanvasElementCommonProps; invScale: number }
+  {
+    element: ImageNode
+    commonProps: CanvasElementCommonProps
+    invScale: number
+  }
 >(({ element, commonProps, invScale }, ref) => {
   const { t } = useI18n()
   const [image, setImage] = useState<HTMLImageElement | null>(null)

@@ -175,7 +175,11 @@ function revertOperationDoc(doc: Doc, op: Operation): Doc {
         ...doc,
         nodes: doc.nodes.map((n) =>
           n.id === op.id
-            ? ({ ...n, ...(op.prev as Partial<UnifiedNode>), id: op.id } as UnifiedNode)
+            ? ({
+                ...n,
+                ...(op.prev as Partial<UnifiedNode>),
+                id: op.id,
+              } as UnifiedNode)
             : n
         ),
       }

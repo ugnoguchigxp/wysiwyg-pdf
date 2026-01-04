@@ -238,7 +238,13 @@ export function useCanvasOperations({
       for (let r = 0; r < 3; r++) {
         for (let c = 0; c < 3; c++) {
           if (!table.table.cells.find((cell) => cell.r === r && cell.c === c)) {
-            table.table.cells.push({ r, c, v: '', borderW: 0.2, borderColor: '#000000' })
+            table.table.cells.push({
+              r,
+              c,
+              v: '',
+              borderW: 0.2,
+              borderColor: '#000000',
+            })
           }
         }
       }

@@ -143,7 +143,10 @@ export const LineRenderer: React.FC<LineRendererProps> = ({
     // Update line + endpoint handles
     lineVisualRef.current?.points(draftPts)
     lineStartHandleRef.current?.position({ x: draftPts[0], y: draftPts[1] })
-    lineEndHandleRef.current?.position({ x: draftPts[endIdx], y: draftPts[endIdx + 1] })
+    lineEndHandleRef.current?.position({
+      x: draftPts[endIdx],
+      y: draftPts[endIdx + 1],
+    })
 
     // Update arrow markers (position + rotation)
     const dx = draftPts[endIdx] - draftPts[0]
@@ -152,11 +155,17 @@ export const LineRenderer: React.FC<LineRendererProps> = ({
     const angleToStart = angleToEnd + Math.PI
 
     if (lineStartMarkerGroupRef.current) {
-      lineStartMarkerGroupRef.current.position({ x: draftPts[0], y: draftPts[1] })
+      lineStartMarkerGroupRef.current.position({
+        x: draftPts[0],
+        y: draftPts[1],
+      })
       lineStartMarkerGroupRef.current.rotation((angleToStart * 180) / Math.PI)
     }
     if (lineEndMarkerGroupRef.current) {
-      lineEndMarkerGroupRef.current.position({ x: draftPts[endIdx], y: draftPts[endIdx + 1] })
+      lineEndMarkerGroupRef.current.position({
+        x: draftPts[endIdx],
+        y: draftPts[endIdx + 1],
+      })
       lineEndMarkerGroupRef.current.rotation((angleToEnd * 180) / Math.PI)
     }
 
@@ -211,7 +220,13 @@ export const LineRenderer: React.FC<LineRendererProps> = ({
     // -------------------------------------------------------------------
     const threshold = 12 * invScale
     const showMargin = 80 * invScale
-    let best: { nodeId: string; anchor: Anchor; x: number; y: number; dist2: number } | null = null
+    let best: {
+      nodeId: string
+      anchor: Anchor
+      x: number
+      y: number
+      dist2: number
+    } | null = null
 
     const activeFill = '#059669'
     const baseStroke = '#0f766e'
@@ -275,7 +290,11 @@ export const LineRenderer: React.FC<LineRendererProps> = ({
     if (best) {
       nextPos = { x: best.x, y: best.y }
       // Update draft connection info
-      if (pointIndex === 0) startConnDraftRef.current = { nodeId: best.nodeId, anchor: best.anchor }
+      if (pointIndex === 0)
+        startConnDraftRef.current = {
+          nodeId: best.nodeId,
+          anchor: best.anchor,
+        }
       else if (pointIndex === base.length - 2)
         endConnDraftRef.current = { nodeId: best.nodeId, anchor: best.anchor }
 

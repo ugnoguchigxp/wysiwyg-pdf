@@ -9,7 +9,12 @@ export const PosSizeWidget: React.FC<WidgetProps<PosSizeWidgetConfig>> = ({
   onChange,
   resolveText,
 }) => {
-  const props = config.props ?? { showX: true, showY: true, showW: true, showH: true }
+  const props = config.props ?? {
+    showX: true,
+    showY: true,
+    showW: true,
+    showH: true,
+  }
 
   return (
     <div className="w-full grid grid-cols-2 gap-1">

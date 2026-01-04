@@ -416,12 +416,27 @@ export const MindmapEditor: React.FC<MindmapEditorProps> = ({
           <div className="grid grid-cols-[1fr_auto] gap-x-8 gap-y-3">
             {[
               { key: t('shortcut_add_child', '子ノード追加'), cmd: 'Tab' },
-              { key: t('shortcut_add_sibling', '兄弟ノード追加'), cmd: 'Enter' },
-              { key: t('shortcut_delete', 'ノード削除'), cmd: 'Delete / Backspace' },
-              { key: t('shortcut_delete', 'ノード削除'), cmd: 'Delete / Backspace' },
-              { key: t('shortcut_edit_text', 'テキスト編集'), cmd: 'ダブルクリック' },
+              {
+                key: t('shortcut_add_sibling', '兄弟ノード追加'),
+                cmd: 'Enter',
+              },
+              {
+                key: t('shortcut_delete', 'ノード削除'),
+                cmd: 'Delete / Backspace',
+              },
+              {
+                key: t('shortcut_delete', 'ノード削除'),
+                cmd: 'Delete / Backspace',
+              },
+              {
+                key: t('shortcut_edit_text', 'テキスト編集'),
+                cmd: 'ダブルクリック',
+              },
               { key: t('shortcut_undo', '元に戻す'), cmd: 'Ctrl/Cmd + Z' },
-              { key: t('shortcut_redo', 'やり直し'), cmd: 'Ctrl/Cmd + Shift + Z' },
+              {
+                key: t('shortcut_redo', 'やり直し'),
+                cmd: 'Ctrl/Cmd + Shift + Z',
+              },
             ].map((s, i) => (
               <React.Fragment key={i}>
                 <div className="text-sm font-medium text-foreground">{s.key}</div>

@@ -193,7 +193,7 @@ export const ViewerPage: React.FC<ViewerPageProps> = ({ onBack }) => {
         if (selectedDemo === 'bedlayout') {
             if (!docs.bedlayout) return <div>Loading...</div>
             return (
-                <div className="relative w-full h-full bg-gray-100 dark:bg-gray-900 overflow-hidden">
+                <div className="relative w-full h-full bg-editor-canvas overflow-hidden">
                     <StatusLegend />
                     <BedLayoutViewer
                         document={docs.bedlayout}
@@ -206,7 +206,7 @@ export const ViewerPage: React.FC<ViewerPageProps> = ({ onBack }) => {
 
         if (selectedDemo === 'mindmap') {
             return (
-                <div className="w-full h-full bg-white dark:bg-gray-900 overflow-hidden relative">
+                <div className="w-full h-full bg-editor-canvas overflow-hidden relative">
                     <MindmapEditor readOnly />
                 </div>
             )
@@ -230,7 +230,7 @@ export const ViewerPage: React.FC<ViewerPageProps> = ({ onBack }) => {
         if (!template) return <div>Loading...</div>
 
         return (
-            <div className="w-full h-full bg-gray-50 dark:bg-gray-900 flex justify-center overflow-auto p-4">
+            <div className="w-full h-full bg-editor-canvas flex justify-center overflow-auto p-4">
                 <TemplateViewer doc={template} zoom={zoom / 100} />
             </div>
         )
@@ -370,7 +370,7 @@ export const ViewerPage: React.FC<ViewerPageProps> = ({ onBack }) => {
                             </div>
 
                             {/* Modal Body */}
-                            <div className="flex-1 overflow-hidden relative bg-muted/50">
+                            <div className="flex-1 overflow-hidden relative bg-editor-canvas">
                                 {renderViewerContent()}
                             </div>
                         </div>

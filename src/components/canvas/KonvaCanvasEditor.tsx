@@ -239,7 +239,9 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
 
       const element = elements.find((el) => el.id === editingElementId)
       if (!element || element.t !== 'text') {
-        onChange({ id: editingElementId, text } as Partial<UnifiedNode> & { id: string })
+        onChange({ id: editingElementId, text } as Partial<UnifiedNode> & {
+          id: string
+        })
         return
       }
 
@@ -385,7 +387,7 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       <div
         ref={containerRef}
         className={cn(
-          'w-full h-full bg-gray-100 dark:bg-gray-900 overflow-auto flex scrollbar-thin p-2',
+          'w-full h-full bg-editor-canvas overflow-auto flex scrollbar-thin p-2',
           className
         )}
         style={{

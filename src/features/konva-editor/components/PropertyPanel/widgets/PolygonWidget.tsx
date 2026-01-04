@@ -26,7 +26,11 @@ export const PolygonWidget: React.FC<WidgetProps<PolygonWidgetConfig>> = ({
         max={max}
         step={step}
         value={points}
-        onChange={(e) => onChange({ sides: parseInt(e.target.value, 10) } as Partial<ShapeNode>)}
+        onChange={(e) =>
+          onChange({
+            sides: parseInt(e.target.value, 10),
+          } as Partial<ShapeNode>)
+        }
         className="w-full accent-accent"
       />
     </div>

@@ -1,3 +1,63 @@
+@theme {
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+}
+
+/* UI Density Variables */
+/* Standard (Default) */
+:root {
+  --ui-component-height: 2.5rem;       /* 40px */
+  --ui-list-row-height: 2.5rem;
+  --ui-component-padding-x: 0.75rem;   /* 12px */
+  --ui-component-padding-y: 0.5rem;    /* 8px */
+  --ui-button-padding-x: 1rem;         /* 16px */
+  --ui-button-padding-y: 0.5rem;       /* 8px */
+  --ui-font-size-base: 0.875rem;       /* 14px */
+  --ui-modal-padding: 1.5rem;          /* 24px */
+  --ui-table-cell-padding: 0.75rem;    /* 12px */
+  --radius: 0.5rem;                    /* 8px */
+}
+
+/* Compact */
+:root[data-density="compact"] {
+  --ui-component-height: 2rem;         /* 32px */
+  --ui-list-row-height: 2rem;
+  --ui-component-padding-x: 0.5rem;    /* 8px */
+  --ui-component-padding-y: 0.25rem;   /* 4px */
+  --ui-button-padding-x: 0.5rem;       /* 8px */
+  --ui-button-padding-y: 0.25rem;      /* 4px */
+  --ui-font-size-base: 0.825rem;       /* 13.2px */
+  --ui-modal-padding: 1rem;            /* 16px */
+  --ui-table-cell-padding: 0.5rem;     /* 8px */
+}
+
+/* Spacious */
+:root[data-density="spacious"] {
+  --ui-component-height: 3rem;         /* 48px */
+  --ui-list-row-height: 3.5rem;        /* 56px */
+  --ui-component-padding-x: 1.25rem;   /* 20px */
+  --ui-component-padding-y: 0.75rem;   /* 12px */
+  --ui-button-padding-x: 1.25rem;      /* 20px */
+  --ui-button-padding-y: 0.75rem;      /* 12px */
+  --ui-font-size-base: 1rem;           /* 16px */
+  --ui-modal-padding: 2rem;            /* 32px */
+  --ui-table-cell-padding: 1rem;       /* 16px */
+}
+
+/* Rounded Overrides (Optional but recommended in theme-fix.md) */
+.rounded-lg {
+  border-radius: var(--radius) !important;
+}
+
+.rounded-md {
+  border-radius: calc(var(--radius) - 4px) !important;
+}
+
+.rounded-sm {
+  border-radius: calc(var(--radius) - 2px) !important;
+}
+
 /* ../../src/features/konva-editor/styles/print.css */
 @media print {
   @page {

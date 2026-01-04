@@ -24,7 +24,9 @@ export const NumberInputWidget: React.FC<WidgetProps<NumberInputWidgetConfig>> =
           step={step}
           value={value}
           onChange={(e) =>
-            onChange({ [fieldKey]: parseFloat(e.target.value) } as unknown as Partial<UnifiedNode>)
+            onChange({
+              [fieldKey]: parseFloat(e.target.value),
+            } as unknown as Partial<UnifiedNode>)
           }
         />
         {unit && <span className="text-[12px] text-muted-foreground">{unit}</span>}

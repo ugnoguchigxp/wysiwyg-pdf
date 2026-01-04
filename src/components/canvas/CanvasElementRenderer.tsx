@@ -260,7 +260,10 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
         const snappedLogicalY = Math.round(logicalPos.y / snap) * snap
 
         const absoluteTransform = stage.getAbsoluteTransform()
-        const snappedPos = absoluteTransform.point({ x: snappedLogicalX, y: snappedLogicalY })
+        const snappedPos = absoluteTransform.point({
+          x: snappedLogicalX,
+          y: snappedLogicalY,
+        })
 
         return snappedPos
       },

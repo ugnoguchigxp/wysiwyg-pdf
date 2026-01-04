@@ -94,12 +94,24 @@ export const WIDGET_PRESETS: Record<string, WidgetConfig> = {
   'stroke:width': {
     type: 'stroke',
     labelKey: 'properties_line_width',
-    props: { showColor: false, showWidth: true, minWidth: 0, maxWidth: 20, step: 0.2 },
+    props: {
+      showColor: false,
+      showWidth: true,
+      minWidth: 0,
+      maxWidth: 20,
+      step: 0.2,
+    },
   },
   'stroke:full': {
     type: 'stroke',
     labelKey: 'properties_stroke',
-    props: { showColor: true, showWidth: true, minWidth: 0, maxWidth: 20, step: 0.2 },
+    props: {
+      showColor: true,
+      showWidth: true,
+      minWidth: 0,
+      maxWidth: 20,
+      step: 0.2,
+    },
   },
 
   // === Line Style ===
@@ -314,7 +326,13 @@ export const SECTION_PRESETS: Record<string, SectionConfig> = {
       {
         type: 'slider',
         labelKey: 'properties_signature_optimization',
-        props: { fieldKey: 'tolerance', min: 1.0, max: 3.0, step: 0.1, showValue: true },
+        props: {
+          fieldKey: 'tolerance',
+          min: 1.0,
+          max: 3.0,
+          step: 0.1,
+          showValue: true,
+        },
       },
     ],
   },

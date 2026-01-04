@@ -195,7 +195,10 @@ export const UnifiedPropertyPanel: React.FC<UnifiedPropertyPanelProps> = ({
       ) : null,
   }
 
-  const customRenderers = { ...builtInCustomRenderers, ...externalCustomRenderers }
+  const customRenderers = {
+    ...builtInCustomRenderers,
+    ...externalCustomRenderers,
+  }
 
   // Handle element updates
   const handleChange = (updates: Partial<UnifiedNode>, options?: { saveToHistory?: boolean }) => {

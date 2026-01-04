@@ -40,7 +40,11 @@ interface ReportKonvaEditorProps {
   orientation?: 'portrait' | 'landscape'
   onSelectedCellChange?: (cell: { elementId: string; row: number; col: number } | null) => void
   activeTool?: string
-  drawingSettings?: { stroke: string; strokeWidth: number; simplification?: number }
+  drawingSettings?: {
+    stroke: string
+    strokeWidth: number
+    simplification?: number
+  }
   showGrid?: boolean
   // snapStrength?: number // Removed unused
   gridSize?: number
@@ -64,7 +68,11 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       // orientation = 'portrait', // unused
       onSelectedCellChange,
       activeTool,
-      drawingSettings = { stroke: '#000000', strokeWidth: 0.2, simplification: 0 },
+      drawingSettings = {
+        stroke: '#000000',
+        strokeWidth: 0.2,
+        simplification: 0,
+      },
       showGrid = false,
       // snapStrength = 0, // Removed unused
       gridSize = 50,
@@ -261,7 +269,11 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       if (selectedElementId) {
         const el = nodes.find((n) => n.id === selectedElementId)
         if (el && el.t !== 'line') {
-          handleElementChange({ id: selectedElementId, x: (el.x || 0) + dx, y: (el.y || 0) + dy })
+          handleElementChange({
+            id: selectedElementId,
+            x: (el.x || 0) + dx,
+            y: (el.y || 0) + dy,
+          })
         }
       }
     }
@@ -304,7 +316,10 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
           newNodes.push(newEl)
         })
 
-        onTemplateChange({ ...templateDoc, nodes: [...templateDoc.nodes, ...newNodes] })
+        onTemplateChange({
+          ...templateDoc,
+          nodes: [...templateDoc.nodes, ...newNodes],
+        })
 
         if (newNodes.length > 0) {
           onElementSelect(newNodes[newNodes.length - 1])
@@ -413,7 +428,10 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
           vertical: false,
         }
 
-        onTemplateChange({ ...templateDoc, nodes: [...templateDoc.nodes, newNode] })
+        onTemplateChange({
+          ...templateDoc,
+          nodes: [...templateDoc.nodes, newNode],
+        })
         onElementSelect(newNode)
       } catch (e) {
         console.error('Failed to parse drop data', e)
@@ -423,7 +441,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
     return (
       <div
         ref={containerRef}
-        className="w-full h-full bg-gray-100 dark:bg-gray-900 overflow-auto flex scrollbar-thin p-8"
+        className="w-full h-full bg-editor-canvas overflow-auto flex scrollbar-thin p-8"
         onDrop={handleDrop}
         onDragOver={(e) => {
           e.preventDefault()

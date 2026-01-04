@@ -8,7 +8,11 @@ interface UseSignatureProps {
   onTemplateChange: (doc: Doc) => void
   currentSurface: Surface
   onElementSelect: (element: UnifiedNode | null) => void
-  drawingSettings?: { stroke: string; strokeWidth: number; simplification?: number }
+  drawingSettings?: {
+    stroke: string
+    strokeWidth: number
+    simplification?: number
+  }
 }
 
 export const useSignature = ({

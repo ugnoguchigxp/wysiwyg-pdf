@@ -14,14 +14,30 @@ interface IArrowSelectorProps {
   label: string
 }
 
-const arrowTypeOptions: { value: ArrowType; labelKey: string; fallback: string }[] = [
+const arrowTypeOptions: {
+  value: ArrowType
+  labelKey: string
+  fallback: string
+}[] = [
   { value: 'none', labelKey: 'properties_arrow_none', fallback: 'None' },
-  { value: 'standard', labelKey: 'properties_arrow_standard', fallback: 'Standard' },
+  {
+    value: 'standard',
+    labelKey: 'properties_arrow_standard',
+    fallback: 'Standard',
+  },
   { value: 'filled', labelKey: 'properties_arrow_filled', fallback: 'Filled' },
-  { value: 'triangle', labelKey: 'properties_arrow_triangle', fallback: 'Triangle' },
+  {
+    value: 'triangle',
+    labelKey: 'properties_arrow_triangle',
+    fallback: 'Triangle',
+  },
   { value: 'open', labelKey: 'properties_arrow_open', fallback: 'Open' },
   { value: 'circle', labelKey: 'properties_arrow_circle', fallback: 'Circle' },
-  { value: 'diamond', labelKey: 'properties_arrow_diamond', fallback: 'Diamond' },
+  {
+    value: 'diamond',
+    labelKey: 'properties_arrow_diamond',
+    fallback: 'Diamond',
+  },
   { value: 'square', labelKey: 'properties_arrow_square', fallback: 'Square' },
 ]
 

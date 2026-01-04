@@ -18,9 +18,18 @@ export const BedLayoutHeader: React.FC<EditorHeaderProps> = (props) => {
     <EditorHeader
       {...props}
       orientationOptions={[
-        { label: resolveText('orientations_portrait', 'Portrait'), value: 'portrait' },
-        { label: resolveText('orientations_landscape', 'Landscape'), value: 'landscape' },
-        { label: resolveText('orientations_square', 'Square'), value: 'square' },
+        {
+          label: resolveText('orientations_portrait', 'Portrait'),
+          value: 'portrait',
+        },
+        {
+          label: resolveText('orientations_landscape', 'Landscape'),
+          value: 'landscape',
+        },
+        {
+          label: resolveText('orientations_square', 'Square'),
+          value: 'square',
+        },
       ]}
     />
   )

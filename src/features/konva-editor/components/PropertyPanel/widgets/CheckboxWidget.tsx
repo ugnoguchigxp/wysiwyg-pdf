@@ -30,7 +30,10 @@ export const CheckboxWidget: React.FC<WidgetProps<CheckboxWidgetConfig>> = ({
         const pts = lineNode.pts || []
         if (pts.length >= 4) {
           const newPts = [pts[0], pts[1], pts[pts.length - 2], pts[pts.length - 1]]
-          const updates: Partial<LineNode> = { routing: 'straight', pts: newPts }
+          const updates: Partial<LineNode> = {
+            routing: 'straight',
+            pts: newPts,
+          }
           onChange(updates)
         } else {
           const updates: Partial<LineNode> = { routing: 'straight' }

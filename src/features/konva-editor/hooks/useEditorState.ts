@@ -49,7 +49,10 @@ export function useEditorState(): UseEditorStateReturn {
   }, [])
 
   // Scroll
-  const [scroll, setScroll] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
+  const [scroll, setScroll] = useState<{ x: number; y: number }>({
+    x: 0,
+    y: 0,
+  })
 
   return {
     selection,

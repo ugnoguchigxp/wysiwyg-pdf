@@ -224,7 +224,11 @@ const CanvasSettingsPanel: React.FC<{
 // ========================================
 
 const SignatureDrawingPanel: React.FC<{
-  drawingSettings: { stroke: string; strokeWidth: number; simplification?: number }
+  drawingSettings: {
+    stroke: string
+    strokeWidth: number
+    simplification?: number
+  }
   onDrawingSettingsChange: (settings: {
     stroke: string
     strokeWidth: number
@@ -243,7 +247,12 @@ const SignatureDrawingPanel: React.FC<{
       <input
         type="color"
         value={drawingSettings.stroke}
-        onChange={(e) => onDrawingSettingsChange({ ...drawingSettings, stroke: e.target.value })}
+        onChange={(e) =>
+          onDrawingSettingsChange({
+            ...drawingSettings,
+            stroke: e.target.value,
+          })
+        }
         className={`${inputClass} h-8 p-0.5 cursor-pointer`}
       />
     </div>
@@ -434,7 +443,9 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
               type="checkbox"
               checked={line.routing === 'orthogonal'}
               onChange={(e) =>
-                handleChange(node.id, { routing: e.target.checked ? 'orthogonal' : 'straight' })
+                handleChange(node.id, {
+                  routing: e.target.checked ? 'orthogonal' : 'straight',
+                })
               }
               className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />

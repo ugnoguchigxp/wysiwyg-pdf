@@ -99,7 +99,11 @@ export const useCanvasDrag = ({ element, allElements, onChange }: UseCanvasDragP
       if (connected.length === 0) return
 
       // Temporary Geo
-      const currentGeo = { ...element, x: topLeftX, y: topLeftY } as UnifiedNode
+      const currentGeo = {
+        ...element,
+        x: topLeftX,
+        y: topLeftY,
+      } as UnifiedNode
 
       // We re-use logic but instead of returning updates, we apply them to Konva Nodes
       connected.forEach((ln) => {
@@ -117,8 +121,20 @@ export const useCanvasDrag = ({ element, allElements, onChange }: UseCanvasDragP
 
         if (!sNode || !eNode || !isWHElement(sNode) || !isWHElement(eNode)) return
 
-        const sGeo = { x: sNode.x, y: sNode.y, w: sNode.w, h: sNode.h, r: sNode.r }
-        const eGeo = { x: eNode.x, y: eNode.y, w: eNode.w, h: eNode.h, r: eNode.r }
+        const sGeo = {
+          x: sNode.x,
+          y: sNode.y,
+          w: sNode.w,
+          h: sNode.h,
+          r: sNode.r,
+        }
+        const eGeo = {
+          x: eNode.x,
+          y: eNode.y,
+          w: eNode.w,
+          h: eNode.h,
+          r: eNode.r,
+        }
 
         let nextPts: number[] = []
         if (ln.routing === 'orthogonal') {

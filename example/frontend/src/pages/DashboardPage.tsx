@@ -33,8 +33,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                         onClick={() => onNavigate('report')}
                         className="flex flex-col items-center justify-center p-12 rounded-xl border-2 border-border bg-card hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200 group h-80"
                     >
-                        <div className="w-24 h-24 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
-                            <FileText className="w-12 h-12 text-blue-600 dark:text-blue-400" />
+                        <div className="w-24 h-24 rounded-full bg-blue-600 dark:bg-blue-900/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
+                            <FileText className="w-12 h-12 !text-white dark:text-blue-400" style={{ color: 'white' }} />
                         </div>
                         <h2 className="text-2xl font-bold mb-2 text-foreground">Report Editor</h2>
                         <p className="text-muted-foreground text-center">
@@ -46,8 +46,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                         onClick={() => onNavigate('excel-import')}
                         className="flex flex-col items-center justify-center p-12 rounded-xl border-2 border-border bg-card hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200 group h-80"
                     >
-                        <div className="w-24 h-24 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
-                            <FileSpreadsheet className="w-12 h-12 text-green-600 dark:text-green-400" />
+                        <div className="w-24 h-24 rounded-full bg-green-600 dark:bg-green-900/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
+                            <FileSpreadsheet className="w-12 h-12 !text-white dark:text-green-400" style={{ color: 'white' }} />
                         </div>
                         <h2 className="text-2xl font-bold mb-2 text-foreground">Excel Import</h2>
                         <p className="text-muted-foreground text-center">
@@ -59,8 +59,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                         onClick={() => onNavigate('bed')}
                         className="flex flex-col items-center justify-center p-12 rounded-xl border-2 border-border bg-card hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-200 group h-80"
                     >
-                        <div className="w-24 h-24 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
-                            <LayoutTemplate className="w-12 h-12 text-purple-600 dark:text-purple-400" />
+                        <div className="w-24 h-24 rounded-full bg-purple-600 dark:bg-purple-900/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
+                            <LayoutTemplate className="w-12 h-12 !text-white dark:text-purple-400" style={{ color: 'white' }} />
                         </div>
                         <h2 className="text-2xl font-bold mb-2 text-foreground">Bed Layout Editor</h2>
                         <p className="text-muted-foreground text-center">
@@ -72,8 +72,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                         onClick={() => onNavigate('viewer')}
                         className="flex flex-col items-center justify-center p-12 rounded-xl border-2 border-border bg-card hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200 group h-80"
                     >
-                        <div className="w-24 h-24 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
-                            <Monitor className="w-12 h-12 text-green-600 dark:text-green-400" />
+                        <div className="w-24 h-24 rounded-full bg-green-600 dark:bg-green-900/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
+                            <Monitor className="w-12 h-12 !text-white dark:text-green-400" style={{ color: 'white' }} />
                         </div>
                         <h2 className="text-2xl font-bold mb-2 text-foreground">Viewer Demo</h2>
                         <p className="text-muted-foreground text-center">
@@ -85,8 +85,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                         onClick={() => onNavigate('signature')}
                         className="flex flex-col items-center justify-center p-12 rounded-xl border-2 border-border bg-card hover:border-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all duration-200 group h-80"
                     >
-                        <div className="w-24 h-24 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
-                            <FileText className="w-12 h-12 text-orange-600 dark:text-orange-400" />
+                        <div className="w-24 h-24 rounded-full bg-orange-600 dark:bg-orange-900/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
+                            <FileText className="w-12 h-12 !text-white dark:text-orange-400" style={{ color: 'white' }} />
                         </div>
                         <h2 className="text-2xl font-bold mb-2 text-foreground">Signature Demo</h2>
                         <p className="text-muted-foreground text-center">
@@ -98,8 +98,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                         onClick={() => onNavigate('mindmap')}
                         className="flex flex-col items-center justify-center p-12 rounded-xl border-2 border-border bg-card hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-all duration-200 group h-80"
                     >
-                        <div className="w-24 h-24 rounded-full bg-teal-100 dark:bg-teal-900/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
-                            <GitBranch className="w-12 h-12 text-teal-600 dark:text-teal-400" />
+                        <div className="w-24 h-24 rounded-full bg-teal-600 dark:bg-teal-900/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
+                            <GitBranch className="w-12 h-12 !text-white dark:text-teal-400" style={{ color: 'white' }} />
                         </div>
                         <h2 className="text-2xl font-bold mb-2 text-foreground">Mindmap Editor</h2>
                         <p className="text-muted-foreground text-center">
@@ -111,8 +111,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                         onClick={() => onNavigate('slide')}
                         className="flex flex-col items-center justify-center p-12 rounded-xl border-2 border-border bg-card hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200 group h-80"
                     >
-                        <div className="w-24 h-24 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
-                            <Monitor className="w-12 h-12 text-red-600 dark:text-red-400" />
+                        <div className="w-24 h-24 rounded-full bg-red-600 dark:bg-red-900/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
+                            <Monitor className="w-12 h-12 !text-white dark:text-red-400" style={{ color: 'white' }} />
                         </div>
                         <h2 className="text-2xl font-bold mb-2 text-foreground">Slide Editor</h2>
                         <p className="text-muted-foreground text-center">

@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.3.8/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.3.10/schema.json",
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
@@ -26,8 +26,15 @@
     }
   },
   "files": {
-    "experimentalScannerIgnores": ["**/node_modules/**", "**/dist/**", "example/**", "coverage/**"],
-    "ignoreUnknown": true
+    "ignoreUnknown": true,
+    "includes": [
+      "**",
+      "!!**/node_modules/**",
+      "!!**/dist/**",
+      "!!example/**",
+      "!!**/coverage/**",
+      "!!src/index.css"
+    ]
   },
   "overrides": [
     {

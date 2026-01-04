@@ -55,7 +55,11 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
       sides.forEach((side) => {
         if (side === 'none') return
         newBorders[side] = {
-          ...(newBorders[side] || { style: 'solid', width: 0.2, color: '#000' }),
+          ...(newBorders[side] || {
+            style: 'solid',
+            width: 0.2,
+            color: '#000',
+          }),
           ...updates,
         }
       })

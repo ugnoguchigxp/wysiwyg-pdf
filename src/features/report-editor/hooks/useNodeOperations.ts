@@ -57,7 +57,9 @@ export const useNodeOperations = ({
       const element = templateDoc.nodes.find((n) => n.id === editingElementId)
       if (!element || element.t !== 'text') {
         handleElementChange(
-          { id: editingElementId, text } as Partial<UnifiedNode> & { id?: string },
+          { id: editingElementId, text } as Partial<UnifiedNode> & {
+            id?: string
+          },
           { saveToHistory: false }
         )
         return
@@ -67,7 +69,9 @@ export const useNodeOperations = ({
 
       const updatePatch = applyTextLayoutUpdates(textNode, { text })
       handleElementChange(
-        { id: editingElementId, ...updatePatch } as Partial<UnifiedNode> & { id?: string },
+        { id: editingElementId, ...updatePatch } as Partial<UnifiedNode> & {
+          id?: string
+        },
         { saveToHistory: false }
       )
     },
@@ -84,7 +88,10 @@ export const useNodeOperations = ({
           const fontSize = textNode.fontSize ?? ptToMm(12)
           const padding = textNode.padding ?? 10
           const newH = calculateVerticalTextHeight(textNode.text ?? '', fontSize, padding)
-          const updatePatch: Partial<UnifiedNode> = { id: editingElementId, h: newH }
+          const updatePatch: Partial<UnifiedNode> = {
+            id: editingElementId,
+            h: newH,
+          }
 
           handleElementChange(updatePatch as Partial<UnifiedNode> & { id?: string }, {
             saveToHistory: true,

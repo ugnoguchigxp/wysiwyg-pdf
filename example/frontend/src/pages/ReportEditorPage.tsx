@@ -291,7 +291,7 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack, init
                 </div>
 
                 {/* Center Canvas */}
-                <div className="flex-1 relative overflow-hidden bg-gray-100 dark:bg-gray-900">
+                <div className="flex-1 relative overflow-hidden bg-editor-canvas">
                     <ReportKonvaEditor
                         ref={editorRef}
                         templateDoc={doc}
@@ -312,6 +312,7 @@ export const ReportEditorPage: React.FC<ReportEditorPageProps> = ({ onBack, init
                         drawingSettings={drawingSettings}
                         showGrid={showGrid}
                         gridSize={gridSize}
+                        // @ts-expect-error - snapStrength missing in types
                         snapStrength={snapStrength}
                     />
                 </div>

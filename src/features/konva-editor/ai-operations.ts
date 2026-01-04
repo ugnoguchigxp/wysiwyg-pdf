@@ -3,7 +3,11 @@ import type { Doc, UnifiedNode } from '@/types/canvas'
 
 export type AIOperation =
   | { kind: 'create-element'; element: UnifiedNode }
-  | { kind: 'update-element'; id: string; next: Partial<Omit<UnifiedNode, 't'>> }
+  | {
+      kind: 'update-element'
+      id: string
+      next: Partial<Omit<UnifiedNode, 't'>>
+    }
   | { kind: 'delete-element'; id: string }
   | { kind: 'reorder-elements'; nextOrder: string[] }
 
@@ -65,7 +69,11 @@ function applyOperation(doc: Doc, op: Operation): Doc {
         ...doc,
         nodes: doc.nodes.map((n) =>
           n.id === op.id
-            ? ({ ...n, ...(op.next as Partial<UnifiedNode>), id: op.id } as UnifiedNode)
+            ? ({
+                ...n,
+                ...(op.next as Partial<UnifiedNode>),
+                id: op.id,
+              } as UnifiedNode)
             : n
         ),
       }

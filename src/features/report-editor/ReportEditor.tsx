@@ -83,7 +83,7 @@ export const ReportEditor: React.FC<ReportEditorProps> = ({
       </div>
 
       {/* Center Canvas */}
-      <div className="flex-1 relative overflow-hidden bg-gray-100 dark:bg-gray-900">
+      <div className="flex-1 relative overflow-hidden bg-editor-canvas">
         <ReportKonvaEditor
           ref={editorRef}
           templateDoc={templateDoc}

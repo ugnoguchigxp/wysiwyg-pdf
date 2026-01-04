@@ -33,7 +33,7 @@ export const uploadDocAssets = async (
     // Scan nodes for base64 images
     for (let i = 0; i < newNodes.length; i++) {
         const node = newNodes[i];
-        if (node.t === 'image' && (node as ImageNode).src.startsWith('data:')) {
+        if (node.t === 'image' && (node as ImageNode).src?.startsWith('data:')) {
             const imgNode = node as ImageNode;
             const base64 = imgNode.src;
 
@@ -42,7 +42,7 @@ export const uploadDocAssets = async (
                     console.log(`[uploadDocAssets] Adding task for node ${imgNode.id}`);
                     addTask(`Upload Image: ${imgNode.name || 'Untitled'}`, async (_item, onProgress, signal) => {
                         try {
-                            const file = dataURLtoFile(base64, `image-${imgNode.id}.png`);
+                            const file = dataURLtoFile(base64!, `image-${imgNode.id}.png`);
                             onProgress(10);
                             const result = await uploadFile(file, signal);
                             onProgress(100);

@@ -3,3 +3,5 @@
 example/**
 Test/**
 coverage/**
+**/src/index.css
+src/index.css

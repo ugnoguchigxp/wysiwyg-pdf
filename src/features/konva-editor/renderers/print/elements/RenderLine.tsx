@@ -37,7 +37,12 @@ export const RenderLine = ({ element }: { element: LineNode }) => {
       width={`${width + 20}pt`}
       height={`${height + 20}pt`}
       viewBox={`0 0 ${width + 20} ${height + 20}`}
-      style={{ overflow: 'visible', position: 'absolute', left: `${minX}pt`, top: `${minY}pt` }}
+      style={{
+        overflow: 'visible',
+        position: 'absolute',
+        left: `${minX}pt`,
+        top: `${minY}pt`,
+      }}
     >
       <polyline
         points={relativePts.join(' ')}

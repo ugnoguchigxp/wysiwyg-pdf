@@ -268,12 +268,16 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
         const nextLevel = Math.min(5, Math.max(1, parsed.level + delta))
         if (nextLevel === parsed.level) return line
         changed = true
-        return buildListLine(parsed.content, parsed.type, nextLevel, { vertical: element.vertical })
+        return buildListLine(parsed.content, parsed.type, nextLevel, {
+          vertical: element.vertical,
+        })
       })
 
       if (!changed) return
 
-      const normalized = normalizeListText(updatedLines.join('\n'), { vertical: element.vertical })
+      const normalized = normalizeListText(updatedLines.join('\n'), {
+        vertical: element.vertical,
+      })
       const newLines = normalized.split('\n')
       const newLineStarts: number[] = []
       let newOffset = 0
@@ -289,8 +293,12 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
         const oldLineStart = lineStarts[lineIndex] ?? 0
         const newLineStart = newLineStarts[lineIndex] ?? 0
         const column = pos - oldLineStart
-        const oldParsed = parseListLine(oldLine, { vertical: element.vertical })
-        const newParsed = parseListLine(newLine, { vertical: element.vertical })
+        const oldParsed = parseListLine(oldLine, {
+          vertical: element.vertical,
+        })
+        const newParsed = parseListLine(newLine, {
+          vertical: element.vertical,
+        })
         const oldPrefix = oldParsed.isList ? oldParsed.prefixLength : 0
         const newPrefix = newParsed.isList ? newParsed.prefixLength : 0
         const prefixDelta = column >= oldPrefix ? newPrefix - oldPrefix : 0
@@ -349,7 +357,9 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
 
           const nextNumber =
             parsed.type === 'number'
-              ? getNextListNumber(value, lineIndex, parsed.level, { vertical: element.vertical })
+              ? getNextListNumber(value, lineIndex, parsed.level, {
+                  vertical: element.vertical,
+                })
               : undefined
           const newLine = buildListLine('', parsed.type, parsed.level, {
             vertical: element.vertical,
@@ -360,7 +370,9 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
           const nextPos = selectionStart + insert.length
 
           if (parsed.type === 'number') {
-            const normalized = normalizeListText(updated, { vertical: element.vertical })
+            const normalized = normalizeListText(updated, {
+              vertical: element.vertical,
+            })
             const oldLines = updated.split('\n')
             const newLines = normalized.split('\n')
             const oldLineStarts: number[] = []
@@ -390,8 +402,12 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
               const oldLineStart = oldLineStarts[lineIndex] ?? 0
               const newLineStart = newLineStarts[lineIndex] ?? 0
               const column = pos - oldLineStart
-              const oldParsed = parseListLine(oldLine, { vertical: element.vertical })
-              const newParsed = parseListLine(newLine, { vertical: element.vertical })
+              const oldParsed = parseListLine(oldLine, {
+                vertical: element.vertical,
+              })
+              const newParsed = parseListLine(newLine, {
+                vertical: element.vertical,
+              })
               const oldPrefix = oldParsed.isList ? oldParsed.prefixLength : 0
               const newPrefix = newParsed.isList ? newParsed.prefixLength : 0
               const prefixDelta = column >= oldPrefix ? newPrefix - oldPrefix : 0

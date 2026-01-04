@@ -1,7 +1,10 @@
 import type { PageSize } from '@/features/konva-editor/types'
 import { toMm } from '@/utils/units'
 
-export function getPageDimensions(size: PageSize): { width: number; height: number } {
+export function getPageDimensions(size: PageSize): {
+  width: number
+  height: number
+} {
   if (typeof size === 'object') {
     const { width, height, unit } = size
     const wMm = toMm(width, unit, { dpi: 96 })
@@ -23,7 +26,10 @@ export function getPageDimensions(size: PageSize): { width: number; height: numb
   }
 }
 
-export function getPresentationPageDimensions(size: PageSize): { width: number; height: number } {
+export function getPresentationPageDimensions(size: PageSize): {
+  width: number
+  height: number
+} {
   const DISPLAY_SCALE = 0.7
 
   if (typeof size === 'object') {

@@ -16,7 +16,7 @@ import * as React from 'react'
 import { cn } from '../../utils/utils'
 
 const buttonVariants = cva(
-  'inline-flex min-h-[44px] min-w-[64px] items-center justify-center gap-2 whitespace-nowrap rounded-[6px] border border-solid text-base font-semibold shadow-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 hover:brightness-95 active:shadow-none active:translate-y-[1px]',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap border border-solid text-base font-semibold shadow-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 hover:brightness-95 active:shadow-none active:translate-y-[1px]',
   {
     variants: {
       variant: {
@@ -58,11 +58,11 @@ const buttonVariants = cva(
         fab: 'bg-primary text-primary-foreground border-border rounded-full shadow-sm hover:shadow-md min-h-0 min-w-0',
       },
       size: {
-        default: 'px-4 py-2 text-base',
-        sm: 'px-3 py-1.5 text-sm min-h-[36px] min-w-[48px]',
-        lg: 'px-6 py-3 text-lg min-h-[52px] min-w-[80px]',
-        icon: 'h-11 w-11 p-0',
-        fab: 'h-14 w-14 p-0',
+        default: 'px-4 py-2 text-base rounded-[6px] min-h-[44px] min-w-[64px]',
+        sm: 'px-3 py-1.5 text-sm min-h-[36px] min-w-[48px] rounded-[6px]',
+        lg: 'px-6 py-3 text-lg min-h-[52px] min-w-[80px] rounded-[6px]',
+        icon: 'h-11 w-11 p-0 rounded-[6px]',
+        fab: 'h-14 w-14 p-0 rounded-full',
         circle: 'h-8 w-8 min-h-[32px] min-w-[32px] p-0 text-sm rounded-full',
       },
     },

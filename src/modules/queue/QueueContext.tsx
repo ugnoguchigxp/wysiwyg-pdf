@@ -22,10 +22,10 @@ export interface QueueContextType {
 
 export const QueueContext = createContext<QueueContextType | undefined>(undefined)
 
-export const QueueProvider: React.FC<{ children: React.ReactNode; maxConcurrent?: number }> = ({
-  children,
-  maxConcurrent = 3,
-}) => {
+export const QueueProvider: React.FC<{
+  children: React.ReactNode
+  maxConcurrent?: number
+}> = ({ children, maxConcurrent = 3 }) => {
   const [items, setItems] = useState<IQueueItem[]>([])
   const itemsRef = useRef<IQueueItem[]>([])
 
@@ -134,7 +134,12 @@ export const QueueProvider: React.FC<{ children: React.ReactNode; maxConcurrent?
     (id: string) => {
       const item = itemsRef.current.find((i) => i.id === id)
       if (item && (item.status === 'failed' || item.status === 'cancelled')) {
-        updateItem(id, { status: 'pending', progress: 0, error: undefined, result: undefined })
+        updateItem(id, {
+          status: 'pending',
+          progress: 0,
+          error: undefined,
+          result: undefined,
+        })
       }
     },
     [updateItem]

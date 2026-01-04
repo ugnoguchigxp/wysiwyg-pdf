@@ -70,7 +70,12 @@ interface BaseWidgetConfig {
 
 export interface PosSizeWidgetConfig extends BaseWidgetConfig {
   type: 'posSize'
-  props?: { showX?: boolean; showY?: boolean; showW?: boolean; showH?: boolean }
+  props?: {
+    showX?: boolean
+    showY?: boolean
+    showW?: boolean
+    showH?: boolean
+  }
 }
 
 export interface FontWidgetConfig extends BaseWidgetConfig {
@@ -123,7 +128,11 @@ export interface PolygonWidgetConfig extends BaseWidgetConfig {
 }
 export interface ImageWidgetConfig extends BaseWidgetConfig {
   type: 'image'
-  props?: { showPreview?: boolean; showUploader?: boolean; maxPreviewHeight?: number }
+  props?: {
+    showPreview?: boolean
+    showUploader?: boolean
+    maxPreviewHeight?: number
+  }
 }
 export interface LabelFieldWidgetConfig extends BaseWidgetConfig {
   type: 'labelField'
@@ -143,7 +152,13 @@ export interface ColorPickerWidgetConfig extends BaseWidgetConfig {
 }
 export interface SliderWidgetConfig extends BaseWidgetConfig {
   type: 'slider'
-  props: { fieldKey: string; min: number; max: number; step?: number; showValue?: boolean }
+  props: {
+    fieldKey: string
+    min: number
+    max: number
+    step?: number
+    showValue?: boolean
+  }
 }
 export interface TextContentWidgetConfig extends BaseWidgetConfig {
   type: 'textContent'

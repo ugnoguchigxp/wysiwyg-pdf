@@ -26,7 +26,9 @@ export const SliderWidget: React.FC<WidgetProps<SliderWidgetConfig>> = ({
         step={step}
         value={value}
         onChange={(e) =>
-          onChange({ [fieldKey]: parseFloat(e.target.value) } as unknown as Partial<UnifiedNode>)
+          onChange({
+            [fieldKey]: parseFloat(e.target.value),
+          } as unknown as Partial<UnifiedNode>)
         }
         className="w-full accent-accent"
       />

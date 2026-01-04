@@ -61,8 +61,14 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   }
 
   const defaultOptions = [
-    { label: resolveText('orientations_portrait', 'Portrait'), value: 'portrait' },
-    { label: resolveText('orientations_landscape', 'Landscape'), value: 'landscape' },
+    {
+      label: resolveText('orientations_portrait', 'Portrait'),
+      value: 'portrait',
+    },
+    {
+      label: resolveText('orientations_landscape', 'Landscape'),
+      value: 'landscape',
+    },
   ]
 
   const currentOptions = orientationOptions || defaultOptions
