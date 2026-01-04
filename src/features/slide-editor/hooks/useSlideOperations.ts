@@ -26,6 +26,7 @@ export const useSlideOperations = ({
 
   // Add Slide with Layout
   const handleAddSlide = useCallback(
+    // biome-ignore lint/suspicious/noExplicitAny: layoutId matches LayoutType
     (layoutId: any) => {
       // layoutId is LayoutType
       const layout = SLIDE_LAYOUTS.find((l) => l.id === layoutId) || SLIDE_LAYOUTS[0] // fallback

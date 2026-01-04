@@ -18,6 +18,7 @@ export async function isPptxAvailable(): Promise<boolean> {
  * @param fileName Output filename
  */
 export async function exportToPptx(doc: Doc, fileName = 'presentation.pptx') {
+  // biome-ignore lint/suspicious/noExplicitAny: external lib
   let PptxGenJS: any
   try {
     const module = await import('pptxgenjs')
@@ -87,6 +88,7 @@ export function sanitizeNum(val?: number): number {
   return typeof val === 'number' && Number.isFinite(val) ? val : 0
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: generic slide object
 async function addNodeToSlide(slide: any, node: UnifiedNode) {
   const x = sanitizeNum(node.x) * MM_TO_INCH
   const y = sanitizeNum(node.y) * MM_TO_INCH
@@ -94,6 +96,7 @@ async function addNodeToSlide(slide: any, node: UnifiedNode) {
   const h = sanitizeNum(node.h) * MM_TO_INCH
 
   // Common options
+  // biome-ignore lint/suspicious/noExplicitAny: options bag
   const options: any = {
     x,
     y,

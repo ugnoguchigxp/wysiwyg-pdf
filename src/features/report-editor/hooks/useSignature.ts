@@ -119,7 +119,9 @@ export const useSignature = ({
         const stage = e.target.getStage()
         const nativeEvent = e.evt as PointerEvent | undefined
         const pressure =
-          nativeEvent && 'pressure' in nativeEvent ? (nativeEvent as any).pressure : undefined
+          nativeEvent && 'pressure' in nativeEvent
+            ? (nativeEvent as PointerEvent).pressure
+            : undefined
         const isPressureDevice = typeof pressure === 'number' && pressure !== 0.5 && pressure !== 0
         const point = stage?.getPointerPosition()
         if (point) {

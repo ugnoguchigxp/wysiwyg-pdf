@@ -178,6 +178,7 @@ import { SlidePreview } from './SlidePreview'
 
 // Update SlideThumbnailProps
 interface SlideThumbnailProps {
+  // biome-ignore lint/suspicious/noExplicitAny: complex type
   slide: any // UnifiedNode/Surface
   isSelected: boolean
   isDragged: boolean
@@ -363,6 +364,7 @@ const SlideThumbnail: React.FC<SlideThumbnailProps> = ({
               <span>Duplicate</span>
             </DropdownMenuItem>
             <DropdownMenuItem
+              // biome-ignore lint/suspicious/noExplicitAny: event type
               onClick={(e) => onDelete(e as any, slide.id)}
               className="text-destructive focus:text-destructive"
               disabled={surfacesCount <= 1}

@@ -34,6 +34,12 @@ vi.mock('@/components/ui/Button', () => ({
     ),
 }))
 
+// Mock utils to avoid async state updates after teardown
+vi.mock('@/features/slide-editor/utils/pptxExport', () => ({
+    isPptxAvailable: () => Promise.resolve(true),
+    // Add other exports if needed
+}))
+
 const mockDoc: Doc = {
     v: 1, id: 'd1', title: 'test', unit: 'mm', surfaces: [], nodes: []
 }

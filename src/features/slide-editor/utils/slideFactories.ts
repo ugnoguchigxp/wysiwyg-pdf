@@ -55,6 +55,7 @@ export const INITIAL_DOC: Doc = {
   unit: 'mm',
   surfaces: [
     // 1. All Layout Masters
+    // biome-ignore lint/suspicious/noExplicitAny: implicit any
     ...INITIAL_MASTERS.map((m: any) => m.surface),
     // 2. Initial Slide (Title Layout)
     {
@@ -68,7 +69,9 @@ export const INITIAL_DOC: Doc = {
   ],
   // Initial nodes: Master Nodes + Slide Nodes (Title Layout)
   nodes: [
+    // biome-ignore lint/suspicious/noExplicitAny: implicit any
     ...INITIAL_MASTERS.flatMap((m: any) => m.nodes),
+    // biome-ignore lint/suspicious/noExplicitAny: implicit any
     ...(SLIDE_LAYOUTS.find((l: any) => l.id === 'title')?.generateNodes(
       'slide-1',
       PAGE_SIZES.A4_LANDSCAPE.w,
