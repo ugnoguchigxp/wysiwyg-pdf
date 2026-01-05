@@ -3,6 +3,7 @@ import { PAGE_SIZES } from '@/constants/pageSizes'
 import { SLIDE_LAYOUTS } from '@/features/slide-editor/constants/layouts'
 import { SLIDE_TEMPLATES } from '@/features/slide-editor/constants/templates'
 import type { Doc, UnifiedNode } from '@/types/canvas'
+import { generateUUID } from '@/utils/browser'
 
 interface UseSlideOperationsProps {
   setDoc: (
@@ -38,7 +39,7 @@ export const useSlideOperations = ({
 
       if (isMasterEditMode) {
         // Create a NEW MASTER
-        const newMasterId = `master-${crypto.randomUUID()}`
+        const newMasterId = `master-${generateUUID()}`
         const newSurface = {
           id: newMasterId,
           type: 'slide',
@@ -58,7 +59,7 @@ export const useSlideOperations = ({
         setCurrentSlideId(newMasterId)
       } else {
         // Create a Normal Slide
-        const newSlideId = `slide-${crypto.randomUUID()}`
+        const newSlideId = `slide-${generateUUID()}`
         const targetMasterId = `master-${layoutId}`
         const masterSurface = doc.surfaces.find((s) => s.id === targetMasterId)
         const safeMasterId = masterSurface ? targetMasterId : 'master-blank'
@@ -80,7 +81,7 @@ export const useSlideOperations = ({
           )
           newNodes = masterPlaceholders.map((n) => ({
             ...n,
-            id: `${n.t}-${crypto.randomUUID()}`,
+            id: `${n.t}-${generateUUID()}`,
             s: newSlideId,
             isPlaceholder: undefined,
             locked: false,
@@ -152,7 +153,7 @@ export const useSlideOperations = ({
         masterSurfaces.forEach((master) => {
           const templateNodesForMaster = template.master.nodes.map((n) => ({
             ...n,
-            id: `${n.t}-${crypto.randomUUID()}`,
+            id: `${n.t}-${generateUUID()}`,
             s: master.id,
           }))
           newNodes = [...newNodes, ...templateNodesForMaster]

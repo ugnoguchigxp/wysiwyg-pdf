@@ -85,14 +85,22 @@ export const ImageWidget: React.FC<WidgetProps<ImageWidgetConfig>> = ({
                   if (result) {
                     const img = new Image()
                     img.onload = () => {
-                      const dpi = 96
-                      const naturalW = pxToMm(img.width, { dpi })
-                      const naturalH = pxToMm(img.height, { dpi })
+                      const dpi = 300 // Use 300 DPI for high-res images to avoid massive initial size
+                      let naturalW = pxToMm(img.naturalWidth, { dpi })
+                      let naturalH = pxToMm(img.naturalHeight, { dpi })
+
+                      // Cap initial width to 150mm to ensure it fits reasonably on A4 (210mm)
+                      const maxWidthMm = 150
+                      if (naturalW > maxWidthMm) {
+                        const scale = maxWidthMm / naturalW
+                        naturalW = maxWidthMm
+                        naturalH *= scale
+                      }
 
                       onChange({
                         src: result,
-                        w: naturalW,
-                        h: naturalH,
+                        w: Math.round(naturalW * 10) / 10,
+                        h: Math.round(naturalH * 10) / 10,
                       } as Partial<ImageNode>)
                     }
                     img.src = result

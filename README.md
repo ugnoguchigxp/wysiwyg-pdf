@@ -490,6 +490,35 @@ pnpm -C wysiwyg-pdf/example dev
 If you publish this to npm, ensure you have a proper build output (e.g., `dist/`) and configure `main`/`module`/`types`/`exports` accordingly.
 Also ensure CSS assets (e.g., `print.css`) are included in the published files.
 
+## Testing
+
+This project uses [Vitest](https://vitest.dev/) for unit testing.
+
+### Prerequisites
+
+- **Node.js**: v18.18 or higher
+- **Package Manager**: `npm` (recommended for standard environments)
+
+### Running Tests
+
+To run all tests:
+```bash
+npm test
+```
+
+To run tests in watch mode:
+```bash
+npm run test:watch
+```
+
+To check code coverage:
+```bash
+npm run coverage
+```
+
+> [!NOTE]
+> If you encounter `vitest: not found`, ensure you have run `npm install` to install all dependencies. If you are using `npm test -- --runInBand`, make sure your environment recognizes the local binaries in `node_modules/.bin`.
+
 ## License
 
 ## Deployment to Cloudflare Workers

@@ -95,7 +95,9 @@ export function useMindmapHistory(initialDoc: Doc): UseHistoryReturn {
     // Validate doc on load
     const validation = validateDoc(doc)
     if (!validation.success) {
-      console.warn('[useMindmapHistory] Doc validation failed:', validation.errors)
+      if (import.meta.env.DEV) {
+        console.warn('[useMindmapHistory] Doc validation failed:', validation.errors)
+      }
     }
     setHistory({
       past: [],

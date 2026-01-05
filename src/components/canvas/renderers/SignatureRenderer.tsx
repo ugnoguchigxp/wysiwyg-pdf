@@ -1,24 +1,30 @@
 import type React from 'react'
 import { Group, Line, Rect } from 'react-konva'
 import type { SignatureNode } from '@/types/canvas'
+import { simplifyPoints } from '@/utils/geometry'
 import type { CanvasElementCommonProps } from '../types'
 
 const SignatureShape = ({ element }: { element: SignatureNode }) => {
   const sig = element
+  const tolerance = sig.tolerance ?? 0
+
   return (
     <>
-      {sig.strokes.map((stroke, index) => (
-        <Line
-          key={index}
-          points={stroke}
-          stroke={sig.stroke}
-          strokeWidth={sig.strokeW}
-          tension={0.5}
-          lineCap="round"
-          lineJoin="round"
-          listening={false}
-        />
-      ))}
+      {sig.strokes.map((stroke, index) => {
+        const points = tolerance > 0 ? simplifyPoints(stroke, tolerance) : stroke
+        return (
+          <Line
+            key={index}
+            points={points}
+            stroke={sig.stroke}
+            strokeWidth={sig.strokeW}
+            tension={0.5}
+            lineCap="round"
+            lineJoin="round"
+            listening={false}
+          />
+        )
+      })}
     </>
   )
 }

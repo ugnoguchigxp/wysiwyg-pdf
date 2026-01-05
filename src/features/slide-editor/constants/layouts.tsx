@@ -1,5 +1,6 @@
 import type React from 'react'
 import type { ShapeNode, TextNode, UnifiedNode } from '@/types/canvas'
+import { generateUUID } from '@/utils/browser'
 import { ptToMm } from '@/utils/units'
 
 export type LayoutType =
@@ -38,7 +39,7 @@ const createText = (
   align: 'l' | 'c' | 'r' = 'l',
   fontWeight = 400
 ): TextNode => ({
-  id: `text-${crypto.randomUUID()}`,
+  id: `text-${generateUUID()}`,
   t: 'text',
   s,
   x,
@@ -57,7 +58,7 @@ const createText = (
 
 // Helper to create placeholder shape (for images)
 const createPlaceholder = (s: string, x: number, y: number, w: number, h: number): ShapeNode => ({
-  id: `shape-${crypto.randomUUID()}`,
+  id: `shape-${generateUUID()}`,
   t: 'shape',
   s,
   x,

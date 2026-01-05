@@ -43,6 +43,7 @@ import type {
   UnifiedNode,
   WidgetNode,
 } from '@/types/canvas'
+import { generateUUID } from '@/utils/browser'
 import { ptToMm } from '@/utils/units'
 
 export type ToolType = 'select' | 'text' | 'image' | 'bed' | 'shape' | 'line'
@@ -183,7 +184,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   const addText = () => {
     const s = getTargetSurfaceId()
     const { x, y } = calculateInitialPosition(s)
-    const id = `text-${crypto.randomUUID()}`
+    const id = `text-${generateUUID()}`
     const textContent = resolveText('toolbar_default_text', 'Text')
     const dpi = 96
     const fontSizeMm = ptToMm(12)
@@ -218,7 +219,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   const addImage = () => {
     const s = getTargetSurfaceId()
     const { x, y } = calculateInitialPosition(s)
-    const id = `image-${crypto.randomUUID()}`
+    const id = `image-${generateUUID()}`
     const image: ImageNode = {
       id,
       t: 'image',
@@ -238,7 +239,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   const addWall = () => {
     const s = getTargetSurfaceId()
     const { x, y } = calculateInitialPosition(s)
-    const id = `wall-${crypto.randomUUID()}`
+    const id = `wall-${generateUUID()}`
     const line: LineNode = {
       id,
       t: 'line',
@@ -256,7 +257,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   const addShape = (shapeType: string) => {
     const s = getTargetSurfaceId()
     const { x, y } = calculateInitialPosition(s)
-    const id = `${shapeType.toLowerCase()}-${crypto.randomUUID()}`
+    const id = `${shapeType.toLowerCase()}-${generateUUID()}`
 
     let width = 80
     let height = 80
@@ -297,7 +298,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   const addBed = () => {
     const s = getTargetSurfaceId()
     const { x, y } = calculateInitialPosition(s)
-    const id = `bed-${crypto.randomUUID()}`
+    const id = `bed-${generateUUID()}`
     const bed: WidgetNode = {
       id,
       t: 'widget',

@@ -1,6 +1,6 @@
 import type Konva from 'konva'
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
-import { Rect as KonvaRect, Layer, Stage } from 'react-konva'
+import { Rect as KonvaRect, Layer, Stage, Line as KonvaLine } from 'react-konva'
 import { CanvasElementRenderer } from '@/components/canvas/CanvasElementRenderer'
 import { CellEditOverlay } from '@/components/canvas/CellEditOverlay'
 import { GridLayer } from '@/components/canvas/GridLayer'
@@ -8,7 +8,10 @@ import { useKeyboardShortcuts } from '@/components/canvas/hooks/useKeyboardShort
 import { ObjectContextMenu } from '@/components/canvas/ObjectContextMenu'
 import { TextEditOverlay } from '@/components/canvas/TextEditOverlay'
 import type { Doc, TableNode, TextNode, UnifiedNode } from '@/types/canvas' // Direct import
+import { generateUUID, safeLocalStorage } from '@/utils/browser'
 import { mmToPx, ptToMm } from '@/utils/units'
+import { simplifyPoints } from '@/utils/geometry'
+import { calculatePasteNodes } from './utils/clipboardUtils'
 // Table operations imports removed (unused)
 // Signature utils moved to useSignature
 // import { reorderNodes } from '@/utils/reorderUtils' // Moved to hook
@@ -162,6 +165,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
 
     const {
       currentStrokes,
+      currentPoints,
       commitSignature,
       handleSignatureMouseDown,
       handleSignatureMouseMove,
@@ -283,38 +287,25 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       const selected = nodes.find((n) => n.id === selectedElementId)
       if (selected) {
         const clipboardData = [selected]
-        localStorage.setItem('__konva_clipboard', JSON.stringify(clipboardData))
+        safeLocalStorage.setItem('__konva_clipboard', JSON.stringify(clipboardData))
         setPasteCount(1)
       }
     }
 
     const handlePaste = () => {
       try {
-        const json = localStorage.getItem('__konva_clipboard')
+        const json = safeLocalStorage.getItem('__konva_clipboard')
         if (!json) return
         const clipboardElements = JSON.parse(json) as UnifiedNode[]
 
         if (!Array.isArray(clipboardElements) || clipboardElements.length === 0) return
 
-        const step = currentSurface.w * 0.01
-        const offset = step * pasteCount
-
-        const newNodes: UnifiedNode[] = []
-        clipboardElements.forEach((el) => {
-          const newId = crypto.randomUUID()
-          const newEl = { ...el, id: newId, s: currentSurface.id }
-
-          if (
-            'x' in newEl &&
-            'y' in newEl &&
-            typeof newEl.x === 'number' &&
-            typeof newEl.y === 'number'
-          ) {
-            newEl.x += offset
-            newEl.y += offset
-          }
-          newNodes.push(newEl)
-        })
+        const newNodes = calculatePasteNodes(
+          clipboardElements,
+          currentSurface.id,
+          currentSurface.w,
+          pasteCount
+        )
 
         onTemplateChange({
           ...templateDoc,
@@ -413,7 +404,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
         const logicY = stagePos.y / displayScale
 
         const newNode: TextNode = {
-          id: `text-${crypto.randomUUID()}`,
+          id: `text-${generateUUID()}`,
           t: 'text',
           s: currentSurface.id,
           x: logicX,
@@ -534,6 +525,45 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
                   strokeWidth={2 / displayScale}
                   listening={false}
                 />
+              )}
+
+              {/* Transient drawing strokes */}
+              {activeTool === 'signature' && (
+                <>
+                  {currentStrokes.map((stroke, i) => {
+                    const points =
+                      drawingSettings.simplification && drawingSettings.simplification > 0
+                        ? simplifyPoints(stroke, drawingSettings.simplification)
+                        : stroke
+                    return (
+                      <KonvaLine
+                        key={`committed-${i}`}
+                        points={points}
+                        stroke={drawingSettings.stroke}
+                        strokeWidth={drawingSettings.strokeWidth}
+                        tension={0.5}
+                        lineCap="round"
+                        lineJoin="round"
+                        listening={false}
+                      />
+                    )
+                  })}
+                  {currentPoints.length > 0 && (
+                    <KonvaLine
+                      points={
+                        drawingSettings.simplification && drawingSettings.simplification > 0
+                          ? simplifyPoints(currentPoints, drawingSettings.simplification)
+                          : currentPoints
+                      }
+                      stroke={drawingSettings.stroke}
+                      strokeWidth={drawingSettings.strokeWidth}
+                      tension={0.5}
+                      lineCap="round"
+                      lineJoin="round"
+                      listening={false}
+                    />
+                  )}
+                </>
               )}
             </Layer>
           </Stage>

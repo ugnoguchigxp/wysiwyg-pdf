@@ -1,6 +1,7 @@
 import type Konva from 'konva'
 import { useCallback, useState } from 'react'
 import type { Doc, SignatureNode, Surface, UnifiedNode } from '@/features/konva-editor/types'
+import { generateUUID } from '@/utils/browser'
 import { getStrokesBox, normalizeStrokes, processStrokes } from '../utils/signatureUtils'
 
 interface UseSignatureProps {
@@ -31,17 +32,14 @@ export const useSignature = ({
   const commitSignature = useCallback((): Doc | null => {
     if (currentStrokes.length === 0) return null
 
-    const simplifiedStrokes = processStrokes(currentStrokes, {
-      simplification: drawingSettings.simplification,
-    })
-
-    const box = getStrokesBox(simplifiedStrokes)
-
-    const normalizedStrokes = normalizeStrokes(simplifiedStrokes, box)
+    // We no longer simplify during commit to allow dynamic simplification in the renderer
+    const rawStrokes = currentStrokes
+    const box = getStrokesBox(rawStrokes)
+    const normalizedStrokes = normalizeStrokes(rawStrokes, box)
 
     const hasPressureData = allPressureData.some((pressure) => pressure.length > 0)
     const element: SignatureNode = {
-      id: `sig-${crypto.randomUUID()}`,
+      id: `sig-${generateUUID()}`,
       t: 'signature',
       s: currentSurface.id,
       name: 'Signature',
@@ -54,6 +52,7 @@ export const useSignature = ({
       strokeW: drawingSettings.strokeWidth,
       pressureData: hasPressureData ? allPressureData : undefined,
       usePressureSim: !hasPressureData,
+      tolerance: drawingSettings.simplification,
       r: 0,
       locked: false,
       hidden: false,

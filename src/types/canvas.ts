@@ -244,6 +244,7 @@ export interface SignatureNode extends BaseNode {
   strokeW: number // Stroke width
   pressureData?: number[][] // Pressure data for each stroke (optional)
   usePressureSim?: boolean // Use pressure simulation (default: true)
+  tolerance?: number // Simplification tolerance (for real-time preview)
 }
 
 // ========================================

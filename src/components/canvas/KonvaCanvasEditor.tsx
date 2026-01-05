@@ -4,6 +4,7 @@ import { Layer, Rect, Stage } from 'react-konva'
 // import { measureText } from '@/features/konva-editor/utils/textUtils'
 import { applyTextLayoutUpdates } from '@/features/konva-editor/utils/textLayout'
 import { cn } from '@/lib/utils'
+import { generateUUID, safeLocalStorage } from '@/utils/browser'
 import { reorderNodes } from '@/utils/reorderUtils'
 import { mmToPx } from '@/utils/units'
 import type { TextNode, UnifiedNode } from '../../types/canvas'
@@ -284,7 +285,7 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
       const selectedElements = elements.filter((el) => selectedIds.includes(el.id))
 
       if (selectedElements.length > 0) {
-        localStorage.setItem('__konva_clipboard', JSON.stringify(selectedElements))
+        safeLocalStorage.setItem('__konva_clipboard', JSON.stringify(selectedElements))
         // Reset paste counter on new copy
         setPasteCount(1)
       }
@@ -298,7 +299,7 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
         return
       }
       try {
-        const json = localStorage.getItem('__konva_clipboard')
+        const json = safeLocalStorage.getItem('__konva_clipboard')
         if (!json) return
         const clipboardElements = JSON.parse(json) as UnifiedNode[]
 
@@ -310,7 +311,7 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
         const offset = step * pasteCount
 
         const newElements = clipboardElements.map((el) => {
-          const newId = crypto.randomUUID()
+          const newId = generateUUID()
           const newEl = { ...el, id: newId }
 
           if (
