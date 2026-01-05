@@ -4,10 +4,10 @@ import type { Doc, UnifiedNode } from '@/types/canvas'
 export type AIOperation =
   | { kind: 'create-element'; element: UnifiedNode }
   | {
-      kind: 'update-element'
-      id: string
-      next: Partial<Omit<UnifiedNode, 't'>>
-    }
+    kind: 'update-element'
+    id: string
+    next: Partial<Omit<UnifiedNode, 't'>>
+  }
   | { kind: 'delete-element'; id: string }
   | { kind: 'reorder-elements'; nextOrder: string[] }
 
@@ -20,19 +20,19 @@ export function enrichAIOperation(doc: Doc, aiOp: AIOperation): Operation {
       const node = doc.nodes.find((n) => n.id === aiOp.id)
       if (!node) {
         console.warn(`[enrichAIOperation] Node not found: ${aiOp.id}`)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // biome-ignore lint/suspicious/noExplicitAny: prev/next can be anything here for fallback
         return { ...aiOp, prev: {} as any, next: aiOp.next as any }
       }
       // Runtime check to ensure 't' is not being modified, even if type casted
       if ('t' in aiOp.next) {
         console.warn(`[enrichAIOperation] prohibited type change attempted on ${aiOp.id}`)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // biome-ignore lint/suspicious/noExplicitAny: Runtime safety to remove property that shouldn't be there
         delete (aiOp.next as any).t
       }
       const prev: Partial<UnifiedNode> = {}
       for (const key of Object.keys(aiOp.next)) {
         if (key in node) {
-          ;(prev as unknown as Record<string, unknown>)[key] = (
+          ; (prev as unknown as Record<string, unknown>)[key] = (
             node as unknown as Record<string, unknown>
           )[key]
         }
@@ -70,10 +70,10 @@ function applyOperation(doc: Doc, op: Operation): Doc {
         nodes: doc.nodes.map((n) =>
           n.id === op.id
             ? ({
-                ...n,
-                ...(op.next as Partial<UnifiedNode>),
-                id: op.id,
-              } as UnifiedNode)
+              ...n,
+              ...(op.next as Partial<UnifiedNode>),
+              id: op.id,
+            } as UnifiedNode)
             : n
         ),
       }

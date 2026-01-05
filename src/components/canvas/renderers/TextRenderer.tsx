@@ -79,7 +79,6 @@ export const TextRenderer: React.FC<TextRendererProps> = ({
           if (!parsed.isList || !parsed.type || !parsed.markerText) {
             return (
               <Text
-                // biome-ignore lint/suspicious/noArrayIndexKey: line order is stable
                 key={`line-${index}`}
                 x={options.textX}
                 y={options.textY + index * fontSizeMm * lineHeight}
@@ -134,7 +133,6 @@ export const TextRenderer: React.FC<TextRendererProps> = ({
 
           return (
             <Group
-              // biome-ignore lint/suspicious/noArrayIndexKey: line order is stable
               key={`list-line-${index}`}
             >
               <Text
@@ -227,14 +225,14 @@ export const TextRenderer: React.FC<TextRendererProps> = ({
 
     const listLayer = !element.vertical
       ? renderListLines({
-          offsetX: 0,
-          offsetY: 0,
-          textX,
-          textY,
-          textW,
-          textH,
-          visible: !isEditing,
-        })
+        offsetX: 0,
+        offsetY: 0,
+        textX,
+        textY,
+        textW,
+        textH,
+        visible: !isEditing,
+      })
       : null
 
     return (
@@ -468,14 +466,14 @@ export const TextRenderer: React.FC<TextRendererProps> = ({
 
   const listLayer = !element.vertical
     ? renderListLines({
-        offsetX: 0,
-        offsetY: 0,
-        textX: 0,
-        textY: 0,
-        textW: element.w,
-        textH: element.h,
-        visible: !isEditing,
-      })
+      offsetX: 0,
+      offsetY: 0,
+      textX: 0,
+      textY: 0,
+      textW: element.w,
+      textH: element.h,
+      visible: !isEditing,
+    })
     : null
 
   return (

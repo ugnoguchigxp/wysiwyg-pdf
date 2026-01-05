@@ -98,7 +98,7 @@ function extractBgColor(cell: ExcelCell): string | undefined {
     'argb' in fill.fgColor &&
     fill.fgColor.argb
   ) {
-    return '#' + String(fill.fgColor.argb).slice(2)
+    return `#${String(fill.fgColor.argb).slice(2)}`
   }
   return undefined
 }

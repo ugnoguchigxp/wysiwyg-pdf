@@ -104,6 +104,7 @@ export const CellEditOverlay: React.FC<CellEditOverlayProps> = ({
     // CSS Padding: Top Right Bottom Left.
     // Match TableRenderer: Y=1.6mm, X=0.5mm
     padding: `${PADDING_Y_MM * scale}px ${PADDING_X_MM * scale}px`,
+    // biome-ignore lint/suspicious/noExplicitAny: textAlign type mismatch with CSS
     textAlign: alignMap[textAlign] as any,
     resize: 'none',
     overflow: 'hidden',

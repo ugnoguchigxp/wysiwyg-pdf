@@ -2,7 +2,7 @@ import type Konva from 'konva'
 import { useCallback, useState } from 'react'
 import type { Doc, SignatureNode, Surface, UnifiedNode } from '@/features/konva-editor/types'
 import { generateUUID } from '@/utils/browser'
-import { getStrokesBox, normalizeStrokes, processStrokes } from '../utils/signatureUtils'
+import { getStrokesBox, normalizeStrokes } from '../utils/signatureUtils'
 
 interface UseSignatureProps {
   templateDoc: Doc
@@ -93,7 +93,7 @@ export const useSignature = ({
         setIsDrawing(true)
         const nativeEvent = e.evt as PointerEvent | undefined
         const pressure =
-          nativeEvent && 'pressure' in nativeEvent ? (nativeEvent as any).pressure : undefined
+          nativeEvent && 'pressure' in nativeEvent ? (nativeEvent as PointerEvent).pressure : undefined
         const isPressureDevice = typeof pressure === 'number' && pressure !== 0.5 && pressure !== 0
         const point = stage?.getPointerPosition()
         if (point) {

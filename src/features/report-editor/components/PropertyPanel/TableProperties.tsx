@@ -48,12 +48,13 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({
 
   const updateBorder = (updates: { style?: string; width?: number; color?: string }) => {
     // Prepare the update object for cells
-    const getNewBorders = (currentBorders: any) => {
+    const getNewBorders = (currentBorders: CellProps['borders']) => {
       const sides = selectedBorderSide === 'all' ? ['t', 'r', 'b', 'l'] : [selectedBorderSide]
       const newBorders = { ...(currentBorders || {}) }
 
-      sides.forEach((side) => {
-        if (side === 'none') return
+      sides.forEach((s) => {
+        if (s === 'none') return
+        const side = s as keyof NonNullable<CellProps['borders']>
         newBorders[side] = {
           ...(newBorders[side] || {
             style: 'solid',

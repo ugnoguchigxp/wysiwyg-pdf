@@ -1,11 +1,11 @@
-import React, {
+import type React from 'react'
+import {
   createContext,
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
-  useContext,
 } from 'react'
 import type { IQueueItem, IQueueStats } from './Queue.schema'
 

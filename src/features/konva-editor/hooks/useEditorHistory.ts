@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { Doc, Operation, UnifiedNode } from '@/features/konva-editor/types'
+import type { Doc, Operation, UnifiedNode, WidgetNode } from '@/features/konva-editor/types'
 
 const MAX_HISTORY_SIZE = 50
 
@@ -123,7 +123,7 @@ function applyOperationDoc(doc: Doc, op: Operation): Doc {
       // Debug logging for bed position updates
       if (import.meta.env.DEV && ('x' in update || 'y' in update)) {
         const target = doc.nodes.find((n) => n.id === id)
-        if (target && target.t === 'widget' && (target as any).widget === 'bed') {
+        if (target && target.t === 'widget' && (target as WidgetNode).widget === 'bed') {
           console.log(`[applyOperationDoc] Updating bed ${id} position:`, {
             from: { x: target.x, y: target.y },
             to: { x: update.x ?? target.x, y: update.y ?? target.y },
@@ -178,10 +178,10 @@ function revertOperationDoc(doc: Doc, op: Operation): Doc {
         nodes: doc.nodes.map((n) =>
           n.id === op.id
             ? ({
-                ...n,
-                ...(op.prev as Partial<UnifiedNode>),
-                id: op.id,
-              } as UnifiedNode)
+              ...n,
+              ...(op.prev as Partial<UnifiedNode>),
+              id: op.id,
+            } as UnifiedNode)
             : n
         ),
       }

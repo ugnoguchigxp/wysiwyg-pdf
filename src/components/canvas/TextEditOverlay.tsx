@@ -358,8 +358,8 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
           const nextNumber =
             parsed.type === 'number'
               ? getNextListNumber(value, lineIndex, parsed.level, {
-                  vertical: element.vertical,
-                })
+                vertical: element.vertical,
+              })
               : undefined
           const newLine = buildListLine('', parsed.type, parsed.level, {
             vertical: element.vertical,
@@ -459,18 +459,16 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
   }
 
   return (
-    <>
-      <textarea
-        ref={textareaRef}
-        style={style}
-        defaultValue={element.text}
-        onChange={handleChange}
-        onBlur={handleFinish}
-        onKeyDown={handleKeyDown}
-        onCompositionStart={handleCompositionStart}
-        onCompositionEnd={handleCompositionEnd}
-        wrap="off"
-      />
-    </>
+    <textarea
+      ref={textareaRef}
+      style={style}
+      defaultValue={element.text}
+      onChange={handleChange}
+      onBlur={handleFinish}
+      onKeyDown={handleKeyDown}
+      onCompositionStart={handleCompositionStart}
+      onCompositionEnd={handleCompositionEnd}
+      wrap="off"
+    />
   )
 }
