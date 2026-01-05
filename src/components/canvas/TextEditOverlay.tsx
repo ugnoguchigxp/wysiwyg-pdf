@@ -358,8 +358,8 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
           const nextNumber =
             parsed.type === 'number'
               ? getNextListNumber(value, lineIndex, parsed.level, {
-                vertical: element.vertical,
-              })
+                  vertical: element.vertical,
+                })
               : undefined
           const newLine = buildListLine('', parsed.type, parsed.level, {
             vertical: element.vertical,

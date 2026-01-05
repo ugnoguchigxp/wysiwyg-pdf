@@ -132,9 +132,7 @@ export const TextRenderer: React.FC<TextRendererProps> = ({
           const baseY = options.textY + index * fontSizeMm * lineHeight
 
           return (
-            <Group
-              key={`list-line-${index}`}
-            >
+            <Group key={`list-line-${index}`}>
               <Text
                 x={lineX}
                 y={baseY}
@@ -225,14 +223,14 @@ export const TextRenderer: React.FC<TextRendererProps> = ({
 
     const listLayer = !element.vertical
       ? renderListLines({
-        offsetX: 0,
-        offsetY: 0,
-        textX,
-        textY,
-        textW,
-        textH,
-        visible: !isEditing,
-      })
+          offsetX: 0,
+          offsetY: 0,
+          textX,
+          textY,
+          textW,
+          textH,
+          visible: !isEditing,
+        })
       : null
 
     return (
@@ -466,14 +464,14 @@ export const TextRenderer: React.FC<TextRendererProps> = ({
 
   const listLayer = !element.vertical
     ? renderListLines({
-      offsetX: 0,
-      offsetY: 0,
-      textX: 0,
-      textY: 0,
-      textW: element.w,
-      textH: element.h,
-      visible: !isEditing,
-    })
+        offsetX: 0,
+        offsetY: 0,
+        textX: 0,
+        textY: 0,
+        textW: element.w,
+        textH: element.h,
+        visible: !isEditing,
+      })
     : null
 
   return (

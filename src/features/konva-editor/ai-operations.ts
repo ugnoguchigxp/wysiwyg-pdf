@@ -4,10 +4,10 @@ import type { Doc, UnifiedNode } from '@/types/canvas'
 export type AIOperation =
   | { kind: 'create-element'; element: UnifiedNode }
   | {
-    kind: 'update-element'
-    id: string
-    next: Partial<Omit<UnifiedNode, 't'>>
-  }
+      kind: 'update-element'
+      id: string
+      next: Partial<Omit<UnifiedNode, 't'>>
+    }
   | { kind: 'delete-element'; id: string }
   | { kind: 'reorder-elements'; nextOrder: string[] }
 
@@ -32,7 +32,7 @@ export function enrichAIOperation(doc: Doc, aiOp: AIOperation): Operation {
       const prev: Partial<UnifiedNode> = {}
       for (const key of Object.keys(aiOp.next)) {
         if (key in node) {
-          ; (prev as unknown as Record<string, unknown>)[key] = (
+          ;(prev as unknown as Record<string, unknown>)[key] = (
             node as unknown as Record<string, unknown>
           )[key]
         }
@@ -70,10 +70,10 @@ function applyOperation(doc: Doc, op: Operation): Doc {
         nodes: doc.nodes.map((n) =>
           n.id === op.id
             ? ({
-              ...n,
-              ...(op.next as Partial<UnifiedNode>),
-              id: op.id,
-            } as UnifiedNode)
+                ...n,
+                ...(op.next as Partial<UnifiedNode>),
+                id: op.id,
+              } as UnifiedNode)
             : n
         ),
       }
