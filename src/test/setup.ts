@@ -5,14 +5,14 @@ import React from 'react'
 // Radix UI (and friends) rely on these browser APIs.
 if (!globalThis.ResizeObserver) {
   globalThis.ResizeObserver = class ResizeObserver {
-    observe() { }
-    unobserve() { }
-    disconnect() { }
+    observe() {}
+    unobserve() {}
+    disconnect() {}
   }
 }
 
 if (!HTMLElement.prototype.scrollIntoView) {
-  HTMLElement.prototype.scrollIntoView = () => { }
+  HTMLElement.prototype.scrollIntoView = () => {}
 }
 
 {
@@ -41,10 +41,12 @@ if (!HTMLElement.prototype.scrollIntoView) {
 }
 
 {
+  // biome-ignore lint/suspicious/noExplicitAny: Node.js stderr型の拡張のため必要
   const stderrAny = process.stderr as any
   const originalWrite = stderrAny.write.bind(process.stderr)
+  // biome-ignore lint/suspicious/noExplicitAny: Node.js write関数の型が複雑なため
   stderrAny.write = (chunk: any, ...rest: any[]) => {
-    const msg = typeof chunk === 'string' ? chunk : chunk?.toString?.() ?? ''
+    const msg = typeof chunk === 'string' ? chunk : (chunk?.toString?.() ?? '')
     if (msg.includes('unrecognized in this browser')) return true
     return originalWrite(chunk, ...rest)
   }
@@ -52,38 +54,37 @@ if (!HTMLElement.prototype.scrollIntoView) {
 
 {
   const originalGetContext = HTMLCanvasElement.prototype.getContext
-  HTMLCanvasElement.prototype.getContext = function (
-    contextId: string,
-    ...args: unknown[]
-  ): any {
+  // biome-ignore lint/suspicious/noExplicitAny: Canvas 2D/WebGL context型の汎用性を保つため
+  HTMLCanvasElement.prototype.getContext = function (contextId: string, ...args: unknown[]): any {
     if (contextId === '2d') {
       return {
         font: '',
         measureText: (text: string) => ({ width: (text?.length ?? 0) * 10 }),
-        scale: () => { },
-        transform: () => { },
-        translate: () => { },
-        rotate: () => { },
-        fillText: () => { },
-        strokeText: () => { },
-        beginPath: () => { },
-        moveTo: () => { },
-        lineTo: () => { },
-        closePath: () => { },
-        stroke: () => { },
-        fill: () => { },
-        arc: () => { },
-        rect: () => { },
-        setTransform: () => { },
-        save: () => { },
-        restore: () => { },
-        clearRect: () => { },
-        fillRect: () => { },
+        scale: () => {},
+        transform: () => {},
+        translate: () => {},
+        rotate: () => {},
+        fillText: () => {},
+        strokeText: () => {},
+        beginPath: () => {},
+        moveTo: () => {},
+        lineTo: () => {},
+        closePath: () => {},
+        stroke: () => {},
+        fill: () => {},
+        arc: () => {},
+        rect: () => {},
+        setTransform: () => {},
+        save: () => {},
+        restore: () => {},
+        clearRect: () => {},
+        fillRect: () => {},
         getImageData: () => ({ data: [0, 0, 0, 0] }),
       }
     }
 
     try {
+      // biome-ignore lint/suspicious/noExplicitAny: 可変長引数の型アサーションのため
       const ctx = originalGetContext?.call(this, contextId, ...(args as any[]))
       if (ctx) return ctx
     } catch {

@@ -62,10 +62,7 @@ describe('validateAIOperation', () => {
             id: 'txt-1',
             next: { t: 'shape' }, // Type change is prohibited
         }
-        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => { })
         expect(validateAIOperation(op)).toBe(false)
-        expect(consoleSpy).toHaveBeenCalled()
-        consoleSpy.mockRestore()
     })
 
     it('should validate delete-element operation', () => {

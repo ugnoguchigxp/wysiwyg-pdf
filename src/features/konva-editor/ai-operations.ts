@@ -19,13 +19,11 @@ export function enrichAIOperation(doc: Doc, aiOp: AIOperation): Operation {
     case 'update-element': {
       const node = doc.nodes.find((n) => n.id === aiOp.id)
       if (!node) {
-        console.warn(`[enrichAIOperation] Node not found: ${aiOp.id}`)
         // biome-ignore lint/suspicious/noExplicitAny: prev/next can be anything here for fallback
         return { ...aiOp, prev: {} as any, next: aiOp.next as any }
       }
       // Runtime check to ensure 't' is not being modified, even if type casted
       if ('t' in aiOp.next) {
-        console.warn(`[enrichAIOperation] prohibited type change attempted on ${aiOp.id}`)
         // biome-ignore lint/suspicious/noExplicitAny: Runtime safety to remove property that shouldn't be there
         delete (aiOp.next as any).t
       }
@@ -43,7 +41,6 @@ export function enrichAIOperation(doc: Doc, aiOp: AIOperation): Operation {
     case 'delete-element': {
       const prevElement = doc.nodes.find((n) => n.id === aiOp.id)
       if (!prevElement) {
-        console.warn(`[enrichAIOperation] Node not found: ${aiOp.id}`)
         return { ...aiOp, prevElement: {} as UnifiedNode }
       }
       return { ...aiOp, prevElement }
@@ -131,7 +128,6 @@ export function validateAIOperation(op: unknown): op is AIOperation {
       return typeof o.element === 'object' && o.element !== null
     case 'update-element':
       if (o.next && typeof o.next === 'object' && 't' in o.next) {
-        console.warn('AIOperation: update-element cannot change node type (t)')
         return false
       }
       return typeof o.id === 'string' && typeof o.next === 'object'

@@ -10,7 +10,7 @@ export default defineConfig({
   test: {
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     environment: 'jsdom',
-    setupFiles: ['Test/setup.ts'],
+    setupFiles: ['src/test/setup.ts'],
     globals: true,
     clearMocks: true,
     restoreMocks: true,
@@ -24,7 +24,6 @@ export default defineConfig({
         '**/*.d.ts',
         'dist/**',
         'example/**',
-        'Test/**',
         'src/global.d.ts',
         'src/i18n/**',
         'src/utils/docUnitConversion.ts',

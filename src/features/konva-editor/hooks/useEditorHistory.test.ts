@@ -121,23 +121,4 @@ describe('useEditorHistory', () => {
         })
         expect(result.current.canUndo).toBe(false)
     })
-
-    it('warns in DEV mode when document unit is not mm', () => {
-        // Mock import.meta.env.DEV as true
-        vi.stubGlobal('import', { meta: { env: { DEV: true } } })
-
-        const nonMmDoc: Doc = { ...initialDoc, unit: 'pt' as any }
-        renderHook(() => useEditorHistory(nonMmDoc, mockSetDoc))
-
-        expect(console.warn).toHaveBeenCalledWith(
-            expect.stringContaining('Doc.unit is not mm')
-        )
-
-        vi.unstubAllGlobals()
-    })
-
-    it('does not warn when document unit is mm', () => {
-        renderHook(() => useEditorHistory(initialDoc, mockSetDoc))
-        expect(console.warn).not.toHaveBeenCalled()
-    })
 })

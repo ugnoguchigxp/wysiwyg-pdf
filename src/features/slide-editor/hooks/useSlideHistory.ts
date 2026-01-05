@@ -95,9 +95,7 @@ export function useSlideHistory(initialDoc: Doc): UseSlideHistoryReturn {
     // Validate doc on load
     const validation = validateDoc(doc)
     if (!validation.success) {
-      if (import.meta.env.DEV) {
-        console.warn('[useSlideHistory] Doc validation failed:', validation.errors)
-      }
+      // Validation failed - silently continue
     }
     setHistory({
       past: [],

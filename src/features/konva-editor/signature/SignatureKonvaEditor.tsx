@@ -92,9 +92,6 @@ export const SignatureKonvaEditor: React.FC<SignatureKonvaEditorProps> = ({
         }
       })
 
-      // Log Object for debugging as requested by user
-      console.log('Signature Lines Object (Optimized):', optimizedLines)
-
       onSave?.(dataURL)
     }
   }

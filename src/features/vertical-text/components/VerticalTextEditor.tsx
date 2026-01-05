@@ -46,12 +46,6 @@ export function VerticalTextEditor({
       ? konvaNode.getAbsolutePosition()
       : { x: (node.x || 0) * scale, y: (node.y || 0) * scale }
 
-    if (!konvaNode) {
-      console.warn(
-        `VerticalTextEditor: Konva node not found for id "${node.id}". Using fallback position.`
-      )
-    }
-
     // 縦書きでは幅が列方向、高さが文字送り方向
     // min-width/min-heightで最小サイズを保証しつつ、コンテンツに合わせて拡張させる
     const newStyle: React.CSSProperties = {

@@ -36,7 +36,6 @@ export function useMasterModeToggle({
     if (isMasterEditMode) {
       // Exit Master Mode: Return to previous slide or first normal slide
       const targetId = getTargetSlideIdForExit(lastSlideIdRef.current, doc.surfaces)
-      console.log('[useMasterModeToggle] Exiting Master Mode. Target ID:', targetId)
       setCurrentSlideId(targetId)
     } else {
       // Enter Master Mode
@@ -45,16 +44,12 @@ export function useMasterModeToggle({
       const targetMasterId = getTargetMasterIdForEdit(currentSlide, doc.surfaces)
 
       if (targetMasterId) {
-        console.log('[useMasterModeToggle] Entering Master Mode. Target Master ID:', targetMasterId)
         setCurrentSlideId(targetMasterId)
       } else {
         // Last ditch: ANY master that isn't blank
         const anyMaster = getFirstMasterId(doc.surfaces)
         if (anyMaster) {
-          console.log('[useMasterModeToggle] Falling back to any master:', anyMaster)
           setCurrentSlideId(anyMaster)
-        } else {
-          console.warn('No master slide found to edit.')
         }
       }
     }

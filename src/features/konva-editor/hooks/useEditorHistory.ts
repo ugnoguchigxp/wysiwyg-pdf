@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { Doc, Operation, UnifiedNode, WidgetNode } from '@/features/konva-editor/types'
+import type { Doc, Operation, UnifiedNode } from '@/features/konva-editor/types'
 
 const MAX_HISTORY_SIZE = 50
 
@@ -29,11 +29,6 @@ export function useEditorHistoryDoc(
     }
 
     // Doc is expected to be mm-based everywhere. Convert legacy docs at the import boundary.
-    if (import.meta.env.DEV) {
-      console.warn(
-        '[useEditorHistoryDoc] Doc.unit is not mm. Please convert the document before passing it in.'
-      )
-    }
     didNormalizeRef.current = true
   }, [document, setDocument])
 
@@ -119,17 +114,6 @@ function applyOperationDoc(doc: Doc, op: Operation): Doc {
     case 'update-element': {
       const { id, next } = op
       const update = next as Partial<UnifiedNode>
-
-      // Debug logging for bed position updates
-      if (import.meta.env.DEV && ('x' in update || 'y' in update)) {
-        const target = doc.nodes.find((n) => n.id === id)
-        if (target && target.t === 'widget' && (target as WidgetNode).widget === 'bed') {
-          console.log(`[applyOperationDoc] Updating bed ${id} position:`, {
-            from: { x: target.x, y: target.y },
-            to: { x: update.x ?? target.x, y: update.y ?? target.y },
-          })
-        }
-      }
 
       return {
         ...doc,

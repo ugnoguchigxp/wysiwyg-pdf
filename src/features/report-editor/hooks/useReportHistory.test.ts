@@ -74,18 +74,6 @@ describe('useReportHistory', () => {
         expect(result.current.canUndo).toBe(false)
     })
 
-    it('warns on initialization if unit is not mm', () => {
-        vi.stubGlobal('import', { meta: { env: { DEV: true } } })
-        const nonMmDoc: Doc = { ...initialDoc, unit: 'pt' as any }
-
-        renderHook(() => useReportHistory(nonMmDoc))
-
-        expect(console.warn).toHaveBeenCalledWith(
-            expect.stringContaining('[useReportHistory] Doc.unit is not mm')
-        )
-        vi.unstubAllGlobals()
-    })
-
     it('supports reset with validation', () => {
         const { result } = renderHook(() => useReportHistory(initialDoc))
         const resetDoc: Doc = { ...initialDoc, title: 'Reset' }

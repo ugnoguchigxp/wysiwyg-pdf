@@ -73,17 +73,6 @@ export const TextEditOverlay: React.FC<TextEditOverlayProps> = ({
     const boxW = Math.max(0, scaledW - padding * 2)
     const boxH = Math.max(0, scaledH - padding * 2)
 
-    // Debug log
-    console.log('[TextEditOverlay] render:', {
-      id: element.id,
-      w: element.w,
-      h: element.h,
-      vertical: element.vertical,
-      boxW,
-      boxH,
-      areaPosition,
-    })
-
     let newStyle: React.CSSProperties = {
       position: 'absolute',
       // 位置は絶対座標（Canvasレンダリング領域と一致）

@@ -73,17 +73,9 @@ export const SlideEditor: React.FC<SlideEditorProps> = ({
     if (loadNonce === undefined) return
     if (lastLoadNonceRef.current === loadNonce) return
 
-    console.log('[SlideEditor] loadDoc starting...', loadNonce)
-
     // Find target slide first
     const nextSlideId =
       loadDoc.surfaces.find((s) => !!s.masterId)?.id || loadDoc.surfaces[0]?.id || ''
-
-    console.log(
-      '[SlideEditor] loadDoc surfaces:',
-      loadDoc.surfaces.map((s) => ({ id: s.id, mid: s.masterId }))
-    )
-    console.log('[SlideEditor] loadDoc target slide detected:', nextSlideId)
 
     // Reset history/doc
     reset(loadDoc)
@@ -95,7 +87,6 @@ export const SlideEditor: React.FC<SlideEditorProps> = ({
     setShowGrid(false)
     setThumbnails({})
 
-    console.log('[SlideEditor] loadDoc target slide:', nextSlideId)
     setCurrentSlideId(nextSlideId)
 
     lastLoadNonceRef.current = loadNonce
@@ -107,7 +98,6 @@ export const SlideEditor: React.FC<SlideEditorProps> = ({
       if (doc.surfaces.length > 0) {
         // Default to first real slide, otherwise first master
         const fallbackId = doc.surfaces.find((s) => !!s.masterId)?.id || doc.surfaces[0].id
-        console.log('[SlideEditor] Missing currentSlideId fallback to:', fallbackId)
         setCurrentSlideId(fallbackId)
       }
     }
@@ -116,17 +106,6 @@ export const SlideEditor: React.FC<SlideEditorProps> = ({
   const currentSlide = doc.surfaces.find((s) => s.id === currentSlideId)
   // Use utility function for master detection
   const isMasterEditMode = isMasterSurface(currentSlide)
-
-  useEffect(() => {
-    console.log('[SlideEditor] State Check:', {
-      currentSlideId,
-      isMasterEditMode,
-      surfaceCount: doc.surfaces.length,
-      currentSlideFound: !!currentSlide,
-      currentSlideMasterId: currentSlide?.masterId,
-      docId: doc.id,
-    })
-  }, [currentSlideId, isMasterEditMode, doc.surfaces.length, currentSlide, doc.id])
 
   // Notify parent of master mode changes
   useEffect(() => {

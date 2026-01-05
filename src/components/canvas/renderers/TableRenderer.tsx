@@ -222,26 +222,6 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
         )
       }
 
-      // Debug: Log Header Cell (e.g. Blue cell) to see if it has explicit borders causing white gaps
-      if (r === 1 && c === 1) {
-        // Adjust Row/Col as needed. r=1 is likely row 2.
-        console.log(
-          '[DEBUG] Header Cell Info:',
-          JSON.stringify(
-            {
-              r,
-              c,
-              v: cell?.v,
-              bg,
-              borders: cell?.borders, // Check if explicit borders exist
-              borderFallback: !cell?.borders,
-            },
-            null,
-            2
-          )
-        )
-      }
-
       // 3. Text/Content Layer
       const useRichText = cell?.richText && cell.richText.length > 0
 

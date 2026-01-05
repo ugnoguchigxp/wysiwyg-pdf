@@ -23,11 +23,6 @@ export const useCanvasDrag = ({ element, allElements, onChange }: UseCanvasDragP
         let newX = node.x()
         let newY = node.y()
 
-        console.log(`[useCanvasDrag] handleDragEnd for ${element.t}:${element.id}`, {
-          x: newX,
-          y: newY,
-        })
-
         if (element.t === 'shape') {
           if (
             ['circle', 'star', 'pentagon', 'hexagon'].includes(
