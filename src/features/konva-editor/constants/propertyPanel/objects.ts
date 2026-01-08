@@ -155,5 +155,5 @@ export const SIGNATURE_OBJECT_CONFIG: ObjectPanelConfig = {
 export const WIDGET_BED_OBJECT_CONFIG: ObjectPanelConfig = {
   objectType: 'widget:bed',
   header: { iconName: 'Bed', labelKey: 'toolbar_bed' },
-  sections: ['sec:posSize', 'sec:bed-label'],
+  sections: ['sec:bed-label'],
 }
