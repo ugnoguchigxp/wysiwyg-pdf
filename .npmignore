@@ -1,3 +1,9 @@
 # Keep repository assets out of the published npm package.
 asset/
 assets/
+example/
+node_modules/
+coverage/
+*.tgz
+.git/
+.npm-cache/
