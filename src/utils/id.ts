@@ -9,6 +9,7 @@ const prefixMap: Record<UnifiedNode['t'], string> = {
   table: 'tbl',
   signature: 'sig',
   widget: 'wgt',
+  'speech-bubble': 'spb',
 }
 
 export function generateNodeId(doc: Doc, nodeType: UnifiedNode['t']): string {

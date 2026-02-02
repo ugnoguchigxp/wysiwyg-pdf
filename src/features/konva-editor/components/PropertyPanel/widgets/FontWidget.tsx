@@ -18,8 +18,8 @@ export const FontWidget: React.FC<WidgetProps<FontWidgetConfig>> = ({
   onChange,
   resolveText,
 }) => {
-  if (node.t !== 'text') return null
-  const textNode = node as TextNode
+  if (node.t !== 'text' && node.t !== 'speech-bubble') return null
+  const textNode = node as any
   const props = config.props ?? {}
   const families = props.fontFamilies ?? DEFAULT_FONT_FAMILIES
   const sizes = props.fontSizes ?? DEFAULT_FONT_SIZES

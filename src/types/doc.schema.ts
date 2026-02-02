@@ -198,6 +198,35 @@ export const WidgetNodeSchema = BaseNodeSchema.extend({
   widget: z.string(),
 })
 
+export const SpeechBubbleNodeSchema = BaseNodeSchema.extend({
+  t: z.literal('speech-bubble'),
+  x: z.number(),
+  y: z.number(),
+  w: z.number().positive(),
+  h: z.number().positive(),
+  shapeType: z.enum(['rectangle', 'custom']),
+  hasFrame: z.boolean().optional(),
+  tailPosition: z.object({ x: z.number(), y: z.number() }).optional(),
+  pathPoints: z.array(z.number()).optional(),
+  originalText: z.string().default(''),
+  translations: z.record(z.string()).default({}),
+  font: z.string().optional(),
+  fontSize: z.number().positive().optional(),
+  fontWeight: z.number().optional(),
+  italic: z.boolean().optional(),
+  underline: z.boolean().optional(),
+  lineThrough: z.boolean().optional(),
+  align: z.enum(['l', 'c', 'r', 'j']).optional(),
+  vAlign: z.enum(['t', 'm', 'b']).optional(),
+  fill: ColorSchema.optional(),
+  vertical: z.boolean().optional().default(false),
+  borderColor: ColorSchema.optional(),
+  borderWidth: z.number().nonnegative().optional(),
+  backgroundColor: ColorSchema.optional(),
+  padding: z.number().nonnegative().optional(),
+  autoFit: z.boolean().optional().default(false),
+})
+
 export const UnifiedNodeSchema = z.discriminatedUnion('t', [
   TextNodeSchema,
   ShapeNodeSchema,
@@ -207,6 +236,7 @@ export const UnifiedNodeSchema = z.discriminatedUnion('t', [
   TableNodeSchema,
   SignatureNodeSchema,
   WidgetNodeSchema,
+  SpeechBubbleNodeSchema,
 ])
 
 export type UnifiedNodeSchemaType = z.infer<typeof UnifiedNodeSchema>
@@ -225,6 +255,7 @@ export const SurfaceSchema = z.object({
   h: z.number().positive(),
   margin: MarginSchema.optional(),
   bg: z.string().optional(),
+  bgAssetId: z.string().optional(),
   masterId: z.string().optional(),
 })
 

@@ -12,11 +12,17 @@ export const CheckboxWidget: React.FC<WidgetProps<CheckboxWidgetConfig>> = ({
 }) => {
   const { fieldKey } = config.props
 
-  // Special handling for 'routing' (Line Smart Connection)
   const isRouting = fieldKey === 'routing'
-  const value = isRouting
+  const isHasFrame = fieldKey === 'hasFrame'
+
+  let value = isRouting
     ? (node as unknown as Record<string, string>)[fieldKey] === 'orthogonal'
     : !!(node as unknown as Record<string, boolean>)[fieldKey]
+
+  // Default hasFrame to true if undefined
+  if (isHasFrame && (node as unknown as Record<string, boolean>)[fieldKey] === undefined) {
+    value = true
+  }
 
   const handleChange = (checked: boolean) => {
     if (isRouting) {

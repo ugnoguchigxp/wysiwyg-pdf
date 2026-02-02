@@ -4,6 +4,7 @@ export type Bindings = {
   DB: D1Database
   BUCKET: R2Bucket
   ASSETS: Fetcher
+  AI: any // Cloudflare Workers AI
   DB_TYPE?: 'local' | 'd1'
   STORAGE_TYPE?: 'local' | 'r2'
 }

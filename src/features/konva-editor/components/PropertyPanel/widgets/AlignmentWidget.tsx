@@ -21,8 +21,8 @@ export const AlignmentWidget: React.FC<WidgetProps<AlignmentWidgetConfig>> = ({
   onChange,
   resolveText,
 }) => {
-  if (node.t !== 'text') return null
-  const textNode = node as TextNode
+  if (node.t !== 'text' && node.t !== 'speech-bubble') return null
+  const textNode = node as any
   const options = config.props?.options ?? (['l', 'c', 'r'] as AlignOption[])
 
   return (

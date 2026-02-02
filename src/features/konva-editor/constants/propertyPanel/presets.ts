@@ -183,7 +183,7 @@ export const SECTION_PRESETS: Record<string, SectionConfig> = {
   // === Common Sections ===
   'sec:text-vertical': {
     id: 'common-text-vertical',
-    condition: (node) => node.t === 'text',
+    condition: (node) => node.t === 'text' || node.t === 'speech-bubble',
     widgets: [
       {
         type: 'checkbox',

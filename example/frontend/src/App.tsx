@@ -10,6 +10,7 @@ const SignatureDemoPage = lazy(() => import('./pages/SignatureDemoPage').then(mo
 const MindmapDemoPage = lazy(() => import('./pages/MindmapDemoPage').then(module => ({ default: module.MindmapDemoPage })))
 const SlideEditorPage = lazy(() => import('./pages/SlideEditorPage').then(module => ({ default: module.SlideEditorPage })))
 const ExcelImportPage = lazy(() => import('./pages/ExcelImportPage').then(module => ({ default: module.ExcelImportPage })))
+const MangaDubbingPage = lazy(() => import('./pages/MangaDubbingPage').then(module => ({ default: module.MangaDubbingPage })))
 
 // Simple Hash Router Hook
 const useHashLocation = () => {
@@ -59,6 +60,7 @@ function App() {
         {location === '/signature' && <SignatureDemoPage onBack={() => navigate('/')} />}
         {location === '/mindmap' && <MindmapDemoPage onBack={() => navigate('/')} />}
         {location === '/slide' && <SlideEditorPage onBack={() => navigate('/')} />}
+        {location === '/manga-dub' && <MangaDubbingPage onBack={() => navigate('/')} />}
 
         {location === '/excel-import' && (
           <ExcelImportPage

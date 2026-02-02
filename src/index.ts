@@ -39,6 +39,8 @@ export * from './features/report-editor/hooks/useReportHistory'
 export * from './features/report-editor/ReportEditor'
 export * from './features/report-editor/ReportKonvaEditor'
 export * from './features/slide-editor'
+export * from './features/report-editor/components/Navigation/PageNavigator'
+export * from './features/report-editor/components/Import/BulkImageImport'
 // i18n
 export * from './i18n/I18nContext'
 export * from './modules/queue/hooks'
@@ -46,3 +48,7 @@ export * from './modules/queue/QueueContext'
 export * from './types/schema'
 // Doc unit conversion helpers
 export * from './utils/docUnitConversion'
+// Utils
+export { generateUUID } from './utils/browser'
+export { generateNodeId } from './utils/id'
+export { mmToPx, pxToMm, ptToMm } from './utils/units'

@@ -1,5 +1,6 @@
 import {
   Image as ImageIcon,
+  MessageSquare,
   Minus,
   MousePointer2,
   PenTool,
@@ -37,6 +38,7 @@ interface IWysiwygEditorToolbarProps {
   i18nOverrides?: Record<string, string>
   activeTool?: string
   onToolSelect?: (tool: string) => void
+  editorType?: 'report' | 'manga'
 }
 
 export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
@@ -49,6 +51,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
   i18nOverrides,
   activeTool = 'select',
   onToolSelect,
+  editorType = 'report',
 }) => {
   const { t } = useI18n()
 
@@ -72,7 +75,7 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
   }
 
   // Use the shared hook for canvas operations
-  const { addText, addShape, addLine, addImage, addTable } = useCanvasOperations({
+  const { addText, addShape, addLine, addImage, addTable, addSpeechBubble } = useCanvasOperations({
     templateDoc,
     onTemplateChange,
     onSelectElement,
@@ -184,20 +187,54 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
           <TooltipContent side="right">{resolveText('toolbar_line', 'Line')}</TooltipContent>
         </Tooltip>
 
-        {/* Add Table Button */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              onClick={handleAddTable}
-              className={TOOLBAR_BUTTON_CLASS}
-              aria-label={resolveText('toolbar_add_table', 'Table')}
-            >
-              <Table size={20} />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right">{resolveText('toolbar_add_table', 'Table')}</TooltipContent>
-        </Tooltip>
+        {editorType !== 'manga' && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={handleAddTable}
+                className={TOOLBAR_BUTTON_CLASS}
+                aria-label={resolveText('toolbar_add_table', 'Table')}
+              >
+                <Table size={20} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{resolveText('toolbar_add_table', 'Table')}</TooltipContent>
+          </Tooltip>
+        )}
+
+        {/* Add Speech Bubble Button with Dropdown */}
+        {editorType === 'manga' && (
+          <DropdownMenu>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className={
+                      activeTool === 'speech-bubble' ? TOOLBAR_BUTTON_ACTIVE_CLASS : TOOLBAR_BUTTON_CLASS
+                    }
+                    aria-label={resolveText('toolbar_add_speech_bubble', 'Speech Bubble')}
+                  >
+                    <MessageSquare size={20} />
+                  </button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                {resolveText('toolbar_add_speech_bubble', 'Speech Bubble')}
+              </TooltipContent>
+            </Tooltip>
+
+            <DropdownMenuContent align="start" className="w-40">
+              <DropdownMenuItem onClick={() => addSpeechBubble('rectangle', currentPageId)}>
+                {resolveText('shape_rectangle', 'Rectangle')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onToolSelect?.('speech-bubble')}>
+                {resolveText('shape_custom_draw', 'Custom (Draw)')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
 
         {/* Shapes Menu */}
         <DropdownMenu>

@@ -32,6 +32,8 @@ export const EDITOR_TRANSLATIONS = {
     toolbar_zoom_out: '縮小',
     toolbar_zoom_reset: 'リセット',
     toolbar_default_text: 'テキスト',
+    toolbar_add_speech_bubble: '吹き出し追加',
+    toolbar_default_speech: 'セリフ',
 
     // Properties Panel
     loading: '読み込み中',
@@ -143,4 +145,15 @@ export const EDITOR_TRANSLATIONS = {
     ctx_send_to_back: '最背面へ移動',
     ctx_bring_forward: '前面へ移動',
     ctx_send_backward: '背面へ移動',
+
+    // Manga Dubbing Specific
+    properties_speech_bubble: 'マンガ吹き出し',
+    properties_bubble_style: '吹き出しスタイル',
+    properties_bubble_shape: '形状',
+    properties_ellipse: '楕円',
+    properties_rectangle: '角丸矩形',
+    properties_cloud: 'モコモコ',
+    properties_auto_fit: 'フォント自動調整',
+    properties_text_style: 'テキストスタイル',
+    properties_manga_dubbing: '翻訳（マンガ・ダビング）',
 }

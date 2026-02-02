@@ -20,8 +20,8 @@ export const VAlignmentWidget: React.FC<WidgetProps<VAlignmentWidgetConfig>> = (
   onChange,
   resolveText,
 }) => {
-  if (node.t !== 'text') return null
-  const textNode = node as TextNode
+  if (node.t !== 'text' && node.t !== 'speech-bubble') return null
+  const textNode = node as any
   const options = config.props?.options ?? (['t', 'm', 'b'] as VAlignOption[])
 
   return (

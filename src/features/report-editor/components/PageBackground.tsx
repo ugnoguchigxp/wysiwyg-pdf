@@ -13,24 +13,34 @@ export const PageBackground = ({ width, height, surface }: PageBackgroundProps) 
   const [image, setImage] = useState<HTMLImageElement | null>(null)
 
   const bg = surface.bg
+  const bgAssetId = surface.bgAssetId
   const isColor = bg ? bg.startsWith('#') || bg.startsWith('rgb') : true
 
   useEffect(() => {
-    if (!bg || isColor) {
+    // Priority: bgAssetId > bg
+    if (!bg && !bgAssetId) {
       setImage(null)
       return
     }
 
-    if (!bg.startsWith('http') && !bg.startsWith('data:')) {
-      findImageWithExtension(bg).then((res) => {
+    if (isColor && !bgAssetId) {
+      setImage(null)
+      return
+    }
+
+    const resolveUrl = bgAssetId || bg
+    if (!resolveUrl) return
+
+    if (!resolveUrl.startsWith('http') && !resolveUrl.startsWith('data:')) {
+      findImageWithExtension(resolveUrl).then((res) => {
         if (res) setImage(res.img)
       })
     } else {
       const img = new window.Image()
-      img.src = bg
+      img.src = resolveUrl
       img.onload = () => setImage(img)
     }
-  }, [bg, isColor])
+  }, [bg, bgAssetId, isColor])
 
   return (
     <>

@@ -21,3 +21,6 @@ crons = ["*/30 * * * *"] # Every 30 minutes
 [assets]
 directory = "../frontend/dist"
 binding = "ASSETS"
+
+[ai]
+binding = "AI"

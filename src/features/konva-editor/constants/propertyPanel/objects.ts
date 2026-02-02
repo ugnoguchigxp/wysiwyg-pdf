@@ -157,3 +157,69 @@ export const WIDGET_BED_OBJECT_CONFIG: ObjectPanelConfig = {
   header: { iconName: 'Bed', labelKey: 'toolbar_bed' },
   sections: ['sec:bed-label'],
 }
+
+export const SPEECH_BUBBLE_OBJECT_CONFIG: ObjectPanelConfig = {
+  objectType: 'speech-bubble',
+  header: { iconName: 'MessageSquare', labelKey: 'properties_speech_bubble' },
+  sections: [
+    {
+      id: 'bubble-style',
+      labelKey: 'properties_bubble_style',
+      grid: { cols: 2, gap: 2 },
+      widgets: [
+        {
+          type: 'select',
+          labelKey: 'properties_bubble_shape',
+          props: {
+            fieldKey: 'shapeType',
+            options: [
+              { value: 'rectangle', labelKey: 'properties_rectangle' },
+              { value: 'custom', labelKey: 'properties_custom' },
+            ],
+          },
+        },
+        {
+          type: 'colorPicker',
+          labelKey: 'properties_background_color',
+          props: { fieldKey: 'backgroundColor' },
+        },
+        {
+          type: 'checkbox',
+          labelKey: 'properties_show_frame', // Consistent with Text element
+          props: { fieldKey: 'hasFrame' },
+        },
+        {
+          type: 'colorPicker',
+          labelKey: 'properties_border_color',
+          props: { fieldKey: 'borderColor' },
+          condition: (node) => (node as any).hasFrame !== false,
+        },
+        {
+          type: 'numberInput',
+          labelKey: 'properties_border_width',
+          props: { fieldKey: 'borderWidth', min: 0, step: 0.1, unit: 'mm' },
+          condition: (node) => (node as any).hasFrame !== false,
+        },
+        {
+          type: 'numberInput',
+          labelKey: 'properties_padding',
+          props: { fieldKey: 'padding', min: 0, step: 1, unit: 'mm' },
+        },
+      ],
+    },
+    'sec:text-font',
+    'sec:text-alignment',
+    'sec:text-vertical',
+    {
+      id: 'bubble-translation',
+      labelKey: 'properties_manga_dubbing',
+      widgets: [
+        {
+          type: 'custom',
+          props: { customId: 'mangaDubbing', renderKey: 'mangaDubbing' },
+        },
+      ],
+    },
+    'sec:posSize',
+  ],
+}

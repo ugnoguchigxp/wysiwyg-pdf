@@ -58,6 +58,7 @@ export interface Surface {
   // Page specific details
   margin?: Margin // For 'page' type
   bg?: string // Color hex or image URL (data:image/...)
+  bgAssetId?: string // Reference to an asset in doc.assets
   masterId?: string // 参照するマスタースライドID (undefinedならマスター)
   header?: HeaderFooterContent
   footer?: HeaderFooterContent
@@ -89,6 +90,7 @@ export type UnifiedNode =
   | TableNode
   | SignatureNode
   | WidgetNode
+  | SpeechBubbleNode
 
 // Common properties for all nodes
 export interface BaseNode {
@@ -245,6 +247,45 @@ export interface SignatureNode extends BaseNode {
   pressureData?: number[][] // Pressure data for each stroke (optional)
   usePressureSim?: boolean // Use pressure simulation (default: true)
   tolerance?: number // Simplification tolerance (for real-time preview)
+}
+
+export interface SpeechBubbleNode extends BaseNode {
+  t: 'speech-bubble'
+  x: number
+  y: number
+  w: number
+  h: number
+
+  // Bubble settings
+  shapeType: 'rectangle' | 'custom'
+  hasFrame?: boolean
+  tailPosition?: { x: number; y: number }
+  pathPoints?: number[] // For 'custom' shape: [x1, y1, x2, y2, ...] Relative to (x, y)
+
+  // Text management
+  originalText: string
+  translations: Record<string, string>
+
+  // Text Style
+  font?: string
+  fontSize?: number
+  fontWeight?: number
+  italic?: boolean
+  underline?: boolean
+  lineThrough?: boolean
+  align?: 'l' | 'c' | 'r' | 'j'
+  vAlign?: 't' | 'm' | 'b'
+  fill?: Color
+  vertical?: boolean
+
+  // Box Style
+  borderColor?: Color
+  borderWidth?: number
+  backgroundColor?: Color
+  padding?: number
+
+  // Advanced
+  autoFit?: boolean // Font auto-scaling
 }
 
 // ========================================

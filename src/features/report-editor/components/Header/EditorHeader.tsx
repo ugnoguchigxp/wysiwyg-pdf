@@ -30,6 +30,8 @@ export interface EditorHeaderProps {
   loadMenu?: React.ReactNode
   children?: React.ReactNode
   i18nOverrides?: Record<string, string>
+  hideDownloadButtons?: boolean
+  endContent?: React.ReactNode
 }
 
 export const EditorHeader: React.FC<EditorHeaderProps> = ({
@@ -51,6 +53,8 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   loadMenu,
   children,
   i18nOverrides,
+  hideDownloadButtons,
+  endContent,
 }) => {
   const { t } = useI18n()
 
@@ -116,88 +120,54 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
 
         <div className="h-6 w-px bg-border mx-1" />
 
-        {/* History Controls */}
-        <button
-          type="button"
-          onClick={onUndo}
-          disabled={!canUndo}
-          className="p-2 rounded-md hover:bg-accent text-muted-foreground disabled:opacity-30 transition-colors"
-          title={resolveText('toolbar_undo', 'Undo')}
-        >
-          <Undo className="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          onClick={onRedo}
-          disabled={!canRedo}
-          className="p-2 rounded-md hover:bg-accent text-muted-foreground disabled:opacity-30 transition-colors"
-          title={resolveText('toolbar_redo', 'Redo')}
-        >
-          <Redo className="w-4 h-4" />
-        </button>
-
-        <div className="h-6 w-px bg-border mx-1" />
-
-        <Button
-          variant="circle-help"
-          size="circle"
-          onClick={onShowShortcuts}
-          title={resolveText('toolbar_shortcuts', 'Shortcuts')}
-        >
-          ?
-        </Button>
-
-        <div className="h-6 w-px bg-border mx-1" />
-
-        {/* Actions */}
-        <button
-          type="button"
-          onClick={onDownloadImage}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-foreground hover:bg-accent rounded-md border border-border transition-colors shadow-sm whitespace-nowrap flex-shrink-0"
-        >
-          <ImageIcon className="w-4 h-4" />
-          {resolveText('header_image', 'Image')}
-        </button>
-
-        <button
-          type="button"
-          onClick={onDownloadPdf}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-foreground hover:bg-accent rounded-md border border-border transition-colors shadow-sm whitespace-nowrap flex-shrink-0"
-        >
-          <Download className="w-4 h-4" />
-          {resolveText('header_pdf', 'PDF')}
-        </button>
-
-        <div className="h-6 w-px bg-border mx-1" />
-
-        {/* [Load] [Save] order */}
-        {loadMenu}
-
-        <button
-          type="button"
-          onClick={onSave}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 rounded-md shadow-sm transition-colors whitespace-nowrap flex-shrink-0"
-        >
-          <Save className="w-4 h-4" />
-          {resolveText('save', 'Save')}
-        </button>
-
-        <div className="h-6 w-px bg-border mx-1" />
-
-        {onSettingsClick && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onSettingsClick}
-            className="text-muted-foreground hover:text-foreground"
-            title={resolveText('header_settings', 'Settings')}
+        {/* Load/Save Block */}
+        <div className="flex items-center gap-2">
+          {loadMenu}
+          <button
+            type="button"
+            onClick={onSave}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 rounded-md shadow-sm transition-colors whitespace-nowrap flex-shrink-0"
           >
-            <Settings2 className="w-5 h-5" />
-          </Button>
-        )}
+            <Save className="w-4 h-4" />
+            {resolveText('save', 'Save')}
+          </button>
+        </div>
 
-        {/* Custom Actions (e.g. Dashboard, DarkMode switches) rendered AFTER Save */}
+        <div className="h-6 w-px bg-border mx-1" />
+
+        {/* Custom Middle Actions (e.g. Pagination) */}
         {children}
+
+        <div className="h-6 w-px bg-border mx-1" />
+
+        {/* Far Right System Actions (Help, Mode Toggle, Settings) */}
+        <div className="flex items-center gap-1.5 ml-auto">
+          {onShowShortcuts && (
+            <Button
+              variant="circle-help"
+              size="circle"
+              className="h-8 w-8 text-xs shrink-0"
+              onClick={onShowShortcuts}
+              title={resolveText('toolbar_shortcuts', 'Shortcuts')}
+            >
+              ?
+            </Button>
+          )}
+
+          {endContent}
+
+          {onSettingsClick && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onSettingsClick}
+              className="text-muted-foreground hover:text-foreground shrink-0"
+              title={resolveText('header_settings', 'Settings')}
+            >
+              <Settings2 className="w-5 h-5" />
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   )

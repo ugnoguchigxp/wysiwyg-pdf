@@ -9,6 +9,7 @@ import type {
   SignatureNode,
   TableNode,
   TextNode,
+  SpeechBubbleNode,
 } from '../../types/canvas'
 // Helpers & Components Imports
 import { CanvasImage } from './CanvasImage'
@@ -19,6 +20,7 @@ import { ShapeRenderer } from './renderers/ShapeRenderer'
 import { SignatureRenderer } from './renderers/SignatureRenderer'
 import { TableRenderer } from './renderers/TableRenderer'
 import { TextRenderer } from './renderers/TextRenderer'
+import { SpeechBubbleRenderer } from './renderers/SpeechBubbleRenderer'
 import type { CanvasElementCommonProps, CanvasElementRendererProps } from './types'
 
 export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
@@ -332,6 +334,15 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
             stageScale={stageScale}
           />
         )
+      case 'speech-bubble':
+        return (
+          <SpeechBubbleRenderer
+            element={element as SpeechBubbleNode}
+            commonProps={commonProps}
+            isEditing={isEditing}
+            invScale={invScale}
+          />
+        )
       default:
         return null
     }
@@ -386,15 +397,15 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           enabledAnchors={
             !element.locked
               ? [
-                  'top-left',
-                  'top-right',
-                  'bottom-left',
-                  'bottom-right',
-                  'middle-left',
-                  'middle-right',
-                  'top-center',
-                  'bottom-center',
-                ]
+                'top-left',
+                'top-right',
+                'bottom-left',
+                'bottom-right',
+                'middle-left',
+                'middle-right',
+                'top-center',
+                'bottom-center',
+              ]
               : []
           }
           boundBoxFunc={(oldBox, newBox) => {

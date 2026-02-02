@@ -154,3 +154,193 @@ describe('validateTableCells', () => {
         expect(errors.some((e) => e.includes('collision'))).toBe(true)
     })
 })
+
+describe('SpeechBubbleNode validation', () => {
+    it('should validate a valid speech bubble node', () => {
+        const speechBubbleNode = {
+            t: 'speech-bubble',
+            id: 'bubble-1',
+            s: 'page-1',
+            x: 10,
+            y: 20,
+            w: 100,
+            h: 80,
+            shapeType: 'rectangle',
+            originalText: 'Hello World',
+            translations: {},
+        }
+        const result = validateNode(speechBubbleNode)
+
+        expect(result.success).toBe(true)
+    })
+
+    it('should accept all shape types', () => {
+        const shapeTypes = ['rectangle', 'custom'] as const
+
+        for (const shapeType of shapeTypes) {
+            const node = {
+                t: 'speech-bubble',
+                id: `bubble-${shapeType}`,
+                s: 'page-1',
+                x: 0,
+                y: 0,
+                w: 100,
+                h: 80,
+                shapeType,
+                originalText: 'Test',
+                translations: {},
+                pathPoints: shapeType === 'custom' ? [0, 0, 10, 10] : undefined
+            }
+            const result = validateNode(node)
+            expect(result.success).toBe(true)
+        }
+    })
+
+    it('should validate with translations', () => {
+        const node = {
+            t: 'speech-bubble',
+            id: 'bubble-1',
+            s: 'page-1',
+            x: 0,
+            y: 0,
+            w: 100,
+            h: 80,
+            shapeType: 'rectangle',
+            originalText: 'Hello',
+            translations: {
+                ja: 'こんにちは',
+                en: 'Hello',
+                'zh-CN': '你好',
+            },
+        }
+        const result = validateNode(node)
+
+        expect(result.success).toBe(true)
+    })
+
+    it('should validate with optional text styles', () => {
+        const node = {
+            t: 'speech-bubble',
+            id: 'bubble-1',
+            s: 'page-1',
+            x: 0,
+            y: 0,
+            w: 100,
+            h: 80,
+            shapeType: 'rectangle',
+            originalText: 'Styled Text',
+            translations: {},
+            font: 'Arial',
+            fontSize: 14,
+            fontWeight: 700,
+            italic: true,
+            underline: true,
+            lineThrough: false,
+            fill: '#ff0000',
+            align: 'c',
+            vAlign: 'm',
+            vertical: false,
+        }
+        const result = validateNode(node)
+
+        expect(result.success).toBe(true)
+    })
+
+    it('should validate with box styles', () => {
+        const node = {
+            t: 'speech-bubble',
+            id: 'bubble-1',
+            s: 'page-1',
+            x: 0,
+            y: 0,
+            w: 100,
+            h: 80,
+            shapeType: 'rectangle',
+            originalText: 'Text',
+            translations: {},
+            stroke: '#0000ff',
+            strokeW: 2,
+            backgroundColor: '#ffff00',
+            padding: 10,
+            autoFit: true,
+        }
+        const result = validateNode(node)
+
+        expect(result.success).toBe(true)
+    })
+
+    it('should validate with tail position', () => {
+        const node = {
+            t: 'speech-bubble',
+            id: 'bubble-1',
+            s: 'page-1',
+            x: 0,
+            y: 0,
+            w: 100,
+            h: 80,
+            shapeType: 'rectangle',
+            originalText: 'Text',
+            translations: {},
+            tailPosition: { x: 50, y: 100 },
+        }
+        const result = validateNode(node)
+
+        expect(result.success).toBe(true)
+    })
+
+    it('should fail for invalid shape type', () => {
+        const node = {
+            t: 'speech-bubble',
+            id: 'bubble-1',
+            s: 'page-1',
+            x: 0,
+            y: 0,
+            w: 100,
+            h: 80,
+            shapeType: 'invalid',
+            originalText: 'Text',
+            translations: {},
+        }
+        const result = validateNode(node)
+
+        expect(result.success).toBe(false)
+    })
+
+    it('should fail for negative strokeW', () => {
+        const node = {
+            t: 'speech-bubble',
+            id: 'bubble-1',
+            s: 'page-1',
+            x: 0,
+            y: 0,
+            w: 100,
+            h: 80,
+            shapeType: 'rectangle',
+            originalText: 'Text',
+            translations: {},
+            strokeW: -1,
+        }
+        const result = validateNode(node)
+
+        expect(result.success).toBe(false)
+    })
+
+    it('should fail for negative padding', () => {
+        const node = {
+            t: 'speech-bubble',
+            id: 'bubble-1',
+            s: 'page-1',
+            x: 0,
+            y: 0,
+            w: 100,
+            h: 80,
+            shapeType: 'rectangle',
+            originalText: 'Text',
+            translations: {},
+            padding: -5,
+        }
+        const result = validateNode(node)
+
+        expect(result.success).toBe(false)
+    })
+})

@@ -5,8 +5,10 @@ import type {
   ImageNode,
   LineNode,
   ShapeNode,
+  SignatureNode,
   TableNode,
   TextNode,
+  SpeechBubbleNode,
   UnifiedNode,
 } from '@/types/canvas'
 import { generateNodeId } from '@/utils/id'
@@ -253,11 +255,45 @@ export function useCanvasOperations({
     [getTargetSurfaceId, calculateInitialPosition, withNewElement]
   )
 
+  const addSpeechBubble = useCallback(
+    (shapeType: 'rectangle' = 'rectangle', currentPageId?: string) => {
+      const s = getTargetSurfaceId(currentPageId)
+      const { x, y } = calculateInitialPosition(s)
+      const id = generateNodeId(templateDoc, 'speech-bubble')
+
+      const bubble: SpeechBubbleNode = {
+        id,
+        t: 'speech-bubble',
+        s,
+        locked: false,
+        r: 0,
+        name: 'Speech Bubble',
+        x,
+        y,
+        w: 40,
+        h: 30,
+        shapeType,
+        originalText: resolveText('toolbar_default_speech', 'Speech'),
+        translations: {},
+        fontSize: ptToMm(12),
+        fill: '#000000',
+        backgroundColor: '#ffffff',
+        stroke: '#000000',
+        strokeW: 0.2,
+        padding: 5,
+        autoFit: true,
+      }
+      withNewElement(bubble)
+    },
+    [getTargetSurfaceId, calculateInitialPosition, resolveText, withNewElement, templateDoc]
+  )
+
   return {
     addText,
     addShape,
     addLine,
     addImage,
     addTable,
+    addSpeechBubble,
   }
 }

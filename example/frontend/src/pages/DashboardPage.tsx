@@ -3,7 +3,7 @@ import { FileText, LayoutTemplate, Moon, Sun, Monitor, GitBranch, FileSpreadshee
 
 
 interface DashboardPageProps {
-    onNavigate: (page: 'report' | 'bed' | 'viewer' | 'signature' | 'mindmap' | 'slide' | 'excel-import') => void
+    onNavigate: (page: 'report' | 'bed' | 'viewer' | 'signature' | 'mindmap' | 'slide' | 'excel-import' | 'manga-dub') => void
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
@@ -117,6 +117,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                         <h2 className="text-2xl font-bold mb-2 text-foreground">Slide Editor</h2>
                         <p className="text-muted-foreground text-center">
                             PowerPoint-like slide editor with PPTX export.
+                        </p>
+                    </button>
+
+                    <button
+                        onClick={() => onNavigate('manga-dub')}
+                        className="flex flex-col items-center justify-center p-12 rounded-xl border-2 border-border bg-card hover:border-pink-500 hover:bg-pink-50 dark:hover:bg-pink-900/20 transition-all duration-200 group h-80"
+                    >
+                        <div className="w-24 h-24 rounded-full bg-pink-600 dark:bg-pink-900/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
+                            <LayoutTemplate className="w-12 h-12 !text-white dark:text-pink-400" style={{ color: 'white' }} />
+                        </div>
+                        <h2 className="text-2xl font-bold mb-2 text-foreground">Manga Dubbing</h2>
+                        <p className="text-muted-foreground text-center">
+                            Create speech bubbles and auto-translate dialogue.
                         </p>
                     </button>
                 </div>

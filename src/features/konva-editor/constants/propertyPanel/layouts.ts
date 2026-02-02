@@ -4,6 +4,7 @@ import {
   LINE_OBJECT_CONFIG,
   SHAPE_OBJECT_CONFIG,
   SIGNATURE_OBJECT_CONFIG,
+  SPEECH_BUBBLE_OBJECT_CONFIG,
   TABLE_OBJECT_CONFIG,
   TEXT_OBJECT_CONFIG,
   WIDGET_BED_OBJECT_CONFIG,
@@ -32,6 +33,20 @@ export const REPORT_PANEL_CONFIG: PropertyPanelConfig = {
     IMAGE_OBJECT_CONFIG,
     TABLE_OBJECT_CONFIG,
     SIGNATURE_OBJECT_CONFIG,
+  ],
+}
+
+export const MANGA_DUBBING_PANEL_CONFIG: PropertyPanelConfig = {
+  editorType: 'manga',
+  layout: { ...DEFAULT_PANEL_LAYOUT, width: 288 },
+  defaultSections: ['sec:text-vertical', 'sec:posSize'],
+  objects: [
+    TEXT_OBJECT_CONFIG,
+    SHAPE_OBJECT_CONFIG,
+    LINE_OBJECT_CONFIG,
+    IMAGE_OBJECT_CONFIG,
+    SIGNATURE_OBJECT_CONFIG,
+    SPEECH_BUBBLE_OBJECT_CONFIG,
   ],
 }
 

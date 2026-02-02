@@ -7,7 +7,7 @@ import { GridLayer } from '@/components/canvas/GridLayer'
 import { useKeyboardShortcuts } from '@/components/canvas/hooks/useKeyboardShortcuts'
 import { ObjectContextMenu } from '@/components/canvas/ObjectContextMenu'
 import { TextEditOverlay } from '@/components/canvas/TextEditOverlay'
-import type { Doc, TableNode, TextNode, UnifiedNode } from '@/types/canvas' // Direct import
+import type { Doc, SpeechBubbleNode, TableNode, TextNode, UnifiedNode } from '@/types/canvas' // Direct import
 import { generateUUID, safeLocalStorage } from '@/utils/browser'
 import { mmToPx, ptToMm } from '@/utils/units'
 import { simplifyPoints } from '@/utils/geometry'
@@ -19,6 +19,7 @@ import { TableContextMenu } from './components/ContextMenu/TableContextMenu'
 import { useNodeOperations } from './hooks/useNodeOperations'
 import { useReportContextMenu } from './hooks/useReportContextMenu'
 import { useSignature } from './hooks/useSignature'
+import { useSpeechBubbleDraw } from './hooks/useSpeechBubbleDraw'
 
 // const log = createContextLogger('ReportKonvaEditor') // Removed unused
 
@@ -29,6 +30,7 @@ import { PageBackground } from './components/PageBackground'
 export interface ReportKonvaEditorHandle {
   downloadImage: () => void
   flushSignature: () => Doc | null
+  commitBubble: () => Doc | null
 }
 
 interface ReportKonvaEditorProps {
@@ -51,6 +53,7 @@ interface ReportKonvaEditorProps {
   showGrid?: boolean
   // snapStrength?: number // Removed unused
   gridSize?: number
+  onDrawingFinish?: (tool: string) => void
 }
 
 import { getCellAt, getColWidth, getColX, getRowHeight, getRowY } from './utils/tableUtils'
@@ -79,6 +82,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       showGrid = false,
       // snapStrength = 0, // Removed unused
       gridSize = 50,
+      onDrawingFinish,
     },
     ref
   ) => {
@@ -179,6 +183,18 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
     })
 
     const {
+      points: bubblePoints,
+      handleMouseDown: handleBubbleMouseDown,
+      commitBubble,
+      reset: resetBubbleDraw
+    } = useSpeechBubbleDraw({
+      templateDoc,
+      onTemplateChange,
+      currentSurface,
+      onElementSelect,
+    })
+
+    const {
       contextMenu,
       setContextMenu,
       handleContextMenu,
@@ -198,12 +214,25 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
     useEffect(() => {
       if (activeTool !== 'signature' && currentStrokes.length > 0) {
         commitSignature()
+        onDrawingFinish?.('signature')
       }
-    }, [activeTool, commitSignature, currentStrokes.length])
+    }, [activeTool, commitSignature, currentStrokes.length, onDrawingFinish])
+
+    useEffect(() => {
+      if (activeTool !== 'speech-bubble' && bubblePoints.length > 0) {
+        commitBubble()
+        onDrawingFinish?.('speech-bubble')
+      }
+    }, [activeTool, commitBubble, bubblePoints.length, onDrawingFinish])
 
     const handleStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
       if (activeTool === 'signature') {
         handleSignatureMouseDown(e)
+        return
+      }
+
+      if (activeTool === 'speech-bubble') {
+        handleBubbleMouseDown(e)
         return
       }
 
@@ -383,6 +412,11 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
         const result = commitSignature()
         return result
       },
+      commitBubble: () => {
+        const result = commitBubble()
+        if (result) onDrawingFinish?.('speech-bubble')
+        return result
+      },
     }))
 
     const handleDrop = (e: React.DragEvent) => {
@@ -403,21 +437,41 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
         const logicX = stagePos.x / displayScale
         const logicY = stagePos.y / displayScale
 
-        const newNode: TextNode = {
-          id: `text-${generateUUID()}`,
-          t: 'text',
-          s: currentSurface.id,
-          x: logicX,
-          y: logicY,
-          w: 100,
-          h: 10,
-          text: `{${text}}`,
-          bind: fieldId,
-          fontSize: ptToMm(10),
-          fill: '#000000',
-          align: 'l', // Fixed align type
-          vertical: false,
-        }
+        const newNode: UnifiedNode =
+          payload.data.type === 'speech-bubble'
+            ? ({
+              id: `speech-${generateUUID()}`,
+              t: 'speech-bubble',
+              s: currentSurface.id,
+              x: logicX,
+              y: logicY,
+              w: 50,
+              h: 30,
+              shapeType: 'rectangle',
+              originalText: 'New Speech Bubble',
+              translations: {},
+              fontSize: ptToMm(10),
+              fill: '#000000',
+              backgroundColor: '#ffffff',
+              borderColor: '#000000',
+              borderWidth: ptToMm(0.5),
+              padding: 5,
+            } as SpeechBubbleNode)
+            : ({
+              id: `text-${generateUUID()}`,
+              t: 'text',
+              s: currentSurface.id,
+              x: logicX,
+              y: logicY,
+              w: 100,
+              h: 10,
+              text: `{${text}}`,
+              bind: fieldId,
+              fontSize: ptToMm(10),
+              fill: '#000000',
+              align: 'l',
+              vertical: false,
+            } as TextNode)
 
         onTemplateChange({
           ...templateDoc,
@@ -563,6 +617,30 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
                       listening={false}
                     />
                   )}
+                </>
+              )}
+
+              {/* Transient speech bubble points */}
+              {activeTool === 'speech-bubble' && bubblePoints.length > 0 && (
+                <>
+                  <KonvaLine
+                    points={bubblePoints}
+                    stroke="#3b82f6"
+                    strokeWidth={1 / displayScale}
+                    dash={[5, 2]}
+                  />
+                  {Array.from({ length: bubblePoints.length / 2 }).map((_, i) => (
+                    <KonvaRect
+                      key={`point-${i}`}
+                      x={bubblePoints[i * 2] - 3 / displayScale}
+                      y={bubblePoints[i * 2 + 1] - 3 / displayScale}
+                      width={6 / displayScale}
+                      height={6 / displayScale}
+                      fill={i === 0 ? "#ef4444" : "#3b82f6"} // Highlight first point
+                      stroke="#ffffff"
+                      strokeWidth={1 / displayScale}
+                    />
+                  ))}
                 </>
               )}
             </Layer>

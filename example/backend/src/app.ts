@@ -4,6 +4,7 @@ import { cors } from 'hono/cors'
 import { documents } from './schema'
 import type { StorageService } from './storage/types'
 import type { Bindings } from './types'
+import { translateBatch } from './translation'
 
 type Variables = {
   db: any // Generic Drizzle DB interface
@@ -32,6 +33,26 @@ routes.use(
 )
 
 routes.get('/health', (c) => c.json({ ok: true }))
+
+routes.post('/translate', async (c) => {
+  const body = await c.req.json().catch(() => null)
+  if (!body || !body.texts || !body.targetLang) {
+    return c.json({ error: 'invalid_request' }, 400)
+  }
+
+  const ai = c.env.AI
+  if (!ai) {
+    return c.json({ error: 'ai_not_available' }, 500)
+  }
+
+  try {
+    const result = await translateBatch(ai, body)
+    return c.json(result)
+  } catch (e) {
+    console.error('Translation route failed', e)
+    return c.json({ error: 'translation_failed' }, 500)
+  }
+})
 
 routes.post('/upload', async (c) => {
   const body = await c.req.parseBody()

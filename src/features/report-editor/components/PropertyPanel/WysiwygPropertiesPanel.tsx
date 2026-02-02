@@ -8,20 +8,30 @@
 import React from 'react'
 import { UnifiedPropertyPanel } from '@/features/konva-editor/components/PropertyPanel/UnifiedPropertyPanel'
 import type { WidgetProps } from '@/features/konva-editor/components/PropertyPanel/widgets'
-import { REPORT_PANEL_CONFIG } from '@/features/konva-editor/constants/propertyPanelConfig'
+import { MANGA_DUBBING_PANEL_CONFIG, REPORT_PANEL_CONFIG } from '@/features/konva-editor/constants/propertyPanel/layouts'
 import { applyTextLayoutUpdates } from '@/features/konva-editor/utils/textLayout'
 import { useI18n } from '@/i18n/I18nContext'
-import type { Doc, LineNode, TableNode, UnifiedNode } from '@/types/canvas'
+import type { Doc, LineNode, SpeechBubbleNode, Surface, TableNode, UnifiedNode } from '@/types/canvas'
 import type { IDataSchema } from '@/types/schema'
 import { BindingSelector } from './BindingSelector'
 import { DataBindingModal } from './DataBindingModal'
 import { TableProperties } from './TableProperties'
+import { BulkImageImport } from '../Import/BulkImageImport'
 
 const FIBONACCI_GRID_SIZES = [2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377]
 
 // ========================================
-// Props Interface
+// Context for stable prop sharing
 // ========================================
+
+interface WysiwygPanelContextType {
+  templateDoc: Doc
+  onUpdate: (id: string, updates: Partial<UnifiedNode>) => void
+  selectedCell?: { elementId: string; row: number; col: number } | null
+  i18nOverrides?: Record<string, string>
+}
+
+const WysiwygPanelContext = React.createContext<WysiwygPanelContextType | null>(null)
 
 export interface WysiwygPropertiesPanelProps {
   templateDoc: Doc
@@ -52,6 +62,8 @@ export interface WysiwygPropertiesPanelProps {
   onGridSizeChange?: (size: number) => void
   snapStrength?: number
   onSnapStrengthChange?: (strength: number) => void
+  onBulkImport?: (newSurfaces: Surface[]) => void
+  editorType?: 'report' | 'manga'
 }
 
 // ========================================
@@ -76,6 +88,7 @@ const CanvasSettingsPanel: React.FC<{
   onGridSizeChange?: (size: number) => void
   snapStrength?: number
   onSnapStrengthChange?: (strength: number) => void
+  onBulkImport?: (newSurfaces: Surface[]) => void
   resolveText: (key: string, fallback?: string) => string
 }> = ({
   templateDoc,
@@ -87,137 +100,145 @@ const CanvasSettingsPanel: React.FC<{
   onGridSizeChange,
   snapStrength,
   onSnapStrengthChange,
+  onBulkImport,
   resolveText,
 }) => {
-  const { t } = useI18n()
-  const currentSurface =
-    templateDoc.surfaces.find((s) => s.id === currentPageId) || templateDoc.surfaces[0]
-  const bg = currentSurface?.bg || '#ffffff'
-  const isColor = bg.startsWith('#') || bg.startsWith('rgb')
+    const { t } = useI18n()
+    const currentSurface =
+      templateDoc.surfaces.find((s) => s.id === currentPageId) || templateDoc.surfaces[0]
+    const bg = currentSurface?.bg || '#ffffff'
+    const isColor = bg.startsWith('#') || bg.startsWith('rgb')
 
-  const updateSurface = (updates: Partial<typeof currentSurface>) => {
-    const nextDoc = {
-      ...templateDoc,
-      surfaces: templateDoc.surfaces.map((s) =>
-        s.id === currentSurface.id ? { ...s, ...updates } : s
-      ),
+    const updateSurface = (updates: Partial<typeof currentSurface>) => {
+      const nextDoc = {
+        ...templateDoc,
+        surfaces: templateDoc.surfaces.map((s) =>
+          s.id === currentSurface.id ? { ...s, ...updates } : s
+        ),
+      }
+      onTemplateChange(nextDoc)
     }
-    onTemplateChange(nextDoc)
-  }
 
-  return (
-    <div className="w-64 bg-secondary px-2 py-1 overflow-x-hidden overflow-y-auto text-foreground">
-      {/* Page Background */}
-      <div className="mb-3">
-        <h4 className="text-[13px] font-medium text-muted-foreground mb-1">
-          {resolveText('properties_page_background', 'Background')}
-        </h4>
-        <div className="mb-1">
-          <label className={labelClass}>{resolveText('color', 'Color')}</label>
-          <input
-            type="color"
-            value={isColor ? bg : '#ffffff'}
-            onChange={(e) => updateSurface({ bg: e.target.value })}
-            className={`${inputClass} h-8 p-0.5 cursor-pointer`}
-          />
-        </div>
-        <div>
-          <label className={labelClass}>{resolveText('properties_image_url', 'Image URL')}</label>
-          <div className="flex gap-1 mb-1">
+    return (
+      <div className="w-64 bg-secondary px-2 py-1 overflow-x-hidden overflow-y-auto text-foreground">
+        {/* Page Background */}
+        <div className="mb-3">
+          <h4 className="text-[13px] font-medium text-muted-foreground mb-1">
+            {resolveText('properties_page_background', 'Background')}
+          </h4>
+          <div className="mb-1">
+            <label className={labelClass}>{resolveText('color', 'Color')}</label>
             <input
-              value={!isColor ? bg : ''}
+              type="color"
+              value={isColor ? bg : '#ffffff'}
               onChange={(e) => updateSurface({ bg: e.target.value })}
-              placeholder={resolveText('properties_image_url_placeholder', 'http://...')}
-              className={`${inputClass} flex-1`}
+              className={`${inputClass} h-8 p-0.5 cursor-pointer`}
             />
-            {!isColor && (
-              <button
-                onClick={() => updateSurface({ bg: '#ffffff' })}
-                className="px-2 py-1 text-xs bg-destructive text-destructive-foreground rounded hover:bg-destructive/90 transition-colors"
-                title={resolveText('remove', 'Remove')}
-              >
-                ×
-              </button>
+          </div>
+          <div>
+            <label className={labelClass}>{resolveText('properties_image_url', 'Image URL')}</label>
+            <div className="flex gap-1 mb-1">
+              <input
+                value={!isColor ? bg : ''}
+                onChange={(e) => updateSurface({ bg: e.target.value })}
+                placeholder={resolveText('properties_image_url_placeholder', 'http://...')}
+                className={`${inputClass} flex-1`}
+              />
+              {!isColor && (
+                <button
+                  onClick={() => updateSurface({ bg: '#ffffff' })}
+                  className="px-2 py-1 text-xs bg-destructive text-destructive-foreground rounded hover:bg-destructive/90 transition-colors"
+                  title={resolveText('remove', 'Remove')}
+                >
+                  ×
+                </button>
+              )}
+            </div>
+            <label className="flex flex-col items-center justify-center w-full h-8 border border-border border-dashed rounded cursor-pointer hover:bg-muted transition-colors">
+              <span className="text-xs text-muted-foreground">
+                {resolveText('browse', 'Browse...')}
+              </span>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    const reader = new FileReader()
+                    reader.onload = (ev) => {
+                      const result = ev.target?.result as string
+                      if (result) {
+                        updateSurface({ bg: result })
+                      }
+                    }
+                    reader.readAsDataURL(file)
+                  }
+                }}
+              />
+            </label>
+          </div>
+        </div>
+
+        {/* Grid Settings */}
+        {onShowGridChange && (
+          <div className="mb-3">
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-[13px] text-muted-foreground">
+                {t('settings_show_grid', 'Grid')}
+              </label>
+              <input
+                type="checkbox"
+                checked={showGrid ?? false}
+                onChange={(e) => onShowGridChange(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+            </div>
+            {showGrid && onGridSizeChange && (
+              <div>
+                <label className={labelClass}>{t('settings_grid_size', 'Size')}</label>
+                <select
+                  value={gridSize ?? 13}
+                  onChange={(e) => onGridSizeChange(Number(e.target.value))}
+                  className={inputClass}
+                >
+                  {FIBONACCI_GRID_SIZES.map((size) => (
+                    <option key={size} value={size}>
+                      {size}pt
+                    </option>
+                  ))}
+                </select>
+              </div>
             )}
           </div>
-          <label className="flex flex-col items-center justify-center w-full h-8 border border-border border-dashed rounded cursor-pointer hover:bg-muted transition-colors">
-            <span className="text-xs text-muted-foreground">
-              {resolveText('browse', 'Browse...')}
-            </span>
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (file) {
-                  const reader = new FileReader()
-                  reader.onload = (ev) => {
-                    const result = ev.target?.result as string
-                    if (result) {
-                      updateSurface({ bg: result })
-                    }
-                  }
-                  reader.readAsDataURL(file)
-                }
-              }}
-            />
-          </label>
-        </div>
-      </div>
+        )}
 
-      {/* Grid Settings */}
-      {onShowGridChange && (
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-1">
-            <label className="text-[13px] text-muted-foreground">
-              {t('settings_show_grid', 'Grid')}
-            </label>
-            <input
-              type="checkbox"
-              checked={showGrid ?? false}
-              onChange={(e) => onShowGridChange(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-          </div>
-          {showGrid && onGridSizeChange && (
-            <div>
-              <label className={labelClass}>{t('settings_grid_size', 'Size')}</label>
-              <select
-                value={gridSize ?? 13}
-                onChange={(e) => onGridSizeChange(Number(e.target.value))}
-                className={inputClass}
-              >
-                {FIBONACCI_GRID_SIZES.map((size) => (
-                  <option key={size} value={size}>
-                    {size}pt
-                  </option>
-                ))}
-              </select>
+        {/* Snap to Grid */}
+        {onSnapStrengthChange && (
+          <div className="mb-3">
+            <div className="flex items-center justify-between">
+              <label className="text-[13px] text-muted-foreground">
+                {t('settings_snap_to_grid', 'Snap to Grid')}
+              </label>
+              <input
+                type="checkbox"
+                checked={(snapStrength ?? 0) > 0}
+                onChange={(e) => onSnapStrengthChange(e.target.checked ? (gridSize ?? 15) : 0)}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
             </div>
-          )}
-        </div>
-      )}
-
-      {/* Snap to Grid */}
-      {onSnapStrengthChange && (
-        <div className="mb-3">
-          <div className="flex items-center justify-between">
-            <label className="text-[13px] text-muted-foreground">
-              {t('settings_snap_to_grid', 'Snap to Grid')}
-            </label>
-            <input
-              type="checkbox"
-              checked={(snapStrength ?? 0) > 0}
-              onChange={(e) => onSnapStrengthChange(e.target.checked ? (gridSize ?? 15) : 0)}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
           </div>
-        </div>
-      )}
-    </div>
-  )
-}
+        )}
+
+        {/* Bulk Image Import */}
+        {onBulkImport && (
+          <div className="mt-4 pt-4 border-t border-border">
+            <BulkImageImport onImport={onBulkImport} />
+          </div>
+        )}
+      </div>
+    )
+  }
 
 // ========================================
 // Signature Drawing Panel (署名描画モード時)
@@ -310,6 +331,272 @@ const SignatureDrawingPanel: React.FC<{
   </div>
 )
 
+const SpeechBubbleDrawingPanel: React.FC<{
+  onFinish: () => void
+  resolveText: (key: string, fallback?: string) => string
+}> = ({ onFinish, resolveText }) => (
+  <div className="mb-4 space-y-3">
+    <h4 className="text-[13px] font-medium text-muted-foreground mb-1">
+      {resolveText('toolbar_speech_bubble', 'Speech Bubble')}
+    </h4>
+    <div className="mt-4 pt-4 border-t border-border">
+      <p className="text-xs text-muted-foreground mb-3">
+        {resolveText('speech_bubble_instruction', 'Click on canvas to add points. Click near first point to close.')}
+      </p>
+      <button
+        type="button"
+        onClick={onFinish}
+        className="w-full flex items-center justify-center py-2 px-4 rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+      >
+        {resolveText('properties_finish_drawing', 'Finish Drawing')}
+      </button>
+    </div>
+  </div>
+)
+
+// ========================================
+// Custom Widget Components
+// ========================================
+
+const TablePropertiesWidget: React.FC<WidgetProps> = (props) => {
+  const context = React.useContext(WysiwygPanelContext)
+  if (!context) return null
+  return (
+    <TableProperties
+      element={props.node as TableNode}
+      onUpdate={(newAttrs) => context.onUpdate(props.node.id, newAttrs)}
+      selectedCell={context.selectedCell}
+      i18nOverrides={context.i18nOverrides}
+    />
+  )
+}
+
+const BindingSelectorWidget: React.FC<WidgetProps & {
+  onOpenModal: (mode: 'field' | 'repeater') => void
+  mode: 'field' | 'repeater'
+}> = (props) => {
+  const context = React.useContext(WysiwygPanelContext)
+  if (!context) return null
+  return (
+    <div>
+      <BindingSelector
+        binding={props.node.bind ? { field: props.node.bind } : undefined}
+        onUpdate={(binding) => context.onUpdate(props.node.id, { bind: binding?.field })}
+        onOpenModal={() => props.onOpenModal(props.mode)}
+        i18nOverrides={context.i18nOverrides}
+      />
+    </div>
+  )
+}
+
+const LineRoutingWidget: React.FC<WidgetProps> = ({ node }) => {
+  const context = React.useContext(WysiwygPanelContext)
+  if (!context) return null
+  const line = node as LineNode
+  return (
+    <div className="mb-3">
+      <label className="flex items-center space-x-2 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={line.routing === 'orthogonal'}
+          onChange={(e) =>
+            context.onUpdate(node.id, {
+              routing: e.target.checked ? 'orthogonal' : 'straight',
+            })
+          }
+          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+        />
+        <span className="text-[13px] text-muted-foreground">Orthogonal Routing (90°)</span>
+      </label>
+    </div>
+  )
+}
+
+const LineWaypointsWidget: React.FC<WidgetProps> = ({ node }) => {
+  const context = React.useContext(WysiwygPanelContext)
+  if (!context) return null
+  const line = node as LineNode
+  const intermediateCount = Math.max(0, (line.pts.length - 4) / 2)
+
+  const updateCount = (newCount: number) => {
+    if (Number.isNaN(newCount) || newCount < 0) return
+    const currentCount = (line.pts.length - 4) / 2
+    if (newCount === currentCount) return
+
+    const newPts = [...line.pts]
+
+    if (newCount > currentCount) {
+      const addCount = newCount - currentCount
+      for (let i = 0; i < addCount; i++) {
+        const len = newPts.length
+        const p1x = newPts[len - 4],
+          p1y = newPts[len - 3]
+        const p2x = newPts[len - 2],
+          p2y = newPts[len - 1]
+        const mx = (p1x + p2x) / 2
+        const my = (p1y + p2y) / 2
+        newPts.splice(len - 2, 0, mx, my)
+      }
+    } else {
+      const removeCount = currentCount - newCount
+      newPts.splice(newPts.length - 2 - removeCount * 2, removeCount * 2)
+    }
+    context.onUpdate(node.id, { pts: newPts })
+  }
+
+  return (
+    <div className="mb-3">
+      <label className={labelClass}>Waypoints Count</label>
+      <input
+        type="number"
+        min="0"
+        value={intermediateCount}
+        onChange={(e) => updateCount(parseInt(e.target.value, 10))}
+        className={inputClass}
+      />
+    </div>
+  )
+}
+
+const MangaDubbingWidget: React.FC<WidgetProps> = ({ node }) => {
+  const context = React.useContext(WysiwygPanelContext)
+  if (!context) return null
+  const { templateDoc, onUpdate } = context
+  const bubble = node as SpeechBubbleNode
+  const languages = [
+    { code: 'en', label: 'English' },
+    { code: 'ja', label: '日本語' },
+    { code: 'zh-CN', label: '简体中文' },
+    { code: 'zh-TW', label: '繁體中文' },
+    { code: 'ko', label: '한국어' },
+    { code: 'es', label: 'Español' },
+    { code: 'fr', label: 'Français' },
+    { code: 'de', label: 'Deutsch' },
+    { code: 'pt', label: 'Português' },
+    { code: 'ru', label: 'Русский' },
+    { code: 'it', label: 'Italiano' },
+    { code: 'id', label: 'Bahasa Indonesia' },
+    { code: 'th', label: 'ไทย' },
+    { code: 'vi', label: 'Tiếng Việt' },
+    { code: 'ms', label: 'Bahasa Melayu' },
+    { code: 'hi', label: 'हिन्दी' },
+  ]
+
+  const handleTranslate = async (targetLang: string) => {
+    try {
+      const response = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          texts: [{ id: bubble.id, text: bubble.originalText }],
+          targetLang,
+        })
+      })
+      const data = await response.json() as { translations: { id: string, translatedText: string }[] }
+      if (data.translations && data.translations.length > 0) {
+        const newTranslations = { ...bubble.translations, [targetLang]: data.translations[0].translatedText }
+        onUpdate(bubble.id, { translations: newTranslations })
+      }
+    } catch (e) {
+      console.error('Translation failed', e)
+    }
+  }
+
+  const handleBatchTranslate = async (targetLang: string) => {
+    const speechNodes = templateDoc.nodes.filter(n => n.t === 'speech-bubble') as SpeechBubbleNode[]
+    if (speechNodes.length === 0) return
+
+    try {
+      const response = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          texts: speechNodes.map(n => ({ id: n.id, text: n.originalText })),
+          targetLang,
+        })
+      })
+      const data = await response.json() as { translations: { id: string, translatedText: string }[] }
+
+      if (data.translations) {
+        data.translations.forEach(t => {
+          const node = speechNodes.find(sn => sn.id === t.id)
+          if (node) {
+            const newTranslations = { ...node.translations, [targetLang]: t.translatedText }
+            onUpdate(node.id, { translations: newTranslations })
+          }
+        })
+      }
+    } catch (e) {
+      console.error('Batch translation failed', e)
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <label className={labelClass}>Original Text (Japanese/Any)</label>
+        <textarea
+          value={bubble.originalText}
+          onChange={(e) => onUpdate(node.id, { originalText: e.target.value })}
+          className={`${inputClass} min-h-[60px] resize-none`}
+        />
+      </div>
+
+      <div className="flex gap-2">
+        <button
+          onClick={() => handleTranslate('en')}
+          className="flex-1 py-1 px-2 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90"
+        >
+          Auto EN (Select)
+        </button>
+        <button
+          onClick={() => handleBatchTranslate('en')}
+          className="flex-1 py-1 px-2 text-xs bg-accent text-accent-foreground rounded hover:bg-accent/90"
+        >
+          Auto EN (All)
+        </button>
+      </div>
+
+      <div className="border-t border-border pt-2">
+        <h5 className="text-[11px] font-semibold text-muted-foreground uppercase mb-2">Translations</h5>
+        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 scrollbar-thin">
+          {languages.map((lang) => (
+            <div key={lang.code}>
+              <div className="flex justify-between items-center mb-0.5">
+                <label className="text-[10px] text-muted-foreground">
+                  {lang.label} ({lang.code})
+                </label>
+                <div className="flex gap-1">
+                  <button
+                    className="text-[9px] hover:underline text-blue-500"
+                    onClick={() => handleTranslate(lang.code)}
+                  >
+                    Auto
+                  </button>
+                  <button
+                    className="text-[9px] hover:underline"
+                    onClick={() => onUpdate(node.id, { originalText: bubble.translations[lang.code] || '' })}
+                  >
+                    Apply
+                  </button>
+                </div>
+              </div>
+              <input
+                value={bubble.translations[lang.code] || ''}
+                onChange={(e) => {
+                  const newTranslations = { ...bubble.translations, [lang.code]: e.target.value }
+                  onUpdate(node.id, { translations: newTranslations })
+                }}
+                className={inputClass}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ========================================
 // Main Component
 // ========================================
@@ -332,42 +619,80 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
   onGridSizeChange,
   snapStrength,
   onSnapStrengthChange,
+  onBulkImport,
+  editorType = 'report',
 }) => {
   const { t } = useI18n()
   const [activeBindingMode, setActiveBindingMode] = React.useState<'field' | 'repeater' | null>(
     null
   )
 
-  const resolveText = (key: string, fallback?: string): string => {
+  const resolveText = React.useCallback((key: string, fallback?: string): string => {
     if (i18nOverrides?.[key]) return i18nOverrides[key]
     return t(key, fallback ?? key)
-  }
+  }, [i18nOverrides, t])
 
   const selectedElement = React.useMemo(() => {
     return templateDoc.nodes.find((el) => el.id === selectedElementId)
   }, [templateDoc.nodes, selectedElementId])
 
   const isDrawing = activeTool === 'signature'
+  const isSpeechBubbleDrawing = activeTool === 'speech-bubble'
+
+  // Ref for stable templateDoc access in handleChange
+  const templateDocRef = React.useRef(templateDoc)
+  templateDocRef.current = templateDoc
 
   // Handle element change through templateDoc
-  const handleChange = (
+  const handleChange = React.useCallback((
     id: string,
     updates: Partial<UnifiedNode>,
     options?: { saveToHistory?: boolean }
   ) => {
-    const currentNode = templateDoc.nodes.find((n) => n.id === id)
+    const currentDoc = templateDocRef.current
+    const currentNode = currentDoc.nodes.find((n) => n.id === id)
     const finalUpdates =
       currentNode && currentNode.t === 'text'
         ? applyTextLayoutUpdates(currentNode, updates)
         : updates
 
     const nextDoc: Doc = {
-      ...templateDoc,
-      nodes: templateDoc.nodes.map((el) =>
+      ...currentDoc,
+      nodes: currentDoc.nodes.map((el) =>
         el.id === id ? ({ ...el, ...finalUpdates } as UnifiedNode) : el
       ),
     }
     onTemplateChange(nextDoc, options)
+  }, [onTemplateChange])
+
+  // Custom renderers for Report-specific widgets
+  // These are now stable because the widgets use context to get templateDoc
+  const customRenderers: Record<string, React.FC<WidgetProps>> = React.useMemo(() => ({
+    tableProperties: TablePropertiesWidget,
+    dataBindingField: (props) => (
+      <BindingSelectorWidget
+        {...props}
+        onOpenModal={setActiveBindingMode}
+        mode="field"
+      />
+    ),
+    dataBindingRepeater: (props) => (
+      <BindingSelectorWidget
+        {...props}
+        onOpenModal={setActiveBindingMode}
+        mode="repeater"
+      />
+    ),
+    lineRouting: LineRoutingWidget,
+    lineWaypoints: LineWaypointsWidget,
+    mangaDubbing: MangaDubbingWidget,
+  }), [])
+
+  const handleBindingSelect = (binding: { field?: string }) => {
+    if (selectedElement) {
+      handleChange(selectedElement.id, { bind: binding.field })
+    }
+    setActiveBindingMode(null)
   }
 
   // Drawing mode panel
@@ -378,6 +703,18 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
           drawingSettings={drawingSettings}
           onDrawingSettingsChange={onDrawingSettingsChange}
           onToolSelect={onToolSelect}
+          resolveText={resolveText}
+        />
+      </div>
+    )
+  }
+
+  // Speech bubble tool panel
+  if (isSpeechBubbleDrawing && onToolSelect) {
+    return (
+      <div className="w-full h-full bg-secondary px-2 py-1 overflow-x-hidden overflow-y-auto">
+        <SpeechBubbleDrawingPanel
+          onFinish={() => onToolSelect('select')}
           resolveText={resolveText}
         />
       </div>
@@ -397,146 +734,41 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
         onGridSizeChange={onGridSizeChange}
         snapStrength={snapStrength}
         onSnapStrengthChange={onSnapStrengthChange}
+        onBulkImport={onBulkImport}
         resolveText={resolveText}
       />
     )
   }
 
-  // Custom renderers for Report-specific widgets
-  const customRenderers: Record<string, React.FC<WidgetProps>> = {
-    // Table properties custom renderer
-    tableProperties: ({ node }) => (
-      <TableProperties
-        element={node as TableNode}
-        onUpdate={(newAttrs) => handleChange(node.id, newAttrs)}
-        selectedCell={selectedCell}
-        i18nOverrides={i18nOverrides}
-      />
-    ),
-    // Data binding custom renderer
-    dataBindingField: ({ node }) => (
-      <div>
-        <BindingSelector
-          binding={node.bind ? { field: node.bind } : undefined}
-          onUpdate={(binding) => handleChange(node.id, { bind: binding?.field })}
-          onOpenModal={() => setActiveBindingMode('field')}
-          i18nOverrides={i18nOverrides}
-        />
-      </div>
-    ),
-    dataBindingRepeater: ({ node }) => (
-      <div>
-        <BindingSelector
-          binding={node.bind ? { field: node.bind } : undefined}
-          onUpdate={(binding) => handleChange(node.id, { bind: binding?.field })}
-          onOpenModal={() => setActiveBindingMode('repeater')}
-          i18nOverrides={i18nOverrides}
-        />
-      </div>
-    ),
-    lineRouting: ({ node }) => {
-      const line = node as LineNode
-      return (
-        <div className="mb-3">
-          <label className="flex items-center space-x-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={line.routing === 'orthogonal'}
-              onChange={(e) =>
-                handleChange(node.id, {
-                  routing: e.target.checked ? 'orthogonal' : 'straight',
-                })
-              }
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            <span className="text-[13px] text-muted-foreground">Orthogonal Routing (90°)</span>
-          </label>
-        </div>
-      )
-    },
-    lineWaypoints: ({ node }) => {
-      const line = node as LineNode
-      const intermediateCount = Math.max(0, (line.pts.length - 4) / 2)
-
-      const updateCount = (newCount: number) => {
-        if (Number.isNaN(newCount) || newCount < 0) return
-        const currentCount = (line.pts.length - 4) / 2
-        if (newCount === currentCount) return
-
-        const newPts = [...line.pts]
-
-        if (newCount > currentCount) {
-          // Add points
-          const addCount = newCount - currentCount
-          for (let i = 0; i < addCount; i++) {
-            // Insert at midpoint of last segment (closest to end)
-            // Current end is at length-2, length-1
-            // Previous point is at length-4, length-3
-            const len = newPts.length
-            const p1x = newPts[len - 4],
-              p1y = newPts[len - 3]
-            const p2x = newPts[len - 2],
-              p2y = newPts[len - 1]
-            const mx = (p1x + p2x) / 2
-            const my = (p1y + p2y) / 2
-            // Insert before end point (at index len-2)
-            newPts.splice(len - 2, 0, mx, my)
-          }
-        } else {
-          // Remove points (from end of intermediate list)
-          const removeCount = currentCount - newCount
-          // Remove intermediate points before end point.
-          // End point is at len-2.
-          // Last intermediate is at len-4.
-          // Remove range: [len-2 - (removeCount*2), len-2] ?
-          // Splice start index: length - 2 - (count * 2)
-          newPts.splice(newPts.length - 2 - removeCount * 2, removeCount * 2)
-        }
-        handleChange(node.id, { pts: newPts })
-      }
-
-      return (
-        <div className="mb-3">
-          <label className={labelClass}>Waypoints Count</label>
-          <input
-            type="number"
-            min="0"
-            value={intermediateCount}
-            onChange={(e) => updateCount(parseInt(e.target.value, 10))}
-            className={inputClass}
-          />
-        </div>
-      )
-    },
-  }
-
-  const handleBindingSelect = (binding: { field?: string }) => {
-    if (selectedElement) {
-      handleChange(selectedElement.id, { bind: binding.field })
-    }
-    setActiveBindingMode(null)
-  }
-
   return (
-    <div className="w-full h-full bg-secondary px-2 py-1 overflow-x-hidden overflow-y-auto">
-      <UnifiedPropertyPanel
-        config={REPORT_PANEL_CONFIG}
-        selectedNode={selectedElement}
-        onChange={handleChange}
-        i18nOverrides={i18nOverrides}
-        customRenderers={customRenderers}
-      />
-
-      {activeBindingMode && schema && (
-        <DataBindingModal
-          isOpen={true}
-          onClose={() => setActiveBindingMode(null)}
-          onSelect={handleBindingSelect}
-          mode={activeBindingMode}
-          schema={schema}
+    <WysiwygPanelContext.Provider
+      value={{
+        templateDoc,
+        onUpdate: handleChange,
+        selectedCell,
+        i18nOverrides,
+      }}
+    >
+      <div className="w-full h-full bg-secondary px-2 py-1 overflow-x-hidden overflow-y-auto">
+        <UnifiedPropertyPanel
+          config={editorType === 'manga' ? MANGA_DUBBING_PANEL_CONFIG : REPORT_PANEL_CONFIG}
+          selectedNode={selectedElement}
+          onChange={handleChange}
+          i18nOverrides={i18nOverrides}
+          customRenderers={customRenderers}
         />
-      )}
-    </div>
+
+        {activeBindingMode && schema && (
+          <DataBindingModal
+            isOpen={true}
+            onClose={() => setActiveBindingMode(null)}
+            onSelect={handleBindingSelect}
+            mode={activeBindingMode}
+            schema={schema}
+          />
+        )}
+      </div>
+    </WysiwygPanelContext.Provider>
   )
 }
 
