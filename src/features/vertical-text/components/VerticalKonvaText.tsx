@@ -81,7 +81,7 @@ export function VerticalKonvaText({ node, visible = true }: VerticalKonvaTextPro
   // ここでは各文字に個別に適用
   const availableHeight = h - padding * 2
   const columnHeights = new Map<number, number>()
-  charMetrics.forEach(m => {
+  charMetrics.forEach((m) => {
     const h = m.row * fontSize + fontSize
     columnHeights.set(m.column, Math.max(columnHeights.get(m.column) || 0, h))
   })

@@ -27,6 +27,7 @@ export interface SaveDocumentInput {
 
 export type SaveDocumentResult =
   | { status: 'saved'; document: DocumentDetail }
+  | { status: 'updated'; id: string }
   | { status: 'exists'; document: DocumentSummary }
 
 const DEFAULT_BASE_URL = '/api'
@@ -100,8 +101,27 @@ export const saveDocument = async (input: SaveDocumentInput): Promise<SaveDocume
     throw new Error(`Failed to save document: ${res.status}`)
   }
 
-  const document = await res.json()
-  return { status: 'saved', document }
+  const data = await res.json()
+  if (data.status === 'updated') {
+    return { status: 'updated', id: data.id }
+  }
+  return { status: 'saved', document: data }
+}
+
+export const updateDocument = async (id: string, input: { title: string; payload: unknown; type?: string }): Promise<{ status: 'updated'; id: string }> => {
+  const res = await fetchWithFallback(`${BASE_URL}/documents/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(input),
+  })
+
+  if (!res.ok) {
+    throw new Error(`Failed to update document: ${res.status}`)
+  }
+
+  return res.json()
 }
 
 export const importExcel = async (file: File): Promise<{ id: string; title: string }> => {

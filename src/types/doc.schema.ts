@@ -299,7 +299,19 @@ export const DocSchema = z.object({
       guides: z.boolean().optional(),
     })
     .optional(),
+  data: z.record(z.unknown()).optional(),
 })
+
+/**
+ * BedGroup schema for layout grouping (e.g. nurse/doctor teams)
+ */
+export const bedGroupSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().trim().min(1).max(40),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+})
+
+export const bedGroupListSchema = z.array(bedGroupSchema)
 
 export function validateDoc(
   doc: unknown

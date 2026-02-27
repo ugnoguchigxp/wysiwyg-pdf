@@ -174,7 +174,7 @@ export interface DataBindingWidgetConfig extends BaseWidgetConfig {
 }
 export interface CustomWidgetConfig extends BaseWidgetConfig {
   type: 'custom'
-  props: { renderKey: string;[key: string]: unknown }
+  props: { renderKey: string; [key: string]: unknown }
 }
 
 export interface ArrowheadWidgetConfig extends BaseWidgetConfig {

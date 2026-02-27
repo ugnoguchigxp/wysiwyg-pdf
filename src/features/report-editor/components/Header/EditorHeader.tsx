@@ -1,12 +1,4 @@
-import {
-  ChevronLeft,
-  Download,
-  Image as ImageIcon,
-  Redo,
-  Save,
-  Settings2,
-  Undo,
-} from 'lucide-react'
+import { ChevronLeft, Layers, Save, Settings2 } from 'lucide-react'
 import type React from 'react'
 import { Button } from '@/components/ui/Button'
 import { useI18n } from '@/i18n/I18nContext'
@@ -32,6 +24,7 @@ export interface EditorHeaderProps {
   i18nOverrides?: Record<string, string>
   hideDownloadButtons?: boolean
   endContent?: React.ReactNode
+  onBedGroupsClick?: () => void
 }
 
 export const EditorHeader: React.FC<EditorHeaderProps> = ({
@@ -40,12 +33,6 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   orientation,
   onOrientationChange,
   orientationOptions,
-  canUndo,
-  canRedo,
-  onUndo,
-  onRedo,
-  onDownloadImage,
-  onDownloadPdf,
   onSave,
   onBack,
   onShowShortcuts,
@@ -53,8 +40,8 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   loadMenu,
   children,
   i18nOverrides,
-  hideDownloadButtons,
   endContent,
+  onBedGroupsClick,
 }) => {
   const { t } = useI18n()
 
@@ -132,6 +119,18 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
             {resolveText('save', 'Save')}
           </button>
         </div>
+
+        {onBedGroupsClick && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onBedGroupsClick}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium"
+          >
+            <Layers className="w-4 h-4" />
+            {resolveText('toolbar_bed_groups', 'Bed Groups')}
+          </Button>
+        )}
 
         <div className="h-6 w-px bg-border mx-1" />
 

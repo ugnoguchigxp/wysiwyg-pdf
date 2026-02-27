@@ -1,9 +1,16 @@
 import { render } from '@testing-library/react'
 import { Stage, Layer } from 'react-konva'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi, beforeAll } from 'vitest'
+import Konva from 'konva'
 import type { SpeechBubbleNode } from '@/types/canvas'
 import type { CanvasElementCommonProps } from '../types'
 import { SpeechBubbleRenderer } from './SpeechBubbleRenderer'
+
+beforeAll(() => {
+  if (Konva.Context) {
+    Konva.Context.prototype.clip = vi.fn()
+  }
+})
 
 const mockSpeechBubble: SpeechBubbleNode = {
   t: 'speech-bubble',
@@ -14,6 +21,8 @@ const mockSpeechBubble: SpeechBubbleNode = {
   w: 100,
   h: 80,
   shapeType: 'rectangle',
+  borderColor: '#0000ff',
+  hasFrame: true,
   originalText: 'Hello World',
   translations: {
     ja: 'こんにちは世界',
@@ -140,8 +149,8 @@ describe('SpeechBubbleRenderer', () => {
       underline: true,
       fill: '#ff0000',
       backgroundColor: '#ffff00',
-      stroke: '#0000ff',
-      strokeW: 2,
+      borderColor: '#0000ff',
+      borderWidth: 2,
       padding: 10,
     }
 

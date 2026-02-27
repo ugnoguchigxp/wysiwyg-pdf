@@ -44,6 +44,7 @@ import type {
   WidgetNode,
 } from '@/types/canvas'
 import { generateUUID } from '@/utils/browser'
+import { incrementName } from '@/utils/naming'
 import { ptToMm } from '@/utils/units'
 
 export type ToolType = 'select' | 'text' | 'image' | 'bed' | 'shape' | 'line'
@@ -67,6 +68,7 @@ interface ToolbarProps {
   i18nOverrides?: Record<string, string>
   onCopy?: () => void
   onPaste?: () => void
+  onClickBedGroups?: () => void
 }
 
 const TOOLBAR_BUTTON_CLASS =
@@ -299,6 +301,30 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     const s = getTargetSurfaceId()
     const { x, y } = calculateInitialPosition(s)
     const id = `bed-${generateUUID()}`
+
+    // Get all existing beds
+    const existingBeds = document.nodes.filter(
+      (n) => n.t === 'widget' && (n as WidgetNode).widget === 'bed'
+    ) as WidgetNode[]
+
+    const existingNames = existingBeds.map((n) => n.name || '')
+
+    let newName = ''
+
+    // Smart Naming: Try to follow the pattern of the last added bed
+    if (existingBeds.length > 0) {
+      const lastBed = existingBeds[existingBeds.length - 1]
+      const lastName = lastBed.name || ''
+
+      // Use the utility to increment the last name
+      newName = incrementName(lastName, existingNames)
+    }
+
+    // Fallback: If no beds existed yet, use "bed1"
+    if (!newName) {
+      newName = incrementName('bed0', existingNames)
+    }
+
     const bed: WidgetNode = {
       id,
       t: 'widget',
@@ -306,7 +332,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       s,
       locked: false,
       r: 0,
-      name: 'Bed',
+      name: newName,
       x,
       y,
       w: 15,
@@ -477,7 +503,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         </Tooltip>
       </div>
 
-      {/* Divider before Zoom Controls */}
       <div className="border-t border-border my-3 w-full" />
 
       {/* Zoom Controls */}

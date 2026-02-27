@@ -11,12 +11,13 @@ import {
     type BedStatusData,
     useEditorHistoryDoc as useBedEditorHistoryDoc,
     DocumentLoadMenu,
+    BedGroupModal,
 } from 'wysiwyg-pdf'
 import { EDITOR_TRANSLATIONS } from '../constants/translations'
 import { useReactToPrint, type UseReactToPrintOptions } from 'react-to-print'
 import { useTranslation } from 'react-i18next'
 import { Moon, Sun, LayoutDashboard, Edit } from 'lucide-react'
-import { saveDocument, listDocuments, getDocument } from '../api/documents'
+import { saveDocument, listDocuments, getDocument, updateDocument } from '../api/documents'
 
 // Initial State (Unified Doc)
 const INITIAL_BED_DOC: Doc = {
@@ -44,6 +45,7 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
     const [showShortcuts, setShowShortcuts] = useState(false)
     const [activeTool, setActiveTool] = useState<string>('select')
     const [isDashboardMode, setIsDashboardMode] = useState(false)
+    const [isBedGroupModalOpen, setIsBedGroupModalOpen] = useState(false)
     const [dashboardData, setDashboardData] = useState<Record<string, BedStatusData>>({})
 
     const [showGrid, setShowGrid] = useState(false)
@@ -93,7 +95,7 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                             : node.pts,
                     }
                 }
-                return {
+                const base = {
                     ...node,
                     s: node.s || surfaceId,
                     x: normalizeNumber(node.x) ?? node.x,
@@ -103,7 +105,14 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                     r: normalizeNumber(node.r) ?? node.r,
                     opacity: normalizeNumber(node.opacity) ?? node.opacity,
                 }
+                // Ensure data is preserved at node level too
+                if (node.data) {
+                    base.data = { ...node.data }
+                }
+                return base
             }),
+            // Explicitly preserve and normalize top-level data
+            data: raw.data ? { ...raw.data } : {},
         }
     }
 
@@ -227,34 +236,67 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
     const handleSave = () => {
         const save = async (force = false) => {
             const currentDoc = bedDocRef.current
-            console.log('[BedLayoutEditorPage] handleSave called. Latest bedDocRef:', {
+
+            // Debug log
+            console.log('[BedLayoutEditorPage] handleSave called. Full Doc Payload:', {
+                id: currentDoc.id,
                 title: templateName,
                 nodesCount: currentDoc.nodes.length,
-                beds: currentDoc.nodes.filter(n => n.t === 'widget' && (n as any).widget === 'bed').map(n => ({ id: n.id, x: n.x, y: n.y })),
+                beds: currentDoc.nodes
+                    .filter(n => n.t === 'widget' && (n as any).widget === 'bed')
+                    .map(n => ({
+                        id: n.id,
+                        name: n.name,
+                        groupId: (n as any).data?.groupId,
+                        x: n.x,
+                        y: n.y
+                    })),
+                bedGroups: currentDoc.data?.bedGroups,
                 firstSurface: currentDoc.surfaces[0]
             })
+
             try {
                 const trimmedTitle = templateName.trim() || 'Untitled'
                 if (trimmedTitle !== templateName) {
                     setTemplateName(trimmedTitle)
                 }
 
-                const result = await saveDocument({
-                    user: 'anonymous',
-                    type: 'bed-layout',
-                    title: trimmedTitle,
-                    payload: currentDoc,
-                    force,
-                })
+                // If the document has a real ID (from server), use PUT (updateDocument)
+                // Otherwise use POST (saveDocument)
+                const isExisting = currentDoc.id && currentDoc.id !== 'bed-layout-1'
 
-                if (result.status === 'exists' && !force) {
-                    const confirmed = window.confirm('同名の保存データがあります。上書きしますか？')
-                    if (!confirmed) return
-                    await save(true) // Call save again with force: true
-                    return
+                if (isExisting) {
+                    await updateDocument(currentDoc.id, {
+                        title: trimmedTitle,
+                        payload: currentDoc,
+                        type: 'bed-layout'
+                    })
+                    alert(t('editor_save_success') || 'Saved!')
+                } else {
+                    const result = await saveDocument({
+                        user: 'anonymous',
+                        type: 'bed-layout',
+                        title: trimmedTitle,
+                        payload: currentDoc,
+                        force,
+                    })
+
+                    if (result.status === 'exists' && !force) {
+                        const confirmed = window.confirm('同名の保存データがあります。上書きしますか？')
+                        if (!confirmed) return
+                        await save(true)
+                        return
+                    }
+
+                    if (result.status === 'saved' || result.status === 'updated') {
+                        // Update local state with the assigned ID from server
+                        const newId = result.status === 'saved' ? result.document.id : result.id
+                        if (newId && newId !== currentDoc.id) {
+                            setBedDocument(prev => ({ ...prev, id: newId }))
+                        }
+                        alert(t('editor_save_success') || 'Saved!')
+                    }
                 }
-
-                alert(t('editor_save_success') || 'Saved!')
             } catch (error) {
                 console.error('[BedLayoutEditorPage] Error during save:', error)
                 alert('Error during save. See console.')
@@ -322,6 +364,7 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                 onDownloadPdf={() => reactToPrintFn()}
                 onSave={handleSave}
                 onShowShortcuts={() => setShowShortcuts(true)}
+                onBedGroupsClick={() => setIsBedGroupModalOpen(true)}
                 onBack={onBack}
                 i18nOverrides={EDITOR_TRANSLATIONS}
                 loadMenu={
@@ -392,6 +435,7 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                             }}
                             onCopy={() => bedEditorRef.current?.copy()}
                             onPaste={() => bedEditorRef.current?.paste()}
+                            onClickBedGroups={() => setIsBedGroupModalOpen(true)}
                         />
                     </div>
                 )}
@@ -514,6 +558,13 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                     </div>
                 )}
             </div>
+
+            <BedGroupModal
+                open={isBedGroupModalOpen}
+                onOpenChange={setIsBedGroupModalOpen}
+                document={bedDoc}
+                onDocumentChange={setBedDocument}
+            />
         </div>
     )
 }

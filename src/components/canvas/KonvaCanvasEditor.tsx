@@ -5,9 +5,10 @@ import { Layer, Rect, Stage } from 'react-konva'
 import { applyTextLayoutUpdates } from '@/features/konva-editor/utils/textLayout'
 import { cn } from '@/lib/utils'
 import { generateUUID, safeLocalStorage } from '@/utils/browser'
+import { incrementName } from '@/utils/naming'
 import { reorderNodes } from '@/utils/reorderUtils'
 import { mmToPx } from '@/utils/units'
-import type { TextNode, UnifiedNode } from '../../types/canvas'
+import type { TextNode, UnifiedNode, WidgetNode } from '../../types/canvas'
 import { CanvasElementRenderer } from './CanvasElementRenderer'
 import { GridLayer } from './GridLayer'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
@@ -310,9 +311,22 @@ export const KonvaCanvasEditor = forwardRef<KonvaCanvasEditorHandle, KonvaCanvas
         const step = paperWidth * 0.01
         const offset = step * pasteCount
 
+        const currentNames = new Set(elements.map((el) => el.name || ''))
+        const batchUsedNames = new Set<string>()
+
         const newElements = clipboardElements.map((el) => {
           const newId = generateUUID()
-          const newEl = { ...el, id: newId }
+          let newName = el.name
+
+          // Apply smart naming to beds
+          if (el.t === 'widget' && (el as WidgetNode).widget === 'bed') {
+            const combinedUsedNames = new Set([...currentNames, ...batchUsedNames])
+            const baseName = el.name || 'bed0'
+            newName = incrementName(baseName, combinedUsedNames)
+            batchUsedNames.add(newName)
+          }
+
+          const newEl = { ...el, id: newId, name: newName }
 
           if (
             'x' in newEl &&

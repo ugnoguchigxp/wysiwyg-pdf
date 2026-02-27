@@ -1,4 +1,4 @@
-import type { ShapeNode } from '@/types/canvas'
+import type { ShapeNode, UnifiedNode } from '@/types/canvas'
 import type { ObjectPanelConfig } from './types'
 
 // ========================================
@@ -155,7 +155,19 @@ export const SIGNATURE_OBJECT_CONFIG: ObjectPanelConfig = {
 export const WIDGET_BED_OBJECT_CONFIG: ObjectPanelConfig = {
   objectType: 'widget:bed',
   header: { iconName: 'Bed', labelKey: 'toolbar_bed' },
-  sections: ['sec:bed-label'],
+  sections: [
+    'sec:bed-label',
+    {
+      id: 'bed-group',
+      labelKey: 'properties_bed_group',
+      widgets: [
+        {
+          type: 'custom',
+          props: { customId: 'bedGroupSelect', renderKey: 'bedGroupSelect' },
+        },
+      ],
+    },
+  ],
 }
 
 export const SPEECH_BUBBLE_OBJECT_CONFIG: ObjectPanelConfig = {
@@ -192,13 +204,13 @@ export const SPEECH_BUBBLE_OBJECT_CONFIG: ObjectPanelConfig = {
           type: 'colorPicker',
           labelKey: 'properties_border_color',
           props: { fieldKey: 'borderColor' },
-          condition: (node) => (node as any).hasFrame !== false,
+          condition: (node) => (node as UnifiedNode & { hasFrame?: boolean }).hasFrame !== false,
         },
         {
           type: 'numberInput',
           labelKey: 'properties_border_width',
           props: { fieldKey: 'borderWidth', min: 0, step: 0.1, unit: 'mm' },
-          condition: (node) => (node as any).hasFrame !== false,
+          condition: (node) => (node as UnifiedNode & { hasFrame?: boolean }).hasFrame !== false,
         },
         {
           type: 'numberInput',

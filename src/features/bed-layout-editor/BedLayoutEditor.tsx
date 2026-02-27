@@ -40,7 +40,7 @@ export const BedLayoutEditor = React.forwardRef<BedLayoutEditorHandle, KonvaEdit
   (
     {
       document,
-      name,
+      name: _name,
       zoom,
       selection,
       onSelect,
@@ -57,7 +57,6 @@ export const BedLayoutEditor = React.forwardRef<BedLayoutEditorHandle, KonvaEdit
     },
     ref
   ) => {
-    // Konva Stage reference for image export
     const editorRef = React.useRef<KonvaCanvasEditorHandle | null>(null)
 
     const resolvedSurfaceId =
@@ -70,11 +69,8 @@ export const BedLayoutEditor = React.forwardRef<BedLayoutEditorHandle, KonvaEdit
       downloadImage: () => {
         const stage = editorRef.current?.getStage()
         if (stage) {
-          // Hide grid layer
           const gridLayer = stage.findOne('.grid-layer')
           const wasGridVisible = gridLayer?.visible()
-
-          // Hide transformer handles (selection UI)
           const transformers = (stage.find('Transformer') as unknown as Konva.Node[]).filter(
             (n): n is Konva.Transformer => n.getClassName?.() === 'Transformer'
           )
@@ -85,24 +81,17 @@ export const BedLayoutEditor = React.forwardRef<BedLayoutEditorHandle, KonvaEdit
             transformers.forEach((tr) => {
               tr.hide()
             })
-
             const dataURL = stage.toDataURL({ pixelRatio: 2 })
-
             const link = window.document.createElement('a')
-            link.download = `${name || document.title || 'bed-layout'}.png`
+            link.download = 'layout.png'
             link.href = dataURL
             window.document.body.appendChild(link)
             link.click()
             window.document.body.removeChild(link)
           } finally {
-            // Restore grid layer
-            if (gridLayer && wasGridVisible) {
-              gridLayer.show()
-            }
-            // Restore transformer handles
+            if (gridLayer && wasGridVisible) gridLayer.show()
             transformers.forEach((tr, idx) => {
-              const prev = transformerVisibility[idx]
-              if (prev) tr.show()
+              if (transformerVisibility[idx]) tr.show()
             })
           }
         }
@@ -110,16 +99,13 @@ export const BedLayoutEditor = React.forwardRef<BedLayoutEditorHandle, KonvaEdit
       copy: () => editorRef.current?.copy(),
       paste: () => editorRef.current?.paste(),
     }))
+
     const surface =
       document.surfaces.find((s) => s.id === resolvedSurfaceId) || document.surfaces[0]
     const paperWidth = surface?.w ?? 0
     const paperHeight = surface?.h ?? 0
-
     const elements = document.nodes.filter((n) => n.s === resolvedSurfaceId)
-
     const selectedElementId = selection.length > 0 ? selection[0] : undefined
-    const handleSelect = (ids: string[]) => onSelect(ids)
-    const onUpdateNodes = onChangeElement
 
     return (
       <KonvaCanvasEditor
@@ -143,12 +129,25 @@ export const BedLayoutEditor = React.forwardRef<BedLayoutEditorHandle, KonvaEdit
         renderCustom={(el, commonProps, handleShapeRef) => {
           if (el.t === 'widget' && el.widget === 'bed') {
             const { ref: _ignoredRef, ...propsWithoutRef } = commonProps
+            const bedNode = el as WidgetNode
+            const bedGroups =
+              (document.data?.bedGroups as Array<{ id: string; name: string; color: string }>) || []
+            const selectedBed = elements.find(
+              (e) =>
+                e.id === selectedElementId && e.t === 'widget' && (e as WidgetNode).widget === 'bed'
+            ) as WidgetNode | undefined
+            const selectedGroupId = selectedBed?.data?.groupId
+            const myGroupId = bedNode.data?.groupId
+            const myGroup = bedGroups.find((g) => g.id === myGroupId)
+
             return (
               <BedElement
                 {...propsWithoutRef}
-                element={el as WidgetNode}
+                element={bedNode}
                 isSelected={selection.includes(el.id)}
                 shapeRef={handleShapeRef}
+                groupColor={myGroup?.color}
+                isSameGroupSelected={!!selectedGroupId && selectedGroupId === myGroupId}
               />
             )
           }

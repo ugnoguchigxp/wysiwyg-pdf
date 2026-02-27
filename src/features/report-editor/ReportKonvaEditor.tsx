@@ -1,6 +1,6 @@
 import type Konva from 'konva'
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
-import { Rect as KonvaRect, Layer, Stage, Line as KonvaLine } from 'react-konva'
+import { Line as KonvaLine, Rect as KonvaRect, Layer, Stage } from 'react-konva'
 import { CanvasElementRenderer } from '@/components/canvas/CanvasElementRenderer'
 import { CellEditOverlay } from '@/components/canvas/CellEditOverlay'
 import { GridLayer } from '@/components/canvas/GridLayer'
@@ -9,9 +9,8 @@ import { ObjectContextMenu } from '@/components/canvas/ObjectContextMenu'
 import { TextEditOverlay } from '@/components/canvas/TextEditOverlay'
 import type { Doc, SpeechBubbleNode, TableNode, TextNode, UnifiedNode } from '@/types/canvas' // Direct import
 import { generateUUID, safeLocalStorage } from '@/utils/browser'
-import { mmToPx, ptToMm } from '@/utils/units'
 import { simplifyPoints } from '@/utils/geometry'
-import { calculatePasteNodes } from './utils/clipboardUtils'
+import { mmToPx, ptToMm } from '@/utils/units'
 // Table operations imports removed (unused)
 // Signature utils moved to useSignature
 // import { reorderNodes } from '@/utils/reorderUtils' // Moved to hook
@@ -20,6 +19,7 @@ import { useNodeOperations } from './hooks/useNodeOperations'
 import { useReportContextMenu } from './hooks/useReportContextMenu'
 import { useSignature } from './hooks/useSignature'
 import { useSpeechBubbleDraw } from './hooks/useSpeechBubbleDraw'
+import { calculatePasteNodes } from './utils/clipboardUtils'
 
 // const log = createContextLogger('ReportKonvaEditor') // Removed unused
 
@@ -186,7 +186,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
       points: bubblePoints,
       handleMouseDown: handleBubbleMouseDown,
       commitBubble,
-      reset: resetBubbleDraw
+      reset: resetBubbleDraw,
     } = useSpeechBubbleDraw({
       templateDoc,
       onTemplateChange,
@@ -440,38 +440,38 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
         const newNode: UnifiedNode =
           payload.data.type === 'speech-bubble'
             ? ({
-              id: `speech-${generateUUID()}`,
-              t: 'speech-bubble',
-              s: currentSurface.id,
-              x: logicX,
-              y: logicY,
-              w: 50,
-              h: 30,
-              shapeType: 'rectangle',
-              originalText: 'New Speech Bubble',
-              translations: {},
-              fontSize: ptToMm(10),
-              fill: '#000000',
-              backgroundColor: '#ffffff',
-              borderColor: '#000000',
-              borderWidth: ptToMm(0.5),
-              padding: 5,
-            } as SpeechBubbleNode)
+                id: `speech-${generateUUID()}`,
+                t: 'speech-bubble',
+                s: currentSurface.id,
+                x: logicX,
+                y: logicY,
+                w: 50,
+                h: 30,
+                shapeType: 'rectangle',
+                originalText: 'New Speech Bubble',
+                translations: {},
+                fontSize: ptToMm(10),
+                fill: '#000000',
+                backgroundColor: '#ffffff',
+                borderColor: '#000000',
+                borderWidth: ptToMm(0.5),
+                padding: 5,
+              } as SpeechBubbleNode)
             : ({
-              id: `text-${generateUUID()}`,
-              t: 'text',
-              s: currentSurface.id,
-              x: logicX,
-              y: logicY,
-              w: 100,
-              h: 10,
-              text: `{${text}}`,
-              bind: fieldId,
-              fontSize: ptToMm(10),
-              fill: '#000000',
-              align: 'l',
-              vertical: false,
-            } as TextNode)
+                id: `text-${generateUUID()}`,
+                t: 'text',
+                s: currentSurface.id,
+                x: logicX,
+                y: logicY,
+                w: 100,
+                h: 10,
+                text: `{${text}}`,
+                bind: fieldId,
+                fontSize: ptToMm(10),
+                fill: '#000000',
+                align: 'l',
+                vertical: false,
+              } as TextNode)
 
         onTemplateChange({
           ...templateDoc,
@@ -636,7 +636,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
                       y={bubblePoints[i * 2 + 1] - 3 / displayScale}
                       width={6 / displayScale}
                       height={6 / displayScale}
-                      fill={i === 0 ? "#ef4444" : "#3b82f6"} // Highlight first point
+                      fill={i === 0 ? '#ef4444' : '#3b82f6'} // Highlight first point
                       stroke="#ffffff"
                       strokeWidth={1 / displayScale}
                     />

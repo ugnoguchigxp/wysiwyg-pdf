@@ -17,6 +17,8 @@ type BedElementProps = Omit<CanvasElementCommonProps, 'ref'> & {
   bedStatus?: BedStatusData
   enableStatusStyling?: boolean
   renderText?: boolean
+  isSameGroupSelected?: boolean
+  groupColor?: string
 }
 
 export const BedOverlayText: React.FC<{
@@ -132,6 +134,8 @@ export const BedElement: React.FC<BedElementProps> = ({
   bedStatus,
   enableStatusStyling = false,
   renderText = true,
+  isSameGroupSelected = false,
+  groupColor,
   ...otherProps
 }) => {
   // Data extraction from WidgetNode data
@@ -157,7 +161,7 @@ export const BedElement: React.FC<BedElementProps> = ({
         break
       }
       case 'cleaning': {
-        strokeColor = '#06b6d4'
+        strokeColor = '#06b6d2'
         break
       }
       case 'maintenance': {
@@ -185,6 +189,9 @@ export const BedElement: React.FC<BedElementProps> = ({
   const pillowX = 1
   const pillowY = (height - pillowH) / 2
 
+  // Badge settings
+  const badgeSize = Math.min(8, width * 0.15, height * 0.15)
+
   return (
     <Group
       id={element.id}
@@ -197,6 +204,22 @@ export const BedElement: React.FC<BedElementProps> = ({
       onMouseLeave={onMouseLeave}
       onContextMenu={onContextMenu}
     >
+      {/* Selection/Group Highlight Glow */}
+      {(isSameGroupSelected || _isSelected) && (
+        <Rect
+          width={width}
+          height={height}
+          fill="transparent"
+          stroke="#3b82f6"
+          strokeWidth={strokeWidth + 1}
+          cornerRadius={cornerR}
+          shadowColor="#3b82f6"
+          shadowBlur={10}
+          shadowOpacity={0.6}
+          opacity={0.5}
+        />
+      )}
+
       {/* Bed Frame */}
       <Rect
         width={width}
@@ -205,10 +228,20 @@ export const BedElement: React.FC<BedElementProps> = ({
         stroke={strokeColor}
         strokeWidth={strokeWidth}
         cornerRadius={cornerR}
-        shadowColor="transparent"
-        shadowBlur={0}
-        shadowOpacity={0}
       />
+
+      {/* Group Color Bar (Hachimaki style) */}
+      {groupColor && (
+        <Rect
+          x={strokeWidth / 2}
+          y={strokeWidth / 2}
+          width={width - strokeWidth}
+          height={Math.min(4, height * 0.1)}
+          fill={groupColor}
+          cornerRadius={[cornerR, cornerR, 0, 0]}
+          opacity={0.8}
+        />
+      )}
 
       <Rect
         x={pillowX}

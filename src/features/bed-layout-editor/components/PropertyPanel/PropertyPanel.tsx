@@ -10,7 +10,7 @@ import { UnifiedPropertyPanel } from '@/features/konva-editor/components/Propert
 import type { WidgetProps } from '@/features/konva-editor/components/PropertyPanel/widgets'
 import { BED_LAYOUT_PANEL_CONFIG } from '@/features/konva-editor/constants/propertyPanelConfig'
 import { useI18n } from '@/i18n/I18nContext'
-import type { Doc, UnifiedNode } from '@/types/canvas'
+import type { Doc, UnifiedNode, WidgetNode } from '@/types/canvas'
 
 const FIBONACCI_GRID_SIZES = [2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377]
 
@@ -231,6 +231,37 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
         </button>
       </div>
     ),
+    bedGroupSelect: ({ node }) => {
+      const bedGroups =
+        (document?.data?.bedGroups as Array<{ id: string; name: string; color: string }>) || []
+      const currentGroupId = (node as WidgetNode).data?.groupId
+
+      return (
+        <div className="mt-2">
+          <label className={labelClass}>{resolveText('properties_bed_group', 'Group')}</label>
+          <select
+            value={(currentGroupId as string) || ''}
+            onChange={(e) => {
+              const val = e.target.value
+              onChange(node.id, {
+                data: {
+                  ...(node.data as Record<string, unknown>),
+                  groupId: val || undefined,
+                },
+              })
+            }}
+            className={inputClass}
+          >
+            <option value="">{resolveText('none', 'None')}</option>
+            {bedGroups.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )
+    },
   }
 
   return (

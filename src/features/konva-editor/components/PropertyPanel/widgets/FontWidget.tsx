@@ -5,7 +5,7 @@ import {
   DEFAULT_FONT_FAMILIES,
   DEFAULT_FONT_SIZES,
 } from '@/features/konva-editor/constants/propertyPanelConfig'
-import type { TextNode } from '@/types/canvas'
+import type { TextNode, SpeechBubbleNode } from '@/types/canvas'
 import { mmToPt, ptToMm, roundTo } from '@/utils/units'
 import { cn } from '@/utils/utils'
 import { ColorInput } from '../ColorInput'
@@ -19,7 +19,7 @@ export const FontWidget: React.FC<WidgetProps<FontWidgetConfig>> = ({
   resolveText,
 }) => {
   if (node.t !== 'text' && node.t !== 'speech-bubble') return null
-  const textNode = node as any
+  const textNode = node as TextNode | SpeechBubbleNode
   const props = config.props ?? {}
   const families = props.fontFamilies ?? DEFAULT_FONT_FAMILIES
   const sizes = props.fontSizes ?? DEFAULT_FONT_SIZES

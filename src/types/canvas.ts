@@ -47,6 +47,7 @@ export interface Doc {
   binding?: BindingConfig
   animation?: AnimationConfig
   snap?: SnapConfig
+  data?: Record<string, unknown> // For feature-specific metadata (e.g., bedGroups)
 }
 
 export interface Surface {

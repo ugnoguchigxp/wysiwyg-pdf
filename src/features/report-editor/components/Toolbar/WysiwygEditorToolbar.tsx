@@ -199,7 +199,9 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
                 <Table size={20} />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="right">{resolveText('toolbar_add_table', 'Table')}</TooltipContent>
+            <TooltipContent side="right">
+              {resolveText('toolbar_add_table', 'Table')}
+            </TooltipContent>
           </Tooltip>
         )}
 
@@ -212,7 +214,9 @@ export const WysiwygEditorToolbar: React.FC<IWysiwygEditorToolbarProps> = ({
                   <button
                     type="button"
                     className={
-                      activeTool === 'speech-bubble' ? TOOLBAR_BUTTON_ACTIVE_CLASS : TOOLBAR_BUTTON_CLASS
+                      activeTool === 'speech-bubble'
+                        ? TOOLBAR_BUTTON_ACTIVE_CLASS
+                        : TOOLBAR_BUTTON_CLASS
                     }
                     aria-label={resolveText('toolbar_add_speech_bubble', 'Speech Bubble')}
                   >

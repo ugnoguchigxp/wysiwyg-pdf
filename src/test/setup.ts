@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest'
-import { vi } from 'vitest'
 import React from 'react'
+import { vi } from 'vitest'
 
 // Radix UI (and friends) rely on these browser APIs.
 if (!globalThis.ResizeObserver) {

@@ -8,15 +8,25 @@
 import React from 'react'
 import { UnifiedPropertyPanel } from '@/features/konva-editor/components/PropertyPanel/UnifiedPropertyPanel'
 import type { WidgetProps } from '@/features/konva-editor/components/PropertyPanel/widgets'
-import { MANGA_DUBBING_PANEL_CONFIG, REPORT_PANEL_CONFIG } from '@/features/konva-editor/constants/propertyPanel/layouts'
+import {
+  MANGA_DUBBING_PANEL_CONFIG,
+  REPORT_PANEL_CONFIG,
+} from '@/features/konva-editor/constants/propertyPanel/layouts'
 import { applyTextLayoutUpdates } from '@/features/konva-editor/utils/textLayout'
 import { useI18n } from '@/i18n/I18nContext'
-import type { Doc, LineNode, SpeechBubbleNode, Surface, TableNode, UnifiedNode } from '@/types/canvas'
+import type {
+  Doc,
+  LineNode,
+  SpeechBubbleNode,
+  Surface,
+  TableNode,
+  UnifiedNode,
+} from '@/types/canvas'
 import type { IDataSchema } from '@/types/schema'
+import { BulkImageImport } from '../Import/BulkImageImport'
 import { BindingSelector } from './BindingSelector'
 import { DataBindingModal } from './DataBindingModal'
 import { TableProperties } from './TableProperties'
-import { BulkImageImport } from '../Import/BulkImageImport'
 
 const FIBONACCI_GRID_SIZES = [2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377]
 
@@ -103,142 +113,142 @@ const CanvasSettingsPanel: React.FC<{
   onBulkImport,
   resolveText,
 }) => {
-    const { t } = useI18n()
-    const currentSurface =
-      templateDoc.surfaces.find((s) => s.id === currentPageId) || templateDoc.surfaces[0]
-    const bg = currentSurface?.bg || '#ffffff'
-    const isColor = bg.startsWith('#') || bg.startsWith('rgb')
+  const { t } = useI18n()
+  const currentSurface =
+    templateDoc.surfaces.find((s) => s.id === currentPageId) || templateDoc.surfaces[0]
+  const bg = currentSurface?.bg || '#ffffff'
+  const isColor = bg.startsWith('#') || bg.startsWith('rgb')
 
-    const updateSurface = (updates: Partial<typeof currentSurface>) => {
-      const nextDoc = {
-        ...templateDoc,
-        surfaces: templateDoc.surfaces.map((s) =>
-          s.id === currentSurface.id ? { ...s, ...updates } : s
-        ),
-      }
-      onTemplateChange(nextDoc)
+  const updateSurface = (updates: Partial<typeof currentSurface>) => {
+    const nextDoc = {
+      ...templateDoc,
+      surfaces: templateDoc.surfaces.map((s) =>
+        s.id === currentSurface.id ? { ...s, ...updates } : s
+      ),
     }
+    onTemplateChange(nextDoc)
+  }
 
-    return (
-      <div className="w-64 bg-secondary px-2 py-1 overflow-x-hidden overflow-y-auto text-foreground">
-        {/* Page Background */}
-        <div className="mb-3">
-          <h4 className="text-[13px] font-medium text-muted-foreground mb-1">
-            {resolveText('properties_page_background', 'Background')}
-          </h4>
-          <div className="mb-1">
-            <label className={labelClass}>{resolveText('color', 'Color')}</label>
-            <input
-              type="color"
-              value={isColor ? bg : '#ffffff'}
-              onChange={(e) => updateSurface({ bg: e.target.value })}
-              className={`${inputClass} h-8 p-0.5 cursor-pointer`}
-            />
-          </div>
-          <div>
-            <label className={labelClass}>{resolveText('properties_image_url', 'Image URL')}</label>
-            <div className="flex gap-1 mb-1">
-              <input
-                value={!isColor ? bg : ''}
-                onChange={(e) => updateSurface({ bg: e.target.value })}
-                placeholder={resolveText('properties_image_url_placeholder', 'http://...')}
-                className={`${inputClass} flex-1`}
-              />
-              {!isColor && (
-                <button
-                  onClick={() => updateSurface({ bg: '#ffffff' })}
-                  className="px-2 py-1 text-xs bg-destructive text-destructive-foreground rounded hover:bg-destructive/90 transition-colors"
-                  title={resolveText('remove', 'Remove')}
-                >
-                  ×
-                </button>
-              )}
-            </div>
-            <label className="flex flex-col items-center justify-center w-full h-8 border border-border border-dashed rounded cursor-pointer hover:bg-muted transition-colors">
-              <span className="text-xs text-muted-foreground">
-                {resolveText('browse', 'Browse...')}
-              </span>
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) {
-                    const reader = new FileReader()
-                    reader.onload = (ev) => {
-                      const result = ev.target?.result as string
-                      if (result) {
-                        updateSurface({ bg: result })
-                      }
-                    }
-                    reader.readAsDataURL(file)
-                  }
-                }}
-              />
-            </label>
-          </div>
+  return (
+    <div className="w-64 bg-secondary px-2 py-1 overflow-x-hidden overflow-y-auto text-foreground">
+      {/* Page Background */}
+      <div className="mb-3">
+        <h4 className="text-[13px] font-medium text-muted-foreground mb-1">
+          {resolveText('properties_page_background', 'Background')}
+        </h4>
+        <div className="mb-1">
+          <label className={labelClass}>{resolveText('color', 'Color')}</label>
+          <input
+            type="color"
+            value={isColor ? bg : '#ffffff'}
+            onChange={(e) => updateSurface({ bg: e.target.value })}
+            className={`${inputClass} h-8 p-0.5 cursor-pointer`}
+          />
         </div>
-
-        {/* Grid Settings */}
-        {onShowGridChange && (
-          <div className="mb-3">
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-[13px] text-muted-foreground">
-                {t('settings_show_grid', 'Grid')}
-              </label>
-              <input
-                type="checkbox"
-                checked={showGrid ?? false}
-                onChange={(e) => onShowGridChange(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-            </div>
-            {showGrid && onGridSizeChange && (
-              <div>
-                <label className={labelClass}>{t('settings_grid_size', 'Size')}</label>
-                <select
-                  value={gridSize ?? 13}
-                  onChange={(e) => onGridSizeChange(Number(e.target.value))}
-                  className={inputClass}
-                >
-                  {FIBONACCI_GRID_SIZES.map((size) => (
-                    <option key={size} value={size}>
-                      {size}pt
-                    </option>
-                  ))}
-                </select>
-              </div>
+        <div>
+          <label className={labelClass}>{resolveText('properties_image_url', 'Image URL')}</label>
+          <div className="flex gap-1 mb-1">
+            <input
+              value={!isColor ? bg : ''}
+              onChange={(e) => updateSurface({ bg: e.target.value })}
+              placeholder={resolveText('properties_image_url_placeholder', 'http://...')}
+              className={`${inputClass} flex-1`}
+            />
+            {!isColor && (
+              <button
+                onClick={() => updateSurface({ bg: '#ffffff' })}
+                className="px-2 py-1 text-xs bg-destructive text-destructive-foreground rounded hover:bg-destructive/90 transition-colors"
+                title={resolveText('remove', 'Remove')}
+              >
+                ×
+              </button>
             )}
           </div>
-        )}
-
-        {/* Snap to Grid */}
-        {onSnapStrengthChange && (
-          <div className="mb-3">
-            <div className="flex items-center justify-between">
-              <label className="text-[13px] text-muted-foreground">
-                {t('settings_snap_to_grid', 'Snap to Grid')}
-              </label>
-              <input
-                type="checkbox"
-                checked={(snapStrength ?? 0) > 0}
-                onChange={(e) => onSnapStrengthChange(e.target.checked ? (gridSize ?? 15) : 0)}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Bulk Image Import */}
-        {onBulkImport && (
-          <div className="mt-4 pt-4 border-t border-border">
-            <BulkImageImport onImport={onBulkImport} />
-          </div>
-        )}
+          <label className="flex flex-col items-center justify-center w-full h-8 border border-border border-dashed rounded cursor-pointer hover:bg-muted transition-colors">
+            <span className="text-xs text-muted-foreground">
+              {resolveText('browse', 'Browse...')}
+            </span>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) {
+                  const reader = new FileReader()
+                  reader.onload = (ev) => {
+                    const result = ev.target?.result as string
+                    if (result) {
+                      updateSurface({ bg: result })
+                    }
+                  }
+                  reader.readAsDataURL(file)
+                }
+              }}
+            />
+          </label>
+        </div>
       </div>
-    )
-  }
+
+      {/* Grid Settings */}
+      {onShowGridChange && (
+        <div className="mb-3">
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-[13px] text-muted-foreground">
+              {t('settings_show_grid', 'Grid')}
+            </label>
+            <input
+              type="checkbox"
+              checked={showGrid ?? false}
+              onChange={(e) => onShowGridChange(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+          </div>
+          {showGrid && onGridSizeChange && (
+            <div>
+              <label className={labelClass}>{t('settings_grid_size', 'Size')}</label>
+              <select
+                value={gridSize ?? 13}
+                onChange={(e) => onGridSizeChange(Number(e.target.value))}
+                className={inputClass}
+              >
+                {FIBONACCI_GRID_SIZES.map((size) => (
+                  <option key={size} value={size}>
+                    {size}pt
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Snap to Grid */}
+      {onSnapStrengthChange && (
+        <div className="mb-3">
+          <div className="flex items-center justify-between">
+            <label className="text-[13px] text-muted-foreground">
+              {t('settings_snap_to_grid', 'Snap to Grid')}
+            </label>
+            <input
+              type="checkbox"
+              checked={(snapStrength ?? 0) > 0}
+              onChange={(e) => onSnapStrengthChange(e.target.checked ? (gridSize ?? 15) : 0)}
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Image Import */}
+      {onBulkImport && (
+        <div className="mt-4 pt-4 border-t border-border">
+          <BulkImageImport onImport={onBulkImport} />
+        </div>
+      )}
+    </div>
+  )
+}
 
 // ========================================
 // Signature Drawing Panel (署名描画モード時)
@@ -341,7 +351,10 @@ const SpeechBubbleDrawingPanel: React.FC<{
     </h4>
     <div className="mt-4 pt-4 border-t border-border">
       <p className="text-xs text-muted-foreground mb-3">
-        {resolveText('speech_bubble_instruction', 'Click on canvas to add points. Click near first point to close.')}
+        {resolveText(
+          'speech_bubble_instruction',
+          'Click on canvas to add points. Click near first point to close.'
+        )}
       </p>
       <button
         type="button"
@@ -371,10 +384,12 @@ const TablePropertiesWidget: React.FC<WidgetProps> = (props) => {
   )
 }
 
-const BindingSelectorWidget: React.FC<WidgetProps & {
-  onOpenModal: (mode: 'field' | 'repeater') => void
-  mode: 'field' | 'repeater'
-}> = (props) => {
+const BindingSelectorWidget: React.FC<
+  WidgetProps & {
+    onOpenModal: (mode: 'field' | 'repeater') => void
+    mode: 'field' | 'repeater'
+  }
+> = (props) => {
   const context = React.useContext(WysiwygPanelContext)
   if (!context) return null
   return (
@@ -490,11 +505,16 @@ const MangaDubbingWidget: React.FC<WidgetProps> = ({ node }) => {
         body: JSON.stringify({
           texts: [{ id: bubble.id, text: bubble.originalText }],
           targetLang,
-        })
+        }),
       })
-      const data = await response.json() as { translations: { id: string, translatedText: string }[] }
+      const data = (await response.json()) as {
+        translations: { id: string; translatedText: string }[]
+      }
       if (data.translations && data.translations.length > 0) {
-        const newTranslations = { ...bubble.translations, [targetLang]: data.translations[0].translatedText }
+        const newTranslations = {
+          ...bubble.translations,
+          [targetLang]: data.translations[0].translatedText,
+        }
         onUpdate(bubble.id, { translations: newTranslations })
       }
     } catch (e) {
@@ -503,7 +523,9 @@ const MangaDubbingWidget: React.FC<WidgetProps> = ({ node }) => {
   }
 
   const handleBatchTranslate = async (targetLang: string) => {
-    const speechNodes = templateDoc.nodes.filter(n => n.t === 'speech-bubble') as SpeechBubbleNode[]
+    const speechNodes = templateDoc.nodes.filter(
+      (n) => n.t === 'speech-bubble'
+    ) as SpeechBubbleNode[]
     if (speechNodes.length === 0) return
 
     try {
@@ -511,15 +533,17 @@ const MangaDubbingWidget: React.FC<WidgetProps> = ({ node }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          texts: speechNodes.map(n => ({ id: n.id, text: n.originalText })),
+          texts: speechNodes.map((n) => ({ id: n.id, text: n.originalText })),
           targetLang,
-        })
+        }),
       })
-      const data = await response.json() as { translations: { id: string, translatedText: string }[] }
+      const data = (await response.json()) as {
+        translations: { id: string; translatedText: string }[]
+      }
 
       if (data.translations) {
-        data.translations.forEach(t => {
-          const node = speechNodes.find(sn => sn.id === t.id)
+        data.translations.forEach((t) => {
+          const node = speechNodes.find((sn) => sn.id === t.id)
           if (node) {
             const newTranslations = { ...node.translations, [targetLang]: t.translatedText }
             onUpdate(node.id, { translations: newTranslations })
@@ -558,7 +582,9 @@ const MangaDubbingWidget: React.FC<WidgetProps> = ({ node }) => {
       </div>
 
       <div className="border-t border-border pt-2">
-        <h5 className="text-[11px] font-semibold text-muted-foreground uppercase mb-2">Translations</h5>
+        <h5 className="text-[11px] font-semibold text-muted-foreground uppercase mb-2">
+          Translations
+        </h5>
         <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 scrollbar-thin">
           {languages.map((lang) => (
             <div key={lang.code}>
@@ -575,7 +601,9 @@ const MangaDubbingWidget: React.FC<WidgetProps> = ({ node }) => {
                   </button>
                   <button
                     className="text-[9px] hover:underline"
-                    onClick={() => onUpdate(node.id, { originalText: bubble.translations[lang.code] || '' })}
+                    onClick={() =>
+                      onUpdate(node.id, { originalText: bubble.translations[lang.code] || '' })
+                    }
                   >
                     Apply
                   </button>
@@ -627,10 +655,13 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
     null
   )
 
-  const resolveText = React.useCallback((key: string, fallback?: string): string => {
-    if (i18nOverrides?.[key]) return i18nOverrides[key]
-    return t(key, fallback ?? key)
-  }, [i18nOverrides, t])
+  const resolveText = React.useCallback(
+    (key: string, fallback?: string): string => {
+      if (i18nOverrides?.[key]) return i18nOverrides[key]
+      return t(key, fallback ?? key)
+    },
+    [i18nOverrides, t]
+  )
 
   const selectedElement = React.useMemo(() => {
     return templateDoc.nodes.find((el) => el.id === selectedElementId)
@@ -644,49 +675,43 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
   templateDocRef.current = templateDoc
 
   // Handle element change through templateDoc
-  const handleChange = React.useCallback((
-    id: string,
-    updates: Partial<UnifiedNode>,
-    options?: { saveToHistory?: boolean }
-  ) => {
-    const currentDoc = templateDocRef.current
-    const currentNode = currentDoc.nodes.find((n) => n.id === id)
-    const finalUpdates =
-      currentNode && currentNode.t === 'text'
-        ? applyTextLayoutUpdates(currentNode, updates)
-        : updates
+  const handleChange = React.useCallback(
+    (id: string, updates: Partial<UnifiedNode>, options?: { saveToHistory?: boolean }) => {
+      const currentDoc = templateDocRef.current
+      const currentNode = currentDoc.nodes.find((n) => n.id === id)
+      const finalUpdates =
+        currentNode && currentNode.t === 'text'
+          ? applyTextLayoutUpdates(currentNode, updates)
+          : updates
 
-    const nextDoc: Doc = {
-      ...currentDoc,
-      nodes: currentDoc.nodes.map((el) =>
-        el.id === id ? ({ ...el, ...finalUpdates } as UnifiedNode) : el
-      ),
-    }
-    onTemplateChange(nextDoc, options)
-  }, [onTemplateChange])
+      const nextDoc: Doc = {
+        ...currentDoc,
+        nodes: currentDoc.nodes.map((el) =>
+          el.id === id ? ({ ...el, ...finalUpdates } as UnifiedNode) : el
+        ),
+      }
+      onTemplateChange(nextDoc, options)
+    },
+    [onTemplateChange]
+  )
 
   // Custom renderers for Report-specific widgets
   // These are now stable because the widgets use context to get templateDoc
-  const customRenderers: Record<string, React.FC<WidgetProps>> = React.useMemo(() => ({
-    tableProperties: TablePropertiesWidget,
-    dataBindingField: (props) => (
-      <BindingSelectorWidget
-        {...props}
-        onOpenModal={setActiveBindingMode}
-        mode="field"
-      />
-    ),
-    dataBindingRepeater: (props) => (
-      <BindingSelectorWidget
-        {...props}
-        onOpenModal={setActiveBindingMode}
-        mode="repeater"
-      />
-    ),
-    lineRouting: LineRoutingWidget,
-    lineWaypoints: LineWaypointsWidget,
-    mangaDubbing: MangaDubbingWidget,
-  }), [])
+  const customRenderers: Record<string, React.FC<WidgetProps>> = React.useMemo(
+    () => ({
+      tableProperties: TablePropertiesWidget,
+      dataBindingField: (props) => (
+        <BindingSelectorWidget {...props} onOpenModal={setActiveBindingMode} mode="field" />
+      ),
+      dataBindingRepeater: (props) => (
+        <BindingSelectorWidget {...props} onOpenModal={setActiveBindingMode} mode="repeater" />
+      ),
+      lineRouting: LineRoutingWidget,
+      lineWaypoints: LineWaypointsWidget,
+      mangaDubbing: MangaDubbingWidget,
+    }),
+    []
+  )
 
   const handleBindingSelect = (binding: { field?: string }) => {
     if (selectedElement) {

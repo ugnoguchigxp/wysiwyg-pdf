@@ -5,10 +5,9 @@ import type {
   ImageNode,
   LineNode,
   ShapeNode,
-  SignatureNode,
+  SpeechBubbleNode,
   TableNode,
   TextNode,
-  SpeechBubbleNode,
   UnifiedNode,
 } from '@/types/canvas'
 import { generateNodeId } from '@/utils/id'
@@ -278,8 +277,8 @@ export function useCanvasOperations({
         fontSize: ptToMm(12),
         fill: '#000000',
         backgroundColor: '#ffffff',
-        stroke: '#000000',
-        strokeW: 0.2,
+        borderColor: '#000000',
+        borderWidth: 0.2,
         padding: 5,
         autoFit: true,
       }

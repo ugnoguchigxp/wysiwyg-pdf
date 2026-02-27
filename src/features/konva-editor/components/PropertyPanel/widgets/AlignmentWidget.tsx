@@ -1,7 +1,7 @@
 import { AlignCenter, AlignJustify, AlignLeft, AlignRight } from 'lucide-react'
 import type React from 'react'
 import type { AlignmentWidgetConfig } from '@/features/konva-editor/constants/propertyPanelConfig'
-import type { TextNode } from '@/types/canvas'
+import type { TextNode, SpeechBubbleNode } from '@/types/canvas'
 import { cn } from '@/utils/utils'
 import { WidgetLabel } from '../shared'
 import type { WidgetProps } from './types'
@@ -22,7 +22,7 @@ export const AlignmentWidget: React.FC<WidgetProps<AlignmentWidgetConfig>> = ({
   resolveText,
 }) => {
   if (node.t !== 'text' && node.t !== 'speech-bubble') return null
-  const textNode = node as any
+  const textNode = node as TextNode | SpeechBubbleNode
   const options = config.props?.options ?? (['l', 'c', 'r'] as AlignOption[])
 
   return (

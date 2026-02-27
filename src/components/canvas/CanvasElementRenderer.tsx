@@ -7,9 +7,9 @@ import type {
   LineNode,
   ShapeNode,
   SignatureNode,
+  SpeechBubbleNode,
   TableNode,
   TextNode,
-  SpeechBubbleNode,
 } from '../../types/canvas'
 // Helpers & Components Imports
 import { CanvasImage } from './CanvasImage'
@@ -18,9 +18,9 @@ import { useCanvasTransform } from './hooks/useCanvasTransform'
 import { LineRenderer } from './renderers/LineRenderer'
 import { ShapeRenderer } from './renderers/ShapeRenderer'
 import { SignatureRenderer } from './renderers/SignatureRenderer'
+import { SpeechBubbleRenderer } from './renderers/SpeechBubbleRenderer'
 import { TableRenderer } from './renderers/TableRenderer'
 import { TextRenderer } from './renderers/TextRenderer'
-import { SpeechBubbleRenderer } from './renderers/SpeechBubbleRenderer'
 import type { CanvasElementCommonProps, CanvasElementRendererProps } from './types'
 
 export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
@@ -397,15 +397,15 @@ export const CanvasElementRenderer: React.FC<CanvasElementRendererProps> = ({
           enabledAnchors={
             !element.locked
               ? [
-                'top-left',
-                'top-right',
-                'bottom-left',
-                'bottom-right',
-                'middle-left',
-                'middle-right',
-                'top-center',
-                'bottom-center',
-              ]
+                  'top-left',
+                  'top-right',
+                  'bottom-left',
+                  'bottom-right',
+                  'middle-left',
+                  'middle-right',
+                  'top-center',
+                  'bottom-center',
+                ]
               : []
           }
           boundBoxFunc={(oldBox, newBox) => {
