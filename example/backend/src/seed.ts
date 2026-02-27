@@ -8,7 +8,7 @@ const ptToMm = (pt: number) => (pt * 25.4) / 72
 const id = (prefix: string) => `${prefix}-${crypto.randomUUID().slice(0, 8)}`
 
 // --- Data: Bed Layout ---
-const createBed = (x: number, y: number, label: string, rotation = 0) => ({
+const createBed = (x: number, y: number, label: string, groupId: string, rotation = 0) => ({
   id: id('bed'),
   t: 'widget',
   widget: 'bed',
@@ -21,7 +21,7 @@ const createBed = (x: number, y: number, label: string, rotation = 0) => ({
   name: label,
   opacity: 1,
   locked: true,
-  data: { bedType: 'standard' },
+  data: { bedType: 'standard', groupId },
 })
 
 const createWall = (x1: number, y1: number, x2: number, y2: number) => ({
@@ -53,33 +53,72 @@ const createText = (x: number, y: number, text: string, fontSize = 14) => ({
   locked: true,
 })
 
+const createShape = (x: number, y: number, w: number, h: number, fill: string) => ({
+  id: id('shape'),
+  t: 'shape',
+  shape: 'rect',
+  s: 'layout',
+  x: pxToMm(x),
+  y: pxToMm(y),
+  w: pxToMm(w),
+  h: pxToMm(h),
+  fill,
+  stroke: '#cbd5e1',
+  strokeW: pxToMm(2),
+  locked: true,
+})
+
 const beds = [
-  createBed(50, 100, 'b1'),
-  createBed(150, 100, 'b2'),
-  createBed(250, 100, 'b3'),
-  createBed(50, 400, 'b4'),
-  createBed(150, 400, 'b5'),
-  createBed(250, 400, 'b6'),
+  // Group A (top left)
+  createBed(50, 80, 'b1', 'group-a'),
+  createBed(150, 80, 'b2', 'group-a'),
+  createBed(250, 80, 'b3', 'group-a'),
+  createBed(50, 220, 'b4', 'group-a'),
+  createBed(150, 220, 'b5', 'group-a'),
+  createBed(250, 220, 'b6', 'group-a'),
+  // Group B (top right)
+  createBed(450, 80, 'b7', 'group-b'),
+  createBed(550, 80, 'b8', 'group-b'),
+  createBed(650, 80, 'b9', 'group-b'),
+  createBed(450, 220, 'b10', 'group-b'),
+  createBed(550, 220, 'b11', 'group-b'),
+  createBed(650, 220, 'b12', 'group-b'),
+  // Group C (bottom middle)
+  createBed(250, 420, 'b13', 'group-c'),
+  createBed(350, 420, 'b14', 'group-c'),
+  createBed(450, 420, 'b15', 'group-c'),
+  createBed(250, 560, 'b16', 'group-c'),
+  createBed(350, 560, 'b17', 'group-c'),
+  createBed(450, 560, 'b18', 'group-c'),
+]
+
+const shapes = [
+  createShape(350, 320, 100, 60, '#f1f5f9'), // Nurse Station background
 ]
 
 const walls = [
   createWall(20, 20, 780, 20),
-  createWall(20, 20, 20, 580),
-  createWall(780, 20, 780, 580),
-  createWall(20, 580, 780, 580),
-  createWall(350, 20, 350, 200),
-  createWall(350, 400, 350, 580),
+  createWall(20, 20, 20, 780),
+  createWall(780, 20, 780, 780),
+  createWall(20, 780, 780, 780),
 ]
 
-const labels = [createText(300, 30, 'ICU Ward A', 24), createText(400, 250, 'Nurse Station', 16)]
+const labels = [createText(400, 30, 'ICU Ward A', 24), createText(400, 335, 'Nurse Station', 12)]
 
 const BED_LAYOUT_DOC = {
   v: 1,
   id: 'demo-icu-ward',
   title: 'ICU Ward A',
   unit: 'mm',
-  surfaces: [{ id: 'layout', type: 'canvas', w: pxToMm(800), h: pxToMm(600) }],
-  nodes: [...walls, ...beds, ...labels],
+  surfaces: [{ id: 'layout', type: 'canvas', w: pxToMm(800), h: pxToMm(800) }],
+  nodes: [...walls, ...shapes, ...beds, ...labels],
+  data: {
+    bedGroups: [
+      { id: 'group-a', name: 'Team A', color: '#10b981' },
+      { id: 'group-b', name: 'Team B', color: '#f59e0b' },
+      { id: 'group-c', name: 'Team C', color: '#3b82f6' },
+    ],
+  },
 }
 
 // --- Data: Invoice ---

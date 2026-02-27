@@ -49,15 +49,22 @@ export const BedLayoutViewer: React.FC<BedLayoutViewerProps> = ({
       renderCustom={(el, commonProps, handleShapeRef) => {
         if (el.t === 'widget' && el.widget === 'bed') {
           const { ref: _ignoredRef, ...propsWithoutRef } = commonProps
+          const bedNode = el as WidgetNode
+          const bedGroups =
+            (document.data?.bedGroups as Array<{ id: string; name: string; color: string }>) || []
           const bedStatus = dashboardData ? dashboardData[el.id] : undefined
+          const myGroupId = bedNode.data?.groupId
+          const myGroup = bedGroups.find((g) => g.id === myGroupId)
+
           return (
             <BedElement
               {...propsWithoutRef}
-              element={el as WidgetNode}
+              element={bedNode}
               isSelected={false}
               shapeRef={handleShapeRef}
               bedStatus={bedStatus}
               enableStatusStyling={Boolean(dashboardData)}
+              groupColor={myGroup?.color}
               renderText={false}
             />
           )
