@@ -8,11 +8,25 @@ import {
 import type { Doc, WidgetNode } from '@/types/canvas'
 import { PaperBackground } from './components/PaperBackground'
 
-interface BedLayoutViewerProps {
+export interface BedGroupConfig {
+  id: string
+  name: string
+  color: string
+  bedIds: string[]
+}
+
+interface LegacyBedGroupConfig {
+  id: string
+  name: string
+  color: string
+}
+
+export interface BedLayoutViewerProps {
   document: Doc
   dashboardData?: Record<string, BedStatusData>
   zoom: number
   surfaceId?: string
+  bedGroups?: BedGroupConfig[]
 }
 
 export const BedLayoutViewer: React.FC<BedLayoutViewerProps> = ({
@@ -20,6 +34,7 @@ export const BedLayoutViewer: React.FC<BedLayoutViewerProps> = ({
   dashboardData,
   zoom,
   surfaceId,
+  bedGroups,
 }) => {
   const resolvedSurfaceId =
     surfaceId ||
@@ -31,6 +46,24 @@ export const BedLayoutViewer: React.FC<BedLayoutViewerProps> = ({
   const paperHeight = surface?.h ?? 0
 
   const elements = document.nodes.filter((n) => n.s === resolvedSurfaceId)
+  const hasPropBedGroups = bedGroups !== undefined
+
+  const groupColorByBedId = new Map<string, string>()
+  if (hasPropBedGroups) {
+    for (const group of bedGroups) {
+      for (const bedId of group.bedIds) {
+        // Keep the first definition when a bed is assigned to multiple groups.
+        if (!groupColorByBedId.has(bedId)) {
+          groupColorByBedId.set(bedId, group.color)
+        }
+      }
+    }
+  }
+
+  const legacyBedGroups: LegacyBedGroupConfig[] = hasPropBedGroups
+    ? []
+    : ((document.data?.bedGroups as LegacyBedGroupConfig[] | undefined) ?? [])
+  const legacyGroupColorById = new Map(legacyBedGroups.map((group) => [group.id, group.color]))
 
   return (
     <KonvaViewer
@@ -50,11 +83,14 @@ export const BedLayoutViewer: React.FC<BedLayoutViewerProps> = ({
         if (el.t === 'widget' && el.widget === 'bed') {
           const { ref: _ignoredRef, ...propsWithoutRef } = commonProps
           const bedNode = el as WidgetNode
-          const bedGroups =
-            (document.data?.bedGroups as Array<{ id: string; name: string; color: string }>) || []
           const bedStatus = dashboardData ? dashboardData[el.id] : undefined
-          const myGroupId = bedNode.data?.groupId
-          const myGroup = bedGroups.find((g) => g.id === myGroupId)
+          const myGroupId =
+            typeof bedNode.data?.groupId === 'string' ? (bedNode.data.groupId as string) : undefined
+          const groupColor = hasPropBedGroups
+            ? groupColorByBedId.get(bedNode.id)
+            : myGroupId
+              ? legacyGroupColorById.get(myGroupId)
+              : undefined
 
           return (
             <BedElement
@@ -64,7 +100,7 @@ export const BedLayoutViewer: React.FC<BedLayoutViewerProps> = ({
               shapeRef={handleShapeRef}
               bedStatus={bedStatus}
               enableStatusStyling={Boolean(dashboardData)}
-              groupColor={myGroup?.color}
+              groupColor={groupColor}
               renderText={false}
             />
           )

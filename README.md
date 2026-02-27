@@ -406,6 +406,26 @@ From `src/index.ts`, typical consumers use:
 
 This package also exports bed-layout related components (e.g., `BedLayoutEditor`, `BedPrintLayout`).
 
+### BedLayoutViewer group color override
+
+`BedLayoutViewer` can resolve bed group colors from props without mutating `Doc`.
+
+```tsx
+import { BedLayoutViewer, type BedGroupConfig } from 'wysiwyg-pdf'
+
+const groups: BedGroupConfig[] = [
+  { id: 'group-1', name: '透析室A', color: '#3b82f6', bedIds: ['bed-1', 'bed-2'] },
+  { id: 'group-2', name: '透析室B', color: '#ef4444', bedIds: ['bed-3'] },
+]
+
+<BedLayoutViewer document={doc} dashboardData={statusMap} zoom={1} bedGroups={groups} />
+```
+
+Compatibility behavior:
+
+- If `bedGroups` prop is provided, it is used as the primary source for group colors.
+- If `bedGroups` is omitted, the viewer falls back to legacy `document.data.bedGroups` + `node.data.groupId`.
+
 ## Component Customization
 
 You can customize the editor components to fit your application's needs or build your own variants.
