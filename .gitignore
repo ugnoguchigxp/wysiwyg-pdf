@@ -43,6 +43,7 @@ example/data.sqlite
 *.sqlite
 
 example/backend/public/uploads/
+example/backend/template/local/
 
 
 # Cloudflare

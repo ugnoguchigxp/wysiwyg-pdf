@@ -41,6 +41,7 @@ export * from './features/report-editor/components/Toolbar/WysiwygEditorToolbar'
 export * from './features/report-editor/hooks/useReportHistory'
 export * from './features/report-editor/ReportEditor'
 export * from './features/report-editor/ReportKonvaEditor'
+export { resolveBindingData } from './features/report-editor/utils/dataResolver'
 export * from './features/slide-editor'
 // i18n
 export * from './i18n/I18nContext'

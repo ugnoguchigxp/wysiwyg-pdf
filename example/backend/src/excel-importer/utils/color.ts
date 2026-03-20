@@ -133,7 +133,7 @@ const INDEXED_COLORS: Record<number, string> = {
   61: '993366',
   62: '333399',
   63: '333333',
-  64: 'FFFFFF', // System Foreground (Window Text) or Background? Usually auto. Treat as White/Transparent or black depending on context. But here we assume explicit color.
+  64: '000000', // System Foreground (Auto). In template borders/fonts this is commonly rendered as black.
 }
 
 function getIndexedColor(index: number): string {
@@ -235,9 +235,9 @@ export function cssToArgb(css: string): string {
   // rgba()形式
   const rgbaMatch = css.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/)
   if (rgbaMatch) {
-    const r = parseInt(rgbaMatch[1]).toString(16).padStart(2, '0')
-    const g = parseInt(rgbaMatch[2]).toString(16).padStart(2, '0')
-    const b = parseInt(rgbaMatch[3]).toString(16).padStart(2, '0')
+    const r = parseInt(rgbaMatch[1], 10).toString(16).padStart(2, '0')
+    const g = parseInt(rgbaMatch[2], 10).toString(16).padStart(2, '0')
+    const b = parseInt(rgbaMatch[3], 10).toString(16).padStart(2, '0')
     const a = rgbaMatch[4]
       ? Math.round(parseFloat(rgbaMatch[4]) * 255)
           .toString(16)

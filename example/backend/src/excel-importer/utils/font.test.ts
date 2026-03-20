@@ -173,7 +173,7 @@ describe('DEFAULT_FONT_MAPPING', () => {
 
   test('has correct mapping values', () => {
     expect(DEFAULT_FONT_MAPPING['MS Gothic']).toBe('Noto Sans JP')
-    expect(DEFAULT_FONT_MAPPING['Arial']).toBe('Noto Sans')
+    expect(DEFAULT_FONT_MAPPING.Arial).toBe('Noto Sans')
     expect(DEFAULT_FONT_MAPPING['Times New Roman']).toBe('Noto Serif')
   })
 })

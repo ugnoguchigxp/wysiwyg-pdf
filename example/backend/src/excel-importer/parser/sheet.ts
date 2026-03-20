@@ -89,10 +89,12 @@ type ExcelJSRow = {
   number: number
   height?: number
   hidden?: boolean
+  getCell: (index: number) => ExcelJSCell
   eachCell: (
     options: { includeEmpty: boolean },
     callback: (cell: ExcelJSCell, colNumber: number) => void
   ) => void
+  actualColumnCount: number
 }
 
 type ExcelJSColumn = {
@@ -121,46 +123,50 @@ type ExcelJSCell = {
 export function parseSheet(worksheet: ExcelJSWorksheet, index: number): ExcelSheet {
   const rows: ExcelRow[] = []
   const columns: ExcelColumn[] = []
+  const printArea = worksheet.pageSetup.printArea
+    ? parsePrintArea(worksheet.pageSetup.printArea)
+    : undefined
 
   // 列情報を収集
-  // worksheet.columns が存在する場合は定義された列を優先（末尾の空列定義などを拾うため）
-  if (Array.isArray(worksheet.columns) && worksheet.columns.length > 0) {
-    worksheet.columns.forEach((col, i) => {
-      // ExcelJS sometimes mixes object/header logic, but for simple import:
-      const colDef = col as ExcelJSColumn
-      columns.push({
-        index: i,
-        width: colDef.width ?? 8.43,
-        hidden: colDef.hidden ?? false,
-      })
-    })
-
-    // columnCountがcolumns.lengthより大きい場合は補完 (セルデータだけある場合)
-    if (worksheet.columnCount > worksheet.columns.length) {
-      for (let i = worksheet.columns.length + 1; i <= worksheet.columnCount; i++) {
-        const col = worksheet.getColumn(i)
-        columns.push({
-          index: i - 1,
-          width: col.width ?? 8.43,
-          hidden: col.hidden ?? false,
-        })
+  // worksheet.columnCount / worksheet.columns は罫線だけで XFD まで膨らむことがあるため利用しない。
+  // 値・塗りつぶし・明示範囲(printArea)のみを列採用条件とする。
+  const COLUMN_SCAN_CAP = 500
+  let actualMaxCol = printArea ? printArea.endCol + 1 : 0
+  worksheet.eachRow({ includeEmpty: false }, (row) => {
+    const rowScanLimit = Math.min(Math.max(0, row.actualColumnCount), COLUMN_SCAN_CAP)
+    for (let colNumber = 1; colNumber <= rowScanLimit; colNumber++) {
+      const cell = row.getCell(colNumber)
+      if (!cell) continue
+      if (isCellEffectiveForColumnTrim(cell)) {
+        actualMaxCol = Math.max(actualMaxCol, colNumber)
       }
     }
-  } else {
-    // fallback
-    for (let i = 1; i <= worksheet.columnCount; i++) {
-      const col = worksheet.getColumn(i)
-      columns.push({
-        index: i - 1, // 0-based
-        width: col.width ?? 8.43, // デフォルト幅
-        hidden: col.hidden ?? false,
-      })
-    }
+
+    // Sparse rows may have cells beyond actualColumnCount.
+    row.eachCell({ includeEmpty: false }, (cell, colNumber) => {
+      if (colNumber > COLUMN_SCAN_CAP) return
+      if (isCellEffectiveForColumnTrim(cell)) {
+        actualMaxCol = Math.max(actualMaxCol, colNumber)
+      }
+    })
+  })
+
+  // 安全のためハードキャップ(500)
+  const maxCol = Math.min(actualMaxCol, COLUMN_SCAN_CAP)
+
+  for (let i = 1; i <= maxCol; i++) {
+    const colDef = (worksheet.columns as any)?.[i - 1] as ExcelJSColumn | undefined
+    const col = worksheet.getColumn(i)
+    columns.push({
+      index: i - 1,
+      width: colDef?.width ?? col.width ?? 8.43,
+      hidden: colDef?.hidden ?? col.hidden ?? false,
+    })
   }
 
   // 行情報を収集
   worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
-    const cells = parseCellsInRow(row)
+    const cells = parseCellsInRow(row, maxCol)
     rows.push({
       index: rowNumber - 1, // 0-based
       height: row.height ?? 15, // デフォルト高さ（pt）
@@ -174,14 +180,6 @@ export function parseSheet(worksheet: ExcelJSWorksheet, index: number): ExcelShe
 
   // ページ設定を解析
   const pageSetup = parsePageSetup(worksheet.pageSetup)
-
-  // 印刷範囲を解析
-  const printArea = worksheet.pageSetup.printArea
-    ? parsePrintArea(worksheet.pageSetup.printArea)
-    : undefined
-
-  // UsedRangeを計算
-  const usedRange = calculateUsedRange(rows)
 
   return {
     name: worksheet.name,
@@ -198,14 +196,88 @@ export function parseSheet(worksheet: ExcelJSWorksheet, index: number): ExcelShe
 /**
  * 行内のセルをパース
  */
-function parseCellsInRow(row: ExcelJSRow) {
+function parseCellsInRow(row: ExcelJSRow, maxCol: number) {
   const cells: ReturnType<typeof parseCell>[] = []
 
-  row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+  for (let colNumber = 1; colNumber <= maxCol; colNumber++) {
+    const cell = row.getCell(colNumber)
+    if (!cell) continue
+    if (!isCellEffectiveForParsing(cell)) continue
     cells.push(parseCell(cell, row.number - 1, colNumber - 1))
-  })
+  }
 
   return cells
+}
+
+function isCellEffectiveForParsing(cell: ExcelJSCell): boolean {
+  if (cell.value !== null && cell.value !== undefined && cell.value !== '') return true
+  if (cell.formula) return true
+
+  const style = cell.style as
+    | {
+        fill?: {
+          type?: string
+          pattern?: string
+          fgColor?: unknown
+          bgColor?: unknown
+        }
+        border?: {
+          top?: { style?: string }
+          right?: { style?: string }
+          bottom?: { style?: string }
+          left?: { style?: string }
+          diagonal?: { style?: string }
+        }
+      }
+    | undefined
+
+  const fill = style?.fill
+  if (fill) {
+    if (fill.type === 'gradient') return true
+    const pattern = fill.pattern ?? 'none'
+    if (pattern !== 'none' && (pattern !== 'solid' || !!fill.fgColor || !!fill.bgColor)) {
+      return true
+    }
+    if (pattern === 'solid' && (fill.fgColor || fill.bgColor)) {
+      return true
+    }
+  }
+
+  const border = style?.border
+  if (border) {
+    const sides = [border.top, border.right, border.bottom, border.left, border.diagonal]
+    if (sides.some((side) => !!side?.style && side.style !== 'none')) {
+      return true
+    }
+  }
+
+  return false
+}
+
+function isCellEffectiveForColumnTrim(cell: ExcelJSCell): boolean {
+  if (cell.value !== null && cell.value !== undefined && cell.value !== '') return true
+  if (cell.formula) return true
+
+  const style = cell.style as
+    | {
+        fill?: {
+          type?: string
+          pattern?: string
+          fgColor?: unknown
+          bgColor?: unknown
+        }
+      }
+    | undefined
+  const fill = style?.fill
+  if (!fill) return false
+
+  if (fill.type === 'gradient') return true
+
+  const pattern = fill.pattern ?? 'none'
+  if (pattern === 'none') return false
+  if (pattern === 'solid') return true
+
+  return !!fill.fgColor || !!fill.bgColor
 }
 
 /**
@@ -334,38 +406,6 @@ function parsePrintArea(printArea: string): CellRange | undefined {
 }
 
 /**
- * UsedRangeを計算
- */
-function calculateUsedRange(rows: ExcelRow[]): CellRange | undefined {
-  if (rows.length === 0) return undefined
-
-  let minRow = Infinity
-  let maxRow = -Infinity
-  let minCol = Infinity
-  let maxCol = -Infinity
-
-  for (const row of rows) {
-    for (const cell of row.cells) {
-      if (cell.value !== null) {
-        minRow = Math.min(minRow, cell.row)
-        maxRow = Math.max(maxRow, cell.row)
-        minCol = Math.min(minCol, cell.col)
-        maxCol = Math.max(maxCol, cell.col)
-      }
-    }
-  }
-
-  if (minRow === Infinity) return undefined
-
-  return {
-    startRow: minRow,
-    startCol: minCol,
-    endRow: maxRow,
-    endCol: maxCol,
-  }
-}
-
-/**
  * 画像情報を解析
  */
 function parseImages(worksheet: ExcelJSWorksheet): ExcelImage[] {
@@ -406,7 +446,7 @@ function parseImages(worksheet: ExcelJSWorksheet): ExcelImage[] {
         },
       })
     }
-  } catch (e) {
+  } catch (_e) {
     // console.warn('Failed to parse images:', e)
   }
 

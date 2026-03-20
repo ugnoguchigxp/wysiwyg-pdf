@@ -30,14 +30,20 @@ export const useSignature = ({
   const [allPressureData, setAllPressureData] = useState<number[][]>([])
 
   const commitSignature = useCallback((): Doc | null => {
-    if (currentStrokes.length === 0) return null
+    const nextRawStrokes =
+      currentPoints.length > 0 ? [...currentStrokes, currentPoints] : currentStrokes
+
+    if (nextRawStrokes.length === 0) return null
 
     // We no longer simplify during commit to allow dynamic simplification in the renderer
-    const rawStrokes = currentStrokes
-    const box = getStrokesBox(rawStrokes)
-    const normalizedStrokes = normalizeStrokes(rawStrokes, box)
+    const box = getStrokesBox(nextRawStrokes)
+    const normalizedStrokes = normalizeStrokes(nextRawStrokes, box)
 
-    const hasPressureData = allPressureData.some((pressure) => pressure.length > 0)
+    const nextPressureData =
+      currentPoints.length > 0
+        ? [...allPressureData, currentPressure.length > 0 ? currentPressure : []]
+        : allPressureData
+    const hasPressureData = nextPressureData.some((pressure) => pressure.length > 0)
     const element: SignatureNode = {
       id: `sig-${generateUUID()}`,
       t: 'signature',
@@ -50,7 +56,7 @@ export const useSignature = ({
       strokes: normalizedStrokes,
       stroke: drawingSettings.stroke,
       strokeW: drawingSettings.strokeWidth,
-      pressureData: hasPressureData ? allPressureData : undefined,
+      pressureData: hasPressureData ? nextPressureData : undefined,
       usePressureSim: !hasPressureData,
       tolerance: drawingSettings.simplification,
       r: 0,
@@ -74,6 +80,8 @@ export const useSignature = ({
     return nextDoc
   }, [
     currentStrokes,
+    currentPoints,
+    currentPressure,
     currentSurface.id,
     templateDoc,
     onTemplateChange,
@@ -87,26 +95,22 @@ export const useSignature = ({
   const handleSignatureMouseDown = useCallback(
     (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
       const stage = e.target.getStage()
-      const interestedInBackground = e.target === stage || e.target.name() === '_background'
-
-      if (interestedInBackground) {
-        setIsDrawing(true)
-        const nativeEvent = e.evt as PointerEvent | undefined
-        const pressure =
-          nativeEvent && 'pressure' in nativeEvent
-            ? (nativeEvent as PointerEvent).pressure
-            : undefined
-        const isPressureDevice = typeof pressure === 'number' && pressure !== 0.5 && pressure !== 0
-        const point = stage?.getPointerPosition()
-        if (point) {
-          const transform = stage?.getAbsoluteTransform().copy()
-          transform?.invert()
-          const pos = transform?.point(point)
-          if (pos) {
-            setCurrentPoints([pos.x, pos.y])
-            if (isPressureDevice && typeof pressure === 'number') {
-              setCurrentPressure([pressure])
-            }
+      setIsDrawing(true)
+      const nativeEvent = e.evt as PointerEvent | undefined
+      const pressure =
+        nativeEvent && 'pressure' in nativeEvent
+          ? (nativeEvent as PointerEvent).pressure
+          : undefined
+      const isPressureDevice = typeof pressure === 'number' && pressure !== 0.5 && pressure !== 0
+      const point = stage?.getPointerPosition()
+      if (point) {
+        const transform = stage?.getAbsoluteTransform().copy()
+        transform?.invert()
+        const pos = transform?.point(point)
+        if (pos) {
+          setCurrentPoints([pos.x, pos.y])
+          if (isPressureDevice && typeof pressure === 'number') {
+            setCurrentPressure([pressure])
           }
         }
       }

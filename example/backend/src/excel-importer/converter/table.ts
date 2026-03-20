@@ -8,7 +8,7 @@ import type { ExcelCell, ExcelRow, ExcelSheet, MergedCell } from '../types/excel
 import type { ImportOptions } from '../types/options'
 import type { OutputBorderStyle, OutputCell, OutputTableNode } from '../types/output'
 import { convertCell } from './cell'
-import { borderWidth } from './style'
+import { convertCellStyle } from './style'
 
 export type PageRange = { startRow: number; endRow: number; startCol: number; endCol: number }
 
@@ -86,7 +86,7 @@ function collectCells(
     }
   }
 
-  const cells: OutputCell[] = []
+  const _cells: OutputCell[] = []
 
   // Helper to get cell at relative position
   const getCell = (r: number, c: number) => {
@@ -123,6 +123,14 @@ function collectCells(
       if (mergeInfo) {
         base.rs = mergeInfo.endRow - mergeInfo.startRow + 1
         base.cs = mergeInfo.endCol - mergeInfo.startCol + 1
+
+        const mergedPerimeterBorders = collectMergedPerimeterBorders(mergeInfo, getCell, options)
+        base.borders = {
+          t: resolveEdge(base.borders?.t, mergedPerimeterBorders.t),
+          r: resolveEdge(base.borders?.r, mergedPerimeterBorders.r),
+          b: resolveEdge(base.borders?.b, mergedPerimeterBorders.b),
+          l: resolveEdge(base.borders?.l, mergedPerimeterBorders.l),
+        }
       }
 
       cellMap.set(key, base)
@@ -133,7 +141,7 @@ function collectCells(
   // Iterate all cells to resolve conflicts with neighbors (Right/Bottom)
   // Logic: "Winner takes all" - stronger border overwrites weaker one.
   // We check R and B of current cell against L and T of neighbor.
-  cellMap.forEach((cell, key) => {
+  cellMap.forEach((cell, _key) => {
     // Current cell position (local)
     // Note: cell.r / cell.c are local indices relative to Range
     const r = cell.r
@@ -221,6 +229,9 @@ function resolveEdge(
   if (w1 > w2) return b1
   if (w2 > w1) return b2
 
+  const colorWinner = resolveColorTie(b1, b2)
+  if (colorWinner) return colorWinner
+
   // Weights equal - Check style styles?
   // e.g. Solid vs Double?
   // Double borders often have same "width" mapping in our naive map (0.7 vs 0.7).
@@ -235,4 +246,144 @@ function resolveEdge(
 
   if (priority(b1.style) >= priority(b2.style)) return b1
   return b2
+}
+
+function resolveColorTie(
+  b1: OutputBorderStyle,
+  b2: OutputBorderStyle
+): OutputBorderStyle | undefined {
+  const c1 = normalizeHexColor(b1.color)
+  const c2 = normalizeHexColor(b2.color)
+
+  if (!c1 && !c2) return undefined
+  if (!c1) return b2
+  if (!c2) return b1
+  if (c1 === c2) return undefined
+
+  const nearWhite1 = isNearWhite(c1)
+  const nearWhite2 = isNearWhite(c2)
+  if (nearWhite1 !== nearWhite2) {
+    return nearWhite1 ? b2 : b1
+  }
+
+  const l1 = relativeLuminance(c1)
+  const l2 = relativeLuminance(c2)
+  if (Math.abs(l1 - l2) > 1e-4) {
+    return l1 < l2 ? b1 : b2
+  }
+
+  return undefined
+}
+
+function normalizeHexColor(color: string | undefined): string | undefined {
+  if (!color) return undefined
+  const value = color.trim().toUpperCase()
+  if (!value.startsWith('#')) return undefined
+  const hex = value.slice(1)
+  if (hex.length === 6 && /^[0-9A-F]{6}$/.test(hex)) {
+    return `#${hex}`
+  }
+  if (hex.length === 3 && /^[0-9A-F]{3}$/.test(hex)) {
+    return `#${hex
+      .split('')
+      .map((ch) => `${ch}${ch}`)
+      .join('')}`
+  }
+  return undefined
+}
+
+function isNearWhite(color: string): boolean {
+  const { r, g, b } = parseHexColor(color)
+  return r >= 245 && g >= 245 && b >= 245
+}
+
+function relativeLuminance(color: string): number {
+  const { r, g, b } = parseHexColor(color)
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+function parseHexColor(color: string): { r: number; g: number; b: number } {
+  const hex = color.slice(1)
+  return {
+    r: parseInt(hex.slice(0, 2), 16),
+    g: parseInt(hex.slice(2, 4), 16),
+    b: parseInt(hex.slice(4, 6), 16),
+  }
+}
+
+function collectMergedPerimeterBorders(
+  mergeInfo: MergedCell,
+  getCell: (r: number, c: number) => ExcelCell | undefined,
+  options: ImportOptions
+): {
+  t?: OutputBorderStyle
+  r?: OutputBorderStyle
+  b?: OutputBorderStyle
+  l?: OutputBorderStyle
+} {
+  let top: OutputBorderStyle | undefined
+  let right: OutputBorderStyle | undefined
+  let bottom: OutputBorderStyle | undefined
+  let left: OutputBorderStyle | undefined
+
+  for (let c = mergeInfo.startCol; c <= mergeInfo.endCol; c++) {
+    top = resolveEdge(top, getCellBorderSide(getCell(mergeInfo.startRow, c), 't', options))
+    bottom = resolveEdge(bottom, getCellBorderSide(getCell(mergeInfo.endRow, c), 'b', options))
+  }
+
+  for (let r = mergeInfo.startRow; r <= mergeInfo.endRow; r++) {
+    left = resolveEdge(left, getCellBorderSide(getCell(r, mergeInfo.startCol), 'l', options))
+    right = resolveEdge(right, getCellBorderSide(getCell(r, mergeInfo.endCol), 'r', options))
+  }
+
+  // Excel merged ranges sometimes keep only one vertical side on edge cells.
+  // If there is no adjacent anchor-side column, mirror the opposite side to preserve visible box edges.
+  const hasLeftNeighbor = hasAnyCellInColumn(
+    getCell,
+    mergeInfo.startCol - 1,
+    mergeInfo.startRow,
+    mergeInfo.endRow
+  )
+  const hasRightNeighbor = hasAnyCellInColumn(
+    getCell,
+    mergeInfo.endCol + 1,
+    mergeInfo.startRow,
+    mergeInfo.endRow
+  )
+  if (!left && right && !hasLeftNeighbor) {
+    left = { ...right }
+  }
+  if (!right && left && !hasRightNeighbor) {
+    right = { ...left }
+  }
+
+  return {
+    t: top,
+    r: right,
+    b: bottom,
+    l: left,
+  }
+}
+
+function hasAnyCellInColumn(
+  getCell: (r: number, c: number) => ExcelCell | undefined,
+  col: number,
+  startRow: number,
+  endRow: number
+): boolean {
+  if (col < 0) return false
+  for (let r = startRow; r <= endRow; r++) {
+    if (getCell(r, col)) return true
+  }
+  return false
+}
+
+function getCellBorderSide(
+  cell: ExcelCell | undefined,
+  side: 't' | 'r' | 'b' | 'l',
+  options: ImportOptions
+): OutputBorderStyle | undefined {
+  if (!cell) return undefined
+  const style = convertCellStyle(cell.style, options)
+  return style.borders?.[side]
 }

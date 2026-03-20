@@ -49,6 +49,13 @@ describe('EditorHeader', () => {
     fireEvent.click(screen.getByText('save'))
     expect(onSave).toHaveBeenCalledTimes(1)
 
+    // Check new buttons
+    fireEvent.click(screen.getByTitle('header_preview'))
+    expect(onDownloadPdf).toHaveBeenCalledTimes(1)
+
+    fireEvent.click(screen.getByTitle('header_image'))
+    expect(onDownloadImage).toHaveBeenCalledTimes(1)
+
     fireEvent.click(screen.getByText('?'))
     expect(onShowShortcuts).toHaveBeenCalledTimes(1)
     expect(screen.getByText('Child')).toBeInTheDocument()

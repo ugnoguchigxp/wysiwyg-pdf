@@ -1,5 +1,4 @@
 import type { CellStyle, ExcelRow, ExcelSheet } from '../types/excel'
-import { DEFAULT_IMPORT_OPTIONS } from '../types/options'
 import { mmToPt } from '../utils'
 import { convertSheet } from './surface'
 

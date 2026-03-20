@@ -1,4 +1,4 @@
-import { ChevronLeft, Layers, Save, Settings2 } from 'lucide-react'
+import { ChevronLeft, Eye, Image as ImageIcon, Layers, Save, Settings2 } from 'lucide-react'
 import type React from 'react'
 import { Button } from '@/components/ui/Button'
 import { useI18n } from '@/i18n/I18nContext'
@@ -34,12 +34,15 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   onOrientationChange,
   orientationOptions,
   onSave,
+  onDownloadImage,
+  onDownloadPdf,
   onBack,
   onShowShortcuts,
   onSettingsClick,
   loadMenu,
   children,
   i18nOverrides,
+  hideDownloadButtons = false,
   endContent,
   onBedGroupsClick,
 }) => {
@@ -110,6 +113,31 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
         {/* Load/Save Block */}
         <div className="flex items-center gap-2">
           {loadMenu}
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onDownloadPdf}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium"
+            title={resolveText('header_preview', 'Preview')}
+          >
+            <Eye className="w-4 h-4" />
+            {resolveText('header_preview', 'Preview')}
+          </Button>
+
+          {!hideDownloadButtons && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onDownloadImage}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium"
+              title={resolveText('header_image', 'Save Image')}
+            >
+              <ImageIcon className="w-4 h-4" />
+              {resolveText('header_image', 'Save Image')}
+            </Button>
+          )}
+
           <button
             type="button"
             onClick={onSave}

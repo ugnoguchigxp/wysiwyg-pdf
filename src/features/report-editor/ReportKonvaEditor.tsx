@@ -153,6 +153,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
     const height = currentSurface.h
 
     const displayScale = zoom * mmToPx(1, { dpi })
+    const isDrawingToolActive = activeTool === 'signature' || activeTool === 'speech-bubble'
 
     const handleElementSelect = (element: UnifiedNode | null) => {
       onElementSelect(element)
@@ -518,7 +519,7 @@ export const ReportKonvaEditor = forwardRef<ReportKonvaEditorHandle, ReportKonva
                 visible={showGrid}
               />
             </Layer>
-            <Layer>
+            <Layer listening={!isDrawingToolActive}>
               {nodes.map((element) => (
                 <CanvasElementRenderer
                   key={element.id}

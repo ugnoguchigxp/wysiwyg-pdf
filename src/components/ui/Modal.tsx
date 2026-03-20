@@ -8,6 +8,8 @@ interface IModalProps extends React.ComponentPropsWithoutRef<typeof DialogPrimit
   trigger?: React.ReactNode
   title?: string
   description?: string
+  headerActions?: React.ReactNode
+  contentStyle?: React.CSSProperties
   footer?: React.ReactNode
   footerClassName?: string
   className?: string
@@ -26,6 +28,8 @@ const Modal = React.memo(
         trigger,
         title,
         description,
+        headerActions,
+        contentStyle,
         footer,
         footerClassName,
         className,
@@ -129,10 +133,16 @@ const Modal = React.memo(
                 >
                   {title || t('dialog', 'Dialog')}
                 </DialogPrimitive.Title>
-                <DialogPrimitive.Close className="rounded-full p-1 opacity-70 ring-offset-background transition-all hover:opacity-100 hover:bg-accent focus:outline-none disabled:pointer-events-none cursor-pointer">
-                  <X className="h-5 w-5 text-foreground" />
-                  <span className="sr-only">{t('close', 'Close')}</span>
-                </DialogPrimitive.Close>
+                <div
+                  className="ml-auto flex items-center gap-2"
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  {headerActions}
+                  <DialogPrimitive.Close className="rounded-full p-1 opacity-70 ring-offset-background transition-all hover:opacity-100 hover:bg-accent focus:outline-none disabled:pointer-events-none cursor-pointer">
+                    <X className="h-5 w-5 text-foreground" />
+                    <span className="sr-only">{t('close', 'Close')}</span>
+                  </DialogPrimitive.Close>
+                </div>
               </div>
               {description && (
                 <DialogPrimitive.Description className="text-sm text-muted-foreground">
@@ -199,9 +209,11 @@ const Modal = React.memo(
                   ? {
                       transform: `translate(calc(-50% + ${position.x}px), calc(-50% + ${position.y}px))`,
                       cursor: isDragging ? 'grabbing' : undefined,
+                      ...contentStyle,
                     }
                   : {
                       transform: 'translate(-50%, -50%)',
+                      ...contentStyle,
                     }
               }
             >

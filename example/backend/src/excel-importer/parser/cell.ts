@@ -17,7 +17,7 @@ type ExcelJSCell = {
 }
 
 // ExcelJSのセルタイプ
-const CellType = {
+const _CellType = {
   Null: 0,
   Merge: 1,
   Number: 2,

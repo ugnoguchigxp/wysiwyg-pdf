@@ -5,7 +5,7 @@ import {
   DEFAULT_FONT_FAMILIES,
   DEFAULT_FONT_SIZES,
 } from '@/features/konva-editor/constants/propertyPanelConfig'
-import type { TextNode, SpeechBubbleNode } from '@/types/canvas'
+import type { SpeechBubbleNode, TextNode } from '@/types/canvas'
 import { mmToPt, ptToMm, roundTo } from '@/utils/units'
 import { cn } from '@/utils/utils'
 import { ColorInput } from '../ColorInput'

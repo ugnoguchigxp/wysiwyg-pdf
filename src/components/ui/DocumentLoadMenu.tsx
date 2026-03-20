@@ -32,6 +32,11 @@ export interface DocumentLoadMenuProps {
    */
   onLoad: (id: string) => Promise<void> | void
 
+  /**
+   * Optional list of preset/standard templates.
+   */
+  presets?: DocumentSummary[]
+
   triggerClassName?: string
   triggerTooltip?: string
 }
@@ -42,6 +47,7 @@ export const DocumentLoadMenu: React.FC<DocumentLoadMenuProps> = ({
   fetchRecent,
   fetchBrowse,
   onLoad,
+  presets = [],
   triggerClassName,
   triggerTooltip,
 }) => {
@@ -97,9 +103,13 @@ export const DocumentLoadMenu: React.FC<DocumentLoadMenuProps> = ({
     return quickList.map((doc) => (
       <DropdownMenu.Item
         key={doc.id}
-        onSelect={(event) => {
-          event.preventDefault()
+        onSelect={() => {
+          console.log('[DocumentLoadMenu] Quick item onSelect:', doc.id, doc.title)
           onLoad(doc.id)
+        }}
+        onClick={(_e) => {
+          // Fallback click handler if onSelect is not reliable
+          console.log('[DocumentLoadMenu] Quick item onClick:', doc.id)
         }}
         className="px-3 py-2 text-sm text-foreground hover:bg-accent cursor-pointer outline-none"
       >
@@ -137,6 +147,31 @@ export const DocumentLoadMenu: React.FC<DocumentLoadMenuProps> = ({
             sideOffset={8}
             className="bg-popover border border-border rounded-md shadow-md min-w-[260px] py-2 z-50 animate-in fade-in-80 zoom-in-95"
           >
+            {presets.length > 0 && (
+              <>
+                <div className="px-3 py-1 text-xs font-semibold text-muted-foreground">
+                  標準テンプレート
+                </div>
+                {presets.map((doc) => (
+                  <DropdownMenu.Item
+                    key={doc.id}
+                    onSelect={() => {
+                      console.log('[DocumentLoadMenu] Preset item onSelect:', doc.id, doc.title)
+                      onLoad(doc.id)
+                    }}
+                    onClick={(_e) => {
+                      console.log('[DocumentLoadMenu] Preset item onClick:', doc.id)
+                    }}
+                    className="px-3 py-2 text-sm text-foreground hover:bg-accent cursor-pointer outline-none"
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium truncate max-w-[220px]">{doc.title}</span>
+                    </div>
+                  </DropdownMenu.Item>
+                ))}
+                <DropdownMenu.Separator className="h-px bg-border my-1" />
+              </>
+            )}
             <div className="px-3 py-1 text-xs font-semibold text-muted-foreground">Quick List</div>
             {quickContent}
             <DropdownMenu.Separator className="h-px bg-border my-1" />

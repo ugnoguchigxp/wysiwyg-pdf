@@ -114,6 +114,76 @@ describe('convertToTableNode', () => {
     expect(result.table.cells[0].cs).toBe(3)
   })
 
+  test('preserves merged cell outer borders from covered cells', () => {
+    const rows = [
+      createMockRow(0, 15, [
+        {
+          ...createMockCell(0, 0, 'Merged'),
+          style: {
+            border: {
+              top: { style: 'thin' as const, color: { argb: 'FF000000' } },
+              left: { style: 'thin' as const, color: { argb: 'FF000000' } },
+            },
+          },
+        },
+        {
+          ...createMockCell(0, 1, ''),
+          style: {
+            border: {
+              top: { style: 'thin' as const, color: { argb: 'FF000000' } },
+              right: { style: 'thick' as const, color: { argb: 'FF000000' } },
+            },
+          },
+        },
+      ]),
+      createMockRow(1, 15, [
+        {
+          ...createMockCell(1, 0, ''),
+          style: {
+            border: {
+              left: { style: 'thin' as const, color: { argb: 'FF000000' } },
+              bottom: { style: 'medium' as const, color: { argb: 'FF000000' } },
+            },
+          },
+        },
+        {
+          ...createMockCell(1, 1, ''),
+          style: {
+            border: {
+              right: { style: 'thick' as const, color: { argb: 'FF000000' } },
+              bottom: { style: 'medium' as const, color: { argb: 'FF000000' } },
+            },
+          },
+        },
+      ]),
+    ]
+    const mergedCells = [{ startRow: 0, startCol: 0, endRow: 1, endCol: 1 }]
+    const sheet = createMockSheet(rows, mergedCells)
+    const range = { startRow: 0, endRow: 1, startCol: 0, endCol: 1 }
+    const rowHeights = [15, 15]
+    const colWidths = [10, 10]
+    const position = { x: 0, y: 0 }
+
+    const result = convertToTableNode(
+      sheet,
+      range,
+      rowHeights,
+      colWidths,
+      'surface1',
+      DEFAULT_IMPORT_OPTIONS,
+      position
+    )
+
+    expect(result.table.cells).toHaveLength(1)
+    const merged = result.table.cells[0]
+    expect(merged.rs).toBe(2)
+    expect(merged.cs).toBe(2)
+    expect(merged.borders?.t?.width).toBe(0.2)
+    expect(merged.borders?.l?.width).toBe(0.2)
+    expect(merged.borders?.r?.width).toBe(0.7)
+    expect(merged.borders?.b?.width).toBe(0.5)
+  })
+
   test('generates unique id for table', () => {
     const rows = [createMockRow(0, 15, [createMockCell(0, 0, 'A1')])]
     const sheet = createMockSheet(rows)
@@ -266,6 +336,94 @@ describe('convertToTableNode', () => {
     expect(cellB1).toBeDefined()
     expect(cellA1?.borders?.r?.width).toBe(0.7)
     expect(cellB1?.borders?.l?.width).toBe(0.7)
+  })
+
+  test('prefers visible (non-white) color when border width is equal', () => {
+    const rows = [
+      createMockRow(0, 15, [
+        {
+          ...createMockCell(0, 0, 'A1'),
+          style: {
+            border: {
+              right: { style: 'thin' as const, color: { argb: 'FFFFFFFF' } },
+            },
+          },
+        },
+        {
+          ...createMockCell(0, 1, 'B1'),
+          style: {
+            border: {
+              left: { style: 'thin' as const, color: { argb: 'FF000000' } },
+            },
+          },
+        },
+      ]),
+    ]
+    const sheet = createMockSheet(rows)
+    const range = { startRow: 0, endRow: 0, startCol: 0, endCol: 1 }
+    const rowHeights = [15]
+    const colWidths = [10, 10]
+    const position = { x: 0, y: 0 }
+
+    const result = convertToTableNode(
+      sheet,
+      range,
+      rowHeights,
+      colWidths,
+      'surface1',
+      DEFAULT_IMPORT_OPTIONS,
+      position
+    )
+
+    const cellA1 = result.table.cells.find((c: any) => c.c === 0)
+    const cellB1 = result.table.cells.find((c: any) => c.c === 1)
+    expect(cellA1?.borders?.r?.color).toBe('#000000')
+    expect(cellB1?.borders?.l?.color).toBe('#000000')
+  })
+
+  test('mirrors missing merged left border from right edge when neighbor column is absent', () => {
+    const rows = [
+      createMockRow(0, 15, [
+        {
+          ...createMockCell(0, 1, 'Merged'),
+          style: {
+            border: {
+              top: { style: 'thin' as const, color: { argb: 'FF000000' } },
+            },
+          },
+        },
+        {
+          ...createMockCell(0, 2, ''),
+          style: {
+            border: {
+              right: { style: 'medium' as const, color: { argb: 'FF000000' } },
+              top: { style: 'thin' as const, color: { argb: 'FF000000' } },
+            },
+          },
+        },
+      ]),
+    ]
+    const mergedCells = [{ startRow: 0, startCol: 1, endRow: 0, endCol: 2 }]
+    const sheet = createMockSheet(rows, mergedCells)
+    const range = { startRow: 0, endRow: 0, startCol: 0, endCol: 2 }
+    const rowHeights = [15]
+    const colWidths = [10, 10, 10]
+    const position = { x: 0, y: 0 }
+
+    const result = convertToTableNode(
+      sheet,
+      range,
+      rowHeights,
+      colWidths,
+      'surface1',
+      DEFAULT_IMPORT_OPTIONS,
+      position
+    )
+
+    const merged = result.table.cells.find((c: any) => c.c === 1)
+    expect(merged?.cs).toBe(2)
+    expect(merged?.borders?.r?.width).toBe(0.5)
+    expect(merged?.borders?.l?.width).toBe(0.5)
   })
 
   test('handles borders with different styles but same width', () => {

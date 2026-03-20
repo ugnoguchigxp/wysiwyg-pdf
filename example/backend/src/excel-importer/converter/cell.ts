@@ -20,10 +20,11 @@ export function convertCell(cell: ExcelCell, options: ImportOptions): OutputCell
   let richTextFragments: any[] = []
   if (isRichText(cell.value)) {
     const rt = cell.value
+    const scale = options.scale ?? 1.0
     richTextFragments = rt.richText.map((fragment) => ({
       text: fragment.text,
       font: fragment.font?.name,
-      fontSize: fragment.font?.size ? ptToMm(fragment.font.size) : undefined,
+      fontSize: fragment.font?.size ? ptToMm(fragment.font.size) * scale : undefined,
       bold: fragment.font?.bold,
       italic: fragment.font?.italic,
       strike: fragment.font?.strike,

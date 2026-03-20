@@ -28,11 +28,11 @@ export const ExcelImportPage: React.FC<ExcelImportPageProps> = ({ onBack, onComp
         e.preventDefault()
         setIsDragging(false)
         const files = e.dataTransfer.files
-        if (files.length > 0 && files[0].name.match(/\.xlsx?$/)) {
+        if (files.length > 0 && files[0].name.match(/\.(xlsx|xls|xlsm)$/i)) {
             setFile(files[0])
             setError(null)
         } else {
-            setError('Please select a valid Excel file (.xlsx or .xls)')
+            setError('Please select a valid Excel file (.xlsx, .xls, or .xlsm)')
         }
     }
 
@@ -121,7 +121,7 @@ export const ExcelImportPage: React.FC<ExcelImportPageProps> = ({ onBack, onComp
                                     ref={fileInputRef}
                                     type="file"
                                     className="hidden"
-                                    accept=".xlsx,.xls"
+                                    accept=".xlsx,.xls,.xlsm"
                                     onChange={handleFileSelect}
                                 />
                                 <button
