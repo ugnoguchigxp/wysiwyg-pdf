@@ -53,6 +53,21 @@ describe('parseCellStyle', () => {
     })
   })
 
+  test('parses solid fill with bgColor fallback', () => {
+    const style = {
+      fill: {
+        type: 'pattern',
+        pattern: 'solid',
+        bgColor: { argb: 'FFD9D9D9' },
+      },
+    }
+    const result = parseCellStyle(style)
+    expect(result.fill).toEqual({
+      type: 'solid',
+      color: { argb: 'FFD9D9D9' },
+    })
+  })
+
   test('returns undefined for none pattern fill', () => {
     const style = {
       fill: {

@@ -8,7 +8,7 @@
 import type { ExcelCell, ExcelRow, ExcelSheet, MergedCell } from '../types/excel'
 import type { ImportOptions } from '../types/options'
 import { DEFAULT_IMPORT_OPTIONS } from '../types/options'
-import type { OutputNode, OutputSurface } from '../types/output'
+import type { OutputNode, OutputSurface, OutputTableNode } from '../types/output'
 import { excelColWidthToMm, excelRowHeightToMm, inchToMm, PAPER_SIZES, pxToMm } from '../utils'
 import { convertToTableNode } from './table'
 
@@ -16,7 +16,7 @@ export function convertSheet(
   sheet: ExcelSheet,
   sheetOrder: number,
   options: ImportOptions,
-  defaultFont: { name: string; size: number }
+  _defaultFont: { name: string; size: number }
 ): { surfaces: OutputSurface[]; nodes: OutputNode[] } {
   const resolvedOptions = { ...DEFAULT_IMPORT_OPTIONS, ...options }
 
@@ -109,6 +109,30 @@ export function convertSheet(
     scale = (sheet.pageSetup.scale ?? 100) / 100
   }
 
+  // 5. 行高・列幅 (スケール適用後)
+  let rowHeightsMm = rowMap.map((i) => {
+    const h = sheet.rows[i]?.height ?? 15
+    return excelRowHeightToMm(h) * scale
+  })
+  let colWidthsMm = colMap.map((i) => {
+    // シート定義がない場合はデフォルト幅(8.43)
+    // ExcelRowのセルデータから推測もできるが、基本はデフォルトでOK
+    const w = sheet.columns[i]?.width ?? 8.43
+    return excelColWidthToMm(w) * scale
+  })
+
+  // テーブル幅と描画領域の不整合を補正し、cols合計とtable.wが一致する状態を作る。
+  const scaledContentWidth = sumNumbers(colWidthsMm)
+  if (scaledContentWidth > 0 && drawableWidth > 0 && scaledContentWidth > drawableWidth) {
+    const fitScale = drawableWidth / scaledContentWidth
+    scale *= fitScale
+    rowHeightsMm = rowHeightsMm.map((h) => h * fitScale)
+    colWidthsMm = colWidthsMm.map((w) => w * fitScale)
+  }
+
+  // Pass scale to resolvedOptions so cell converters (font/border/richText) can use it.
+  resolvedOptions.scale = scale
+
   // Safety: Prevent Scale from becoming too small (Task 5-1)
   const SAFE_MIN_SCALE = 0.3
   if (scale < SAFE_MIN_SCALE) {
@@ -127,18 +151,6 @@ export function convertSheet(
     paperKey,
     colMapSize: colMap.length,
     columnsCount: sheet.columns.length,
-  })
-
-  // 5. 行高・列幅 (スケール適用後)
-  const rowHeightsMm = rowMap.map((i) => {
-    const h = sheet.rows[i]?.height ?? 15
-    return excelRowHeightToMm(h) * scale
-  })
-  const colWidthsMm = colMap.map((i) => {
-    // シート定義がない場合はデフォルト幅(8.43)
-    // ExcelRowのセルデータから推測もできるが、基本はデフォルトでOK
-    const w = sheet.columns[i]?.width ?? 8.43
-    return excelColWidthToMm(w) * scale
   })
 
   // 累積座標（ページ判定用）
@@ -208,6 +220,7 @@ export function convertSheet(
         resolvedOptions,
         { x: margin.l, y: margin.t }
       )
+      normalizeTableNodeSize(tableNode, drawableWidth, drawableHeight)
 
       surfaces.push({
         id: surfaceId,
@@ -401,7 +414,7 @@ function filterRowsCols(sheet: ExcelSheet, options: ImportOptions): FilterResult
   // colMap構築
   for (let c = startCol; c <= endCol; c++) {
     const colKey = sheet.columns.find((col) => col.index === c)
-    if (colKey && colKey.hidden) continue
+    if (colKey?.hidden) continue
 
     // 列が空かどうかのチェック (isColumnEmptyは全行スキャンするため重いが...)
     // UsedRange範囲内であれば「何かある」はずだが、sparseな矩形の可能性はある
@@ -544,6 +557,39 @@ function calculateColRanges(
   return ranges
 }
 
+function sumNumbers(values: number[]): number {
+  return values.reduce((sum, value) => sum + value, 0)
+}
+
+function clipSizesToLimit(sizes: number[], limit: number): number[] {
+  if (sizes.length === 0) return sizes
+
+  const safeLimit = Math.max(0, limit)
+  const clipped = sizes.map((size) => Math.max(0, size))
+  let overflow = sumNumbers(clipped) - safeLimit
+  if (overflow <= 1e-6) return clipped
+
+  for (let i = clipped.length - 1; i >= 0 && overflow > 0; i--) {
+    const reducible = Math.min(clipped[i], overflow)
+    clipped[i] -= reducible
+    overflow -= reducible
+  }
+
+  return clipped
+}
+
+function normalizeTableNodeSize(
+  tableNode: OutputTableNode,
+  drawableWidth: number,
+  drawableHeight: number
+): void {
+  tableNode.table.cols = clipSizesToLimit(tableNode.table.cols, drawableWidth)
+  tableNode.table.rows = clipSizesToLimit(tableNode.table.rows, drawableHeight)
+
+  tableNode.w = sumNumbers(tableNode.table.cols)
+  tableNode.h = sumNumbers(tableNode.table.rows)
+}
+
 /**
  * 厳密なUsedRangeを計算 (データまたはスタイルがある範囲)
  */
@@ -588,20 +634,11 @@ function calculateStrictUsedRange(sheet: ExcelSheet): {
 
 /**
  * セルが「有効」か判定
- * 値がある、またはスタイル(罫線・背景)がある
+ * 値がある、または背景(Fill)がある
  */
 function isCellEffective(cell: ExcelCell): boolean {
   // 値がある
   if (cell.value !== null && cell.value !== undefined && cell.value !== '') return true
-
-  // スタイルがある (Border)
-  if (cell.style.border) {
-    const b = cell.style.border
-    if (b.top && b.top.style && b.top.style !== 'none') return true
-    if (b.bottom && b.bottom.style && b.bottom.style !== 'none') return true
-    if (b.left && b.left.style && b.left.style !== 'none') return true
-    if (b.right && b.right.style && b.right.style !== 'none') return true
-  }
 
   // スタイルがある (Fill)
   if (cell.style.fill) {
@@ -613,6 +650,9 @@ function isCellEffective(cell: ExcelCell): boolean {
     }
   }
 
+  // 背景や値がない場合、罫線のみでは「有効範囲」としてカウントしないように変更。
+  // Excelでは行全体に罫線を引くことが多く、それが原因でインポート範囲が巨大化するため。
+
   return false
 }
 
@@ -621,7 +661,7 @@ function isCellEffective(cell: ExcelCell): boolean {
  */
 function resolveHeaderFooter(
   hf: import('../types/excel').HeaderFooter | undefined,
-  pageNumber: number,
+  _pageNumber: number,
   type: 'header' | 'footer'
 ): import('../types/output').HeaderFooterContent | undefined {
   if (!hf) return undefined

@@ -86,6 +86,69 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
   const borders: React.ReactNode[] = []
   const texts: React.ReactNode[] = []
 
+  type CoverageCell = {
+    anchorR: number
+    anchorC: number
+    cell: TableNode['table']['cells'][number]
+  }
+
+  const cellCoverage: Array<Array<CoverageCell | undefined>> = Array.from(
+    { length: rowCount },
+    () => Array<CoverageCell | undefined>(colCount).fill(undefined)
+  )
+  for (const c of cells) {
+    const rs = c.rs || 1
+    const cs = c.cs || 1
+    for (let rr = 0; rr < rs; rr++) {
+      const rowIndex = c.r + rr
+      if (rowIndex < 0 || rowIndex >= rowCount) continue
+      for (let cc = 0; cc < cs; cc++) {
+        const colIndex = c.c + cc
+        if (colIndex < 0 || colIndex >= colCount) continue
+        cellCoverage[rowIndex][colIndex] = {
+          anchorR: c.r,
+          anchorC: c.c,
+          cell: c,
+        }
+      }
+    }
+  }
+
+  const hasCellDisplayText = (target?: TableNode['table']['cells'][number]) => {
+    if (!target) return false
+    if (typeof target.v === 'string' && target.v.length > 0) return true
+    if (target.richText && target.richText.length > 0) return true
+    return false
+  }
+
+  const getTextRenderWidth = (
+    row: number,
+    col: number,
+    colSpan: number,
+    cell?: TableNode['table']['cells'][number]
+  ) => {
+    const baseWidth = getColWidth(col, colSpan)
+    if (!cell || cell.wrap) return baseWidth
+
+    const align = cell.align || 'l'
+    if (align !== 'l') return baseWidth
+
+    let width = baseWidth
+    const ownEndCol = col + colSpan - 1
+    for (let nextCol = ownEndCol + 1; nextCol < colCount; nextCol++) {
+      const covered = cellCoverage[row]?.[nextCol]
+      if (
+        covered &&
+        !(covered.anchorR === row && covered.anchorC === col) &&
+        hasCellDisplayText(covered.cell)
+      ) {
+        break
+      }
+      width += cols[nextCol] ?? 0
+    }
+    return width
+  }
+
   // Helper to create identifying key
   const getCellId = (r: number, c: number) => `${tableElement.id}_cell_${r}_${c} `
 
@@ -230,88 +293,73 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
         const PADDING_Y = 1.6 * invScale
 
         texts.push(
-          <RichTextRenderer
-            key={`${cellId}_richtext`}
-            fragments={cell.richText!}
-            x={x + PADDING_X}
-            y={y + PADDING_Y}
-            width={Math.max(0, w - 2 * PADDING_X)}
-            height={Math.max(0, h - 2 * PADDING_Y)}
-            align={align}
-            vAlign={vAlign}
-            defaultFontSize={fontSize}
-            defaultFontFamily={fontFamily}
-            defaultColor={color}
-            keyPrefix={cellId}
-            wrap={!!cell.wrap}
-          />
+          <Group
+            key={`${cellId}_richtext_clip`}
+            clipX={x}
+            clipY={y}
+            clipWidth={Math.max(0, w)}
+            clipHeight={Math.max(0, h)}
+            listening={false}
+          >
+            <RichTextRenderer
+              key={`${cellId}_richtext`}
+              fragments={cell.richText!}
+              x={x + PADDING_X}
+              y={y + PADDING_Y}
+              width={Math.max(0, w - 2 * PADDING_X)}
+              height={Math.max(0, h - 2 * PADDING_Y)}
+              align={align}
+              vAlign={vAlign}
+              defaultFontSize={fontSize}
+              defaultFontFamily={fontFamily}
+              defaultColor={color}
+              keyPrefix={cellId}
+              wrap={!!cell.wrap}
+            />
+          </Group>
         )
       } else if (cell?.v) {
-        const isRight = align === 'r'
-
         // Style Logic
         const fontStyle = ((cell.bold ? 'bold ' : '') + (cell.italic ? 'italic' : '')).trim()
         const textDecoration = cell.strike ? 'line-through' : undefined
 
         // PADDING Logic
-        // Add small horizontal padding to prevent text touching borders
-        // Reduced to 0.5 based on feedback (2.0 was too large)
         const PADDING_X = 0.5 * invScale
-        const PADDING_Y = 1.6 * invScale // Increased vertical padding to ensuring text floats off the line
+        const PADDING_Y = 1.6 * invScale
 
-        // ... (Align Logic omitted - preserved)
-        // Large Header Text logic
-        // Fix: Lower threshold and force "INVOICE" to never wrap
-        const isLargeText = fontSize > 2.8 // Lowered slightly
-        const isInvoiceHeader = typeof cell.v === 'string' && cell.v.includes('INVOICE')
-        const shouldUnconstrain = !cell.wrap || isLargeText || !!cell.bold || isInvoiceHeader
-
-        let textW = !cell.wrap ? undefined : Math.max(0, w - 2 * PADDING_X)
-        let textX = x + PADDING_X
-
-        const textH = h - 2 * PADDING_Y // Constrain height with padding
-        const textY = y + PADDING_Y // Offset Y
-
-        const LARGE_WIDTH = 5000
-
-        if (isRight) {
-          textW = LARGE_WIDTH
-          textX = x + w - LARGE_WIDTH - PADDING_X
-        } else if (align === 'c') {
-          if (shouldUnconstrain) {
-            textW = LARGE_WIDTH
-            textX = x + w / 2 - LARGE_WIDTH / 2
-          } else {
-            textW = w - 2 * PADDING_X
-          }
-        } else {
-          // Left align (default)
-          // Fix: Use Massive Width strategy even for Left Align to ensure verticalAlign works consistently with Right/Center.
-          if (shouldUnconstrain) {
-            textW = LARGE_WIDTH
-          }
-        }
+        const textRenderWidth = getTextRenderWidth(r, c, cs, cell)
+        const textW = Math.max(0, textRenderWidth - 2 * PADDING_X)
+        const textX = x + PADDING_X
+        const textH = Math.max(0, h - 2 * PADDING_Y)
+        const textY = y + PADDING_Y
 
         texts.push(
-          <Text
-            key={`${cellId}_text`}
-            x={textX}
-            y={textY}
-            width={textW}
-            height={textH}
-            text={cell.v}
-            fontSize={fontSize}
-            fontFamily={fontFamily}
-            fontStyle={fontStyle}
-            textDecoration={textDecoration}
-            fill={color}
-            align={isRight ? 'right' : align === 'c' ? 'center' : 'left'}
-            // Fix: Map 'bottom' (and default 'middle') to 'middle' to ensure visual centering.
-            // Only 'top' is respected as distinct.
-            verticalAlign={vAlign === 't' ? 'top' : 'middle'}
-            wrap={shouldUnconstrain ? 'none' : 'word'}
+          <Group
+            key={`${cellId}_text_clip`}
+            clipX={0}
+            clipY={0}
+            clipWidth={Math.max(0, tableElement.w)}
+            clipHeight={Math.max(0, tableElement.h)}
             listening={false}
-          />
+          >
+            <Text
+              key={`${cellId}_text`}
+              x={textX}
+              y={textY}
+              width={textW}
+              height={textH}
+              text={cell.v}
+              fontSize={fontSize}
+              fontFamily={fontFamily}
+              fontStyle={fontStyle}
+              textDecoration={textDecoration}
+              fill={color}
+              align={align === 'r' ? 'right' : align === 'c' ? 'center' : 'left'}
+              verticalAlign={vAlign === 't' ? 'top' : 'middle'}
+              wrap={cell.wrap ? 'word' : 'none'}
+              listening={false}
+            />
+          </Group>
         )
       }
 

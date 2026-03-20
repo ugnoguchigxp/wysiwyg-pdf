@@ -7,6 +7,11 @@ describe('borderWidth', () => {
     expect(borderWidth(undefined)).toBe(0.2)
   })
 
+  test('applies scale to border width', () => {
+    expect(borderWidth('thin', 0.5)).toBe(0.1)
+    expect(borderWidth('thick', 2)).toBe(1.4)
+  })
+
   test('returns correct width for thin', () => {
     expect(borderWidth('thin')).toBe(0.2)
   })
@@ -131,6 +136,17 @@ describe('convertCellStyle', () => {
     expect(result.border).toBe('solid')
     expect(result.borderColor).toBeTruthy()
     expect(result.borderW).toBe(0.7)
+  })
+
+  test('scales legacy border width with options.scale', () => {
+    const style = {
+      border: {
+        top: { style: 'thick' as const },
+      },
+    }
+    const result = convertCellStyle(style, { ...DEFAULT_IMPORT_OPTIONS, scale: 0.5 })
+    expect(result.borderW).toBe(0.35)
+    expect(result.borders?.t?.width).toBe(0.35)
   })
 
   test('does not set legacy border when no borders present', () => {

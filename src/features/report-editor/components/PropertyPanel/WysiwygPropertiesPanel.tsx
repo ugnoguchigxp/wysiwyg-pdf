@@ -374,11 +374,16 @@ const SpeechBubbleDrawingPanel: React.FC<{
 const TablePropertiesWidget: React.FC<WidgetProps> = (props) => {
   const context = React.useContext(WysiwygPanelContext)
   if (!context) return null
+  const tableNode = props.node as TableNode
+  const selectedCellForThisTable =
+    context.selectedCell && context.selectedCell.elementId === tableNode.id
+      ? { row: context.selectedCell.row, col: context.selectedCell.col }
+      : null
   return (
     <TableProperties
-      element={props.node as TableNode}
+      element={tableNode}
       onUpdate={(newAttrs) => context.onUpdate(props.node.id, newAttrs)}
-      selectedCell={context.selectedCell}
+      selectedCell={selectedCellForThisTable}
       i18nOverrides={context.i18nOverrides}
     />
   )
@@ -392,12 +397,69 @@ const BindingSelectorWidget: React.FC<
 > = (props) => {
   const context = React.useContext(WysiwygPanelContext)
   if (!context) return null
+
+  const tableNode = props.node.t === 'table' ? (props.node as TableNode) : null
+  const selectedCellForThisTable =
+    tableNode && context.selectedCell && context.selectedCell.elementId === tableNode.id
+      ? context.selectedCell
+      : null
+
+  const selectedCellValue = selectedCellForThisTable
+    ? tableNode?.table.cells.find(
+        (cell) => cell.r === selectedCellForThisTable.row && cell.c === selectedCellForThisTable.col
+      )?.v || ''
+    : ''
+
+  const handleBindingUpdate = (binding: { field?: string } | undefined) => {
+    if (tableNode && selectedCellForThisTable) {
+      const newValue = binding?.field || ''
+      const nextCells = [...tableNode.table.cells]
+      const existingIndex = nextCells.findIndex(
+        (cell) => cell.r === selectedCellForThisTable.row && cell.c === selectedCellForThisTable.col
+      )
+
+      if (existingIndex >= 0) {
+        nextCells[existingIndex] = { ...nextCells[existingIndex], v: newValue }
+      } else {
+        nextCells.push({
+          r: selectedCellForThisTable.row,
+          c: selectedCellForThisTable.col,
+          v: newValue,
+        })
+      }
+
+      context.onUpdate(tableNode.id, {
+        table: {
+          ...tableNode.table,
+          cells: nextCells,
+        },
+      })
+      return
+    }
+
+    context.onUpdate(props.node.id, { bind: binding?.field })
+  }
+
+  const handleOpenModal = () => {
+    if (tableNode && selectedCellForThisTable) {
+      props.onOpenModal('field')
+      return
+    }
+    props.onOpenModal(props.mode)
+  }
+
   return (
     <div>
       <BindingSelector
-        binding={props.node.bind ? { field: props.node.bind } : undefined}
-        onUpdate={(binding) => context.onUpdate(props.node.id, { bind: binding?.field })}
-        onOpenModal={() => props.onOpenModal(props.mode)}
+        binding={
+          tableNode && selectedCellForThisTable
+            ? { field: selectedCellValue }
+            : props.node.bind
+              ? { field: props.node.bind }
+              : undefined
+        }
+        onUpdate={handleBindingUpdate}
+        onOpenModal={handleOpenModal}
         i18nOverrides={context.i18nOverrides}
       />
     </div>
@@ -714,7 +776,34 @@ export const WysiwygPropertiesPanel: React.FC<WysiwygPropertiesPanelProps> = ({
   )
 
   const handleBindingSelect = (binding: { field?: string }) => {
-    if (selectedElement) {
+    if (!selectedElement) return
+
+    if (selectedElement.t === 'text') {
+      handleChange(selectedElement.id, { text: binding.field, bind: binding.field })
+    } else if (selectedElement.t === 'table' && selectedCell) {
+      const tableNode = selectedElement as TableNode
+      const newCells = tableNode.table.cells.map((cell) => {
+        if (cell.r === selectedCell.row && cell.c === selectedCell.col) {
+          return { ...cell, v: binding.field || '' }
+        }
+        return cell
+      })
+
+      // If cell doesn't exist, add it
+      const cellExists = tableNode.table.cells.some(
+        (c) => c.r === selectedCell.row && c.c === selectedCell.col
+      )
+      if (!cellExists) {
+        newCells.push({ r: selectedCell.row, c: selectedCell.col, v: binding.field || '' })
+      }
+
+      handleChange(selectedElement.id, {
+        table: {
+          ...tableNode.table,
+          cells: newCells,
+        },
+      })
+    } else {
       handleChange(selectedElement.id, { bind: binding.field })
     }
     setActiveBindingMode(null)

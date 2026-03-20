@@ -103,6 +103,11 @@ describe('colorInfoToCSS', () => {
     expect(colorInfoToCSS(color)).toBe('#FF0000')
   })
 
+  test('maps indexed auto color (64) to black for visible borders', () => {
+    const color: ColorInfo = { indexed: 64 }
+    expect(colorInfoToCSS(color)).toBe('#000000')
+  })
+
   test('returns undefined for undefined color', () => {
     expect(colorInfoToCSS(undefined)).toBeUndefined()
   })

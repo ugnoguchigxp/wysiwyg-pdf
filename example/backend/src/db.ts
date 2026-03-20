@@ -1,23 +1,33 @@
 import { Database } from 'bun:sqlite'
-import { drizzle } from 'drizzle-orm/bun-sqlite'
+import { drizzle as drizzleSqlite } from 'drizzle-orm/bun-sqlite'
+import { drizzle as drizzlePg } from 'drizzle-orm/postgres-js'
+import postgres from 'postgres'
+import * as pgSchema from './schema'
+import * as sqliteSchema from './schema.sqlite'
 
-const sqlite = new Database('data.sqlite')
+const connectionString = process.env.DATABASE_URL
+const dbType = process.env.DB_TYPE || 'sqlite' // デフォルトを sqlite に設定
 
-sqlite.exec(`
-  CREATE TABLE IF NOT EXISTS documents (
-    id TEXT PRIMARY KEY,
-    user TEXT NOT NULL,
-    type TEXT NOT NULL,
-    title TEXT NOT NULL,
-    payload TEXT NOT NULL,
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL
-  );
-  CREATE UNIQUE INDEX IF NOT EXISTS documents_user_title_idx
-    ON documents(user, title);
-  CREATE INDEX IF NOT EXISTS documents_type_updated_at_idx
-    ON documents(type, updated_at);
-`)
+// Postgres Client (保持)
+export const pgClient = postgres(
+  connectionString || 'postgres://postgres:postgres@localhost:5432/postgres',
+  {
+    max: 10,
+    idle_timeout: 20,
+    connect_timeout: 10,
+  }
+)
 
-export const db = drizzle(sqlite)
-export { sqlite }
+// SQLite Client (Bun environment)
+export const sqliteClient = new Database('data.sqlite')
+
+// Instance selection
+export const db =
+  dbType === 'postgres'
+    ? drizzlePg(pgClient, { schema: pgSchema })
+    : (drizzleSqlite(sqliteClient, { schema: sqliteSchema }) as any)
+
+export const schema = dbType === 'postgres' ? pgSchema : sqliteSchema
+
+// Backward compatibility (client access)
+export const client = dbType === 'postgres' ? pgClient : sqliteClient

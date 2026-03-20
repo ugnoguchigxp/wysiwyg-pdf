@@ -1,5 +1,4 @@
 import type { ExecutionContext, ScheduledEvent } from '@cloudflare/workers-types'
-import { and, lt } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { Hono } from 'hono'
 import { routes } from './app'
@@ -32,7 +31,7 @@ app.all('*', async (c) => {
 export default {
   fetch: app.fetch,
 
-  async scheduled(_event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
+  async scheduled(_event: ScheduledEvent, env: Bindings, _ctx: ExecutionContext) {
     const db = drizzle(env.DB)
     const bucket = env.BUCKET
 

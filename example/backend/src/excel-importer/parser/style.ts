@@ -119,19 +119,27 @@ function parseFill(fill: ExcelJSFill): FillInfo | undefined {
       return undefined
     }
 
-    if (fill.pattern === 'solid' && fill.fgColor) {
+    if (fill.pattern === 'solid' && (fill.fgColor || fill.bgColor)) {
+      const resolvedColor = fill.fgColor ?? fill.bgColor
+      if (!resolvedColor) {
+        return undefined
+      }
       return {
         type: 'solid',
-        color: parseColor(fill.fgColor),
+        color: parseColor(resolvedColor),
       }
     }
 
-    if (fill.pattern && fill.fgColor) {
+    if (fill.pattern && (fill.fgColor || fill.bgColor)) {
+      const resolvedColor = fill.fgColor ?? fill.bgColor
+      if (!resolvedColor) {
+        return undefined
+      }
       return {
         type: 'pattern',
         patternType: fill.pattern,
-        color: parseColor(fill.fgColor),
-        patternColor: fill.bgColor ? parseColor(fill.bgColor) : undefined,
+        color: parseColor(resolvedColor),
+        patternColor: fill.fgColor && fill.bgColor ? parseColor(fill.bgColor) : undefined,
       }
     }
   }

@@ -1,7 +1,7 @@
 import { AlignCenter, AlignJustify, AlignLeft, AlignRight } from 'lucide-react'
 import type React from 'react'
 import type { AlignmentWidgetConfig } from '@/features/konva-editor/constants/propertyPanelConfig'
-import type { TextNode, SpeechBubbleNode } from '@/types/canvas'
+import type { SpeechBubbleNode, TextNode } from '@/types/canvas'
 import { cn } from '@/utils/utils'
 import { WidgetLabel } from '../shared'
 import type { WidgetProps } from './types'

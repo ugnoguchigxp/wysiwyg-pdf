@@ -166,4 +166,35 @@ describe('components/canvas/renderers/TableRenderer', () => {
     cellRect.onClick({ cancelBubble: false })
     expect(onCellClick).toHaveBeenCalledWith('tbl1', 0, 0)
   })
+
+  it('allows text to overflow into following empty cells like Excel', () => {
+    resetRecorded()
+    const table = {
+      ...baseTable,
+      w: 150,
+      table: {
+        ...baseTable.table,
+        cols: [50, 50, 50],
+        cells: [
+          { r: 0, c: 0, v: 'LONG_TEXT', wrap: false, bold: true },
+          { r: 0, c: 2, v: 'BLOCKER', wrap: false },
+        ],
+      },
+    }
+
+    render(
+      <TableRenderer
+        element={table as any}
+        commonProps={commonProps}
+        isSelected={false}
+        invScale={1}
+        onChange={vi.fn()}
+      />
+    )
+
+    const textNode = recorded.Text.find((t) => t.text === 'LONG_TEXT')
+    expect(textNode).toBeTruthy()
+    expect(textNode.width).toBeGreaterThan(50)
+    expect(textNode.width).toBeLessThanOrEqual(100)
+  })
 })

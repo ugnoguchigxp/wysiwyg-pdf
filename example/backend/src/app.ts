@@ -1,18 +1,16 @@
 import { and, desc, eq, like } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-import { documents } from './schema'
+import { schema } from './db'
+import { importExcel as importExcelDoc } from './excel-importer'
 import type { StorageService } from './storage/types'
 import type { Bindings } from './types'
-import { translateBatch } from './translation'
 
 type Variables = {
-  db: any // Generic Drizzle DB interface
+  db: any
   storage: StorageService
 }
 
-// This application instance handles the business logic routes.
-// It expects 'db' and 'storage' to be available in the context (Variables).
 export const routes = new Hono<{ Bindings: Bindings; Variables: Variables }>()
 
 routes.use(
@@ -34,91 +32,56 @@ routes.use(
 
 routes.get('/health', (c) => c.json({ ok: true }))
 
-routes.post('/translate', async (c) => {
-  const body = await c.req.json().catch(() => null)
-  if (!body || !body.texts || !body.targetLang) {
-    return c.json({ error: 'invalid_request' }, 400)
-  }
+routes.get('/preview-data', async (c) => {
+  const db = c.get('db')
+  const patientNo = c.req.query('patientNo') || 'P001'
+  const s = schema as any
 
-  const ai = c.env.AI
-  if (!ai) {
-    return c.json({ error: 'ai_not_available' }, 500)
-  }
+  const [doctorOrders, dialysis, conditions, devices, oxygen, medicines, comments] =
+    await Promise.all([
+      db
+        .select()
+        .from(s.doctorInstructions)
+        .where(eq(s.doctorInstructions.patientNo, patientNo))
+        .orderBy(s.doctorInstructions.drInstructionSeq)
+        .limit(10),
+      db
+        .select()
+        .from(s.dialysisRecords)
+        .where(eq(s.dialysisRecords.patientNo, patientNo))
+        .orderBy(s.dialysisRecords.dialysisDate)
+        .limit(10),
+      db
+        .select()
+        .from(s.dialysisConditions)
+        .where(eq(s.dialysisConditions.patientNo, patientNo))
+        .orderBy(s.dialysisConditions.dialysisDate)
+        .limit(10),
+      db.select().from(s.deviceInfo).orderBy(s.deviceInfo.index).limit(30),
+      db.select().from(s.oxygenInfo).limit(10),
+      db.select().from(s.medicineInfo).limit(20),
+      db.select().from(s.treatmentComments).limit(10),
+    ])
 
-  try {
-    const result = await translateBatch(ai, body)
-    return c.json(result)
-  } catch (e) {
-    console.error('Translation route failed', e)
-    return c.json({ error: 'translation_failed' }, 500)
-  }
-})
-
-routes.post('/upload', async (c) => {
-  const body = await c.req.parseBody()
-  const file = body.file as File
-
-  if (!file) {
-    return c.json({ error: 'no_file' }, 400)
-  }
-
-  const storage = c.get('storage')
-  const id = crypto.randomUUID()
-  const ext = file.name.split('.').pop() || 'bin'
-  const filename = `${id}.${ext}`
-
-  try {
-    const url = await storage.upload(file, filename)
-    return c.json({
-      id,
-      url,
-      name: file.name,
-    })
-  } catch (e) {
-    console.error('Upload failed', e)
-    return c.json({ error: 'upload_failed' }, 500)
-  }
-})
-
-import { importExcel } from './excel-importer'
-
-routes.post('/excel/import', async (c) => {
-  const body = await c.req.parseBody()
-  const file = body.file as File
-
-  if (!file) {
-    return c.json({ error: 'no_file' }, 400)
-  }
-
-  try {
-    const buffer = await file.arrayBuffer()
-    const doc = await importExcel(buffer)
-
-    const id = crypto.randomUUID()
-    const now = Date.now()
-    const user = 'anonymous'
-    // Remove extension and ensure title is unique enough or let DB handle it?
-    // Schema has unique index on (user, title).
-    // We should probably append timestamp if needed, but let's start simple.
-    // Actually, let's append a short random string to avoid collision if user uploads same file twice.
-    const title = `${file.name.replace(/\.[^/.]+$/, '')} (${new Date().toLocaleTimeString()})`
-
-    const db = c.get('db')
-    await db.insert(documents).values({
-      id,
-      user,
-      type: 'report',
-      title,
-      payload: JSON.stringify(doc),
-      createdAt: now,
-      updatedAt: now,
-    })
-
-    return c.json({ id, title })
-  } catch (e) {
-    console.error('Excel import failed', e)
-    return c.json({ error: 'import_failed', details: String(e) }, 500)
-  }
+  return c.json({
+    医師指示情報: doctorOrders,
+    透析記録情報: dialysis,
+    透析条件情報: conditions,
+    装置情報: devices,
+    酸素情報: oxygen,
+    '薬剤・材料・処置情報': medicines,
+    処置コメント情報: comments,
+    patient:
+      doctorOrders.length > 0
+        ? [
+            {
+              'patient.name': doctorOrders[0].patientName,
+              'patient.id': doctorOrders[0].patientNo,
+              'patient.dob': doctorOrders[0].birthday,
+            },
+          ]
+        : [],
+  })
 })
 
 const parsePayload = (raw: string) => {
@@ -129,6 +92,26 @@ const parsePayload = (raw: string) => {
   }
 }
 
+const getFileBaseName = (name: string) => name.replace(/\.[^/.]+$/, '').trim()
+
+const resolveUniqueTitle = async (db: any, user: string, baseTitle: string): Promise<string> => {
+  const safeBase = baseTitle || 'Imported Excel'
+  let candidate = safeBase
+  let index = 2
+
+  while (true) {
+    const existing = await db
+      .select({ id: schema.documents.id })
+      .from(schema.documents)
+      .where(and(eq(schema.documents.user, user), eq(schema.documents.title, candidate)))
+      .limit(1)
+
+    if (!existing[0]) return candidate
+    candidate = `${safeBase} (${index})`
+    index += 1
+  }
+}
+
 routes.get('/documents', async (c) => {
   const query = c.req.query()
   const user = (query.user ?? 'anonymous').trim()
@@ -136,61 +119,78 @@ routes.get('/documents', async (c) => {
   const q = query.q?.trim()
   const limit = Math.min(Number.parseInt(query.limit ?? '20', 10) || 20, 100)
   const offset = Math.max(Number.parseInt(query.offset ?? '0', 10) || 0, 0)
-
   const db = c.get('db')
-
-  const conditions = [eq(documents.user, user)]
-  if (type) conditions.push(eq(documents.type, type))
-  if (q) conditions.push(like(documents.title, `%${q}%`))
-
+  const conditions = [eq(schema.documents.user, user)]
+  if (type) conditions.push(eq(schema.documents.type, type))
+  if (q) conditions.push(like(schema.documents.title, `%${q}%`))
   const rows = await db
     .select({
-      id: documents.id,
-      user: documents.user,
-      type: documents.type,
-      title: documents.title,
-      createdAt: documents.createdAt,
-      updatedAt: documents.updatedAt,
+      id: schema.documents.id,
+      user: schema.documents.user,
+      type: schema.documents.type,
+      title: schema.documents.title,
+      createdAt: schema.documents.createdAt,
+      updatedAt: schema.documents.updatedAt,
     })
-    .from(documents)
+    .from(schema.documents)
     .where(and(...conditions))
-    .orderBy(desc(documents.updatedAt))
+    .orderBy(desc(schema.documents.updatedAt))
     .limit(limit)
     .offset(offset)
-  // .all() is for synchronous sqlite, but D1 is async.
-  // Drizzle's unified interface usually supports await .all() or just await query builder.
-  // For universal support, we should assume async.
-  // .all() might be specific to bun-sqlite synchronous driver?
-  // Let's iterate: Drizzle usually returns a Promise if we await it, but .all() might be the sync method.
-  // We should check what the generic interface supports.
-  // Usually with generic usage, we just await the query builder.
-
   return c.json({ items: rows })
 })
 
 routes.get('/documents/:id', async (c) => {
   const id = c.req.param('id')
-  const user = (c.req.query('user') ?? '').trim()
   const db = c.get('db')
-
   const results = await db
     .select()
-    .from(documents)
-    .where(user ? and(eq(documents.id, id), eq(documents.user, user)) : eq(documents.id, id))
+    .from(schema.documents)
+    .where(eq(schema.documents.id, id))
     .limit(1)
-  // .get() is convenient but might differ between adapters.
-  // Using limit(1) and taking [0] is safer for universal async.
-
   const row = results[0]
+  if (!row) return c.json({ error: 'not_found' }, 404)
+  return c.json({ ...row, payload: parsePayload(row.payload) })
+})
 
-  if (!row) {
-    return c.json({ error: 'not_found' }, 404)
+routes.post('/excel/import', async (c) => {
+  const body = await c.req.parseBody().catch(() => null)
+  const rawFile = body?.file
+  const file = Array.isArray(rawFile) ? rawFile[0] : rawFile
+
+  if (!(file instanceof File)) {
+    return c.json({ error: 'file is required' }, 400)
   }
 
-  return c.json({
-    ...row,
-    payload: parsePayload(row.payload),
-  })
+  if (!file.name.match(/\.(xlsx|xls|xlsm)$/i)) {
+    return c.json({ error: 'unsupported file type' }, 400)
+  }
+
+  try {
+    const db = c.get('db')
+    const user = 'anonymous'
+    const fileBuffer = await file.arrayBuffer()
+    const baseTitle = getFileBaseName(file.name) || 'Imported Excel'
+    const converted = await importExcelDoc(fileBuffer, { documentTitle: baseTitle })
+    const title = await resolveUniqueTitle(db, user, converted.title || baseTitle)
+    const now = Date.now()
+    const id = crypto.randomUUID()
+
+    await db.insert(schema.documents).values({
+      id,
+      user,
+      type: 'report',
+      title,
+      payload: JSON.stringify(converted),
+      createdAt: now,
+      updatedAt: now,
+    })
+
+    return c.json({ id, title }, 201)
+  } catch (error) {
+    console.error('Excel import failed', error)
+    return c.json({ error: 'excel import failed' }, 500)
+  }
 })
 
 routes.post('/documents', async (c) => {
@@ -200,40 +200,27 @@ routes.post('/documents', async (c) => {
   const title = typeof body?.title === 'string' ? body.title.trim() : ''
   const payload = body?.payload
   const force = Boolean(body?.force)
-
-  if (!type || !title || payload === undefined) {
-    return c.json({ error: 'user/type/title/payload are required' }, 400)
-  }
-
+  if (!type || !title || payload === undefined)
+    return c.json({ error: 'required fields missing' }, 400)
   const db = c.get('db')
-
   const existingResults = await db
     .select()
-    .from(documents)
-    .where(and(eq(documents.user, user), eq(documents.title, title)))
+    .from(schema.documents)
+    .where(and(eq(schema.documents.user, user), eq(schema.documents.title, title)))
     .limit(1)
   const existing = existingResults[0]
-
   const now = Date.now()
-
-  if (existing && !force) {
-    return c.json({ status: 'exists', document: existing }, 409)
-  }
-
+  if (existing && !force) return c.json({ status: 'exists', document: existing }, 409)
   const serialized = JSON.stringify(payload)
-
   if (existing && force) {
     await db
-      .update(documents)
+      .update(schema.documents)
       .set({ payload: serialized, updatedAt: now, type: type || existing.type })
-      .where(eq(documents.id, existing.id))
-
-    console.log(`[POST /documents] Updated doc: ${existing.id}`)
+      .where(eq(schema.documents.id, existing.id))
     return c.json({ status: 'updated', id: existing.id })
   }
-
   const id = crypto.randomUUID()
-  await db.insert(documents).values({
+  await db.insert(schema.documents).values({
     id,
     user,
     type: type || 'unknown',
@@ -242,8 +229,6 @@ routes.post('/documents', async (c) => {
     createdAt: now,
     updatedAt: now,
   })
-
-  console.log(`[POST /documents] Created doc: ${id}, title=${title}`)
   return c.json({ id, user, type: type || 'unknown', title, createdAt: now, updatedAt: now }, 201)
 })
 
@@ -252,36 +237,17 @@ routes.put('/documents/:id', async (c) => {
   const body = await c.req.json().catch(() => null)
   const title = typeof body?.title === 'string' ? body.title.trim() : ''
   const payload = body?.payload
-  const type = typeof body?.type === 'string' ? body.type.trim() : ''
-
-  if (!title || payload === undefined) {
-    return c.json({ error: 'title/payload are required' }, 400)
-  }
-
+  if (!title || payload === undefined) return c.json({ error: 'required fields missing' }, 400)
   const db = c.get('db')
-
-  const existingResults = await db.select().from(documents).where(eq(documents.id, id)).limit(1)
-  const existing = existingResults[0]
-
-  if (!existing) {
-    return c.json({ error: 'not_found' }, 404)
-  }
-
-  try {
-    const timestamp = Date.now()
-    await db
-      .update(documents)
-      .set({
-        payload: JSON.stringify(payload),
-        updatedAt: timestamp,
-        title,
-        type: type || existing.type,
-      })
-      .where(eq(documents.id, id))
-
-    return c.json({ status: 'updated', id })
-  } catch (err) {
-    console.error(err)
-    return c.json({ error: 'internal_error' }, 500)
-  }
+  const existingResults = await db
+    .select()
+    .from(schema.documents)
+    .where(eq(schema.documents.id, id))
+    .limit(1)
+  if (!existingResults[0]) return c.json({ error: 'not_found' }, 404)
+  await db
+    .update(schema.documents)
+    .set({ payload: JSON.stringify(payload), updatedAt: Date.now(), title })
+    .where(eq(schema.documents.id, id))
+  return c.json({ status: 'updated', id })
 })

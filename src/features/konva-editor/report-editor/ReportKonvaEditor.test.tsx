@@ -79,6 +79,7 @@ const stageState = vi.hoisted(() => ({
   toDataURL: vi.fn(() => 'data:image/png;base64,xxx'),
   gridVisible: true,
   transformers: [] as any[],
+  eventTarget: null as any,
 }))
 
 vi.mock('react-konva', async () => {
@@ -120,9 +121,9 @@ vi.mock('react-konva', async () => {
     return (
       <div
         data-testid="stage"
-        onMouseDown={() => props.onMouseDown?.({ target: stageObj })}
-        onMouseMove={() => props.onMouseMove?.({ target: stageObj })}
-        onMouseUp={() => props.onMouseUp?.({ target: stageObj })}
+        onMouseDown={() => props.onMouseDown?.({ target: stageState.eventTarget ?? stageObj })}
+        onMouseMove={() => props.onMouseMove?.({ target: stageState.eventTarget ?? stageObj })}
+        onMouseUp={() => props.onMouseUp?.({ target: stageState.eventTarget ?? stageObj })}
       >
         {props.children}
       </div>
@@ -146,6 +147,7 @@ beforeEach(() => {
   if (!globalThis.crypto || !('randomUUID' in globalThis.crypto)) {
     ; (globalThis as any).crypto = { randomUUID: () => 'uuid' }
   }
+  stageState.eventTarget = null
 })
 
 describe('ReportKonvaEditor', () => {
@@ -228,6 +230,59 @@ describe('ReportKonvaEditor', () => {
       }),
       undefined
     )
+  })
+
+  it('starts signature drawing even when pointer starts on a non-background target', () => {
+    const onTemplateChange = vi.fn()
+    const onElementSelect = vi.fn()
+
+    const doc = {
+      surfaces: [{ id: 'p1', type: 'page', w: 100, h: 100, bg: '#fff' }],
+      nodes: [],
+    } as any
+
+    stageState.eventTarget = {
+      getStage: () => ({
+        getPointerPosition: () => stageState.pointer,
+        getAbsoluteTransform: () => ({
+          copy: () => ({
+            invert: () => { },
+            point: (p: any) => p,
+          }),
+        }),
+      }),
+      name: () => 'table-cell-hit',
+    }
+
+    const { rerender } = render(
+      <ReportKonvaEditor
+        templateDoc={doc}
+        zoom={1}
+        onElementSelect={onElementSelect}
+        onTemplateChange={onTemplateChange}
+        currentPageId="p1"
+        activeTool="signature"
+      />
+    )
+
+    fireEvent.mouseDown(screen.getByTestId('stage'))
+    fireEvent.mouseMove(screen.getByTestId('stage'))
+    fireEvent.mouseUp(screen.getByTestId('stage'))
+
+    rerender(
+      <ReportKonvaEditor
+        templateDoc={doc}
+        zoom={1}
+        onElementSelect={onElementSelect}
+        onTemplateChange={onTemplateChange}
+        currentPageId="p1"
+        activeTool="select"
+      />
+    )
+
+    expect(onTemplateChange).toHaveBeenCalledWith(expect.objectContaining({ nodes: expect.any(Array) }))
+    const committedDoc = onTemplateChange.mock.calls.at(-1)?.[0] as Doc
+    expect(committedDoc.nodes.some((n: any) => n.t === 'signature')).toBe(true)
   })
 
   it('supports drop binding and downloadImage via ref', () => {

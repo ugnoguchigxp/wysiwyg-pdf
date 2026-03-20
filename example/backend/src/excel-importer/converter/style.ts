@@ -29,10 +29,10 @@ export function convertCellStyle(
   // 罫線（詳細）
   if (style.border) {
     result.borders = {
-      t: convertBorderSide(style.border.top),
-      r: convertBorderSide(style.border.right),
-      b: convertBorderSide(style.border.bottom),
-      l: convertBorderSide(style.border.left),
+      t: convertBorderSide(style.border.top, options),
+      r: convertBorderSide(style.border.right, options),
+      b: convertBorderSide(style.border.bottom, options),
+      l: convertBorderSide(style.border.left, options),
     }
 
     // 後方互換性のため代表線も残すが、優先度はborders
@@ -43,7 +43,7 @@ export function convertCellStyle(
         const color = colorInfoToCSS(border.color)
         if (color) result.borderColor = color
       }
-      result.borderW = borderWidth(border.style)
+      result.borderW = borderWidth(border.style, options.scale)
     }
   }
 
@@ -73,7 +73,7 @@ export function convertCellStyle(
   // MANUAL OVERRIDES for Known Issues (User Feedback)
   // Force "Thank you for your business!" to be centered
 
-  if (style.font && style.alignment && typeof (style as any)['value'] === 'undefined') {
+  if (style.font && style.alignment && typeof (style as any).value === 'undefined') {
     // We don't have value here easily in convertCellStyle unless passed?
     // convertCellStyle takes `style`. The value is in `cell.v`.
     // We need to move this logic or pass value.
@@ -92,12 +92,13 @@ export function convertCellStyle(
 }
 
 function convertBorderSide(
-  side: { style: BorderStyleType; color?: import('../types/excel').ColorInfo } | undefined
+  side: { style: BorderStyleType; color?: import('../types/excel').ColorInfo } | undefined,
+  options: ImportOptions
 ): import('../types/output').OutputBorderStyle | undefined {
   if (!side || side.style === 'none') return undefined
   return {
     style: 'solid', // Canvas only supports solid for now mostly, or we map dashes later
-    width: borderWidth(side.style),
+    width: borderWidth(side.style, options.scale),
     color: side.color ? colorInfoToCSS(side.color) : '#000000',
   }
 }
@@ -127,8 +128,8 @@ export function pickBorder(border: NonNullable<CellStyle['border']> | undefined)
 /**
  * 罫線の太さをざっくりマッピング（mm）
  */
-export function borderWidth(style: BorderStyleType | undefined): number {
-  if (!style) return 0.2
+export function borderWidth(style: BorderStyleType | undefined, scale: number = 1.0): number {
+  if (!style) return 0.2 * scale
   const map: Record<BorderStyleType, number> = {
     thin: 0.2,
     medium: 0.5, // Reduced from 0.7
@@ -145,7 +146,7 @@ export function borderWidth(style: BorderStyleType | undefined): number {
     slantDashDot: 0.35,
     none: 0,
   }
-  return map[style as BorderStyleType] ?? 0.2
+  return (map[style as BorderStyleType] ?? 0.2) * scale
 }
 
 function convertFont(
@@ -159,9 +160,10 @@ function convertFont(
   const mappedFont = font.name
     ? mapFont(font.name, options.fontMapping, options.defaultFont)
     : undefined
+  const scale = options.scale ?? 1.0
   return {
     font: mappedFont,
-    fontSize: font.size ? ptToMm(font.size) : undefined,
+    fontSize: font.size ? ptToMm(font.size) * scale : undefined,
   }
 }
 

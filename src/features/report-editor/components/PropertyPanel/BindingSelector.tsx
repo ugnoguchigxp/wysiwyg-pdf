@@ -1,6 +1,5 @@
-import { Database } from 'lucide-react'
+import { Database, X } from 'lucide-react'
 import type React from 'react'
-import { Button } from '@/components/ui/Button'
 import { useI18n } from '@/i18n/I18nContext'
 
 export interface BindingInfo {
@@ -34,64 +33,51 @@ export const BindingSelector: React.FC<BindingSelectorProps> = ({
   }
 
   const displayLabel = label ?? resolveText('data_binding', 'Data Binding')
-
-  if (!binding) {
-    return (
-      <div className="mb-4">
-        <Button
-          variant="outline"
-          size="sm"
-          className="font-normal"
-          onClick={onOpenModal}
-          type="button"
-        >
-          <span>{displayLabel}</span>
-        </Button>
-      </div>
-    )
-  }
-
-  // Display logic
-  const displayText = binding.field || binding.fieldId || binding.path || ''
+  const value = binding?.field || ''
 
   return (
-    <div className="mb-4 p-2.5 bg-blue-50/50 border border-blue-100 rounded">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <Database size={14} className="text-blue-600" />
-          <span className="text-[11px] font-semibold text-blue-900">{displayLabel}</span>
-        </div>
-      </div>
-
-      <div className="bg-white border border-blue-100 rounded px-2 py-1.5 mb-2">
-        <div className="text-sm font-medium text-gray-900 break-all leading-tight">
-          {displayText}
-        </div>
-        {binding.sourceId && (
-          <div className="text-[10px] text-gray-500 mt-0.5">
-            {resolveText('source', 'Source')}: {binding.sourceId}
-          </div>
-        )}
-      </div>
-
-      <div className="flex justify-end gap-2">
-        <button
-          className="px-2 py-1 h-6 text-[10px] text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-          onClick={() => onUpdate(undefined)}
-          type="button"
-        >
-          {resolveText('remove', 'Remove')}
-        </button>
+    <div className="mb-4 space-y-2">
+      <div className="flex items-center justify-between">
+        <label className="text-[13px] text-muted-foreground flex items-center gap-1.5">
+          <Database size={14} className="text-blue-500" />
+          {displayLabel}
+        </label>
         {onOpenModal && (
           <button
-            className="px-2 py-1 h-6 text-[10px] bg-white border border-blue-200 text-blue-700 hover:bg-blue-50 rounded transition-colors shadow-sm"
             onClick={onOpenModal}
+            className="text-[11px] text-blue-500 hover:underline flex items-center gap-0.5"
             type="button"
           >
-            {resolveText('change', 'Change')}
+            {resolveText('change', 'Select')}
           </button>
         )}
       </div>
+
+      <div className="relative group">
+        <textarea
+          value={value}
+          onChange={(e) => onUpdate({ ...binding, field: e.target.value, path: e.target.value })}
+          placeholder="{Table}.[Field]"
+          className="w-full px-2 py-1.5 text-sm border border-border rounded bg-background min-h-[40px] resize-none focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono leading-tight"
+          rows={Math.max(1, value.split('\n').length)}
+        />
+        {value && (
+          <button
+            onClick={() => onUpdate(undefined)}
+            className="absolute top-1 right-1 p-1 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-red-500"
+            type="button"
+            title={resolveText('remove', 'Remove')}
+          >
+            <X size={14} />
+          </button>
+        )}
+      </div>
+
+      {binding?.sourceId && (
+        <div className="text-[10px] text-muted-foreground bg-blue-50/50 px-1.5 py-0.5 rounded border border-blue-100/50 inline-block">
+          {resolveText('source', 'Source')}: {binding.sourceId}
+        </div>
+      )}
     </div>
   )
 }

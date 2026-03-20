@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react'
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import {
     BedLayoutHeader,
     ShortcutHelpModal,
@@ -6,17 +6,19 @@ import {
     BedToolbar,
     BedPropertyPanel,
     BedLayoutViewer,
+    BedPrintLayout,
     type Doc,
     type BedLayoutEditorHandle,
     type BedStatusData,
     useEditorHistoryDoc as useBedEditorHistoryDoc,
     DocumentLoadMenu,
     BedGroupModal,
+    Modal,
 } from 'wysiwyg-pdf'
 import { EDITOR_TRANSLATIONS } from '../constants/translations'
 import { useReactToPrint, type UseReactToPrintOptions } from 'react-to-print'
 import { useTranslation } from 'react-i18next'
-import { Moon, Sun, LayoutDashboard, Edit } from 'lucide-react'
+import { Moon, Sun, LayoutDashboard, Edit, Printer } from 'lucide-react'
 import { saveDocument, listDocuments, getDocument, updateDocument } from '../api/documents'
 
 // Initial State (Unified Doc)
@@ -46,6 +48,10 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
     const [activeTool, setActiveTool] = useState<string>('select')
     const [isDashboardMode, setIsDashboardMode] = useState(false)
     const [isBedGroupModalOpen, setIsBedGroupModalOpen] = useState(false)
+    const [isPrintPreviewOpen, setIsPrintPreviewOpen] = useState(false)
+    const [fitScale, setFitScale] = useState(1)
+    const [manualScale, setManualScale] = useState<number | null>(null)
+    const [previewModalSize, setPreviewModalSize] = useState({ width: 760, height: 1040 })
     const [dashboardData, setDashboardData] = useState<Record<string, BedStatusData>>({})
 
     const [showGrid, setShowGrid] = useState(false)
@@ -341,11 +347,94 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
         setSelectedElementId(null)
     }, [])
 
-    // Print Logic (stubbed for now or reuse existing hidden print layout if compatible)
     const reactToPrintFn = useReactToPrint({
-        contentRef: printRef, // We might need a BedPrintLayout later
+        contentRef: printRef,
         documentTitle: templateName,
     } as UseReactToPrintOptions)
+
+    const handlePrint = useCallback(() => {
+        reactToPrintFn()
+    }, [reactToPrintFn])
+
+    const handleOpenPrintPreview = useCallback(() => {
+        setManualScale(null)
+        setIsPrintPreviewOpen(true)
+    }, [])
+
+    const previewSurfaceSize = useMemo(() => {
+        const surface =
+            bedDoc.surfaces.find((s: Doc['surfaces'][number]) => s.type === 'canvas') ?? bedDoc.surfaces[0]
+        const width = Number(surface?.w ?? 210)
+        const height = Number(surface?.h ?? 297)
+        return {
+            width: Number.isFinite(width) && width > 0 ? width : 210,
+            height: Number.isFinite(height) && height > 0 ? height : 297,
+        }
+    }, [bedDoc.surfaces])
+    const MM_TO_PX = 96 / 25.4
+
+    const updatePreviewLayout = useCallback(() => {
+        if (typeof window === 'undefined') return
+
+        const pageWidthPx = previewSurfaceSize.width * MM_TO_PX
+        const pageHeightPx = previewSurfaceSize.height * MM_TO_PX
+        const viewportMargin = 24
+        const headerHeight = 52
+        const canvasPadding = 8
+        const minModalWidth = 420
+
+        const maxModalWidth = Math.max(320, window.innerWidth - viewportMargin * 2)
+        const maxModalHeight = Math.max(320, window.innerHeight - viewportMargin * 2)
+        const availableCanvasWidth = Math.max(120, maxModalWidth - canvasPadding * 2)
+        const availableCanvasHeight = Math.max(120, maxModalHeight - headerHeight - canvasPadding * 2)
+
+        const nextFitScale = Math.min(
+            availableCanvasWidth / pageWidthPx,
+            availableCanvasHeight / pageHeightPx,
+            1
+        )
+        const safeFitScale = Math.max(0.15, nextFitScale)
+        const previewWidthPx = Math.round(pageWidthPx * safeFitScale)
+        const previewHeightPx = Math.round(pageHeightPx * safeFitScale)
+
+        const modalWidth = Math.min(
+            maxModalWidth,
+            Math.max(minModalWidth, previewWidthPx + canvasPadding * 2)
+        )
+        const modalHeight = Math.min(
+            maxModalHeight,
+            previewHeightPx + headerHeight + canvasPadding * 2
+        )
+
+        setFitScale((prev) => (Math.abs(prev - safeFitScale) < 0.001 ? prev : safeFitScale))
+        setPreviewModalSize({
+            width: Math.round(modalWidth),
+            height: Math.round(modalHeight),
+        })
+    }, [previewSurfaceSize.height, previewSurfaceSize.width])
+
+    useEffect(() => {
+        if (!isPrintPreviewOpen) return
+        updatePreviewLayout()
+        window.addEventListener('resize', updatePreviewLayout)
+        return () => {
+            window.removeEventListener('resize', updatePreviewLayout)
+        }
+    }, [isPrintPreviewOpen, updatePreviewLayout])
+
+    const handlePreviewClick = useCallback(() => {
+        setManualScale((prev) => {
+            if (prev === null) {
+                const next = Math.min(2.5, Math.max(1, fitScale * 1.8))
+                return next
+            }
+            return null
+        })
+    }, [fitScale])
+
+    const previewScale = manualScale ?? fitScale
+    const previewSurfaceWidthPx = previewSurfaceSize.width * MM_TO_PX
+    const previewSurfaceHeightPx = previewSurfaceSize.height * MM_TO_PX
 
     return (
         <div className="flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground transition-colors duration-200">
@@ -361,7 +450,7 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
                 onUndo={undoBed}
                 onRedo={redoBed}
                 onDownloadImage={handleDownloadImage}
-                onDownloadPdf={() => reactToPrintFn()}
+                onDownloadPdf={handleOpenPrintPreview}
                 onSave={handleSave}
                 onShowShortcuts={() => setShowShortcuts(true)}
                 onBedGroupsClick={() => setIsBedGroupModalOpen(true)}
@@ -393,15 +482,48 @@ export const BedLayoutEditorPage: React.FC<BedLayoutEditorPageProps> = ({ onBack
 
             <ShortcutHelpModal open={showShortcuts} onOpenChange={setShowShortcuts} />
 
-            {/* Print Ref (Placeholder) */}
-            <div style={{ display: 'none' }}>
-                <div ref={printRef}>
-                    <BedLayoutViewer
-                        document={bedDoc}
-                        dashboardData={dashboardData}
-                        zoom={1.0} // Print usually 1.0 or fit
-                    />
+            <Modal
+                open={isPrintPreviewOpen}
+                onOpenChange={setIsPrintPreviewOpen}
+                draggable={false}
+                noPadding
+                className="sm:!max-w-none sm:!max-h-none"
+                contentStyle={{ width: `${previewModalSize.width}px`, height: `${previewModalSize.height}px` }}
+                contentClassName="p-0 !overflow-hidden !overflow-y-hidden !overflow-x-hidden !flex !flex-col"
+                headerActions={
+                    <button
+                        type="button"
+                        onClick={handlePrint}
+                        className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                    >
+                        <Printer className="w-4 h-4" />
+                        印刷 / PDF保存
+                    </button>
+                }
+            >
+                <style>{`.print-preview-fit .print-page{margin-bottom:0 !important;box-shadow:none !important;}`}</style>
+                <div
+                    className={`flex-1 min-h-0 min-w-0 bg-editor-canvas p-2 ${manualScale === null ? 'overflow-hidden cursor-zoom-in' : 'overflow-auto cursor-zoom-out'}`}
+                    onClick={handlePreviewClick}
+                >
+                    <div className={`flex h-full w-full ${manualScale === null ? 'items-center justify-center' : 'items-start justify-center'}`}>
+                        <div
+                            style={
+                                {
+                                    width: previewSurfaceWidthPx * previewScale,
+                                    height: previewSurfaceHeightPx * previewScale,
+                                }
+                            }
+                        >
+                            <div className="print-preview-fit" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top left' }}>
+                                <BedPrintLayout document={bedDoc} />
+                            </div>
+                        </div>
+                    </div>
                 </div>
+            </Modal>
+            <div style={{ position: 'fixed', left: '-100000px', top: 0, pointerEvents: 'none' }} aria-hidden="true">
+                <BedPrintLayout ref={printRef} document={bedDoc} />
             </div>
 
             {/* Main Content Area */}

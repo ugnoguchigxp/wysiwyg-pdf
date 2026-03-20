@@ -133,12 +133,12 @@ export const WIDGET_PRESETS: Record<string, WidgetConfig> = {
 
   // === Data Binding ===
   'binding:field': {
-    type: 'dataBinding',
-    props: { mode: 'field' },
+    type: 'custom',
+    props: { renderKey: 'dataBindingField' },
   },
   'binding:repeater': {
-    type: 'dataBinding',
-    props: { mode: 'repeater' },
+    type: 'custom',
+    props: { renderKey: 'dataBindingRepeater' },
   },
 
   // === Image ===

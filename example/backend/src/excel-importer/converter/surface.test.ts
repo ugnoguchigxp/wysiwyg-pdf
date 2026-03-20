@@ -1,4 +1,4 @@
-import type { ExcelCell, ExcelColumn, ExcelRow, ExcelSheet } from '../types/excel'
+import type { ExcelColumn, ExcelRow, ExcelSheet } from '../types/excel'
 import { DEFAULT_IMPORT_OPTIONS } from '../types/options'
 import { mmToPt } from '../utils'
 import { convertSheet } from './surface'
@@ -106,8 +106,43 @@ describe('convertSheet', () => {
     // Or check surfaces size? No surface is paper size.
 
     // Let's rely on node structure check.
-    const node = result.nodes[0] as any
+    const _node = result.nodes[0] as any
     // Should be larger than default?
+  })
+
+  test('rescales oversized table and keeps table width aligned with cols sum', () => {
+    const rows: ExcelRow[] = [
+      {
+        index: 0,
+        height: 15,
+        hidden: false,
+        cells: [
+          {
+            row: 0,
+            col: 0,
+            value: 'A1',
+            style: {
+              font: { name: 'Arial', size: 12 },
+              border: { top: { style: 'thin' } },
+            },
+          },
+        ],
+      },
+    ]
+    const cols: ExcelColumn[] = [{ index: 0, width: 200, hidden: false }]
+    const sheet = createMockSheet(rows, cols)
+
+    const options = { ...DEFAULT_IMPORT_OPTIONS, fitToPage: false, scale: 2.0 }
+    const result = convertSheet(sheet, 1, options, { name: 'Arial', size: 11 })
+    const node = result.nodes[0] as any
+
+    const colsSum = node.table.cols.reduce((sum: number, width: number) => sum + width, 0)
+    expect(node.w).toBeLessThanOrEqual(210.0001)
+    expect(colsSum).toBeCloseTo(node.w, 6)
+
+    const cell = node.table.cells.find((c: any) => c.r === 0 && c.c === 0)
+    expect(cell.fontSize).toBeLessThan(4.2334)
+    expect(cell.borders.t.width).toBeLessThan(0.2)
   })
 
   test('handles printArea filtering', () => {

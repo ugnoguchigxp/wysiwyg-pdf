@@ -19,13 +19,17 @@ import { convertSheet } from './surface'
 export function convertWorkbook(workbook: ExcelWorkbook, options: ImportOptions = {}): OutputDoc {
   const docId = options.documentId ?? generateId()
   const title = options.documentTitle ?? workbook.metadata?.title ?? 'Untitled'
+  const defaultFont = {
+    name: workbook.defaultFont?.name ?? 'Calibri',
+    size: workbook.defaultFont?.size ?? 11,
+  }
 
   // 対象シートを決定
   const targetSheets = selectTargetSheets(workbook, options)
 
   // 各シートをSurface + Nodesに変換
   const conversionResults = targetSheets.map((sheet, index) =>
-    convertSheet(sheet, index, options, workbook.defaultFont)
+    convertSheet(sheet, index, options, defaultFont)
   )
 
   // 結果を統合
